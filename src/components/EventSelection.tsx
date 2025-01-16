@@ -8,6 +8,7 @@ export const EventSelection = () => {
   const navigate = useNavigate();
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
+    console.log("Selected date:", selectedDate); // Debug log
     setDate(selectedDate);
   };
 
@@ -54,7 +55,7 @@ export const EventSelection = () => {
             <Button 
               onClick={() => navigate('/suggestions')} 
               className="flex-1"
-              disabled={!date}
+              disabled={date === null}
             >
               Next
             </Button>
