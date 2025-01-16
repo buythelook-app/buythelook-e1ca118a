@@ -15,6 +15,7 @@ import { Contact } from "@/components/Contact";
 import { Auth } from "@/pages/Auth";
 import { Entrance } from "@/pages/Entrance";
 import { Cart } from "@/components/Cart";
+import { Profile } from "@/components/Profile";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
