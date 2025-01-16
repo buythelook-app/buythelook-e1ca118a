@@ -21,6 +21,13 @@ export const EventSelection = () => {
     });
   };
 
+  const handleNext = () => {
+    if (date) {
+      console.log("Navigating to suggestions with date:", date);
+      navigate('/suggestions');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
       <div className="container max-w-md mx-auto">
@@ -61,6 +68,7 @@ export const EventSelection = () => {
               onSelect={handleDateSelect}
               defaultMonth={new Date()}
               initialFocus
+              className="mx-auto"
             />
           </div>
 
@@ -73,7 +81,7 @@ export const EventSelection = () => {
               Skip
             </Button>
             <Button 
-              onClick={() => navigate('/suggestions')} 
+              onClick={handleNext}
               className="flex-1 bg-netflix-accent hover:bg-netflix-accent/90"
               disabled={!date}
             >
