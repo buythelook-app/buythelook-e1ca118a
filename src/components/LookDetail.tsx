@@ -24,7 +24,7 @@ export const LookDetail = () => {
 
   return (
     <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
-      <div className="container mx-auto max-w-6xl">
+      <div className="container mx-auto max-w-7xl">
         <Button 
           variant="ghost" 
           onClick={() => navigate(-1)}
@@ -33,10 +33,11 @@ export const LookDetail = () => {
           ← Back to Looks
         </Button>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Look Preview */}
           <div className="space-y-4">
-            <div className="bg-netflix-card rounded-lg p-4">
-              <LookCanvas items={currentLook.items} width={500} height={500} />
+            <div className="bg-netflix-card rounded-lg p-4 h-full">
+              <LookCanvas items={currentLook.items} width={600} height={600} />
             </div>
             <div className="flex gap-2">
               <Button className="flex-1">Try the Look</Button>
@@ -44,8 +45,9 @@ export const LookDetail = () => {
             </div>
           </div>
 
-          <div>
-            <Tabs defaultValue="details" className="w-full">
+          {/* Right Column - Look Details */}
+          <div className="h-full">
+            <Tabs defaultValue="details" className="w-full h-full">
               <TabsList className="w-full grid grid-cols-3">
                 <TabsTrigger value="details">Details</TabsTrigger>
                 <TabsTrigger value="size">Size Guide</TabsTrigger>
@@ -53,7 +55,7 @@ export const LookDetail = () => {
               </TabsList>
               
               <TabsContent value="details">
-                <Card>
+                <Card className="h-full">
                   <CardContent className="p-6">
                     <div className="space-y-6">
                       <div>
