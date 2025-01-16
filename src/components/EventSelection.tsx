@@ -2,14 +2,23 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Calendar } from "./ui/calendar";
 import { useState } from "react";
+import { useToast } from "./ui/use-toast";
 
 export const EventSelection = () => {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
-    console.log("Selected date:", selectedDate); // Debug log
+    console.log("Selected date:", selectedDate);
     setDate(selectedDate);
+  };
+
+  const handleSyncCalendar = () => {
+    toast({
+      title: "Calendar Sync",
+      description: "This feature will be available soon!",
+    });
   };
 
   return (
@@ -37,6 +46,14 @@ export const EventSelection = () => {
             </button>
           </div>
 
+          <Button
+            variant="outline"
+            onClick={handleSyncCalendar}
+            className="w-full flex items-center justify-center gap-2"
+          >
+            <span>📅</span> Sync with My Calendar
+          </Button>
+
           <Calendar
             mode="single"
             selected={date}
@@ -55,7 +72,7 @@ export const EventSelection = () => {
             <Button 
               onClick={() => navigate('/suggestions')} 
               className="flex-1"
-              disabled={date === null}
+              disabled={!date}
             >
               Next
             </Button>
