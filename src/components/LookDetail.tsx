@@ -22,6 +22,10 @@ export const LookDetail = () => {
     );
   }
 
+  const handleAddToCart = () => {
+    navigate('/cart');
+  };
+
   return (
     <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
       <div className="container mx-auto">
@@ -39,8 +43,8 @@ export const LookDetail = () => {
               <LookCanvas items={currentLook.items} width={500} height={500} />
             </div>
             <div className="flex gap-2">
-              <Button className="flex-1">Try the Look</Button>
-              <Button variant="outline" className="flex-1">Buy the Look ({currentLook.price})</Button>
+              <Button className="flex-1" onClick={handleAddToCart}>Try the Look</Button>
+              <Button variant="outline" className="flex-1" onClick={handleAddToCart}>Buy the Look ({currentLook.price})</Button>
             </div>
           </div>
 
@@ -71,7 +75,7 @@ export const LookDetail = () => {
                           <span className="text-sm opacity-75">Individual price:</span>
                           <span className="font-medium">{currentLook.price}</span>
                         </div>
-                        <Button variant="outline" size="sm">Add to Cart</Button>
+                        <Button variant="outline" size="sm" onClick={handleAddToCart}>Add to Cart</Button>
                       </div>
                     </div>
                   </div>

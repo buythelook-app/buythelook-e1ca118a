@@ -14,6 +14,7 @@ import { FAQ } from "@/components/FAQ";
 import { Contact } from "@/components/Contact";
 import { Auth } from "@/pages/Auth";
 import { Entrance } from "@/pages/Entrance";
+import { Cart } from "@/components/Cart";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/faq" element={<FAQ />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/cart" element={<Cart />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
