@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowRight, ArrowLeft } from "lucide-react";
+import { GenderStep } from "./quiz/GenderStep";
+import { MeasurementsStep } from "./quiz/MeasurementsStep";
+import { BodyShapeStep } from "./quiz/BodyShapeStep";
+import { PhotoUploadStep } from "./quiz/PhotoUploadStep";
+import { ColorPreferencesStep } from "./quiz/ColorPreferencesStep";
 
 export const StyleQuiz = () => {
   const { toast } = useToast();
@@ -64,187 +66,63 @@ export const StyleQuiz = () => {
       });
       return;
     }
-    // Here you would typically send the data to your backend
     toast({
       title: "Quiz completed!",
       description: "We'll prepare your personalized style recommendations.",
     });
-    // You can add navigation logic here
   };
 
   const renderStep = () => {
     switch (step) {
       case 1:
         return (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-display font-semibold mb-6">What's your gender?</h2>
-            <RadioGroup
-              value={formData.gender}
-              onValueChange={(value) => setFormData({ ...formData, gender: value })}
-              className="flex flex-col space-y-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="male" id="male" />
-                <Label htmlFor="male">Male</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="female" id="female" />
-                <Label htmlFor="female">Female</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="other" id="other" />
-                <Label htmlFor="other">Other</Label>
-              </div>
-            </RadioGroup>
-          </div>
+          <GenderStep
+            value={formData.gender}
+            onChange={(value) => setFormData({ ...formData, gender: value })}
+          />
         );
-
       case 2:
-        return (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-display font-semibold mb-6">What's your height?</h2>
-            <div className="flex items-center space-x-2">
-              <Input
-                type="number"
-                placeholder="Height in cm"
-                value={formData.height}
-                onChange={(e) => setFormData({ ...formData, height: e.target.value })}
-                className="w-full"
-              />
-            </div>
-          </div>
-        );
-
       case 3:
-        return (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-display font-semibold mb-6">What's your weight?</h2>
-            <div className="flex items-center space-x-2">
-              <Input
-                type="number"
-                placeholder="Weight in kg"
-                value={formData.weight}
-                onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                className="w-full"
-              />
-            </div>
-          </div>
-        );
-
       case 4:
         return (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-display font-semibold mb-6">Your measurements</h2>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="waist">Waist (cm)</Label>
-                <Input
-                  id="waist"
-                  type="number"
-                  value={formData.waist}
-                  onChange={(e) => setFormData({ ...formData, waist: e.target.value })}
-                  className="w-full mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="chest">Chest (cm)</Label>
-                <Input
-                  id="chest"
-                  type="number"
-                  value={formData.chest}
-                  onChange={(e) => setFormData({ ...formData, chest: e.target.value })}
-                  className="w-full mt-1"
-                />
-              </div>
-            </div>
-          </div>
+          <MeasurementsStep
+            height={formData.height}
+            weight={formData.weight}
+            waist={formData.waist}
+            chest={formData.chest}
+            onHeightChange={(value) => setFormData({ ...formData, height: value })}
+            onWeightChange={(value) => setFormData({ ...formData, weight: value })}
+            onWaistChange={(value) => setFormData({ ...formData, waist: value })}
+            onChestChange={(value) => setFormData({ ...formData, chest: value })}
+            step={step}
+          />
         );
-
       case 5:
         return (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-display font-semibold mb-6">What's your body shape?</h2>
-            <RadioGroup
-              value={formData.bodyShape}
-              onValueChange={(value) => setFormData({ ...formData, bodyShape: value })}
-              className="flex flex-col space-y-4"
-            >
-              {["hourglass", "pear", "rectangle", "triangle", "oval"].map((shape) => (
-                <div key={shape} className="flex items-center space-x-2">
-                  <RadioGroupItem value={shape} id={shape} />
-                  <Label htmlFor={shape} className="capitalize">{shape}</Label>
-                </div>
-              ))}
-            </RadioGroup>
-          </div>
+          <BodyShapeStep
+            value={formData.bodyShape}
+            onChange={(value) => setFormData({ ...formData, bodyShape: value })}
+          />
         );
-
       case 6:
         return (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-display font-semibold mb-6">Upload a photo (optional)</h2>
-            <div className="flex flex-col items-center space-y-4">
-              <div className="w-full max-w-xs">
-                <Label htmlFor="photo" className="cursor-pointer">
-                  <div className="border-2 border-dashed border-netflix-accent rounded-lg p-8 text-center hover:bg-netflix-card transition-colors">
-                    <Upload className="mx-auto mb-4" />
-                    <p>Click to upload or drag and drop</p>
-                    <p className="text-sm text-gray-400">PNG, JPG up to 10MB</p>
-                  </div>
-                </Label>
-                <input
-                  id="photo"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setFormData({ ...formData, photo: file });
-                    }
-                  }}
-                />
-              </div>
-              {formData.photo && (
-                <p className="text-netflix-accent">Photo uploaded: {formData.photo.name}</p>
-              )}
-            </div>
-          </div>
+          <PhotoUploadStep
+            photo={formData.photo}
+            onPhotoChange={(file) => setFormData({ ...formData, photo: file })}
+          />
         );
-
       case 7:
         return (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-display font-semibold mb-6">Select your color preferences</h2>
-            <div className="grid grid-cols-2 gap-4">
-              {["warm", "cool", "neutral", "bright", "pastel", "dark"].map((color) => (
-                <div key={color} className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id={color}
-                    checked={formData.colorPreferences.includes(color)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setFormData({
-                          ...formData,
-                          colorPreferences: [...formData.colorPreferences, color],
-                        });
-                      } else {
-                        setFormData({
-                          ...formData,
-                          colorPreferences: formData.colorPreferences.filter((c) => c !== color),
-                        });
-                      }
-                    }}
-                    className="w-4 h-4"
-                  />
-                  <Label htmlFor={color} className="capitalize">{color}</Label>
-                </div>
-              ))}
-            </div>
-          </div>
+          <ColorPreferencesStep
+            selectedColors={formData.colorPreferences}
+            onColorToggle={(color) => {
+              const newColors = formData.colorPreferences.includes(color)
+                ? formData.colorPreferences.filter((c) => c !== color)
+                : [...formData.colorPreferences, color];
+              setFormData({ ...formData, colorPreferences: newColors });
+            }}
+          />
         );
-
       default:
         return null;
     }
