@@ -1,6 +1,9 @@
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 export const HeroSection = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="relative h-[80vh] w-full">
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1490481651871-ab68de25d43d')] bg-cover bg-center">
@@ -19,6 +22,7 @@ export const HeroSection = () => {
           <Button 
             className="bg-netflix-accent hover:bg-netflix-accent/90 text-white"
             size="lg"
+            onClick={() => navigate('/quiz')}
           >
             Take Style Quiz
           </Button>
