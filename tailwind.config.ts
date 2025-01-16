@@ -20,10 +20,10 @@ export default {
     extend: {
       colors: {
         netflix: {
-          background: "#141414",
-          card: "#181818",
+          background: "#0A0F1C", // Darker blue-black
+          card: "#141B2D", // Dark blue
           text: "#F5F5F1",
-          accent: "#BFA181",
+          accent: "#3B82F6", // Bright blue accent
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
