@@ -40,16 +40,18 @@ export const BudgetSelection = () => {
         <div className="space-y-8">
           <div className="space-y-6">
             <div className="relative p-6 bg-netflix-card rounded-lg shadow-xl">
-              <Slider
-                value={[budget]}
-                onValueChange={handleBudgetChange}
-                min={100}
-                max={1000}
-                step={50}
-                className="w-full"
-              />
-              <div className="flex justify-between text-sm mt-4">
-                <span className="text-netflix-accent font-medium">$100</span>
+              <div className="mb-6">
+                <Slider
+                  value={[budget]}
+                  onValueChange={handleBudgetChange}
+                  min={100}
+                  max={1000}
+                  step={50}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-netflix-accent font-medium bg-netflix-card/50 px-3 py-1 rounded-full">$100</span>
                 <span className="text-netflix-accent font-semibold bg-netflix-card/50 px-3 py-1 rounded-full">
                   {isUnlimited ? "Money is not an issue" : `$${budget}`}
                 </span>
