@@ -59,6 +59,8 @@ export const EventSelection = () => {
             selected={date}
             onSelect={handleDateSelect}
             className="rounded-lg border border-netflix-card"
+            defaultMonth={new Date()}
+            initialFocus
           />
 
           <div className="flex gap-4">
