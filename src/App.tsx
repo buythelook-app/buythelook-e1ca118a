@@ -12,6 +12,7 @@ import { MoodSelection } from "@/components/MoodSelection";
 import { EventSelection } from "@/components/EventSelection";
 import { FAQ } from "@/components/FAQ";
 import { Contact } from "@/components/Contact";
+import { Auth } from "@/pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/event" element={<EventSelection />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/auth" element={<Auth />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

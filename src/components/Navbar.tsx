@@ -12,9 +12,9 @@ export const Navbar = () => {
           <button className="hover:text-netflix-accent">
             <Search size={24} />
           </button>
-          <button className="hover:text-netflix-accent">
+          <Link to="/auth" className="hover:text-netflix-accent">
             <User size={24} />
-          </button>
+          </Link>
         </div>
       </div>
     </nav>
