@@ -10,8 +10,8 @@ export const EventSelection = () => {
   const { toast } = useToast();
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
-    console.log("Selected date:", selectedDate);
     setDate(selectedDate);
+    console.log("Date selected:", selectedDate);
   };
 
   const handleSyncCalendar = () => {
@@ -54,14 +54,15 @@ export const EventSelection = () => {
             <span>📅</span> Sync with My Calendar
           </Button>
 
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={handleDateSelect}
-            className="rounded-lg border border-netflix-card"
-            defaultMonth={new Date()}
-            initialFocus
-          />
+          <div className="bg-netflix-card p-4 rounded-lg">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={handleDateSelect}
+              defaultMonth={new Date()}
+              initialFocus
+            />
+          </div>
 
           <div className="flex gap-4">
             <Button 
@@ -73,7 +74,7 @@ export const EventSelection = () => {
             </Button>
             <Button 
               onClick={() => navigate('/suggestions')} 
-              className="flex-1"
+              className="flex-1 bg-netflix-accent hover:bg-netflix-accent/90"
               disabled={!date}
             >
               Next
