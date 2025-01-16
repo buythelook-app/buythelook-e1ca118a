@@ -13,6 +13,7 @@ import { EventSelection } from "@/components/EventSelection";
 import { FAQ } from "@/components/FAQ";
 import { Contact } from "@/components/Contact";
 import { Auth } from "@/pages/Auth";
+import { Entrance } from "@/pages/Entrance";
 
 const queryClient = new QueryClient();
 
@@ -23,7 +24,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<Entrance />} />
+          <Route path="/home" element={<Index />} />
           <Route path="/quiz" element={<StyleQuiz />} />
           <Route path="/suggestions" element={<LookSuggestions />} />
           <Route path="/look/:id" element={<LookDetail />} />

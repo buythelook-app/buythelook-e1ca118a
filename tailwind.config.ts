@@ -20,10 +20,10 @@ export default {
     extend: {
       colors: {
         netflix: {
-          background: "#0A0F1C", // Darker blue-black
-          card: "#141B2D", // Dark blue
+          background: "#0A0F1C",
+          card: "#141B2D",
           text: "#F5F5F1",
-          accent: "#3B82F6", // Bright blue accent
+          accent: "#3B82F6",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -68,9 +68,14 @@ export default {
           "0%": { transform: "scale(1)" },
           "100%": { transform: "scale(1.05)" },
         },
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
       },
       animation: {
         "card-hover": "card-hover 0.2s ease-in-out forwards",
+        "fade-in": "fade-in 1s ease-in-out forwards",
       },
     },
   },
