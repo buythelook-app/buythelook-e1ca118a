@@ -54,7 +54,7 @@ export const EventSelection = () => {
             <Button 
               onClick={() => navigate('/suggestions')} 
               className="flex-1"
-              disabled={date === undefined}
+              disabled={!date}
             >
               Next
             </Button>
