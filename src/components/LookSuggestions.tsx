@@ -2,6 +2,14 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { LookCanvas } from "./LookCanvas";
+import { Filter } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 const MODES = ["All", "Casual", "Formal", "Business", "Party", "Sport"];
 const COLORS = ["All", "Black", "White", "Blue", "Red", "Green", "Purple", "Pink"];
@@ -110,8 +118,7 @@ export const LookSuggestions = () => {
   const filteredLooks = mockLooks.filter(look => {
     const categoryMatch = selectedCategory === "All" || look.category === selectedCategory;
     const modeMatch = selectedMode === "All" || look.category === selectedMode;
-    // Note: You would need to add color data to your looks to implement color filtering
-    const colorMatch = selectedColor === "All"; // Placeholder for color filtering
+    const colorMatch = selectedColor === "All";
     return categoryMatch && modeMatch && colorMatch;
   });
 
@@ -119,58 +126,76 @@ export const LookSuggestions = () => {
     <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
       <div className="container mx-auto">
         <div className="flex flex-col gap-4 mb-8">
-          <h1 className="text-2xl font-display font-semibold">Have a Look!</h1>
-          
-          <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {["All", "New", "Casual", "Work", "Party"].map((category) => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category as Category)}
-                >
-                  {category}
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-display font-semibold">Have a Look!</h1>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
                 </Button>
-              ))}
-            </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-64 bg-netflix-card text-netflix-text border-netflix-accent">
+                <DropdownMenuLabel>Categories</DropdownMenuLabel>
+                <div className="p-2">
+                  <div className="flex flex-wrap gap-2">
+                    {["All", "New", "Casual", "Work", "Party"].map((category) => (
+                      <Button
+                        key={category}
+                        variant={selectedCategory === category ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedCategory(category as Category)}
+                      >
+                        {category}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Mode</DropdownMenuLabel>
+                <div className="p-2">
+                  <div className="flex flex-wrap gap-2">
+                    {MODES.map((mode) => (
+                      <Button
+                        key={mode}
+                        variant={selectedMode === mode ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedMode(mode)}
+                      >
+                        {mode}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
 
-            <div className="flex flex-wrap gap-2">
-              <span className="text-sm text-gray-400 mr-2 self-center">Mode:</span>
-              {MODES.map((mode) => (
-                <Button
-                  key={mode}
-                  variant={selectedMode === mode ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedMode(mode)}
-                  className="bg-netflix-card/50"
-                >
-                  {mode}
-                </Button>
-              ))}
-            </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Colors</DropdownMenuLabel>
+                <div className="p-2">
+                  <div className="flex flex-wrap gap-2">
+                    {COLORS.map((color) => (
+                      <Button
+                        key={color}
+                        variant={selectedColor === color ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedColor(color)}
+                      >
+                        {color}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
 
-            <div className="flex flex-wrap gap-2">
-              <span className="text-sm text-gray-400 mr-2 self-center">Color:</span>
-              {COLORS.map((color) => (
-                <Button
-                  key={color}
-                  variant={selectedColor === color ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedColor(color)}
-                  className="bg-netflix-card/50"
-                >
-                  {color}
-                </Button>
-              ))}
-            </div>
-
-            <Button
-              onClick={() => navigate('/budget')}
-              className="bg-netflix-accent hover:bg-opacity-80"
-            >
-              Set Your Budget
-            </Button>
+                <DropdownMenuSeparator />
+                <div className="p-2">
+                  <Button
+                    onClick={() => navigate('/budget')}
+                    className="w-full bg-netflix-accent hover:bg-opacity-80"
+                  >
+                    Set Your Budget
+                  </Button>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
         
