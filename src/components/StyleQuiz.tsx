@@ -7,9 +7,11 @@ import { MeasurementsStep } from "./quiz/MeasurementsStep";
 import { BodyShapeStep } from "./quiz/BodyShapeStep";
 import { PhotoUploadStep } from "./quiz/PhotoUploadStep";
 import { ColorPreferencesStep } from "./quiz/ColorPreferencesStep";
+import { useNavigate } from "react-router-dom";
 
 export const StyleQuiz = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     gender: "",
@@ -70,6 +72,7 @@ export const StyleQuiz = () => {
       title: "Quiz completed!",
       description: "We'll prepare your personalized style recommendations.",
     });
+    navigate('/suggestions');
   };
 
   const renderStep = () => {
