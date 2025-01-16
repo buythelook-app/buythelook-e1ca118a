@@ -4,10 +4,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { mockLooks } from "./LookSuggestions";
 import { Card, CardContent } from "./ui/card";
 import { LookCanvas } from "./LookCanvas";
+import { useCartStore } from "./Cart";
+import { toast } from "sonner";
 
 export const LookDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { addItem, addItems } = useCartStore();
 
   const currentLook = mockLooks.find(look => look.id === id);
 
@@ -22,7 +25,27 @@ export const LookDetail = () => {
     );
   }
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (itemIndex: number) => {
+    const item = currentLook.items[itemIndex];
+    addItem({
+      id: item.id,
+      image: item.image,
+      title: `Item ${itemIndex + 1} from ${currentLook.title}`,
+      price: currentLook.price
+    });
+    toast.success('Item added to cart');
+    navigate('/cart');
+  };
+
+  const handleBuyLook = () => {
+    const lookItems = currentLook.items.map((item, index) => ({
+      id: item.id,
+      image: item.image,
+      title: `Item ${index + 1} from ${currentLook.title}`,
+      price: currentLook.price
+    }));
+    addItems(lookItems);
+    toast.success('All items added to cart');
     navigate('/cart');
   };
 
@@ -43,8 +66,10 @@ export const LookDetail = () => {
               <LookCanvas items={currentLook.items} width={500} height={500} />
             </div>
             <div className="flex gap-2">
-              <Button className="flex-1" onClick={handleAddToCart}>Try the Look</Button>
-              <Button variant="outline" className="flex-1" onClick={handleAddToCart}>Buy the Look ({currentLook.price})</Button>
+              <Button className="flex-1" onClick={handleBuyLook}>Try the Look</Button>
+              <Button variant="outline" className="flex-1" onClick={handleBuyLook}>
+                Buy the Look ({currentLook.price})
+              </Button>
             </div>
           </div>
 
@@ -75,7 +100,13 @@ export const LookDetail = () => {
                           <span className="text-sm opacity-75">Individual price:</span>
                           <span className="font-medium">{currentLook.price}</span>
                         </div>
-                        <Button variant="outline" size="sm" onClick={handleAddToCart}>Add to Cart</Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleAddToCart(index)}
+                        >
+                          Add to Cart
+                        </Button>
                       </div>
                     </div>
                   </div>
