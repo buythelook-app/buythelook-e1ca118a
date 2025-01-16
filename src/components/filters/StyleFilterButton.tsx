@@ -24,7 +24,7 @@ interface StyleFilterButtonProps {
 }
 
 export type Category = "New" | "Casual" | "Work" | "Party" | "All";
-export type Mode = "All" | "Casual" | "Formal" | "Business" | "Party" | "Sport";
+export type Mode = "All" | "Relaxing" | "Party" | "Work" | "Date" | "Travel" | "Shopping" | "Sport" | "Casual";
 export type Color = "All" | "warm & cold" | "natural" | "monochrome" | "highlight";
 export type Style = "classic" | "sportive" | "elegant" | "minimalist" | "romantic" | "boohoo";
 
