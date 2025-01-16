@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Button } from "./ui/button";
-import { LookCard } from "./LookCard";
+import { LookCanvas } from "./LookCanvas";
 
 const mockLooks = [
   {
@@ -9,28 +9,44 @@ const mockLooks = [
     image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
     title: "Spring Time",
     price: "$149.99",
-    category: "Casual"
+    category: "Casual",
+    items: [
+      { id: "1a", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+      { id: "1b", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+    ]
   },
   {
     id: "2",
     image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
     title: "Office Ready",
     price: "$199.99",
-    category: "Work"
+    category: "Work",
+    items: [
+      { id: "2a", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+      { id: "2b", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+    ]
   },
   {
     id: "3",
     image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
     title: "Night Out",
     price: "$249.99",
-    category: "Party"
+    category: "Party",
+    items: [
+      { id: "3a", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+      { id: "3b", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+    ]
   },
   {
     id: "4",
     image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
     title: "Fresh Collection",
     price: "$179.99",
-    category: "New"
+    category: "New",
+    items: [
+      { id: "4a", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+      { id: "4b", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+    ]
   }
 ];
 
@@ -70,7 +86,18 @@ export const LookSuggestions = () => {
               onClick={() => navigate(`/look/${look.id}`)}
               className="cursor-pointer transition-transform hover:scale-105"
             >
-              <LookCard {...look} />
+              <div className="look-card">
+                <LookCanvas items={look.items} />
+                <div className="look-card-content">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-sm text-netflix-accent mb-1">{look.category}</p>
+                      <h3 className="text-lg font-semibold mb-1">{look.title}</h3>
+                      <p className="text-sm opacity-90">{look.price}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           ))}
         </div>
