@@ -67,7 +67,10 @@ export const LookDetail = () => {
                       <h4 className="font-medium mb-1">Item {index + 1}</h4>
                       <p className="text-sm text-netflix-accent mb-2">Part of {currentLook.title}</p>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm opacity-75">Individual price available in cart</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm opacity-75">Individual price:</span>
+                          <span className="font-medium">{currentLook.price}</span>
+                        </div>
                         <Button variant="outline" size="sm">Add to Cart</Button>
                       </div>
                     </div>
