@@ -42,14 +42,15 @@ export const EventSelection = () => {
           <div className="flex gap-4">
             <Button 
               variant="outline" 
-              onClick={() => navigate('/faq')} 
+              onClick={() => navigate('/suggestions')} 
               className="flex-1"
             >
               Skip
             </Button>
             <Button 
-              onClick={() => navigate('/faq')} 
+              onClick={() => navigate('/suggestions')} 
               className="flex-1"
+              disabled={!date}
             >
               Next
             </Button>
