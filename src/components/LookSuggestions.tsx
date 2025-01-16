@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "./ui/button";
 import { LookCard } from "./LookCard";
 
@@ -10,11 +11,38 @@ const mockLooks = [
     price: "$149.99",
     category: "Casual"
   },
-  // Add more mock looks as needed
+  {
+    id: "2",
+    image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
+    title: "Office Ready",
+    price: "$199.99",
+    category: "Work"
+  },
+  {
+    id: "3",
+    image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
+    title: "Night Out",
+    price: "$249.99",
+    category: "Party"
+  },
+  {
+    id: "4",
+    image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
+    title: "Fresh Collection",
+    price: "$179.99",
+    category: "New"
+  }
 ];
+
+type Category = "New" | "Casual" | "Work" | "Party" | "All";
 
 export const LookSuggestions = () => {
   const navigate = useNavigate();
+  const [selectedCategory, setSelectedCategory] = useState<Category>("All");
+
+  const filteredLooks = selectedCategory === "All" 
+    ? mockLooks 
+    : mockLooks.filter(look => look.category === selectedCategory);
 
   return (
     <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
@@ -22,16 +50,26 @@ export const LookSuggestions = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-display font-semibold">Have a Look!</h1>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">New</Button>
-            <Button variant="outline" size="sm">Casual</Button>
-            <Button variant="outline" size="sm">Work</Button>
-            <Button variant="outline" size="sm">Party</Button>
+            {["All", "New", "Casual", "Work", "Party"].map((category) => (
+              <Button
+                key={category}
+                variant={selectedCategory === category ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedCategory(category as Category)}
+              >
+                {category}
+              </Button>
+            ))}
           </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {mockLooks.map((look) => (
-            <div key={look.id} onClick={() => navigate(`/look/${look.id}`)}>
+          {filteredLooks.map((look) => (
+            <div 
+              key={look.id} 
+              onClick={() => navigate(`/look/${look.id}`)}
+              className="cursor-pointer transition-transform hover:scale-105"
+            >
               <LookCard {...look} />
             </div>
           ))}
