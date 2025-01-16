@@ -33,7 +33,7 @@ export const LookDetail = () => {
           ← Back to Looks
         </Button>
 
-        <div className="grid grid-cols-1 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="space-y-4">
             <div className="bg-netflix-card rounded-lg p-4">
               <LookCanvas items={currentLook.items} width={500} height={500} />
@@ -44,54 +44,45 @@ export const LookDetail = () => {
             </div>
           </div>
 
-          <div>
-            <Tabs defaultValue="details" className="w-full">
-              <TabsList className="w-full grid grid-cols-3">
-                <TabsTrigger value="details">Details</TabsTrigger>
-                <TabsTrigger value="size">Size Guide</TabsTrigger>
-                <TabsTrigger value="ratings">Reviews</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="details">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="space-y-6">
-                      <div>
-                        <h2 className="text-2xl font-semibold mb-2">{currentLook.title}</h2>
-                        <p className="text-netflix-accent">{currentLook.category}</p>
-                      </div>
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold mb-2">{currentLook.title}</h2>
+              <p className="text-netflix-accent">{currentLook.category}</p>
+            </div>
 
-                      <div>
-                        <h3 className="text-lg font-semibold mb-4">Items in this Look</h3>
-                        <div className="space-y-4">
-                          {currentLook.items.map((item, index) => (
-                            <div 
-                              key={item.id}
-                              className="flex items-start gap-4 p-4 bg-netflix-background rounded-lg transition-all hover:bg-netflix-card"
-                            >
-                              <img 
-                                src={item.image} 
-                                alt={`Item ${index + 1}`}
-                                className="w-24 h-24 object-cover rounded-md"
-                              />
-                              <div className="flex-1">
-                                <h4 className="font-medium mb-1">Item {index + 1}</h4>
-                                <p className="text-sm text-netflix-accent mb-2">Part of {currentLook.title}</p>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm opacity-75">Individual price available in cart</span>
-                                  <Button variant="outline" size="sm">Add to Cart</Button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Items in this Look</h3>
+              <div className="space-y-4">
+                {currentLook.items.map((item, index) => (
+                  <div 
+                    key={item.id}
+                    className="flex items-start gap-4 p-4 bg-netflix-background rounded-lg transition-all hover:bg-netflix-card"
+                  >
+                    <img 
+                      src={item.image} 
+                      alt={`Item ${index + 1}`}
+                      className="w-24 h-24 object-cover rounded-md"
+                    />
+                    <div className="flex-1">
+                      <h4 className="font-medium mb-1">Item {index + 1}</h4>
+                      <p className="text-sm text-netflix-accent mb-2">Part of {currentLook.title}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm opacity-75">Individual price available in cart</span>
+                        <Button variant="outline" size="sm">Add to Cart</Button>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-              <TabsContent value="size">
+            <Tabs defaultValue="details" className="w-full">
+              <TabsList className="w-full grid grid-cols-2">
+                <TabsTrigger value="details">Size Guide</TabsTrigger>
+                <TabsTrigger value="ratings">Reviews</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="details">
                 <Card>
                   <CardContent className="p-6">
                     <h3 className="font-semibold mb-4">Size Guide</h3>
