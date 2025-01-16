@@ -6,11 +6,14 @@ import { Card, CardContent } from "./ui/card";
 import { LookCanvas } from "./LookCanvas";
 import { useCartStore } from "./Cart";
 import { toast } from "sonner";
+import { useState } from "react";
+import { AIPreview } from "./AIPreview";
 
 export const LookDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addItem, addItems } = useCartStore();
+  const [showAIPreview, setShowAIPreview] = useState(false);
 
   const currentLook = mockLooks.find(look => look.id === id);
 
@@ -66,8 +69,17 @@ export const LookDetail = () => {
               <LookCanvas items={currentLook.items} width={500} height={500} />
             </div>
             <div className="flex gap-2">
-              <Button className="flex-1" onClick={handleBuyLook}>Try the Look</Button>
-              <Button variant="outline" className="flex-1" onClick={handleBuyLook}>
+              <Button 
+                className="flex-1" 
+                onClick={() => setShowAIPreview(true)}
+              >
+                Try the Look
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex-1" 
+                onClick={handleBuyLook}
+              >
                 Buy the Look ({currentLook.price})
               </Button>
             </div>
@@ -146,6 +158,12 @@ export const LookDetail = () => {
           </div>
         </div>
       </div>
+
+      <AIPreview
+        lookImage={currentLook.items[0].image}
+        isOpen={showAIPreview}
+        onClose={() => setShowAIPreview(false)}
+      />
     </div>
   );
 };
