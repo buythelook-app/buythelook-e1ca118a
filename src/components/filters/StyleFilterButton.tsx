@@ -3,7 +3,6 @@ import { Button } from "../ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
@@ -44,43 +43,55 @@ export const StyleFilterButton = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
+        <Button 
+          variant="outline" 
+          size="icon"
+          className="relative"
+        >
           <Filter className="h-4 w-4" />
+          {(selectedCategory !== "All" || selectedStyle !== "All" || selectedMode !== "All" || selectedColor !== "All") && (
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-netflix-accent rounded-full" />
+          )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-96 bg-netflix-card text-netflix-text border-netflix-accent">
-        <CategoryFilter
-          selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
-        />
-        
-        <DropdownMenuSeparator />
+      <DropdownMenuContent 
+        className="w-[350px] bg-netflix-card text-netflix-text border-netflix-accent p-4"
+        align="end"
+      >
         <StylePreferencesFilter
           selectedStyle={selectedStyle}
           setSelectedStyle={setSelectedStyle}
         />
 
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="my-4" />
+        
+        <CategoryFilter
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+        />
+
+        <DropdownMenuSeparator className="my-4" />
+        
         <ModeFilter
           selectedMode={selectedMode}
           setSelectedMode={setSelectedMode}
         />
 
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="my-4" />
+        
         <ColorFilter
           selectedColor={selectedColor}
           setSelectedColor={setSelectedColor}
         />
 
-        <DropdownMenuSeparator />
-        <div className="p-2">
-          <Button
-            onClick={() => navigate('/budget')}
-            className="w-full bg-netflix-accent hover:bg-opacity-80"
-          >
-            Set Your Budget
-          </Button>
-        </div>
+        <DropdownMenuSeparator className="my-4" />
+        
+        <Button
+          onClick={() => navigate('/budget')}
+          className="w-full bg-netflix-accent hover:bg-opacity-80"
+        >
+          Set Your Budget
+        </Button>
       </DropdownMenuContent>
     </DropdownMenu>
   );
