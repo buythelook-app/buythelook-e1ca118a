@@ -47,6 +47,50 @@ const mockLooks = [
       { id: "4a", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
       { id: "4b", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
     ]
+  },
+  {
+    id: "5",
+    image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
+    title: "Summer Vibes",
+    price: "$159.99",
+    category: "New",
+    items: [
+      { id: "5a", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+      { id: "5b", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+    ]
+  },
+  {
+    id: "6",
+    image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
+    title: "Weekend Casual",
+    price: "$139.99",
+    category: "Casual",
+    items: [
+      { id: "6a", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+      { id: "6b", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+    ]
+  },
+  {
+    id: "7",
+    image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
+    title: "Business Casual",
+    price: "$189.99",
+    category: "Work",
+    items: [
+      { id: "7a", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+      { id: "7b", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+    ]
+  },
+  {
+    id: "8",
+    image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
+    title: "Evening Elegance",
+    price: "$229.99",
+    category: "Party",
+    items: [
+      { id: "8a", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+      { id: "8b", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+    ]
   }
 ];
 
