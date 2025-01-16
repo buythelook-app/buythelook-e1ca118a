@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 import { LookCanvas } from "./LookCanvas";
 
-const mockLooks = [
+export const mockLooks = [
   {
     id: "1",
     image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
