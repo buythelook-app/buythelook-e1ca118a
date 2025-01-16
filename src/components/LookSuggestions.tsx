@@ -1,26 +1,6 @@
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Button } from "./ui/button";
-import { LookCanvas } from "./LookCanvas";
-import { Filter } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-
-const MODES = ["All", "Casual", "Formal", "Business", "Party", "Sport"];
-const COLORS = ["All", "Black", "White", "Blue", "Red", "Green", "Purple", "Pink"];
-const STYLES = [
-  { id: "classic", name: "Classic", image: "https://images.unsplash.com/photo-1490725263030-1f0521cec8ec?w=500&auto=format" },
-  { id: "sportive", name: "Sportive", image: "https://images.unsplash.com/photo-1483721310020-03333e577078?w=500&auto=format" },
-  { id: "elegant", name: "Elegant", image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&auto=format" },
-  { id: "minimalist", name: "Minimalist", image: "https://images.unsplash.com/photo-1513094735237-8f2714d57c13?w=500&auto=format" },
-  { id: "romantic", name: "Romantic", image: "https://images.unsplash.com/photo-1502716119720-b23a93e5fe1b?w=500&auto=format" },
-  { id: "boohoo", name: "Boohoo", image: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=500&auto=format" },
-];
+import { StyleFilterButton, Category, Mode, Color, Style } from "./filters/StyleFilterButton";
+import { LookGrid } from "./LookGrid";
 
 export const mockLooks = [
   {
@@ -113,13 +93,7 @@ export const mockLooks = [
   }
 ];
 
-type Category = "New" | "Casual" | "Work" | "Party" | "All";
-type Mode = typeof MODES[number];
-type Color = typeof COLORS[number];
-type Style = typeof STYLES[number]["id"];
-
 export const LookSuggestions = () => {
-  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<Category>("All");
   const [selectedMode, setSelectedMode] = useState<Mode>("All");
   const [selectedColor, setSelectedColor] = useState<Color>("All");
@@ -129,7 +103,7 @@ export const LookSuggestions = () => {
     const categoryMatch = selectedCategory === "All" || look.category === selectedCategory;
     const modeMatch = selectedMode === "All" || look.category === selectedMode;
     const colorMatch = selectedColor === "All";
-    const styleMatch = selectedStyle === "All"; // You would need to add style property to your looks data to filter by style
+    const styleMatch = selectedStyle === "All";
     return categoryMatch && modeMatch && colorMatch && styleMatch;
   });
 
@@ -139,140 +113,38 @@ export const LookSuggestions = () => {
         <div className="flex flex-col gap-4 mb-8">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-display font-semibold">Have a Look!</h1>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-96 bg-netflix-card text-netflix-text border-netflix-accent">
-                <DropdownMenuLabel>Categories</DropdownMenuLabel>
-                <div className="p-2">
-                  <div className="flex flex-wrap gap-2">
-                    {["All", "New", "Casual", "Work", "Party"].map((category) => (
-                      <Button
-                        key={category}
-                        variant={selectedCategory === category ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setSelectedCategory(category as Category)}
-                      >
-                        {category}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Style Preferences</DropdownMenuLabel>
-                <div className="p-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    {STYLES.map((style) => (
-                      <Button
-                        key={style.id}
-                        variant={selectedStyle === style.id ? "default" : "outline"}
-                        size="sm"
-                        className="flex items-center gap-2 w-full"
-                        onClick={() => setSelectedStyle(style.id)}
-                      >
-                        <img 
-                          src={style.image} 
-                          alt={style.name} 
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                        {style.name}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Mode</DropdownMenuLabel>
-                <div className="p-2">
-                  <div className="flex flex-wrap gap-2">
-                    {MODES.map((mode) => (
-                      <Button
-                        key={mode}
-                        variant={selectedMode === mode ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setSelectedMode(mode)}
-                      >
-                        {mode}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Colors</DropdownMenuLabel>
-                <div className="p-2">
-                  <div className="flex flex-wrap gap-2">
-                    {COLORS.map((color) => (
-                      <Button
-                        key={color}
-                        variant={selectedColor === color ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setSelectedColor(color)}
-                      >
-                        {color}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <DropdownMenuSeparator />
-                <div className="p-2">
-                  <Button
-                    onClick={() => navigate('/budget')}
-                    className="w-full bg-netflix-accent hover:bg-opacity-80"
-                  >
-                    Set Your Budget
-                  </Button>
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <StyleFilterButton
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              selectedStyle={selectedStyle}
+              setSelectedStyle={setSelectedStyle}
+              selectedMode={selectedMode}
+              setSelectedMode={setSelectedMode}
+              selectedColor={selectedColor}
+              setSelectedColor={setSelectedColor}
+            />
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredLooks.map((look) => (
-            <div 
-              key={look.id} 
-              onClick={() => navigate(`/look/${look.id}`)}
-              className="cursor-pointer transition-transform hover:scale-105"
-            >
-              <div className="look-card">
-                <LookCanvas items={look.items} />
-                <div className="look-card-content">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-sm text-netflix-accent mb-1">{look.category}</p>
-                      <h3 className="text-lg font-semibold mb-1">{look.title}</h3>
-                      <p className="text-sm opacity-90">{look.price}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <LookGrid looks={filteredLooks} />
 
         <div className="fixed bottom-0 left-0 right-0 bg-netflix-card p-4">
           <div className="container mx-auto flex justify-around">
-            <Button variant="ghost">
+            <button className="p-2 hover:text-netflix-accent transition-colors">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
-            </Button>
-            <Button variant="ghost">
+            </button>
+            <button className="p-2 hover:text-netflix-accent transition-colors">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-            </Button>
-            <Button variant="ghost">
+            </button>
+            <button className="p-2 hover:text-netflix-accent transition-colors">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-            </Button>
+            </button>
           </div>
         </div>
       </div>
