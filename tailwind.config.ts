@@ -23,7 +23,7 @@ export default {
           background: "#0A0F1C",
           card: "#141B2D",
           text: "#F5F5F1",
-          accent: "#64748B",
+          accent: "#8B5CF6",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
