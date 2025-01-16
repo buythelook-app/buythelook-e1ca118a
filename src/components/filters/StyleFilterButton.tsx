@@ -25,7 +25,7 @@ interface StyleFilterButtonProps {
 
 export type Category = "New" | "Casual" | "Work" | "Party" | "All";
 export type Mode = "All" | "Casual" | "Formal" | "Business" | "Party" | "Sport";
-export type Color = "All" | "Black" | "White" | "Blue" | "Red" | "Green" | "Purple" | "Pink";
+export type Color = "All" | "warm & cold" | "natural" | "monochrome" | "highlight";
 export type Style = "classic" | "sportive" | "elegant" | "minimalist" | "romantic" | "boohoo";
 
 export const StyleFilterButton = ({

@@ -2,7 +2,7 @@ import { Button } from "../ui/button";
 import { DropdownMenuLabel } from "../ui/dropdown-menu";
 import { Color } from "./StyleFilterButton";
 
-const COLORS = ["All", "Black", "White", "Blue", "Red", "Green", "Purple", "Pink"];
+const COLORS = ["All", "warm & cold", "natural", "monochrome", "highlight"] as const;
 
 interface ColorFilterProps {
   selectedColor: Color;
