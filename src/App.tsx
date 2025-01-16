@@ -19,30 +19,32 @@ import { Profile } from "@/components/Profile";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Entrance />} />
-          <Route path="/home" element={<Index />} />
-          <Route path="/quiz" element={<StyleQuiz />} />
-          <Route path="/suggestions" element={<LookSuggestions />} />
-          <Route path="/look/:id" element={<LookDetail />} />
-          <Route path="/budget" element={<BudgetSelection />} />
-          <Route path="/mood" element={<MoodSelection />} />
-          <Route path="/event" element={<EventSelection />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/profile" element={<Profile />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Entrance />} />
+            <Route path="/home" element={<Index />} />
+            <Route path="/quiz" element={<StyleQuiz />} />
+            <Route path="/suggestions" element={<LookSuggestions />} />
+            <Route path="/look/:id" element={<LookDetail />} />
+            <Route path="/budget" element={<BudgetSelection />} />
+            <Route path="/mood" element={<MoodSelection />} />
+            <Route path="/event" element={<EventSelection />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/profile" element={<Profile />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
