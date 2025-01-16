@@ -13,6 +13,14 @@ import {
 
 const MODES = ["All", "Casual", "Formal", "Business", "Party", "Sport"];
 const COLORS = ["All", "Black", "White", "Blue", "Red", "Green", "Purple", "Pink"];
+const STYLES = [
+  { id: "classic", name: "Classic", image: "https://images.unsplash.com/photo-1490725263030-1f0521cec8ec?w=500&auto=format" },
+  { id: "sportive", name: "Sportive", image: "https://images.unsplash.com/photo-1483721310020-03333e577078?w=500&auto=format" },
+  { id: "elegant", name: "Elegant", image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&auto=format" },
+  { id: "minimalist", name: "Minimalist", image: "https://images.unsplash.com/photo-1513094735237-8f2714d57c13?w=500&auto=format" },
+  { id: "romantic", name: "Romantic", image: "https://images.unsplash.com/photo-1502716119720-b23a93e5fe1b?w=500&auto=format" },
+  { id: "boohoo", name: "Boohoo", image: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=500&auto=format" },
+];
 
 export const mockLooks = [
   {
@@ -108,18 +116,21 @@ export const mockLooks = [
 type Category = "New" | "Casual" | "Work" | "Party" | "All";
 type Mode = typeof MODES[number];
 type Color = typeof COLORS[number];
+type Style = typeof STYLES[number]["id"];
 
 export const LookSuggestions = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<Category>("All");
   const [selectedMode, setSelectedMode] = useState<Mode>("All");
   const [selectedColor, setSelectedColor] = useState<Color>("All");
+  const [selectedStyle, setSelectedStyle] = useState<Style | "All">("All");
 
   const filteredLooks = mockLooks.filter(look => {
     const categoryMatch = selectedCategory === "All" || look.category === selectedCategory;
     const modeMatch = selectedMode === "All" || look.category === selectedMode;
     const colorMatch = selectedColor === "All";
-    return categoryMatch && modeMatch && colorMatch;
+    const styleMatch = selectedStyle === "All"; // You would need to add style property to your looks data to filter by style
+    return categoryMatch && modeMatch && colorMatch && styleMatch;
   });
 
   return (
@@ -134,7 +145,7 @@ export const LookSuggestions = () => {
                   <Filter className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-64 bg-netflix-card text-netflix-text border-netflix-accent">
+              <DropdownMenuContent className="w-96 bg-netflix-card text-netflix-text border-netflix-accent">
                 <DropdownMenuLabel>Categories</DropdownMenuLabel>
                 <div className="p-2">
                   <div className="flex flex-wrap gap-2">
@@ -151,6 +162,29 @@ export const LookSuggestions = () => {
                   </div>
                 </div>
                 
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Style Preferences</DropdownMenuLabel>
+                <div className="p-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    {STYLES.map((style) => (
+                      <Button
+                        key={style.id}
+                        variant={selectedStyle === style.id ? "default" : "outline"}
+                        size="sm"
+                        className="flex items-center gap-2 w-full"
+                        onClick={() => setSelectedStyle(style.id)}
+                      >
+                        <img 
+                          src={style.image} 
+                          alt={style.name} 
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                        {style.name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Mode</DropdownMenuLabel>
                 <div className="p-2">
