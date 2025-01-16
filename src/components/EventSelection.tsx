@@ -7,6 +7,10 @@ export const EventSelection = () => {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const navigate = useNavigate();
 
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    setDate(selectedDate);
+  };
+
   return (
     <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
       <div className="container max-w-md mx-auto">
@@ -35,7 +39,7 @@ export const EventSelection = () => {
           <Calendar
             mode="single"
             selected={date}
-            onSelect={setDate}
+            onSelect={handleDateSelect}
             className="rounded-lg border border-netflix-card"
           />
 
@@ -50,7 +54,7 @@ export const EventSelection = () => {
             <Button 
               onClick={() => navigate('/suggestions')} 
               className="flex-1"
-              disabled={!date}
+              disabled={date === undefined}
             >
               Next
             </Button>
