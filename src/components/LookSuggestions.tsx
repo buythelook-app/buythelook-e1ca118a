@@ -3,6 +3,9 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 import { LookCanvas } from "./LookCanvas";
 
+const MODES = ["All", "Casual", "Formal", "Business", "Party", "Sport"];
+const COLORS = ["All", "Black", "White", "Blue", "Red", "Green", "Purple", "Pink"];
+
 export const mockLooks = [
   {
     id: "1",
@@ -95,31 +98,79 @@ export const mockLooks = [
 ];
 
 type Category = "New" | "Casual" | "Work" | "Party" | "All";
+type Mode = typeof MODES[number];
+type Color = typeof COLORS[number];
 
 export const LookSuggestions = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<Category>("All");
+  const [selectedMode, setSelectedMode] = useState<Mode>("All");
+  const [selectedColor, setSelectedColor] = useState<Color>("All");
 
-  const filteredLooks = selectedCategory === "All" 
-    ? mockLooks 
-    : mockLooks.filter(look => look.category === selectedCategory);
+  const filteredLooks = mockLooks.filter(look => {
+    const categoryMatch = selectedCategory === "All" || look.category === selectedCategory;
+    const modeMatch = selectedMode === "All" || look.category === selectedMode;
+    // Note: You would need to add color data to your looks to implement color filtering
+    const colorMatch = selectedColor === "All"; // Placeholder for color filtering
+    return categoryMatch && modeMatch && colorMatch;
+  });
 
   return (
     <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
       <div className="container mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col gap-4 mb-8">
           <h1 className="text-2xl font-display font-semibold">Have a Look!</h1>
-          <div className="flex gap-2">
-            {["All", "New", "Casual", "Work", "Party"].map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedCategory(category as Category)}
-              >
-                {category}
-              </Button>
-            ))}
+          
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {["All", "New", "Casual", "Work", "Party"].map((category) => (
+                <Button
+                  key={category}
+                  variant={selectedCategory === category ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedCategory(category as Category)}
+                >
+                  {category}
+                </Button>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <span className="text-sm text-gray-400 mr-2 self-center">Mode:</span>
+              {MODES.map((mode) => (
+                <Button
+                  key={mode}
+                  variant={selectedMode === mode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedMode(mode)}
+                  className="bg-netflix-card/50"
+                >
+                  {mode}
+                </Button>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <span className="text-sm text-gray-400 mr-2 self-center">Color:</span>
+              {COLORS.map((color) => (
+                <Button
+                  key={color}
+                  variant={selectedColor === color ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedColor(color)}
+                  className="bg-netflix-card/50"
+                >
+                  {color}
+                </Button>
+              ))}
+            </div>
+
+            <Button
+              onClick={() => navigate('/budget')}
+              className="bg-netflix-accent hover:bg-opacity-80"
+            >
+              Set Your Budget
+            </Button>
           </div>
         </div>
         
