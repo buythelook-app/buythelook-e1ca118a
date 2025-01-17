@@ -16,6 +16,9 @@ import { Auth } from "@/pages/Auth";
 import { Entrance } from "@/pages/Entrance";
 import { Cart } from "@/components/Cart";
 import { Profile } from "@/components/Profile";
+import { Orders } from "@/components/Orders";
+import { WishList } from "@/components/WishList";
+import { StyleGuide } from "@/components/StyleGuide";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +43,9 @@ function App() {
             <Route path="/auth" element={<Auth />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/orders" element={<Orders />} />
+            <Route path="/wishlist" element={<WishList />} />
+            <Route path="/style-guide" element={<StyleGuide />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

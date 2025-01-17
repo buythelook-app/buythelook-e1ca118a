@@ -1,4 +1,4 @@
-import { Search, User, Calendar, Bell, MapPin, ShoppingBag, Heart, Book, UserCog, Sparkles } from "lucide-react";
+import { Search, Calendar, Bell, MapPin, ShoppingBag, Heart, Book, UserCog, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   DropdownMenu,
@@ -8,9 +8,33 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
+import { useState } from "react";
+import { ShippingAddress } from "./ShippingAddress";
+import { useToast } from "./ui/use-toast";
 
 export const Navbar = () => {
-  const isAuthenticated = true; // Changed to true to show the menu
+  const isAuthenticated = true;
+  const [showShippingAddress, setShowShippingAddress] = useState(false);
+  const { toast } = useToast();
+
+  const handleCalendarSync = () => {
+    if ('calendar' in navigator && 'requestPermission' in navigator.calendar) {
+      // @ts-ignore - Calendar API is not yet standardized
+      navigator.calendar.requestPermission().then((result) => {
+        if (result === 'granted') {
+          toast({
+            title: "Calendar Synced",
+            description: "Your calendar has been successfully synced.",
+          });
+        }
+      });
+    } else {
+      toast({
+        title: "Calendar Sync",
+        description: "Calendar sync is only available on mobile devices.",
+      });
+    }
+  };
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
@@ -50,7 +74,12 @@ export const Navbar = () => {
                   <div className="flex items-center justify-between px-2 py-1">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-netflix-text" />
-                      <span className="text-sm text-netflix-text">Sync To Calendar</span>
+                      <button 
+                        onClick={handleCalendarSync}
+                        className="text-sm text-netflix-text hover:text-netflix-accent"
+                      >
+                        Sync To Calendar
+                      </button>
                     </div>
                     <Switch />
                   </div>
@@ -63,11 +92,12 @@ export const Navbar = () => {
                     <Switch />
                   </div>
 
-                  <DropdownMenuItem asChild>
-                    <Link to="/shipping" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
-                      <MapPin className="h-4 w-4" />
-                      <span>Shipping Address</span>
-                    </Link>
+                  <DropdownMenuItem 
+                    onClick={() => setShowShippingAddress(true)}
+                    className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent"
+                  >
+                    <MapPin className="h-4 w-4" />
+                    <span>Shipping Address</span>
                   </DropdownMenuItem>
 
                   <DropdownMenuItem asChild>
@@ -102,11 +132,16 @@ export const Navbar = () => {
             </DropdownMenu>
           ) : (
             <Link to="/auth" className="hover:text-netflix-accent">
-              <User size={24} />
+              <Sparkles size={24} />
             </Link>
           )}
         </div>
       </div>
+
+      <ShippingAddress 
+        isOpen={showShippingAddress} 
+        onClose={() => setShowShippingAddress(false)} 
+      />
     </nav>
   );
 };
