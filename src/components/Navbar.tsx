@@ -1,4 +1,4 @@
-import { Search, User } from "lucide-react";
+import { Search, User, Calendar, Bell, MapPin, ShoppingBag, Heart, Book, UserCog } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   DropdownMenu,
@@ -7,9 +7,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Switch } from "@/components/ui/switch";
 
 export const Navbar = () => {
-  const isAuthenticated = false; // This should be replaced with actual auth state
+  const isAuthenticated = true; // Changed to true to show the menu
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
@@ -29,20 +30,70 @@ export const Navbar = () => {
                   <AvatarFallback>U</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" className="w-full cursor-pointer">
-                    Profile Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/cart" className="w-full cursor-pointer">
-                    My Cart
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  Sign Out
-                </DropdownMenuItem>
+              <DropdownMenuContent align="end" className="w-56 bg-white p-2">
+                <div className="flex items-center gap-3 p-2 mb-2 border-b">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src="" />
+                    <AvatarFallback>U</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="font-medium">hilak2</span>
+                    <span className="text-sm text-gray-500">hilak@gmail.com</span>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between px-2 py-1">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      <span className="text-sm">Sync To Calendar</span>
+                    </div>
+                    <Switch />
+                  </div>
+
+                  <div className="flex items-center justify-between px-2 py-1">
+                    <div className="flex items-center gap-2">
+                      <Bell className="h-4 w-4" />
+                      <span className="text-sm">Turn On Notification</span>
+                    </div>
+                    <Switch />
+                  </div>
+
+                  <DropdownMenuItem asChild>
+                    <Link to="/shipping" className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      <span>Shipping Address</span>
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem asChild>
+                    <Link to="/orders" className="flex items-center gap-2">
+                      <ShoppingBag className="h-4 w-4" />
+                      <span>My Orders</span>
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem asChild>
+                    <Link to="/wishlist" className="flex items-center gap-2">
+                      <Heart className="h-4 w-4" />
+                      <span>My Wish List</span>
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem asChild>
+                    <Link to="/style-guide" className="flex items-center gap-2">
+                      <Book className="h-4 w-4" />
+                      <span>Style Guide</span>
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="flex items-center gap-2">
+                      <UserCog className="h-4 w-4" />
+                      <span>Update Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
