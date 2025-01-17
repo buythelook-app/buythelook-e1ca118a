@@ -19,6 +19,8 @@ import { Profile } from "@/components/Profile";
 import { Orders } from "@/components/Orders";
 import { WishList } from "@/components/WishList";
 import { StyleGuide } from "@/components/StyleGuide";
+import { AboutApp } from "@/components/AboutApp";
+import { OurRules } from "@/components/OurRules";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +48,8 @@ function App() {
             <Route path="/orders" element={<Orders />} />
             <Route path="/wishlist" element={<WishList />} />
             <Route path="/style-guide" element={<StyleGuide />} />
+            <Route path="/about" element={<AboutApp />} />
+            <Route path="/rules" element={<OurRules />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

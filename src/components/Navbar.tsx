@@ -1,10 +1,11 @@
-import { Search, Calendar, Bell, MapPin, ShoppingBag, Heart, Book, UserCog, Sparkles } from "lucide-react";
+import { Search, Calendar, Bell, MapPin, ShoppingBag, Heart, Book, UserCog, Sparkles, Info, ScrollText } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
@@ -12,12 +13,10 @@ import { useState } from "react";
 import { ShippingAddress } from "./ShippingAddress";
 import { useToast } from "./ui/use-toast";
 
-// Define the Calendar API interface
 interface CalendarAPI {
   requestPermission: () => Promise<string>;
 }
 
-// Extend the Navigator interface
 interface NavigatorWithCalendar extends Navigator {
   calendar?: CalendarAPI;
 }
@@ -136,6 +135,22 @@ export const Navbar = () => {
                     <Link to="/profile" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
                       <UserCog className="h-4 w-4" />
                       <span>Update Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator className="bg-gray-700" />
+
+                  <DropdownMenuItem asChild>
+                    <Link to="/about" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
+                      <Info className="h-4 w-4" />
+                      <span>About The App</span>
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem asChild>
+                    <Link to="/rules" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
+                      <ScrollText className="h-4 w-4" />
+                      <span>Our Rules</span>
                     </Link>
                   </DropdownMenuItem>
                 </div>
