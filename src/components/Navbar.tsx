@@ -12,15 +12,26 @@ import { useState } from "react";
 import { ShippingAddress } from "./ShippingAddress";
 import { useToast } from "./ui/use-toast";
 
+// Define the Calendar API interface
+interface CalendarAPI {
+  requestPermission: () => Promise<string>;
+}
+
+// Extend the Navigator interface
+interface NavigatorWithCalendar extends Navigator {
+  calendar?: CalendarAPI;
+}
+
 export const Navbar = () => {
   const isAuthenticated = true;
   const [showShippingAddress, setShowShippingAddress] = useState(false);
   const { toast } = useToast();
 
   const handleCalendarSync = () => {
-    if ('calendar' in navigator && 'requestPermission' in navigator.calendar) {
-      // @ts-ignore - Calendar API is not yet standardized
-      navigator.calendar.requestPermission().then((result) => {
+    const navigatorWithCalendar = navigator as NavigatorWithCalendar;
+    
+    if (navigatorWithCalendar.calendar?.requestPermission) {
+      navigatorWithCalendar.calendar.requestPermission().then((result) => {
         if (result === 'granted') {
           toast({
             title: "Calendar Synced",
