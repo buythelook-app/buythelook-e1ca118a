@@ -1,19 +1,22 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Heart } from "lucide-react";
+import { LookCard } from "./LookCard";
 
-const mockWishlist = [
+const mockWishlistLooks = [
   {
     id: 1,
-    title: "Summer Dress",
-    price: "$89.99",
-    image: "https://example.com/dress.jpg"
+    title: "Summer Beach Look",
+    price: "$299.99",
+    category: "Summer Collection",
+    image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png"
   },
   {
     id: 2,
-    title: "Leather Jacket",
-    price: "$199.99",
-    image: "https://example.com/jacket.jpg"
+    title: "Evening Elegance",
+    price: "$459.99",
+    category: "Evening Wear",
+    image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png"
   }
 ];
 
@@ -33,24 +36,26 @@ export const WishList = () => {
 
         <div className="flex items-center gap-2 mb-6">
           <Heart className="text-netflix-accent" />
-          <h1 className="text-2xl font-semibold">My Wishlist</h1>
+          <h1 className="text-2xl font-semibold">My Favorite Looks</h1>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockWishlist.map((item) => (
-            <div 
-              key={item.id}
-              className="bg-netflix-card rounded-lg overflow-hidden"
-            >
-              <div className="aspect-square bg-gray-800" />
-              <div className="p-4">
-                <h3 className="font-medium">{item.title}</h3>
-                <p className="text-netflix-accent">{item.price}</p>
-                <Button className="w-full mt-4">Add to Cart</Button>
-              </div>
-            </div>
+          {mockWishlistLooks.map((look) => (
+            <LookCard
+              key={look.id}
+              image={look.image}
+              title={look.title}
+              price={look.price}
+              category={look.category}
+            />
           ))}
         </div>
+
+        {mockWishlistLooks.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-netflix-text/60">No favorite looks yet</p>
+          </div>
+        )}
       </div>
     </div>
   );
