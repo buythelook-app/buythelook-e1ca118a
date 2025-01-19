@@ -1,102 +1,19 @@
-import { Search, Calendar, Bell, MapPin, ShoppingBag, Heart, Book, UserCog, Sparkles, Info, ScrollText } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Switch } from "@/components/ui/switch";
 import { useState } from "react";
 import { ShippingAddress } from "./ShippingAddress";
-import { useToast } from "@/hooks/use-toast";
-import { useIsMobile } from "@/hooks/use-mobile";
-
-interface CalendarAPI {
-  requestPermission: () => Promise<string>;
-  sync?: () => Promise<void>;
-}
-
-declare global {
-  interface Navigator {
-    standalone?: boolean;
-    calendar?: CalendarAPI;
-  }
-}
+import { UserDropdownMenu } from "./navbar/UserDropdownMenu";
+import { useCalendarSync } from "./navbar/CalendarSync";
 
 export const Navbar = () => {
   const isAuthenticated = true;
   const [showShippingAddress, setShowShippingAddress] = useState(false);
-  const { toast } = useToast();
-  const isMobile = useIsMobile();
-  const isTestMode = true; // Enable test mode
-
-  const handleCalendarSync = async () => {
-    // In test mode, skip the standalone check
-    if (!isTestMode) {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                          navigator.standalone || 
-                          document.referrer.includes('android-app://');
-
-      if (!isMobile || !isStandalone) {
-        toast({
-          title: "Calendar Sync",
-          description: "Calendar sync is only available in our mobile app. Please install and open our app.",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
-    try {
-      // Mock calendar API for testing
-      if (isTestMode) {
-        toast({
-          title: "Test Mode Calendar Sync",
-          description: "Calendar sync simulation successful!",
-        });
-        return;
-      }
-
-      // Real calendar API implementation
-      if ('calendar' in navigator && navigator.calendar) {
-        const permission = await navigator.calendar.requestPermission();
-        
-        if (permission === 'granted') {
-          if (navigator.calendar.sync) {
-            await navigator.calendar.sync();
-            toast({
-              title: "Calendar Synced",
-              description: "Your calendar has been successfully synced.",
-            });
-          } else {
-            throw new Error('Calendar sync method not available');
-          }
-        } else {
-          toast({
-            title: "Calendar Sync Failed",
-            description: "Calendar permission was denied. Please enable calendar access in your device settings.",
-            variant: "destructive",
-          });
-        }
-      } else {
-        toast({
-          title: "Calendar Sync",
-          description: "Calendar API is not supported on your device. Please make sure you're using our latest mobile app version.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Calendar sync error:', error);
-      toast({
-        title: "Calendar Sync Error",
-        description: "An error occurred while syncing your calendar. Please try again or update your app.",
-        variant: "destructive",
-      });
-    }
-  };
+  const { handleCalendarSync } = useCalendarSync();
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
@@ -105,9 +22,6 @@ export const Navbar = () => {
           Buy the Look
         </Link>
         <div className="flex items-center gap-6">
-          <button className="hover:text-netflix-accent">
-            <Search size={24} />
-          </button>
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger className="hover:text-netflix-accent">
@@ -118,95 +32,10 @@ export const Navbar = () => {
                   </AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-netflix-card p-2">
-                <div className="flex items-center gap-3 p-2 mb-2 border-b border-gray-700">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src="" />
-                    <AvatarFallback>
-                      <Sparkles className="h-6 w-6" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col">
-                    <span className="font-medium text-netflix-text">hilak2</span>
-                    <span className="text-sm text-gray-400">hilak@gmail.com</span>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between px-2 py-1">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-netflix-text" />
-                      <button 
-                        onClick={handleCalendarSync}
-                        className="text-sm text-netflix-text hover:text-netflix-accent"
-                      >
-                        Sync To Calendar
-                      </button>
-                    </div>
-                    <Switch />
-                  </div>
-
-                  <div className="flex items-center justify-between px-2 py-1">
-                    <div className="flex items-center gap-2">
-                      <Bell className="h-4 w-4 text-netflix-text" />
-                      <span className="text-sm text-netflix-text">Turn On Notification</span>
-                    </div>
-                    <Switch />
-                  </div>
-
-                  <DropdownMenuItem 
-                    onClick={() => setShowShippingAddress(true)}
-                    className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent"
-                  >
-                    <MapPin className="h-4 w-4" />
-                    <span>Shipping Address</span>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem asChild>
-                    <Link to="/orders" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
-                      <ShoppingBag className="h-4 w-4" />
-                      <span>My Orders</span>
-                    </Link>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem asChild>
-                    <Link to="/wishlist" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
-                      <Heart className="h-4 w-4" />
-                      <span>My Wish List</span>
-                    </Link>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem asChild>
-                    <Link to="/style-guide" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
-                      <Book className="h-4 w-4" />
-                      <span>Style Guide</span>
-                    </Link>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
-                      <UserCog className="h-4 w-4" />
-                      <span>Update Profile</span>
-                    </Link>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuSeparator className="bg-gray-700" />
-
-                  <DropdownMenuItem asChild>
-                    <Link to="/about" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
-                      <Info className="h-4 w-4" />
-                      <span>About The App</span>
-                    </Link>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem asChild>
-                    <Link to="/rules" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
-                      <ScrollText className="h-4 w-4" />
-                      <span>Our Rules</span>
-                    </Link>
-                  </DropdownMenuItem>
-                </div>
-              </DropdownMenuContent>
+              <UserDropdownMenu 
+                onAddressClick={() => setShowShippingAddress(true)}
+                handleCalendarSync={handleCalendarSync}
+              />
             </DropdownMenu>
           ) : (
             <Link to="/auth" className="hover:text-netflix-accent">
