@@ -3,6 +3,8 @@ import { LookSection } from "@/components/LookSection";
 import { Navbar } from "@/components/Navbar";
 import { FilterOptions } from "@/components/filters/FilterOptions";
 import { useCartStore } from "@/components/Cart";
+import { ShoppingCart } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Index() {
   const { items, looks } = useCartStore();
@@ -43,9 +45,21 @@ export default function Index() {
     }
   ];
 
+  const totalCount = getTotalCount();
+
   return (
     <div className="min-h-screen bg-netflix-background">
       <Navbar />
+      <div className="fixed top-4 right-4 z-50">
+        <Link to="/cart" className="relative inline-block">
+          <ShoppingCart className="h-6 w-6 text-netflix-text hover:text-netflix-accent transition-colors" />
+          {(looks.length > 0 || items.length > 0) && (
+            <span className="absolute -top-2 -right-2 bg-netflix-accent text-netflix-text text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+              {totalCount}
+            </span>
+          )}
+        </Link>
+      </div>
       <HeroSection />
       <div className="container mx-auto px-4">
         <FilterOptions />

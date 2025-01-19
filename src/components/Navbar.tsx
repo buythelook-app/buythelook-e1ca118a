@@ -1,4 +1,4 @@
-import { Sparkles, Heart, ShoppingCart } from "lucide-react";
+import { Sparkles, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   DropdownMenu,
@@ -10,7 +10,6 @@ import { ShippingAddress } from "./ShippingAddress";
 import { UserDropdownMenu } from "./navbar/UserDropdownMenu";
 import { useCalendarSync } from "./navbar/CalendarSync";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
-import { useCartStore } from "@/components/Cart";
 import { Badge } from "./ui/badge";
 
 export const Navbar = () => {
@@ -18,16 +17,12 @@ export const Navbar = () => {
   const [showShippingAddress, setShowShippingAddress] = useState(false);
   const { handleCalendarSync } = useCalendarSync();
   const { favorites } = useFavoritesStore();
-  const { items, looks } = useCartStore();
 
   const totalLooks = favorites.length;
   const displayCount = totalLooks > 9 ? '9+' : totalLooks.toString();
 
-  const cartTotalCount = items.length + looks.length;
-  const cartDisplayCount = cartTotalCount > 9 ? '9+' : cartTotalCount.toString();
-
   return (
-    <nav className="fixed top-0 w-full z-50 bg-black/80 px-4 py-3">
+    <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
       <div className="container mx-auto flex items-center justify-between">
         <Link to="/" className="text-2xl font-display text-netflix-accent">
           Buy the Look
@@ -36,22 +31,12 @@ export const Navbar = () => {
           {isAuthenticated ? (
             <>
               <Link to="/my-list" className="hover:text-netflix-accent relative">
-                <Heart className="h-6 w-6 text-white" />
+                <Heart className="h-6 w-6" />
                 {totalLooks > 0 && (
                   <Badge 
                     className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-netflix-accent text-[10px]"
                   >
                     {displayCount}
-                  </Badge>
-                )}
-              </Link>
-              <Link to="/cart" className="hover:text-netflix-accent relative">
-                <ShoppingCart className="h-6 w-6 text-white" />
-                {cartTotalCount > 0 && (
-                  <Badge 
-                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-netflix-accent text-[10px]"
-                  >
-                    {cartDisplayCount}
                   </Badge>
                 )}
               </Link>
