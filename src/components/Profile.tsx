@@ -23,7 +23,7 @@ export const Profile = () => {
       <div className="container max-w-3xl mx-auto">
         <Card className="bg-netflix-card border-netflix-accent">
           <CardHeader>
-            <CardTitle className="text-2xl font-display font-bold text-netflix-accent">My Terminal X</CardTitle>
+            <CardTitle className="text-2xl font-display font-bold text-netflix-accent">Buy The Look</CardTitle>
             <div className="flex items-center gap-4 mt-4">
               <Avatar className="h-20 w-20">
                 <AvatarImage src="" />
@@ -93,18 +93,6 @@ export const Profile = () => {
                     <CardContent className="p-4">
                       <p className="text-2xl font-bold">0 Points</p>
                       <p className="text-sm text-gray-400">Available Credits</p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Dream Card</h3>
-                  <Card className="bg-netflix-background">
-                    <CardContent className="p-4">
-                      <p className="text-sm">Apply for our Dream Card and enjoy exclusive benefits</p>
-                      <Button className="mt-4 bg-netflix-accent hover:bg-netflix-accent/90">
-                        Apply Now
-                      </Button>
                     </CardContent>
                   </Card>
                 </div>
