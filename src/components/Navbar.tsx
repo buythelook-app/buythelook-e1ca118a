@@ -31,29 +31,40 @@ export const Navbar = () => {
   const [showShippingAddress, setShowShippingAddress] = useState(false);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const isTestMode = true; // Enable test mode
 
   const handleCalendarSync = async () => {
-    // Check if running in standalone mode (PWA)
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                        navigator.standalone || // iOS
-                        document.referrer.includes('android-app://'); // Android
+    // In test mode, skip the standalone check
+    if (!isTestMode) {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                          navigator.standalone || 
+                          document.referrer.includes('android-app://');
 
-    if (!isMobile || !isStandalone) {
-      toast({
-        title: "Calendar Sync",
-        description: "Calendar sync is only available in our mobile app. Please install and open our app.",
-        variant: "destructive",
-      });
-      return;
+      if (!isMobile || !isStandalone) {
+        toast({
+          title: "Calendar Sync",
+          description: "Calendar sync is only available in our mobile app. Please install and open our app.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     try {
-      // Request calendar permissions
+      // Mock calendar API for testing
+      if (isTestMode) {
+        toast({
+          title: "Test Mode Calendar Sync",
+          description: "Calendar sync simulation successful!",
+        });
+        return;
+      }
+
+      // Real calendar API implementation
       if ('calendar' in navigator && navigator.calendar) {
         const permission = await navigator.calendar.requestPermission();
         
         if (permission === 'granted') {
-          // Attempt to sync calendar if the sync method exists
           if (navigator.calendar.sync) {
             await navigator.calendar.sync();
             toast({
