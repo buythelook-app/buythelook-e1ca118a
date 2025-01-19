@@ -12,7 +12,7 @@ import { AIPreview } from "./AIPreview";
 export const LookDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addItem, addItems } = useCartStore();
+  const { addItem, addLook } = useCartStore();
   const [showAIPreview, setShowAIPreview] = useState(false);
 
   const currentLook = mockLooks.find(look => look.id === id);
@@ -41,14 +41,18 @@ export const LookDetail = () => {
   };
 
   const handleBuyLook = () => {
-    const lookItems = currentLook.items.map((item, index) => ({
-      id: item.id,
-      image: item.image,
-      title: `Item ${index + 1} from ${currentLook.title}`,
-      price: currentLook.price
-    }));
-    addItems(lookItems);
-    toast.success('All items added to cart');
+    addLook({
+      id: currentLook.id,
+      title: currentLook.title,
+      items: currentLook.items.map((item, index) => ({
+        id: item.id,
+        image: item.image,
+        title: `Item ${index + 1} from ${currentLook.title}`,
+        price: currentLook.price
+      })),
+      totalPrice: currentLook.price
+    });
+    toast.success('Look added to cart');
     navigate('/cart');
   };
 
@@ -166,4 +170,3 @@ export const LookDetail = () => {
       />
     </div>
   );
-};
