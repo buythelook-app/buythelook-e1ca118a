@@ -27,16 +27,16 @@ export const Navbar = () => {
   const cartDisplayCount = cartTotalCount > 9 ? '9+' : cartTotalCount.toString();
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
+    <nav className="fixed top-0 w-full z-50 bg-black/80 px-4 py-3">
       <div className="container mx-auto flex items-center justify-between">
         <Link to="/" className="text-2xl font-display text-netflix-accent">
           Buy the Look
         </Link>
-        <div className="flex items-center gap-6 relative z-50">
+        <div className="flex items-center gap-6">
           {isAuthenticated ? (
             <>
               <Link to="/my-list" className="hover:text-netflix-accent relative">
-                <Heart className="h-6 w-6" />
+                <Heart className="h-6 w-6 text-netflix-text" />
                 {totalLooks > 0 && (
                   <Badge 
                     className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-netflix-accent text-[10px]"
@@ -46,7 +46,7 @@ export const Navbar = () => {
                 )}
               </Link>
               <Link to="/cart" className="hover:text-netflix-accent relative">
-                <ShoppingCart className="h-6 w-6" />
+                <ShoppingCart className="h-6 w-6 text-netflix-text" />
                 {cartTotalCount > 0 && (
                   <Badge 
                     className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-netflix-accent text-[10px]"
