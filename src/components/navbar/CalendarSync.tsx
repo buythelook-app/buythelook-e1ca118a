@@ -1,6 +1,19 @@
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+// Define types for the Calendar API
+interface CalendarAPI {
+  requestPermission: () => Promise<'granted' | 'denied'>;
+  sync: () => Promise<void>;
+}
+
+declare global {
+  interface Navigator {
+    standalone?: boolean;
+    calendar?: CalendarAPI;
+  }
+}
+
 export const useCalendarSync = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
