@@ -21,6 +21,7 @@ import { WishList } from "@/components/WishList";
 import { StyleGuide } from "@/components/StyleGuide";
 import { AboutApp } from "@/components/AboutApp";
 import { OurRules } from "@/components/OurRules";
+import { MyList } from "@/components/MyList";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ function App() {
             <Route path="/style-guide" element={<StyleGuide />} />
             <Route path="/about" element={<AboutApp />} />
             <Route path="/rules" element={<OurRules />} />
+            <Route path="/my-list" element={<MyList />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

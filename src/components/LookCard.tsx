@@ -1,13 +1,31 @@
 import { Heart } from "lucide-react";
+import { useFavoritesStore } from "@/stores/useFavoritesStore";
+import { toast } from "sonner";
 
 interface LookCardProps {
+  id: string;
   image: string;
   title: string;
   price: string;
   category: string;
 }
 
-export const LookCard = ({ image, title, price, category }: LookCardProps) => {
+export const LookCard = ({ id, image, title, price, category }: LookCardProps) => {
+  const { addFavorite, removeFavorite, isFavorite } = useFavoritesStore();
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const look = { id, image, title, price, category };
+    
+    if (isFavorite(id)) {
+      removeFavorite(id);
+      toast.success('Removed from My List');
+    } else {
+      addFavorite(look);
+      toast.success('Added to My List');
+    }
+  };
+
   return (
     <div className="look-card group">
       <img 
@@ -22,8 +40,14 @@ export const LookCard = ({ image, title, price, category }: LookCardProps) => {
             <h3 className="text-lg font-display font-semibold mb-1 text-white">{title}</h3>
             <p className="text-sm text-white/90 font-medium">{price}</p>
           </div>
-          <button className="p-2 hover:text-netflix-accent transition-colors">
-            <Heart size={24} />
+          <button 
+            className="p-2 hover:text-netflix-accent transition-colors"
+            onClick={handleFavoriteClick}
+          >
+            <Heart 
+              size={24} 
+              fill={isFavorite(id) ? "currentColor" : "none"}
+            />
           </button>
         </div>
       </div>
