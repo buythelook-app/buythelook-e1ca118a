@@ -9,7 +9,7 @@ interface CartItem {
   image: string;
   title: string;
   price: string;
-  lookId?: string; // Optional lookId to associate item with a look
+  lookId?: string;
 }
 
 interface Look {
@@ -23,6 +23,7 @@ interface CartStore {
   items: CartItem[];
   looks: Look[];
   addItem: (item: CartItem) => void;
+  addItems: (items: CartItem[]) => void;  // Added this line
   addLook: (look: Look) => void;
   removeLook: (lookId: string) => void;
   removeItem: (itemId: string) => void;
@@ -34,6 +35,9 @@ export const useCartStore = create<CartStore>((set) => ({
   looks: [],
   addItem: (item) => set((state) => ({ 
     items: [...state.items, item] 
+  })),
+  addItems: (newItems) => set((state) => ({  // Added this implementation
+    items: [...state.items, ...newItems]
   })),
   addLook: (look) => set((state) => ({ 
     looks: [...state.looks, look] 
