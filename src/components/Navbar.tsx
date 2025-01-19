@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { useState } from "react";
 import { ShippingAddress } from "./ShippingAddress";
 import { useToast } from "./ui/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CalendarAPI {
   requestPermission: () => Promise<string>;
@@ -25,23 +26,48 @@ export const Navbar = () => {
   const isAuthenticated = true;
   const [showShippingAddress, setShowShippingAddress] = useState(false);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
-  const handleCalendarSync = () => {
-    const navigatorWithCalendar = navigator as NavigatorWithCalendar;
-    
-    if (navigatorWithCalendar.calendar?.requestPermission) {
-      navigatorWithCalendar.calendar.requestPermission().then((result) => {
-        if (result === 'granted') {
-          toast({
-            title: "Calendar Synced",
-            description: "Your calendar has been successfully synced.",
-          });
-        }
-      });
-    } else {
+  const handleCalendarSync = async () => {
+    if (!isMobile) {
       toast({
         title: "Calendar Sync",
-        description: "Calendar sync is only available on mobile devices.",
+        description: "Calendar sync is only available on mobile devices. Please use our mobile app.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const navigatorWithCalendar = navigator as NavigatorWithCalendar;
+    
+    if (!navigatorWithCalendar.calendar?.requestPermission) {
+      toast({
+        title: "Calendar Sync",
+        description: "Please make sure you're using our mobile app for calendar sync.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const result = await navigatorWithCalendar.calendar.requestPermission();
+      if (result === 'granted') {
+        toast({
+          title: "Calendar Synced",
+          description: "Your calendar has been successfully synced.",
+        });
+      } else {
+        toast({
+          title: "Calendar Sync Failed",
+          description: "Permission was denied. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Calendar Sync Error",
+        description: "An error occurred while syncing your calendar. Please try again.",
+        variant: "destructive",
       });
     }
   };
