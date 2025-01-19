@@ -29,10 +29,23 @@ export const Navbar = () => {
   const isMobile = useIsMobile();
 
   const handleCalendarSync = async () => {
-    if (!isMobile) {
+    // Check if running in a standalone PWA or mobile app
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    
+    if (!isMobile || !isStandalone) {
       toast({
         title: "Calendar Sync",
-        description: "Calendar sync is only available on mobile devices. Please use our mobile app.",
+        description: "Calendar sync is only available in our mobile app. Please install and open our app.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if the calendar API is available
+    if (!('calendar' in navigator)) {
+      toast({
+        title: "Calendar Sync",
+        description: "Calendar API is not supported in your device. Please update your app or try a different device.",
         variant: "destructive",
       });
       return;
@@ -43,7 +56,7 @@ export const Navbar = () => {
     if (!navigatorWithCalendar.calendar?.requestPermission) {
       toast({
         title: "Calendar Sync",
-        description: "Please make sure you're using our mobile app for calendar sync.",
+        description: "Calendar sync is not available. Please make sure you're using our latest mobile app version.",
         variant: "destructive",
       });
       return;
@@ -64,6 +77,7 @@ export const Navbar = () => {
         });
       }
     } catch (error) {
+      console.error('Calendar sync error:', error);
       toast({
         title: "Calendar Sync Error",
         description: "An error occurred while syncing your calendar. Please try again.",
