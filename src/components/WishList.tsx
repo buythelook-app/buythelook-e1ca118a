@@ -5,14 +5,14 @@ import { LookCard } from "./LookCard";
 
 const mockWishlistLooks = [
   {
-    id: 1,
+    id: "1",
     title: "Summer Beach Look",
     price: "$299.99",
     category: "Summer Collection",
     image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png"
   },
   {
-    id: 2,
+    id: "2",
     title: "Evening Elegance",
     price: "$459.99",
     category: "Evening Wear",
@@ -43,10 +43,7 @@ export const WishList = () => {
           {mockWishlistLooks.map((look) => (
             <LookCard
               key={look.id}
-              image={look.image}
-              title={look.title}
-              price={look.price}
-              category={look.category}
+              {...look}
             />
           ))}
         </div>
