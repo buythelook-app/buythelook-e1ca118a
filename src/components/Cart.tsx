@@ -23,10 +23,11 @@ interface CartStore {
   items: CartItem[];
   looks: Look[];
   addItem: (item: CartItem) => void;
-  addItems: (items: CartItem[]) => void;  // Added this line
+  addItems: (items: CartItem[]) => void;
   addLook: (look: Look) => void;
   removeLook: (lookId: string) => void;
   removeItem: (itemId: string) => void;
+  removeItemFromLook: (lookId: string, itemId: string) => void;
   clearCart: () => void;
 }
 
@@ -36,7 +37,7 @@ export const useCartStore = create<CartStore>((set) => ({
   addItem: (item) => set((state) => ({ 
     items: [...state.items, item] 
   })),
-  addItems: (newItems) => set((state) => ({  // Added this implementation
+  addItems: (newItems) => set((state) => ({
     items: [...state.items, ...newItems]
   })),
   addLook: (look) => set((state) => ({ 
@@ -48,12 +49,28 @@ export const useCartStore = create<CartStore>((set) => ({
   removeItem: (itemId) => set((state) => ({
     items: state.items.filter((item) => item.id !== itemId)
   })),
+  removeItemFromLook: (lookId, itemId) => set((state) => ({
+    looks: state.looks.map(look => {
+      if (look.id === lookId) {
+        const updatedItems = look.items.filter(item => item.id !== itemId);
+        // If all items are removed, remove the look entirely
+        if (updatedItems.length === 0) {
+          return null;
+        }
+        return {
+          ...look,
+          items: updatedItems
+        };
+      }
+      return look;
+    }).filter((look): look is Look => look !== null)
+  })),
   clearCart: () => set({ items: [], looks: [] }),
 }));
 
 export const Cart = () => {
   const navigate = useNavigate();
-  const { items, looks, clearCart, removeItem, removeLook } = useCartStore();
+  const { items, looks, clearCart, removeItem, removeLook, removeItemFromLook } = useCartStore();
 
   const calculateTotalPrice = () => {
     const itemsTotal = items.reduce((sum, item) => {
@@ -77,6 +94,11 @@ export const Cart = () => {
   const handleRemoveItem = (itemId: string) => {
     removeItem(itemId);
     toast.success('Item removed from cart');
+  };
+
+  const handleRemoveItemFromLook = (lookId: string, itemId: string) => {
+    removeItemFromLook(lookId, itemId);
+    toast.success('Item removed from look');
   };
 
   return (
@@ -121,17 +143,25 @@ export const Cart = () => {
                     {look.items.map((item) => (
                       <div 
                         key={item.id}
-                        className="flex items-center gap-4 bg-netflix-card p-3 rounded-lg"
+                        className="flex items-center gap-4 bg-netflix-card p-3 rounded-lg relative group"
                       >
                         <img 
                           src={item.image} 
                           alt={item.title} 
                           className="w-20 h-20 object-cover rounded-md"
                         />
-                        <div>
+                        <div className="flex-1">
                           <p className="font-medium">{item.title}</p>
                           <p className="text-sm text-netflix-accent">{item.price}</p>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveItemFromLook(look.id, item.id)}
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     ))}
                   </div>
