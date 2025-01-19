@@ -1,4 +1,4 @@
-import { Sparkles, Heart } from "lucide-react";
+import { Sparkles, Heart, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   DropdownMenu,
@@ -10,6 +10,7 @@ import { ShippingAddress } from "./ShippingAddress";
 import { UserDropdownMenu } from "./navbar/UserDropdownMenu";
 import { useCalendarSync } from "./navbar/CalendarSync";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
+import { useCartStore } from "./Cart";
 import { Badge } from "./ui/badge";
 
 export const Navbar = () => {
@@ -17,9 +18,13 @@ export const Navbar = () => {
   const [showShippingAddress, setShowShippingAddress] = useState(false);
   const { handleCalendarSync } = useCalendarSync();
   const { favorites } = useFavoritesStore();
+  const { items, looks } = useCartStore();
 
   const totalLooks = favorites.length;
   const displayCount = totalLooks > 9 ? '9+' : totalLooks.toString();
+
+  const totalCartItems = items.length + looks.length;
+  const cartDisplayCount = totalCartItems > 9 ? '9+' : totalCartItems.toString();
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
@@ -30,6 +35,16 @@ export const Navbar = () => {
         <div className="flex items-center gap-6">
           {isAuthenticated ? (
             <>
+              <Link to="/cart" className="hover:text-netflix-accent relative">
+                <ShoppingCart className="h-6 w-6 text-white" />
+                {totalCartItems > 0 && (
+                  <Badge 
+                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-netflix-accent text-[10px]"
+                  >
+                    {cartDisplayCount}
+                  </Badge>
+                )}
+              </Link>
               <Link to="/my-list" className="hover:text-netflix-accent relative">
                 <Heart className="h-6 w-6" />
                 {totalLooks > 0 && (
