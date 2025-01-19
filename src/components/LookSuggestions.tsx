@@ -3,6 +3,8 @@ import { StyleFilterButton, Category, Mode, Color, Style } from "./filters/Style
 import { LookGrid } from "./LookGrid";
 import { useNavigate } from "react-router-dom";
 import { UserDropdownMenu } from "./navbar/UserDropdownMenu";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "./ui/button";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -127,6 +129,15 @@ export const LookSuggestions = () => {
   return (
     <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
       <div className="container mx-auto">
+        <Button 
+          variant="ghost" 
+          onClick={() => navigate(-1)}
+          className="mb-6"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+
         <div className="flex flex-col gap-4 mb-8">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-display font-semibold">Have a Look!</h1>
