@@ -11,15 +11,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { useState } from "react";
 import { ShippingAddress } from "./ShippingAddress";
-import { useToast } from "./ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CalendarAPI {
   requestPermission: () => Promise<string>;
+  sync?: () => Promise<void>;
 }
 
-interface NavigatorWithCalendar extends Navigator {
-  calendar?: CalendarAPI;
+declare global {
+  interface Navigator {
+    standalone?: boolean;
+    calendar?: CalendarAPI;
+  }
 }
 
 export const Navbar = () => {
@@ -29,9 +33,11 @@ export const Navbar = () => {
   const isMobile = useIsMobile();
 
   const handleCalendarSync = async () => {
-    // Check if running in a standalone PWA or mobile app
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    
+    // Check if running in standalone mode (PWA)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                        navigator.standalone || // iOS
+                        document.referrer.includes('android-app://'); // Android
+
     if (!isMobile || !isStandalone) {
       toast({
         title: "Calendar Sync",
@@ -41,38 +47,33 @@ export const Navbar = () => {
       return;
     }
 
-    // Check if the calendar API is available
-    if (!('calendar' in navigator)) {
-      toast({
-        title: "Calendar Sync",
-        description: "Calendar API is not supported in your device. Please update your app or try a different device.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const navigatorWithCalendar = navigator as NavigatorWithCalendar;
-    
-    if (!navigatorWithCalendar.calendar?.requestPermission) {
-      toast({
-        title: "Calendar Sync",
-        description: "Calendar sync is not available. Please make sure you're using our latest mobile app version.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
-      const result = await navigatorWithCalendar.calendar.requestPermission();
-      if (result === 'granted') {
-        toast({
-          title: "Calendar Synced",
-          description: "Your calendar has been successfully synced.",
-        });
+      // Request calendar permissions
+      if ('calendar' in navigator && navigator.calendar) {
+        const permission = await navigator.calendar.requestPermission();
+        
+        if (permission === 'granted') {
+          // Attempt to sync calendar if the sync method exists
+          if (navigator.calendar.sync) {
+            await navigator.calendar.sync();
+            toast({
+              title: "Calendar Synced",
+              description: "Your calendar has been successfully synced.",
+            });
+          } else {
+            throw new Error('Calendar sync method not available');
+          }
+        } else {
+          toast({
+            title: "Calendar Sync Failed",
+            description: "Calendar permission was denied. Please enable calendar access in your device settings.",
+            variant: "destructive",
+          });
+        }
       } else {
         toast({
-          title: "Calendar Sync Failed",
-          description: "Permission was denied. Please try again.",
+          title: "Calendar Sync",
+          description: "Calendar API is not supported on your device. Please make sure you're using our latest mobile app version.",
           variant: "destructive",
         });
       }
@@ -80,7 +81,7 @@ export const Navbar = () => {
       console.error('Calendar sync error:', error);
       toast({
         title: "Calendar Sync Error",
-        description: "An error occurred while syncing your calendar. Please try again.",
+        description: "An error occurred while syncing your calendar. Please try again or update your app.",
         variant: "destructive",
       });
     }
