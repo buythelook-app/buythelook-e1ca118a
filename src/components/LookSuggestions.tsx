@@ -114,6 +114,16 @@ export const LookSuggestions = () => {
     return categoryMatch && modeMatch && colorMatch && styleMatch;
   });
 
+  const handleAddressClick = async () => {
+    // Add any address click logic here
+    return Promise.resolve();
+  };
+
+  const handleCalendarSync = async () => {
+    // Add any calendar sync logic here
+    return Promise.resolve();
+  };
+
   return (
     <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
       <div className="container mx-auto">
@@ -152,8 +162,8 @@ export const LookSuggestions = () => {
                 </svg>
               </DropdownMenuTrigger>
               <UserDropdownMenu 
-                onAddressClick={() => {}}
-                handleCalendarSync={() => {}}
+                onAddressClick={handleAddressClick}
+                handleCalendarSync={handleCalendarSync}
               />
             </DropdownMenu>
           </div>
