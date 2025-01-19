@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+import { Sparkles, List } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   DropdownMenu,
@@ -23,20 +23,25 @@ export const Navbar = () => {
         </Link>
         <div className="flex items-center gap-6">
           {isAuthenticated ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger className="hover:text-netflix-accent">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="" />
-                  <AvatarFallback>
-                    <Sparkles className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
-              </DropdownMenuTrigger>
-              <UserDropdownMenu 
-                onAddressClick={() => setShowShippingAddress(true)}
-                handleCalendarSync={handleCalendarSync}
-              />
-            </DropdownMenu>
+            <>
+              <Link to="/my-list" className="hover:text-netflix-accent">
+                <List className="h-6 w-6" />
+              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="hover:text-netflix-accent">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="" />
+                    <AvatarFallback>
+                      <Sparkles className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <UserDropdownMenu 
+                  onAddressClick={() => setShowShippingAddress(true)}
+                  handleCalendarSync={handleCalendarSync}
+                />
+              </DropdownMenu>
+            </>
           ) : (
             <Link to="/auth" className="hover:text-netflix-accent">
               <Sparkles size={24} />

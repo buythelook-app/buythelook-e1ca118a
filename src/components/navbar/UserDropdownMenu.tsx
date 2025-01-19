@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
-import { Calendar, Bell, MapPin, ShoppingBag, Heart, Book, UserCog, Sparkles, Info, ScrollText } from "lucide-react";
+import { Calendar, Bell, MapPin, ShoppingBag, Book, UserCog, Sparkles, Info, ScrollText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
@@ -81,13 +81,6 @@ export const UserDropdownMenu = ({ onAddressClick, handleCalendarSync }: UserDro
             onCheckedChange={handleNotificationsToggle}
           />
         </div>
-
-        <DropdownMenuItem asChild>
-          <Link to="/my-list" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
-            <Heart className="h-4 w-4" />
-            <span>My List</span>
-          </Link>
-        </DropdownMenuItem>
 
         <DropdownMenuItem 
           onClick={onAddressClick}
