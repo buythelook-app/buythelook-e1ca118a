@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { Calendar, Bell, MapPin, ShoppingBag, Heart, Book, UserCog, Sparkles, Info, ScrollText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface UserDropdownMenuProps {
   onAddressClick: () => void;
@@ -15,6 +16,34 @@ interface UserDropdownMenuProps {
 }
 
 export const UserDropdownMenu = ({ onAddressClick, handleCalendarSync }: UserDropdownMenuProps) => {
+  const [isCalendarEnabled, setIsCalendarEnabled] = useState(false);
+  const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(false);
+  const { toast } = useToast();
+
+  const handleCalendarToggle = async (checked: boolean) => {
+    setIsCalendarEnabled(checked);
+    if (checked) {
+      await handleCalendarSync();
+      toast({
+        title: "Calendar Sync Enabled",
+        description: "Your calendar is now synced with the app.",
+      });
+    } else {
+      toast({
+        title: "Calendar Sync Disabled",
+        description: "Your calendar is no longer synced with the app.",
+      });
+    }
+  };
+
+  const handleNotificationsToggle = (checked: boolean) => {
+    setIsNotificationsEnabled(checked);
+    toast({
+      title: checked ? "Notifications Enabled" : "Notifications Disabled",
+      description: checked ? "You will now receive notifications." : "You will no longer receive notifications.",
+    });
+  };
+
   return (
     <DropdownMenuContent align="end" className="w-56 bg-netflix-card p-2">
       <div className="flex items-center gap-3 p-2 mb-2 border-b border-gray-700">
@@ -34,14 +63,12 @@ export const UserDropdownMenu = ({ onAddressClick, handleCalendarSync }: UserDro
         <div className="flex items-center justify-between px-2 py-1">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-netflix-text" />
-            <button 
-              onClick={handleCalendarSync}
-              className="text-sm text-netflix-text hover:text-netflix-accent"
-            >
-              Sync To Calendar
-            </button>
+            <span className="text-sm text-netflix-text">Sync To Calendar</span>
           </div>
-          <Switch />
+          <Switch 
+            checked={isCalendarEnabled}
+            onCheckedChange={handleCalendarToggle}
+          />
         </div>
 
         <div className="flex items-center justify-between px-2 py-1">
@@ -49,8 +76,18 @@ export const UserDropdownMenu = ({ onAddressClick, handleCalendarSync }: UserDro
             <Bell className="h-4 w-4 text-netflix-text" />
             <span className="text-sm text-netflix-text">Turn On Notification</span>
           </div>
-          <Switch />
+          <Switch 
+            checked={isNotificationsEnabled}
+            onCheckedChange={handleNotificationsToggle}
+          />
         </div>
+
+        <DropdownMenuItem asChild>
+          <Link to="/my-list" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
+            <Heart className="h-4 w-4" />
+            <span>My List</span>
+          </Link>
+        </DropdownMenuItem>
 
         <DropdownMenuItem 
           onClick={onAddressClick}
@@ -64,13 +101,6 @@ export const UserDropdownMenu = ({ onAddressClick, handleCalendarSync }: UserDro
           <Link to="/orders" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
             <ShoppingBag className="h-4 w-4" />
             <span>My Orders</span>
-          </Link>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem asChild>
-          <Link to="/wishlist" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
-            <Heart className="h-4 w-4" />
-            <span>My Wish List</span>
           </Link>
         </DropdownMenuItem>
 
