@@ -36,7 +36,7 @@ export const Navbar = () => {
           {isAuthenticated ? (
             <>
               <Link to="/my-list" className="hover:text-netflix-accent relative">
-                <Heart className="h-6 w-6 text-netflix-text" />
+                <Heart className="h-6 w-6 text-white" />
                 {totalLooks > 0 && (
                   <Badge 
                     className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-netflix-accent text-[10px]"
@@ -46,7 +46,7 @@ export const Navbar = () => {
                 )}
               </Link>
               <Link to="/cart" className="hover:text-netflix-accent relative">
-                <ShoppingCart className="h-6 w-6 text-netflix-text" />
+                <ShoppingCart className="h-6 w-6 text-white" />
                 {cartTotalCount > 0 && (
                   <Badge 
                     className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-netflix-accent text-[10px]"
