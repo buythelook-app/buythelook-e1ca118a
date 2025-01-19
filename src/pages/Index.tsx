@@ -1,6 +1,7 @@
 import { HeroSection } from "@/components/HeroSection";
 import { LookSection } from "@/components/LookSection";
 import { Navbar } from "@/components/Navbar";
+import { FilterOptions } from "@/components/filters/FilterOptions";
 
 export default function Index() {
   const featuredLooks = [
@@ -38,6 +39,9 @@ export default function Index() {
     <div className="min-h-screen bg-netflix-background">
       <Navbar />
       <HeroSection />
+      <div className="container mx-auto px-4">
+        <FilterOptions />
+      </div>
       <LookSection 
         title="Featured Looks"
         looks={featuredLooks}
