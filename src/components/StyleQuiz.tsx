@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { GenderStep } from "./quiz/GenderStep";
 import { MeasurementsStep } from "./quiz/MeasurementsStep";
 import { BodyShapeStep } from "./quiz/BodyShapeStep";
 import { PhotoUploadStep } from "./quiz/PhotoUploadStep";
 import { ColorPreferencesStep } from "./quiz/ColorPreferencesStep";
 import { StyleComparisonStep } from "./quiz/StyleComparisonStep";
-import { useNavigate } from "react-router-dom";
 import { HomeButton } from "./HomeButton";
+import { QuizProgress } from "./quiz/QuizProgress";
+import { QuizNavigation } from "./quiz/QuizNavigation";
+import { QuizContainer } from "./quiz/QuizContainer";
 
 const styleComparisons = [
   {
@@ -27,6 +28,7 @@ const styleComparisons = [
 ];
 
 const STORAGE_KEY = 'style-quiz-data';
+const TOTAL_STEPS = 10;
 
 export const StyleQuiz = () => {
   const { toast } = useToast();
@@ -44,12 +46,10 @@ export const StyleQuiz = () => {
     stylePreferences: [] as string[],
   });
 
-  // Load saved data on component mount
   useEffect(() => {
     const savedData = localStorage.getItem(STORAGE_KEY);
     if (savedData) {
       const parsedData = JSON.parse(savedData);
-      // Photo can't be stored in localStorage, so we exclude it
       setFormData(prevData => ({
         ...parsedData,
         photo: prevData.photo
@@ -61,11 +61,10 @@ export const StyleQuiz = () => {
     }
   }, [toast]);
 
-  // Save data whenever it changes
   useEffect(() => {
     const dataToSave = {
       ...formData,
-      photo: null // Don't save the photo as it can't be stored in localStorage
+      photo: null
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
   }, [formData]);
@@ -98,13 +97,13 @@ export const StyleQuiz = () => {
       case 5:
         return formData.bodyShape !== "";
       case 6:
-        return true; // Photo is optional
+        return true;
       case 7:
         return formData.colorPreferences.length > 0;
       case 8:
       case 9:
       case 10:
-        return true; // Style comparisons are always valid as they're selected by clicking
+        return true;
       default:
         return true;
     }
@@ -202,66 +201,17 @@ export const StyleQuiz = () => {
 
   return (
     <div>
-      <div className="min-h-screen bg-netflix-background text-netflix-text py-8">
-        <div className="container max-w-2xl mx-auto px-4">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate(-1)}
-            className="mb-6"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-
-          <div className="bg-netflix-card rounded-lg p-8">
-            <div className="mb-8">
-              <div className="flex justify-between items-center mb-4">
-                <h1 className="text-3xl font-display font-bold">Style Quiz</h1>
-                <p className="text-netflix-accent">Step {step} of 10</p>
-              </div>
-              <div className="w-full bg-netflix-background rounded-full h-2">
-                <div
-                  className="bg-netflix-accent h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${(step / 10) * 100}%` }}
-                />
-              </div>
-            </div>
-
-            {renderStep()}
-
-            <div className="flex justify-between mt-8">
-              {step > 1 && (
-                <Button
-                  onClick={handleBack}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <ArrowLeft size={16} />
-                  Back
-                </Button>
-              )}
-              <div className="ml-auto">
-                {step < 10 ? (
-                  <Button
-                    onClick={handleNext}
-                    className="bg-netflix-accent hover:bg-netflix-accent/90 flex items-center gap-2"
-                  >
-                    Next
-                    <ArrowRight size={16} />
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleSubmit}
-                    className="bg-netflix-accent hover:bg-netflix-accent/90"
-                  >
-                    Complete Quiz
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <QuizContainer>
+        <QuizProgress currentStep={step} totalSteps={TOTAL_STEPS} />
+        {renderStep()}
+        <QuizNavigation
+          currentStep={step}
+          totalSteps={TOTAL_STEPS}
+          onNext={handleNext}
+          onBack={handleBack}
+          onComplete={handleSubmit}
+        />
+      </QuizContainer>
       <HomeButton />
     </div>
   );
