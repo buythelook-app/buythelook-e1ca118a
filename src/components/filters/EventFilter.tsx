@@ -1,0 +1,68 @@
+import { Button } from "../ui/button";
+import { Calendar } from "../ui/calendar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
+
+interface EventFilterProps {
+  date: Date | undefined;
+  onDateSelect: (date: Date | undefined) => void;
+  onSyncCalendar: () => void;
+}
+
+export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterProps) => {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="w-full">
+          <span className="mr-2">📅</span>
+          Select Event
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Do you have an upcoming event?</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 p-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Button variant="outline" className="p-4">
+              <span className="text-3xl mb-2 block">🎂</span>
+              <span className="text-sm">Birthday</span>
+            </Button>
+            <Button variant="outline" className="p-4">
+              <span className="text-3xl mb-2 block">💑</span>
+              <span className="text-sm">Date Night</span>
+            </Button>
+            <Button variant="outline" className="p-4">
+              <span className="text-3xl mb-2 block">🎉</span>
+              <span className="text-sm">Party</span>
+            </Button>
+            <Button variant="outline" className="p-4">
+              <span className="text-3xl mb-2 block">💼</span>
+              <span className="text-sm">Work Event</span>
+            </Button>
+          </div>
+          
+          <Button
+            variant="outline"
+            onClick={onSyncCalendar}
+            className="w-full flex items-center justify-center gap-2"
+          >
+            <span>📅</span> Sync with My Calendar
+          </Button>
+
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={onDateSelect}
+            className="rounded-md border"
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
