@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { LookCard } from "./LookCard";
 import { HomeButton } from "./HomeButton";
+import { useNavigate } from "react-router-dom";
 
 // Sample data for look suggestions
 const sampleSuggestions = [
@@ -40,6 +41,7 @@ const sampleSuggestions = [
 
 export const LookSuggestions = () => {
   const [suggestions, setSuggestions] = useState(sampleSuggestions);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // In a real application, this would fetch from an API
@@ -52,7 +54,13 @@ export const LookSuggestions = () => {
         <h1 className="text-2xl font-semibold mb-6">Look Suggestions</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {suggestions.map((look) => (
-            <LookCard key={look.id} {...look} />
+            <div 
+              key={look.id} 
+              onClick={() => navigate(`/look/${look.id}`)}
+              className="cursor-pointer"
+            >
+              <LookCard {...look} />
+            </div>
           ))}
         </div>
       </div>
