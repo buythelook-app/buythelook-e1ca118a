@@ -32,7 +32,7 @@ export const Navbar = () => {
         <Link to="/" className="text-2xl font-display text-netflix-accent">
           Buy the Look
         </Link>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center space-x-8">
           {isAuthenticated ? (
             <>
               <Link to="/cart" className="hover:text-netflix-accent relative">
