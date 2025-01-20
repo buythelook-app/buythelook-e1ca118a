@@ -8,13 +8,23 @@ import {
 } from "../ui/dialog";
 import { Smile, Laugh, Frown, Meh } from "lucide-react";
 
-export type Mood = "happy" | "excited" | "sad" | "neutral";
+export type Mood = "mystery" | "quiet" | "elegant" | "energized" | "flowing" | "optimist" | 
+           "calm" | "romantic" | "unique" | "sweet" | "childish" | "passionate" | "powerful";
 
 const moodIcons: Record<Mood, React.ReactNode> = {
-  happy: <Smile className="w-5 h-5" />,
-  excited: <Laugh className="w-5 h-5" />,
-  sad: <Frown className="w-5 h-5" />,
-  neutral: <Meh className="w-5 h-5" />
+  mystery: <Frown className="w-5 h-5 text-yellow-400" />,
+  quiet: <Meh className="w-5 h-5 text-yellow-400" />,
+  elegant: <Smile className="w-5 h-5 text-yellow-400" />,
+  energized: <Laugh className="w-5 h-5 text-yellow-400" />,
+  flowing: <Smile className="w-5 h-5 text-yellow-400" />,
+  optimist: <Laugh className="w-5 h-5 text-yellow-400" />,
+  calm: <Meh className="w-5 h-5 text-yellow-400" />,
+  romantic: <Smile className="w-5 h-5 text-yellow-400" />,
+  unique: <Laugh className="w-5 h-5 text-yellow-400" />,
+  sweet: <Smile className="w-5 h-5 text-yellow-400" />,
+  childish: <Laugh className="w-5 h-5 text-yellow-400" />,
+  passionate: <Smile className="w-5 h-5 text-yellow-400" />,
+  powerful: <Laugh className="w-5 h-5 text-yellow-400" />
 };
 
 interface MoodFilterProps {
@@ -44,7 +54,7 @@ export const MoodFilter = ({ selectedMood, onMoodSelect }: MoodFilterProps) => {
         <DialogHeader>
           <DialogTitle>How are you feeling today?</DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-4 p-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
           {(Object.keys(moodIcons) as Mood[]).map((mood) => (
             <Button
               key={mood}
