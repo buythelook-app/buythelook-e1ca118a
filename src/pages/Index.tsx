@@ -2,7 +2,7 @@ import { HeroSection } from "@/components/HeroSection";
 import { LookSection } from "@/components/LookSection";
 import { Navbar } from "@/components/Navbar";
 import { FilterOptions } from "@/components/filters/FilterOptions";
-import { Apple, Google } from "lucide-react";
+import { CreditCard, Apple } from "lucide-react";
 
 export default function Index() {
   const featuredLooks = [
@@ -48,7 +48,7 @@ export default function Index() {
           <h3 className="text-xl font-semibold text-netflix-text mb-4">Payment Options</h3>
           <div className="flex gap-4 items-center">
             <button className="flex items-center gap-2 bg-netflix-card hover:bg-netflix-card/80 text-netflix-text px-6 py-3 rounded-lg transition-colors">
-              <Google className="w-6 h-6" />
+              <CreditCard className="w-6 h-6" />
               <span>Google Pay</span>
             </button>
             <button className="flex items-center gap-2 bg-netflix-card hover:bg-netflix-card/80 text-netflix-text px-6 py-3 rounded-lg transition-colors">
