@@ -1,6 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
+import { HomeButton } from "./HomeButton";
 
 export const AboutApp = () => {
   const navigate = useNavigate();
@@ -37,6 +38,7 @@ export const AboutApp = () => {
           </p>
         </div>
       </div>
+      <HomeButton />
     </div>
   );
 };

@@ -2,6 +2,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { HomeButton } from "./HomeButton";
 
 export const Contact = () => {
   const { toast } = useToast();
@@ -45,6 +46,7 @@ export const Contact = () => {
           </Button>
         </form>
       </div>
+      <HomeButton />
     </div>
   );
 };

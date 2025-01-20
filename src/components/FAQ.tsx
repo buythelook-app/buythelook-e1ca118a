@@ -4,6 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "./ui/accordion";
+import { HomeButton } from "./HomeButton";
 
 const faqs = [
   {
@@ -47,6 +48,7 @@ export const FAQ = () => {
           ))}
         </Accordion>
       </div>
+      <HomeButton />
     </div>
   );
 };
