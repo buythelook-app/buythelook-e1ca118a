@@ -39,7 +39,7 @@ export default function Index() {
       <Navbar />
       <main className="container mx-auto px-4 py-8">
         <FilterOptions />
-        <LookSection looks={featuredLooks} />
+        <LookSection title="Featured Looks" looks={featuredLooks} />
       </main>
     </div>
   );
