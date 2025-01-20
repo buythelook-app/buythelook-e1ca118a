@@ -41,45 +41,37 @@ export const FilterOptions = () => {
     <div className="space-y-6 mb-8">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Mood Filter */}
-        <div className="space-y-4">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full">
-                <span className="mr-2">😊</span>
-                Select Mood
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="w-full">
+              <span className="mr-2">😊</span>
+              Select Mood
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>How are you feeling today?</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-4 p-4">
+              <Button variant="outline" className="p-4">
+                <span className="text-3xl mb-2 block">😊</span>
+                <span className="text-sm">Happy</span>
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>How are you feeling today?</DialogTitle>
-              </DialogHeader>
-              <div className="grid grid-cols-2 gap-4 p-4">
-                <Button variant="outline" className="p-4">
-                  <span className="text-3xl mb-2 block">😊</span>
-                  <span className="text-sm">Happy</span>
-                </Button>
-                <Button variant="outline" className="p-4">
-                  <span className="text-3xl mb-2 block">😴</span>
-                  <span className="text-sm">Tired</span>
-                </Button>
-                <Button variant="outline" className="p-4">
-                  <span className="text-3xl mb-2 block">🤔</span>
-                  <span className="text-sm">Confused</span>
-                </Button>
-                <Button variant="outline" className="p-4">
-                  <span className="text-3xl mb-2 block">😎</span>
-                  <span className="text-sm">Cool</span>
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-          <Button 
-            onClick={() => navigate('/suggestions')}
-            className="bg-netflix-accent hover:bg-netflix-accent/80 w-full"
-          >
-            View All Suggestions
-          </Button>
-        </div>
+              <Button variant="outline" className="p-4">
+                <span className="text-3xl mb-2 block">😴</span>
+                <span className="text-sm">Tired</span>
+              </Button>
+              <Button variant="outline" className="p-4">
+                <span className="text-3xl mb-2 block">🤔</span>
+                <span className="text-sm">Confused</span>
+              </Button>
+              <Button variant="outline" className="p-4">
+                <span className="text-3xl mb-2 block">😎</span>
+                <span className="text-sm">Cool</span>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Event Filter */}
         <Dialog>
@@ -187,6 +179,14 @@ export const FilterOptions = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* View All Suggestions Button - Now positioned below all filters */}
+      <Button 
+        onClick={() => navigate('/suggestions')}
+        className="bg-netflix-accent hover:bg-netflix-accent/80 w-full"
+      >
+        View All Suggestions
+      </Button>
     </div>
   );
 };
