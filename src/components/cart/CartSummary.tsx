@@ -12,11 +12,11 @@ export const CartSummary = ({ total, onClearCart }: CartSummaryProps) => {
         <span className="font-semibold">Total:</span>
         <span className="text-netflix-accent">${total.toFixed(2)}</span>
       </div>
-      <div className="flex gap-2">
-        <Button className="flex-1">Checkout</Button>
-        <Button variant="outline" className="flex-1" onClick={onClearCart}>
+      <div className="flex space-x-8 justify-end">
+        <Button variant="outline" onClick={onClearCart}>
           Clear Cart
         </Button>
+        <Button>Checkout</Button>
       </div>
     </div>
   );
