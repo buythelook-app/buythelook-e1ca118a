@@ -2,11 +2,8 @@ import { HeroSection } from "@/components/HeroSection";
 import { LookSection } from "@/components/LookSection";
 import { Navbar } from "@/components/Navbar";
 import { FilterOptions } from "@/components/filters/FilterOptions";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 
 export default function Index() {
-  const navigate = useNavigate();
   const featuredLooks = [
     {
       id: "1",
@@ -43,15 +40,7 @@ export default function Index() {
       <Navbar />
       <HeroSection />
       <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center mb-6">
-          <FilterOptions />
-          <Button 
-            onClick={() => navigate('/suggestions')}
-            className="bg-netflix-accent hover:bg-netflix-accent/80"
-          >
-            View All Suggestions
-          </Button>
-        </div>
+        <FilterOptions />
       </div>
       <LookSection 
         title="Featured Looks"

@@ -3,6 +3,7 @@ import { Button } from "../ui/button";
 import { Calendar } from "../ui/calendar";
 import { Slider } from "../ui/slider";
 import { Input } from "../ui/input";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,7 @@ import {
 import { useToast } from "../ui/use-toast";
 
 export const FilterOptions = () => {
+  const navigate = useNavigate();
   const [budget, setBudget] = useState<number>(100);
   const [isUnlimited, setIsUnlimited] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
@@ -39,37 +41,45 @@ export const FilterOptions = () => {
     <div className="space-y-6 mb-8">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Mood Filter */}
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="w-full">
-              <span className="mr-2">😊</span>
-              Select Mood
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>How are you feeling today?</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-2 gap-4 p-4">
-              <Button variant="outline" className="p-4">
-                <span className="text-3xl mb-2 block">😊</span>
-                <span className="text-sm">Happy</span>
+        <div className="space-y-4">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full">
+                <span className="mr-2">😊</span>
+                Select Mood
               </Button>
-              <Button variant="outline" className="p-4">
-                <span className="text-3xl mb-2 block">😴</span>
-                <span className="text-sm">Tired</span>
-              </Button>
-              <Button variant="outline" className="p-4">
-                <span className="text-3xl mb-2 block">🤔</span>
-                <span className="text-sm">Confused</span>
-              </Button>
-              <Button variant="outline" className="p-4">
-                <span className="text-3xl mb-2 block">😎</span>
-                <span className="text-sm">Cool</span>
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>How are you feeling today?</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-4 p-4">
+                <Button variant="outline" className="p-4">
+                  <span className="text-3xl mb-2 block">😊</span>
+                  <span className="text-sm">Happy</span>
+                </Button>
+                <Button variant="outline" className="p-4">
+                  <span className="text-3xl mb-2 block">😴</span>
+                  <span className="text-sm">Tired</span>
+                </Button>
+                <Button variant="outline" className="p-4">
+                  <span className="text-3xl mb-2 block">🤔</span>
+                  <span className="text-sm">Confused</span>
+                </Button>
+                <Button variant="outline" className="p-4">
+                  <span className="text-3xl mb-2 block">😎</span>
+                  <span className="text-sm">Cool</span>
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button 
+            onClick={() => navigate('/suggestions')}
+            className="bg-netflix-accent hover:bg-netflix-accent/80 w-full"
+          >
+            View All Suggestions
+          </Button>
+        </div>
 
         {/* Event Filter */}
         <Dialog>
