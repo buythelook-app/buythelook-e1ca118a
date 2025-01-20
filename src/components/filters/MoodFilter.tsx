@@ -6,25 +6,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
-import { Smile, Laugh, Frown, Meh } from "lucide-react";
 
 export type Mood = "mystery" | "quiet" | "elegant" | "energized" | "flowing" | "optimist" | 
            "calm" | "romantic" | "unique" | "sweet" | "childish" | "passionate" | "powerful";
 
-const moodIcons: Record<Mood, React.ReactNode> = {
-  mystery: <Frown className="w-5 h-5 text-yellow-400" />,
-  quiet: <Meh className="w-5 h-5 text-yellow-400" />,
-  elegant: <Smile className="w-5 h-5 text-yellow-400" />,
-  energized: <Laugh className="w-5 h-5 text-yellow-400" />,
-  flowing: <Smile className="w-5 h-5 text-yellow-400" />,
-  optimist: <Laugh className="w-5 h-5 text-yellow-400" />,
-  calm: <Meh className="w-5 h-5 text-yellow-400" />,
-  romantic: <Smile className="w-5 h-5 text-yellow-400" />,
-  unique: <Laugh className="w-5 h-5 text-yellow-400" />,
-  sweet: <Smile className="w-5 h-5 text-yellow-400" />,
-  childish: <Laugh className="w-5 h-5 text-yellow-400" />,
-  passionate: <Smile className="w-5 h-5 text-yellow-400" />,
-  powerful: <Laugh className="w-5 h-5 text-yellow-400" />
+const moodIcons: Record<Mood, string> = {
+  mystery: "🤔",
+  quiet: "😌",
+  elegant: "😊",
+  energized: "😄",
+  flowing: "🌊",
+  optimist: "🌟",
+  calm: "😌",
+  romantic: "💝",
+  unique: "🦄",
+  sweet: "🍯",
+  childish: "👶",
+  passionate: "❤️",
+  powerful: "💪"
 };
 
 interface MoodFilterProps {
@@ -39,8 +38,8 @@ export const MoodFilter = ({ selectedMood, onMoodSelect }: MoodFilterProps) => {
         <Button variant="outline" className="w-full">
           {selectedMood ? (
             <>
-              {moodIcons[selectedMood]}
-              <span className="ml-2 capitalize">{selectedMood}</span>
+              <span className="mr-2 text-lg">{moodIcons[selectedMood]}</span>
+              <span className="capitalize">{selectedMood}</span>
             </>
           ) : (
             <>
@@ -62,8 +61,8 @@ export const MoodFilter = ({ selectedMood, onMoodSelect }: MoodFilterProps) => {
               className="p-4 h-auto hover:bg-netflix-accent/10 transition-colors"
               onClick={() => onMoodSelect(mood)}
             >
-              {moodIcons[mood]}
-              <span className="ml-2 text-sm capitalize">{mood}</span>
+              <span className="mr-2 text-lg">{moodIcons[mood]}</span>
+              <span className="text-sm capitalize">{mood}</span>
             </Button>
           ))}
         </div>
