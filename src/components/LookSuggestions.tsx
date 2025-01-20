@@ -5,35 +5,35 @@ import { HomeButton } from "./HomeButton";
 // Sample data for look suggestions
 const sampleSuggestions = [
   {
-    id: 1,
+    id: "1",
     title: "Casual Summer Look",
     description: "Perfect for a sunny day out",
     image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
-    price: 89.99,
+    price: "89.99",
     category: "Casual",
   },
   {
-    id: 2,
+    id: "2",
     title: "Business Professional",
     description: "Elegant office attire",
     image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
-    price: 149.99,
+    price: "149.99",
     category: "Work",
   },
   {
-    id: 3,
+    id: "3",
     title: "Evening Elegance",
     description: "Perfect for special occasions",
     image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
-    price: 199.99,
+    price: "199.99",
     category: "Party",
   },
   {
-    id: 4,
+    id: "4",
     title: "Weekend Casual",
     description: "Comfortable and stylish",
     image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
-    price: 79.99,
+    price: "79.99",
     category: "Casual",
   },
 ];
