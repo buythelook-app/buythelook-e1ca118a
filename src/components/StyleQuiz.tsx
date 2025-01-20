@@ -7,8 +7,24 @@ import { MeasurementsStep } from "./quiz/MeasurementsStep";
 import { BodyShapeStep } from "./quiz/BodyShapeStep";
 import { PhotoUploadStep } from "./quiz/PhotoUploadStep";
 import { ColorPreferencesStep } from "./quiz/ColorPreferencesStep";
+import { StyleComparisonStep } from "./quiz/StyleComparisonStep";
 import { useNavigate } from "react-router-dom";
 import { HomeButton } from "./HomeButton";
+
+const styleComparisons = [
+  {
+    style1: { name: "Modern", image: "/placeholder.svg" },
+    style2: { name: "Classy", image: "/placeholder.svg" }
+  },
+  {
+    style1: { name: "Boo Hoo", image: "/placeholder.svg" },
+    style2: { name: "Nordic", image: "/placeholder.svg" }
+  },
+  {
+    style1: { name: "Sporty", image: "/placeholder.svg" },
+    style2: { name: "Elegance", image: "/placeholder.svg" }
+  }
+];
 
 export const StyleQuiz = () => {
   const { toast } = useToast();
@@ -23,6 +39,7 @@ export const StyleQuiz = () => {
     bodyShape: "",
     photo: null as File | null,
     colorPreferences: [] as string[],
+    stylePreferences: [] as string[],
   });
 
   const handleNext = () => {
@@ -56,9 +73,21 @@ export const StyleQuiz = () => {
         return true; // Photo is optional
       case 7:
         return formData.colorPreferences.length > 0;
+      case 8:
+      case 9:
+      case 10:
+        return true; // Style comparisons are always valid as they're selected by clicking
       default:
         return true;
     }
+  };
+
+  const handleStyleSelect = (selectedStyle: string) => {
+    setFormData(prev => ({
+      ...prev,
+      stylePreferences: [...prev.stylePreferences, selectedStyle]
+    }));
+    handleNext();
   };
 
   const handleSubmit = () => {
@@ -127,6 +156,17 @@ export const StyleQuiz = () => {
             }}
           />
         );
+      case 8:
+      case 9:
+      case 10:
+        const comparisonIndex = step - 8;
+        return (
+          <StyleComparisonStep
+            style1={styleComparisons[comparisonIndex].style1}
+            style2={styleComparisons[comparisonIndex].style2}
+            onSelect={handleStyleSelect}
+          />
+        );
       default:
         return null;
     }
@@ -134,66 +174,66 @@ export const StyleQuiz = () => {
 
   return (
     <div>
-    <div className="min-h-screen bg-netflix-background text-netflix-text py-8">
-      <div className="container max-w-2xl mx-auto px-4">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate(-1)}
-          className="mb-6"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
+      <div className="min-h-screen bg-netflix-background text-netflix-text py-8">
+        <div className="container max-w-2xl mx-auto px-4">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(-1)}
+            className="mb-6"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
 
-        <div className="bg-netflix-card rounded-lg p-8">
-          <div className="mb-8">
-            <div className="flex justify-between items-center mb-4">
-              <h1 className="text-3xl font-display font-bold">Style Quiz</h1>
-              <p className="text-netflix-accent">Step {step} of 7</p>
+          <div className="bg-netflix-card rounded-lg p-8">
+            <div className="mb-8">
+              <div className="flex justify-between items-center mb-4">
+                <h1 className="text-3xl font-display font-bold">Style Quiz</h1>
+                <p className="text-netflix-accent">Step {step} of 10</p>
+              </div>
+              <div className="w-full bg-netflix-background rounded-full h-2">
+                <div
+                  className="bg-netflix-accent h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${(step / 10) * 100}%` }}
+                />
+              </div>
             </div>
-            <div className="w-full bg-netflix-background rounded-full h-2">
-              <div
-                className="bg-netflix-accent h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(step / 7) * 100}%` }}
-              />
-            </div>
-          </div>
 
-          {renderStep()}
+            {renderStep()}
 
-          <div className="flex justify-between mt-8">
-            {step > 1 && (
-              <Button
-                onClick={handleBack}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft size={16} />
-                Back
-              </Button>
-            )}
-            <div className="ml-auto">
-              {step < 7 ? (
+            <div className="flex justify-between mt-8">
+              {step > 1 && (
                 <Button
-                  onClick={handleNext}
-                  className="bg-netflix-accent hover:bg-netflix-accent/90 flex items-center gap-2"
+                  onClick={handleBack}
+                  variant="outline"
+                  className="flex items-center gap-2"
                 >
-                  Next
-                  <ArrowRight size={16} />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleSubmit}
-                  className="bg-netflix-accent hover:bg-netflix-accent/90"
-                >
-                  Complete Quiz
+                  <ArrowLeft size={16} />
+                  Back
                 </Button>
               )}
+              <div className="ml-auto">
+                {step < 10 ? (
+                  <Button
+                    onClick={handleNext}
+                    className="bg-netflix-accent hover:bg-netflix-accent/90 flex items-center gap-2"
+                  >
+                    Next
+                    <ArrowRight size={16} />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleSubmit}
+                    className="bg-netflix-accent hover:bg-netflix-accent/90"
+                  >
+                    Complete Quiz
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
       <HomeButton />
     </div>
   );
