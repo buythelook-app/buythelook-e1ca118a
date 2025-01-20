@@ -37,7 +37,8 @@ export const LookGrid = ({ looks }: LookGridProps) => {
       <div className="flex justify-center mt-12">
         <Button 
           onClick={() => navigate('/look-suggestions')}
-          className="bg-netflix-accent hover:bg-netflix-accent/80 text-white gap-2"
+          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white gap-2"
+          size="lg"
         >
           <ShoppingBag className="h-4 w-4" />
           For more personal looks
