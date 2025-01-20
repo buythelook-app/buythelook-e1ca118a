@@ -6,24 +6,25 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
+import { Moon, Sun, Heart, Fire, Sparkles, Flower, Child, Bolt, Wave } from "lucide-react";
 
 export type Mood = "mystery" | "quiet" | "elegant" | "energized" | "flowing" | "optimist" | 
            "calm" | "romantic" | "unique" | "sweet" | "childish" | "passionate" | "powerful";
 
-const moodColors: Record<Mood, { bg: string; text: string }> = {
-  mystery: { bg: "bg-[#1A1F2C]", text: "text-white" },
-  quiet: { bg: "bg-[#F1F0FB]", text: "text-gray-800" },
-  elegant: { bg: "bg-[#9b87f5]", text: "text-white" },
-  energized: { bg: "bg-[#F97316]", text: "text-white" },
-  flowing: { bg: "bg-[#D3E4FD]", text: "text-gray-800" },
-  optimist: { bg: "bg-[#FEF7CD]", text: "text-gray-800" },
-  calm: { bg: "bg-[#F2FCE2]", text: "text-gray-800" },
-  romantic: { bg: "bg-[#E5DEFF]", text: "text-gray-800" },
-  unique: { bg: "bg-[#8B5CF6]", text: "text-white" },
-  sweet: { bg: "bg-[#FFDEE2]", text: "text-gray-800" },
-  childish: { bg: "bg-[#FEF7CD]", text: "text-gray-800" },
-  passionate: { bg: "bg-[#ea384c]", text: "text-white" },
-  powerful: { bg: "bg-[#1A1F2C]", text: "text-white" }
+const moodIcons: Record<Mood, React.ReactNode> = {
+  mystery: <Moon className="w-5 h-5" />,
+  quiet: <Moon className="w-5 h-5" />,
+  elegant: <Sparkles className="w-5 h-5" />,
+  energized: <Fire className="w-5 h-5" />,
+  flowing: <Wave className="w-5 h-5" />,
+  optimist: <Sun className="w-5 h-5" />,
+  calm: <Moon className="w-5 h-5" />,
+  romantic: <Heart className="w-5 h-5" />,
+  unique: <Sparkles className="w-5 h-5" />,
+  sweet: <Flower className="w-5 h-5" />,
+  childish: <Child className="w-5 h-5" />,
+  passionate: <Fire className="w-5 h-5" />,
+  powerful: <Bolt className="w-5 h-5" />
 };
 
 interface MoodFilterProps {
@@ -35,12 +36,18 @@ export const MoodFilter = ({ selectedMood, onMoodSelect }: MoodFilterProps) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          className={`w-full ${selectedMood ? `${moodColors[selectedMood].bg} ${moodColors[selectedMood].text}` : ''}`}
-        >
-          <span className="mr-2">🎭</span>
-          {selectedMood ? `Mood: ${selectedMood}` : 'Select Mood'}
+        <Button variant="outline" className="w-full">
+          {selectedMood ? (
+            <>
+              {moodIcons[selectedMood]}
+              <span className="ml-2 capitalize">{selectedMood}</span>
+            </>
+          ) : (
+            <>
+              <span className="mr-2">🎭</span>
+              Select Mood
+            </>
+          )}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-3xl">
@@ -48,14 +55,15 @@ export const MoodFilter = ({ selectedMood, onMoodSelect }: MoodFilterProps) => {
           <DialogTitle>How are you feeling today?</DialogTitle>
         </DialogHeader>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-          {(Object.keys(moodColors) as Mood[]).map((mood) => (
+          {(Object.keys(moodIcons) as Mood[]).map((mood) => (
             <Button
               key={mood}
               variant="outline"
-              className={`p-4 h-auto ${moodColors[mood].bg} ${moodColors[mood].text} hover:opacity-90 transition-opacity`}
+              className="p-4 h-auto hover:bg-netflix-accent/10 transition-colors"
               onClick={() => onMoodSelect(mood)}
             >
-              <span className="text-sm capitalize">{mood}</span>
+              {moodIcons[mood]}
+              <span className="ml-2 text-sm capitalize">{mood}</span>
             </Button>
           ))}
         </div>
