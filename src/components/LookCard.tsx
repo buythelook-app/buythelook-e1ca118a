@@ -18,7 +18,9 @@ interface LookCardProps {
 
 export const LookCard = ({ id, image, title, price, category, items = [] }: LookCardProps) => {
   const { addFavorite, removeFavorite, isFavorite } = useFavoritesStore();
-  const { addLook } = useCartStore();
+  const { addLook, looks } = useCartStore();
+
+  const isInCart = looks.some(look => look.id === id);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -70,10 +72,13 @@ export const LookCard = ({ id, image, title, price, category, items = [] }: Look
             <Button
               variant="ghost"
               size="icon"
-              className="hover:text-netflix-accent transition-colors"
+              className={`hover:text-netflix-accent transition-colors ${isInCart ? 'text-white' : ''}`}
               onClick={handleAddToCart}
             >
-              <ShoppingCart className="h-5 w-5" />
+              <ShoppingCart 
+                className="h-5 w-5"
+                fill={isInCart ? "currentColor" : "none"}
+              />
             </Button>
             <Button
               variant="ghost"
