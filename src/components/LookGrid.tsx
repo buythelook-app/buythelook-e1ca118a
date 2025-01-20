@@ -36,7 +36,7 @@ export const LookGrid = ({ looks }: LookGridProps) => {
       
       <div className="flex justify-center mt-12">
         <Button 
-          onClick={() => navigate('/suggestions')}
+          onClick={() => navigate('/look-suggestions')}
           className="bg-netflix-accent hover:bg-netflix-accent/80 text-white gap-2"
         >
           <ShoppingBag className="h-4 w-4" />
