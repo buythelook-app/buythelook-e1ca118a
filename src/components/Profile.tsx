@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CreditCard, Package, Settings, User } from "lucide-react";
+import { HomeButton } from "./HomeButton";
 
 export const Profile = () => {
   const { toast } = useToast();
@@ -19,6 +20,7 @@ export const Profile = () => {
   };
 
   return (
+    <div>
     <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
       <div className="container max-w-3xl mx-auto">
         <Card className="bg-netflix-card border-netflix-accent">
@@ -133,6 +135,8 @@ export const Profile = () => {
           </CardContent>
         </Card>
       </div>
+    </div>
+      <HomeButton />
     </div>
   );
 };

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { CartItem } from "./cart/CartItem";
 import { LookCartItem } from "./cart/LookCartItem";
 import { CartSummary } from "./cart/CartSummary";
+import { HomeButton } from "./HomeButton";
 
 interface CartItem {
   id: string;
@@ -159,6 +160,7 @@ export const Cart = () => {
           )}
         </div>
       </div>
+      <HomeButton />
     </div>
   );
 };

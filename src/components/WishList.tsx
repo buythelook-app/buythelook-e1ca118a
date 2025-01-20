@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Heart } from "lucide-react";
 import { LookCard } from "./LookCard";
+import { HomeButton } from "./HomeButton";
 
 const mockWishlistLooks = [
   {
@@ -54,6 +55,7 @@ export const WishList = () => {
           </div>
         )}
       </div>
+      <HomeButton />
     </div>
   );
 };

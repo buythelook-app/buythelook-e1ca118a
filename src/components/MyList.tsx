@@ -3,6 +3,7 @@ import { Button } from "./ui/button";
 import { Heart } from "lucide-react";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { LookCard } from "./LookCard";
+import { HomeButton } from "./HomeButton";
 
 export const MyList = () => {
   const navigate = useNavigate();
@@ -39,6 +40,7 @@ export const MyList = () => {
           </div>
         )}
       </div>
+      <HomeButton />
     </div>
   );
 };

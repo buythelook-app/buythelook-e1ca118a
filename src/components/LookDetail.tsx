@@ -1,59 +1,72 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "./ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { mockLooks } from "./LookSuggestions";
-import { Card, CardContent } from "./ui/card";
-import { LookCanvas } from "./LookCanvas";
-import { useCartStore } from "./Cart";
+import { Heart, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
-import { AIPreview } from "./AIPreview";
+import { useCartStore } from "./Cart";
+import { useFavoritesStore } from "@/stores/useFavoritesStore";
+import { HomeButton } from "./HomeButton";
+
+const mockLookDetails = {
+  id: "1",
+  title: "Summer Beach Look",
+  description: "Perfect for a day at the beach or a casual summer outing.",
+  price: "$299.99",
+  category: "Summer Collection",
+  image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
+  items: [
+    {
+      id: "item1",
+      title: "Floral Dress",
+      price: "$89.99",
+      image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png"
+    },
+    {
+      id: "item2",
+      title: "Straw Hat",
+      price: "$29.99",
+      image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png"
+    }
+  ]
+};
 
 export const LookDetail = () => {
-  const { id } = useParams();
   const navigate = useNavigate();
-  const { addItem, addLook } = useCartStore();
-  const [showAIPreview, setShowAIPreview] = useState(false);
+  const { id } = useParams();
+  const { addLook, addItems } = useCartStore();
+  const { addFavorite, removeFavorite, favorites } = useFavoritesStore();
 
-  const currentLook = mockLooks.find(look => look.id === id);
+  const look = mockLookDetails;
+  const isFavorite = favorites.some(fav => fav.id === look.id);
 
-  if (!currentLook) {
-    return (
-      <div className="min-h-screen bg-netflix-background text-netflix-text p-6 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-4">Look not found</h2>
-          <Button onClick={() => navigate(-1)}>Go Back</Button>
-        </div>
-      </div>
-    );
-  }
-
-  const handleAddToCart = (itemIndex: number) => {
-    const item = currentLook.items[itemIndex];
-    addItem({
-      id: item.id,
-      image: item.image,
-      title: `Item ${itemIndex + 1} from ${currentLook.title}`,
-      price: currentLook.price
+  const handleAddToCart = () => {
+    addLook({
+      id: look.id,
+      title: look.title,
+      items: look.items,
+      totalPrice: look.price
     });
-    toast.success('Item added to cart');
-    navigate('/cart');
+    toast.success("Look added to cart");
   };
 
-  const handleBuyLook = () => {
-    addLook({
-      id: currentLook.id,
-      title: currentLook.title,
-      items: currentLook.items.map((item, index) => ({
-        id: item.id,
-        image: item.image,
-        title: `Item ${index + 1} from ${currentLook.title}`,
-        price: currentLook.price
-      })),
-      totalPrice: currentLook.price
-    });
-    toast.success('Look added to cart');
-    navigate('/cart');
+  const handleAddItemsToCart = () => {
+    addItems(look.items);
+    toast.success("Items added to cart");
+  };
+
+  const handleToggleFavorite = () => {
+    if (isFavorite) {
+      removeFavorite(look.id);
+      toast.success("Removed from favorites");
+    } else {
+      addFavorite({
+        id: look.id,
+        title: look.title,
+        price: look.price,
+        category: look.category,
+        image: look.image
+      });
+      toast.success("Added to favorites");
+    }
   };
 
   return (
@@ -64,110 +77,75 @@ export const LookDetail = () => {
           onClick={() => navigate(-1)}
           className="mb-6"
         >
-          ← Back to Looks
+          ← Back
         </Button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-4">
-            <div className="bg-netflix-card rounded-lg p-4">
-              <LookCanvas items={currentLook.items} width={500} height={500} />
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                className="flex-1" 
-                onClick={() => setShowAIPreview(true)}
-              >
-                Try the Look
-              </Button>
-              <Button 
-                variant="outline" 
-                className="flex-1" 
-                onClick={handleBuyLook}
-              >
-                Buy the Look ({currentLook.price})
-              </Button>
-            </div>
+        <div className="grid md:grid-cols-2 gap-8">
+          <div>
+            <img 
+              src={look.image} 
+              alt={look.title}
+              className="w-full h-[600px] object-cover rounded-lg"
+            />
           </div>
 
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-semibold mb-2">{currentLook.title}</h2>
-              <p className="text-netflix-accent">{currentLook.category}</p>
+              <h1 className="text-3xl font-semibold mb-2">{look.title}</h1>
+              <p className="text-netflix-text/60">{look.description}</p>
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold mb-4">Items in this Look</h3>
+              <p className="text-2xl text-netflix-accent mb-4">{look.price}</p>
+              <div className="flex gap-4">
+                <Button 
+                  onClick={handleAddToCart}
+                  className="flex-1"
+                >
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  Add Look to Cart
+                </Button>
+                <Button
+                  variant={isFavorite ? "destructive" : "secondary"}
+                  onClick={handleToggleFavorite}
+                >
+                  <Heart className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Included Items</h2>
               <div className="space-y-4">
-                {currentLook.items.map((item, index) => (
+                {look.items.map((item) => (
                   <div 
                     key={item.id}
-                    className="flex items-start gap-4 p-4 bg-netflix-background rounded-lg transition-all hover:bg-netflix-card"
+                    className="flex items-center gap-4 bg-netflix-card p-4 rounded-lg"
                   >
                     <img 
                       src={item.image} 
-                      alt={`Item ${index + 1}`}
-                      className="w-24 h-24 object-cover rounded-md"
+                      alt={item.title}
+                      className="w-20 h-20 object-cover rounded-md"
                     />
                     <div className="flex-1">
-                      <h4 className="font-medium mb-1">Item {index + 1}</h4>
-                      <p className="text-sm text-netflix-accent mb-2">Part of {currentLook.title}</p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm opacity-75">Individual price:</span>
-                          <span className="font-medium">{currentLook.price}</span>
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handleAddToCart(index)}
-                        >
-                          Add to Cart
-                        </Button>
-                      </div>
+                      <h3 className="font-medium">{item.title}</h3>
+                      <p className="text-netflix-accent">{item.price}</p>
                     </div>
                   </div>
                 ))}
               </div>
+              <Button 
+                variant="outline" 
+                onClick={handleAddItemsToCart}
+                className="w-full mt-4"
+              >
+                Add All Items to Cart
+              </Button>
             </div>
-
-            <Tabs defaultValue="details" className="w-full">
-              <TabsList className="w-full grid grid-cols-2">
-                <TabsTrigger value="details">Size Guide</TabsTrigger>
-                <TabsTrigger value="ratings">Reviews</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="details">
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold mb-4">Size Guide</h3>
-                    <p className="text-sm text-gray-400">
-                      Please refer to individual items for specific sizing information.
-                      Each piece may have different sizing charts based on the brand and style.
-                    </p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="ratings">
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold mb-4">Customer Reviews</h3>
-                    <p className="text-sm text-gray-400">
-                      Be the first to review this look!
-                    </p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
           </div>
         </div>
       </div>
-
-      <AIPreview
-        lookImage={currentLook.items[0].image}
-        isOpen={showAIPreview}
-        onClose={() => setShowAIPreview(false)}
-      />
+      <HomeButton />
     </div>
   );
 };

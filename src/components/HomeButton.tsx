@@ -9,7 +9,7 @@ export const HomeButton = () => {
     <Button 
       variant="ghost" 
       onClick={() => navigate('/home')}
-      className="fixed bottom-4 right-4 z-50"
+      className="fixed top-4 right-4 z-50"
     >
       <Home className="h-6 w-6" />
     </Button>

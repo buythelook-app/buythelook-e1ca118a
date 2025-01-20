@@ -8,6 +8,7 @@ import { BodyShapeStep } from "./quiz/BodyShapeStep";
 import { PhotoUploadStep } from "./quiz/PhotoUploadStep";
 import { ColorPreferencesStep } from "./quiz/ColorPreferencesStep";
 import { useNavigate } from "react-router-dom";
+import { HomeButton } from "./HomeButton";
 
 export const StyleQuiz = () => {
   const { toast } = useToast();
@@ -132,6 +133,7 @@ export const StyleQuiz = () => {
   };
 
   return (
+    <div>
     <div className="min-h-screen bg-netflix-background text-netflix-text py-8">
       <div className="container max-w-2xl mx-auto px-4">
         <Button 
@@ -191,6 +193,8 @@ export const StyleQuiz = () => {
           </div>
         </div>
       </div>
+    </div>
+      <HomeButton />
     </div>
   );
 };

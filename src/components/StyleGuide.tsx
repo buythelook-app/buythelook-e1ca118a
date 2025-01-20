@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useToast } from "./ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { HomeButton } from "./HomeButton";
 
 export const StyleGuide = () => {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ export const StyleGuide = () => {
   };
 
   return (
+    <div>
     <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
       <div className="container max-w-2xl mx-auto">
         <Button 
@@ -173,6 +175,8 @@ export const StyleGuide = () => {
           </TabsContent>
         </Tabs>
       </div>
+    </div>
+      <HomeButton />
     </div>
   );
 };

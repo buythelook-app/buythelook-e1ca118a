@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { HomeButton } from "./HomeButton";
 
 const mockOrders = [
   { id: 1, date: "2024-01-01", total: 150, status: "Delivered" },
@@ -59,6 +60,7 @@ export const Orders = () => {
           ))}
         </div>
       </div>
+      <HomeButton />
     </div>
   );
 };
