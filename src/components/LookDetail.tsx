@@ -32,7 +32,7 @@ const mockLookDetails = {
 export const LookDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { addItem } = useCartStore();
+  const { addItem, addLook } = useCartStore();
   const { addFavorite, removeFavorite, favorites } = useFavoritesStore();
 
   const look = mockLookDetails;
@@ -46,6 +46,25 @@ export const LookDetail = () => {
       image: item.image,
     });
     toast.success(`${item.title} added to cart`);
+  };
+
+  const handleAddLookToCart = () => {
+    const lookItems = look.items.map(item => ({
+      id: item.id,
+      title: item.title,
+      price: item.price,
+      image: item.image,
+      lookId: look.id
+    }));
+    
+    addLook({
+      id: look.id,
+      title: look.title,
+      items: lookItems,
+      totalPrice: look.price
+    });
+    
+    toast.success('Complete look added to cart');
   };
 
   const handleToggleFavorite = () => {
@@ -129,6 +148,14 @@ export const LookDetail = () => {
                     </Button>
                   </div>
                 ))}
+              </div>
+              <div className="mt-6">
+                <Button
+                  onClick={handleAddLookToCart}
+                  className="w-full"
+                >
+                  Add Complete Look to Cart
+                </Button>
               </div>
             </div>
           </div>
