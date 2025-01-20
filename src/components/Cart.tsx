@@ -1,6 +1,7 @@
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { toast } from "sonner";
 import { CartItem } from "./cart/CartItem";
 import { LookCartItem } from "./cart/LookCartItem";
@@ -33,42 +34,49 @@ interface CartStore {
   clearCart: () => void;
 }
 
-export const useCartStore = create<CartStore>((set) => ({
-  items: [],
-  looks: [],
-  addItem: (item) => set((state) => ({ 
-    items: [...state.items, item] 
-  })),
-  addItems: (newItems) => set((state) => ({
-    items: [...state.items, ...newItems]
-  })),
-  addLook: (look) => set((state) => ({ 
-    looks: [...state.looks, look] 
-  })),
-  removeLook: (lookId) => set((state) => ({
-    looks: state.looks.filter((look) => look.id !== lookId)
-  })),
-  removeItem: (itemId) => set((state) => ({
-    items: state.items.filter((item) => item.id !== itemId)
-  })),
-  removeItemFromLook: (lookId, itemId) => set((state) => ({
-    looks: state.looks.map(look => {
-      if (look.id === lookId) {
-        const updatedItems = look.items.filter(item => item.id !== itemId);
-        // If all items are removed, remove the look entirely
-        if (updatedItems.length === 0) {
-          return null;
-        }
-        return {
-          ...look,
-          items: updatedItems
-        };
-      }
-      return look;
-    }).filter((look): look is Look => look !== null)
-  })),
-  clearCart: () => set({ items: [], looks: [] }),
-}));
+export const useCartStore = create<CartStore>()(
+  persist(
+    (set) => ({
+      items: [],
+      looks: [],
+      addItem: (item) => set((state) => ({ 
+        items: [...state.items, item] 
+      })),
+      addItems: (newItems) => set((state) => ({
+        items: [...state.items, ...newItems]
+      })),
+      addLook: (look) => set((state) => ({ 
+        looks: [...state.looks, look] 
+      })),
+      removeLook: (lookId) => set((state) => ({
+        looks: state.looks.filter((look) => look.id !== lookId)
+      })),
+      removeItem: (itemId) => set((state) => ({
+        items: state.items.filter((item) => item.id !== itemId)
+      })),
+      removeItemFromLook: (lookId, itemId) => set((state) => ({
+        looks: state.looks.map(look => {
+          if (look.id === lookId) {
+            const updatedItems = look.items.filter(item => item.id !== itemId);
+            // If all items are removed, remove the look entirely
+            if (updatedItems.length === 0) {
+              return null;
+            }
+            return {
+              ...look,
+              items: updatedItems
+            };
+          }
+          return look;
+        }).filter((look): look is Look => look !== null)
+      })),
+      clearCart: () => set({ items: [], looks: [] }),
+    }),
+    {
+      name: 'cart-storage', // unique name for localStorage key
+    }
+  )
+);
 
 export const Cart = () => {
   const navigate = useNavigate();
