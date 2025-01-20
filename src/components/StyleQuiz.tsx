@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, ArrowLeft } from "lucide-react";
@@ -26,6 +26,8 @@ const styleComparisons = [
   }
 ];
 
+const STORAGE_KEY = 'style-quiz-data';
+
 export const StyleQuiz = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -41,6 +43,32 @@ export const StyleQuiz = () => {
     colorPreferences: [] as string[],
     stylePreferences: [] as string[],
   });
+
+  // Load saved data on component mount
+  useEffect(() => {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      // Photo can't be stored in localStorage, so we exclude it
+      setFormData(prevData => ({
+        ...parsedData,
+        photo: prevData.photo
+      }));
+      toast({
+        title: "Previous quiz data loaded",
+        description: "You can continue from where you left off.",
+      });
+    }
+  }, [toast]);
+
+  // Save data whenever it changes
+  useEffect(() => {
+    const dataToSave = {
+      ...formData,
+      photo: null // Don't save the photo as it can't be stored in localStorage
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+  }, [formData]);
 
   const handleNext = () => {
     if (!validateCurrentStep()) {
