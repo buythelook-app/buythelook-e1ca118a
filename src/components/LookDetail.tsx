@@ -32,25 +32,20 @@ const mockLookDetails = {
 export const LookDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { addLook, addItems } = useCartStore();
+  const { addItem } = useCartStore();
   const { addFavorite, removeFavorite, favorites } = useFavoritesStore();
 
   const look = mockLookDetails;
   const isFavorite = favorites.some(fav => fav.id === look.id);
 
-  const handleAddToCart = () => {
-    addLook({
-      id: look.id,
-      title: look.title,
-      items: look.items,
-      totalPrice: look.price
+  const handleAddItemToCart = (item: typeof look.items[0]) => {
+    addItem({
+      id: item.id,
+      title: item.title,
+      price: item.price,
+      image: item.image,
     });
-    toast.success("Look added to cart");
-  };
-
-  const handleAddItemsToCart = () => {
-    addItems(look.items);
-    toast.success("Items added to cart");
+    toast.success(`${item.title} added to cart`);
   };
 
   const handleToggleFavorite = () => {
@@ -98,13 +93,6 @@ export const LookDetail = () => {
             <div>
               <p className="text-2xl text-netflix-accent mb-4">{look.price}</p>
               <div className="flex gap-4">
-                <Button 
-                  onClick={handleAddToCart}
-                  className="flex-1"
-                >
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  Add Look to Cart
-                </Button>
                 <Button
                   variant={isFavorite ? "destructive" : "secondary"}
                   onClick={handleToggleFavorite}
@@ -120,7 +108,7 @@ export const LookDetail = () => {
                 {look.items.map((item) => (
                   <div 
                     key={item.id}
-                    className="flex items-center gap-4 bg-netflix-card p-4 rounded-lg"
+                    className="flex items-center gap-4 bg-netflix-card p-4 rounded-lg group relative"
                   >
                     <img 
                       src={item.image} 
@@ -131,16 +119,17 @@ export const LookDetail = () => {
                       <h3 className="font-medium">{item.title}</h3>
                       <p className="text-netflix-accent">{item.price}</p>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleAddItemToCart(item)}
+                      className="text-netflix-text hover:text-netflix-accent transition-colors"
+                    >
+                      <ShoppingCart className="h-5 w-5" />
+                    </Button>
                   </div>
                 ))}
               </div>
-              <Button 
-                variant="outline" 
-                onClick={handleAddItemsToCart}
-                className="w-full mt-4"
-              >
-                Add All Items to Cart
-              </Button>
             </div>
           </div>
         </div>
