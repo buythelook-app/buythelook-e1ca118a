@@ -6,7 +6,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
-import { Moon, Sun, Heart, Fire, Sparkles, Flower, Child, Bolt, Wave } from "lucide-react";
+import { Moon, Sun, Heart, Flame, Sparkles, Flower, Baby, Bolt, Waves } from "lucide-react";
 
 export type Mood = "mystery" | "quiet" | "elegant" | "energized" | "flowing" | "optimist" | 
            "calm" | "romantic" | "unique" | "sweet" | "childish" | "passionate" | "powerful";
@@ -15,15 +15,15 @@ const moodIcons: Record<Mood, React.ReactNode> = {
   mystery: <Moon className="w-5 h-5" />,
   quiet: <Moon className="w-5 h-5" />,
   elegant: <Sparkles className="w-5 h-5" />,
-  energized: <Fire className="w-5 h-5" />,
-  flowing: <Wave className="w-5 h-5" />,
+  energized: <Flame className="w-5 h-5" />,
+  flowing: <Waves className="w-5 h-5" />,
   optimist: <Sun className="w-5 h-5" />,
   calm: <Moon className="w-5 h-5" />,
   romantic: <Heart className="w-5 h-5" />,
   unique: <Sparkles className="w-5 h-5" />,
   sweet: <Flower className="w-5 h-5" />,
-  childish: <Child className="w-5 h-5" />,
-  passionate: <Fire className="w-5 h-5" />,
+  childish: <Baby className="w-5 h-5" />,
+  passionate: <Flame className="w-5 h-5" />,
   powerful: <Bolt className="w-5 h-5" />
 };
 
