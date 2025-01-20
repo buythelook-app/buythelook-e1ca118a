@@ -16,7 +16,7 @@ export const CartSummary = ({ total, onClearCart }: CartSummaryProps) => {
         <Button variant="outline" onClick={onClearCart}>
           Clear Cart
         </Button>
-        <Button>Checkout</Button>
+        <Button variant="outline">Checkout</Button>
       </div>
     </div>
   );
