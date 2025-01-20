@@ -149,7 +149,7 @@ export const LookDetail = () => {
                   </div>
                 ))}
               </div>
-              <div className="mt-6">
+              <div className="mt-6 p-4 border border-netflix-accent rounded-lg bg-netflix-card/50">
                 <Button
                   onClick={handleAddLookToCart}
                   className="w-full"
