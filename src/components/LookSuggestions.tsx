@@ -2,18 +2,48 @@ import { useEffect, useState } from "react";
 import { LookCard } from "./LookCard";
 import { HomeButton } from "./HomeButton";
 
+// Sample data for look suggestions
+const sampleSuggestions = [
+  {
+    id: 1,
+    title: "Casual Summer Look",
+    description: "Perfect for a sunny day out",
+    image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
+    price: 89.99,
+    category: "Casual",
+  },
+  {
+    id: 2,
+    title: "Business Professional",
+    description: "Elegant office attire",
+    image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
+    price: 149.99,
+    category: "Work",
+  },
+  {
+    id: 3,
+    title: "Evening Elegance",
+    description: "Perfect for special occasions",
+    image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
+    price: 199.99,
+    category: "Party",
+  },
+  {
+    id: 4,
+    title: "Weekend Casual",
+    description: "Comfortable and stylish",
+    image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
+    price: 79.99,
+    category: "Casual",
+  },
+];
+
 export const LookSuggestions = () => {
-  const [suggestions, setSuggestions] = useState([]);
+  const [suggestions, setSuggestions] = useState(sampleSuggestions);
 
   useEffect(() => {
-    // Fetch suggestions from an API or some data source
-    const fetchSuggestions = async () => {
-      const response = await fetch("/api/suggestions");
-      const data = await response.json();
-      setSuggestions(data);
-    };
-
-    fetchSuggestions();
+    // In a real application, this would fetch from an API
+    setSuggestions(sampleSuggestions);
   }, []);
 
   return (
