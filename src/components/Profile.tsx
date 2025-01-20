@@ -5,10 +5,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CreditCard, Package, Settings, User } from "lucide-react";
+import { CreditCard, Package, Settings, User, Apple } from "lucide-react";
 import { HomeButton } from "./HomeButton";
 
-// Mock orders data (same as in Orders component)
+// Mock orders data
 const mockOrders = [
   { id: 1, date: "2024-01-01", total: 150, status: "Delivered" },
   { id: 2, date: "2024-02-01", total: 200, status: "Processing" },
@@ -137,7 +137,17 @@ export const Profile = () => {
                 <TabsContent value="payments">
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Payment Methods</h3>
-                    <Button className="w-full bg-netflix-accent hover:bg-netflix-accent/90">
+                    <div className="flex flex-col gap-4">
+                      <button className="flex items-center gap-2 bg-netflix-background hover:bg-netflix-background/80 text-netflix-text px-6 py-3 rounded-lg transition-colors w-full">
+                        <CreditCard className="w-6 h-6" />
+                        <span>Credit Card</span>
+                      </button>
+                      <button className="flex items-center gap-2 bg-netflix-background hover:bg-netflix-background/80 text-netflix-text px-6 py-3 rounded-lg transition-colors w-full">
+                        <Apple className="w-6 h-6" />
+                        <span>Apple Pay</span>
+                      </button>
+                    </div>
+                    <Button className="w-full bg-netflix-accent hover:bg-netflix-accent/90 mt-4">
                       Add New Payment Method
                     </Button>
                   </div>
