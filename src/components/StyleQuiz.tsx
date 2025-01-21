@@ -129,7 +129,7 @@ export const StyleQuiz = () => {
       title: "Quiz completed!",
       description: "We'll prepare your personalized style recommendations.",
     });
-    navigate('/suggestions');
+    navigate('/home');  // Changed from '/suggestions' to '/home'
   };
 
   const renderStep = () => {
