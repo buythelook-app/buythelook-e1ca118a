@@ -139,7 +139,7 @@ export const LookDetail = () => {
       <div className="container mx-auto">
         <Button 
           variant="ghost" 
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/home')}
           className="mb-6"
         >
           ← Back
