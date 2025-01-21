@@ -6,28 +6,73 @@ import { useCartStore } from "./Cart";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { HomeButton } from "./HomeButton";
 
-const mockLookDetails = {
-  id: "1",
-  title: "Summer Beach Look",
-  description: "Perfect for a day at the beach or a casual summer outing.",
-  price: "$299.99",
-  category: "Summer Collection",
-  image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
-  items: [
-    {
-      id: "item1",
-      title: "Floral Dress",
-      price: "$89.99",
-      image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png"
-    },
-    {
-      id: "item2",
-      title: "Straw Hat",
-      price: "$29.99",
-      image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png"
-    }
-  ]
-};
+// Import the looks data from Index
+const featuredLooks = [
+  { 
+    id: "look-1", 
+    title: "Summer Casual", 
+    description: "Perfect for a day at the beach or a casual summer outing.",
+    image: "https://images.unsplash.com/photo-1445205170230-053b83016050",
+    price: "$199.99",
+    category: "Casual",
+    items: [
+      {
+        id: "item-1",
+        title: "Summer Casual Item",
+        price: "$199.99",
+        image: "https://images.unsplash.com/photo-1445205170230-053b83016050"
+      }
+    ]
+  },
+  { 
+    id: "look-2", 
+    title: "Business Professional", 
+    description: "Perfect for important business meetings and formal occasions.",
+    image: "https://images.unsplash.com/photo-1487222477894-8943e31ef7b2",
+    price: "$249.99",
+    category: "Formal",
+    items: [
+      {
+        id: "item-2",
+        title: "Business Professional Item",
+        price: "$249.99",
+        image: "https://images.unsplash.com/photo-1487222477894-8943e31ef7b2"
+      }
+    ]
+  },
+  { 
+    id: "look-3", 
+    title: "Evening Elegance", 
+    description: "Sophisticated and stylish for evening events.",
+    image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d",
+    price: "$299.99",
+    category: "Business",
+    items: [
+      {
+        id: "item-3",
+        title: "Evening Elegance Item",
+        price: "$299.99",
+        image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d"
+      }
+    ]
+  },
+  { 
+    id: "look-4", 
+    title: "Weekend Comfort", 
+    description: "Casual and comfortable for weekend activities.",
+    image: "https://images.unsplash.com/photo-1485968579580-b6d095142e6e",
+    price: "$179.99",
+    category: "Casual",
+    items: [
+      {
+        id: "item-4",
+        title: "Weekend Comfort Item",
+        price: "$179.99",
+        image: "https://images.unsplash.com/photo-1485968579580-b6d095142e6e"
+      }
+    ]
+  }
+];
 
 export const LookDetail = () => {
   const navigate = useNavigate();
@@ -35,7 +80,13 @@ export const LookDetail = () => {
   const { addItem, addLook } = useCartStore();
   const { addFavorite, removeFavorite, favorites } = useFavoritesStore();
 
-  const look = mockLookDetails;
+  // Find the look based on the ID from the URL
+  const look = featuredLooks.find(look => look.id === id);
+
+  if (!look) {
+    return <div>Look not found</div>;
+  }
+
   const isFavorite = favorites.some(fav => fav.id === look.id);
 
   const handleAddItemToCart = (item: typeof look.items[0]) => {
