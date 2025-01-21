@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { LookCard } from "./LookCard";
 
 interface LookSectionProps {
@@ -12,6 +13,8 @@ interface LookSectionProps {
 }
 
 export const LookSection = ({ title, looks }: LookSectionProps) => {
+  const navigate = useNavigate();
+
   return (
     <section className="py-16">
       <div className="container mx-auto px-4">
@@ -21,7 +24,13 @@ export const LookSection = ({ title, looks }: LookSectionProps) => {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {looks.map((look) => (
-            <LookCard key={look.id} {...look} />
+            <div 
+              key={look.id} 
+              onClick={() => navigate(`/look/${look.id}`)}
+              className="cursor-pointer"
+            >
+              <LookCard {...look} />
+            </div>
           ))}
         </div>
       </div>
