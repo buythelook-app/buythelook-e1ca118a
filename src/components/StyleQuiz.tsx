@@ -4,12 +4,13 @@ import { HomeButton } from "./HomeButton";
 import { QuizProgress } from "./quiz/QuizProgress";
 import { QuizNavigation } from "./quiz/QuizNavigation";
 import { QuizContainer } from "./quiz/QuizContainer";
-import { QuizProvider } from "./quiz/QuizContext";
+import { QuizProvider, useQuizContext } from "./quiz/QuizContext";
 import { QuizStepRenderer } from "./quiz/QuizStepRenderer";
 
 const TOTAL_STEPS = 10;
 
-export const StyleQuiz = () => {
+const QuizContent = () => {
+  const { step, handleNext, handleBack, handleSubmit } = useQuizContext();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -23,18 +24,26 @@ export const StyleQuiz = () => {
   }, [toast]);
 
   return (
+    <>
+      <QuizProgress currentStep={step} totalSteps={TOTAL_STEPS} />
+      <QuizStepRenderer />
+      <QuizNavigation
+        currentStep={step}
+        totalSteps={TOTAL_STEPS}
+        onNext={handleNext}
+        onBack={handleBack}
+        onComplete={handleSubmit}
+      />
+    </>
+  );
+};
+
+export const StyleQuiz = () => {
+  return (
     <div>
       <QuizProvider>
         <QuizContainer>
-          <QuizProgress currentStep={step} totalSteps={TOTAL_STEPS} />
-          <QuizStepRenderer />
-          <QuizNavigation
-            currentStep={step}
-            totalSteps={TOTAL_STEPS}
-            onNext={handleNext}
-            onBack={handleBack}
-            onComplete={handleSubmit}
-          />
+          <QuizContent />
         </QuizContainer>
       </QuizProvider>
       <HomeButton />

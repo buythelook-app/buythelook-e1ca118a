@@ -1,4 +1,6 @@
 import { createContext, useContext, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 interface QuizFormData {
   gender: string;
@@ -33,6 +35,8 @@ export const useQuizContext = () => {
 };
 
 export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<QuizFormData>({
     gender: "",
@@ -73,7 +77,7 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
       title: "Quiz completed!",
       description: "We'll prepare your personalized style recommendations.",
     });
-    navigate('/home');  // Changed from '/suggestions' to '/home'
+    navigate('/home');
   };
 
   const validateCurrentStep = () => {
