@@ -6,32 +6,56 @@ import { FilterOptions } from "@/components/filters/FilterOptions";
 export default function Index() {
   const featuredLooks = [
     { 
-      id: "1", 
+      id: "look-1", 
       title: "Summer Casual", 
       image: "https://images.unsplash.com/photo-1445205170230-053b83016050",
       price: "$199.99",
-      category: "Casual"
+      category: "Casual",
+      items: [
+        {
+          id: "item-1",
+          image: "https://images.unsplash.com/photo-1445205170230-053b83016050",
+        }
+      ]
     },
     { 
-      id: "2", 
+      id: "look-2", 
       title: "Business Professional", 
       image: "https://images.unsplash.com/photo-1487222477894-8943e31ef7b2",
       price: "$249.99",
-      category: "Formal"
+      category: "Formal",
+      items: [
+        {
+          id: "item-2",
+          image: "https://images.unsplash.com/photo-1487222477894-8943e31ef7b2",
+        }
+      ]
     },
     { 
-      id: "3", 
+      id: "look-3", 
       title: "Evening Elegance", 
       image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d",
       price: "$299.99",
-      category: "Business"
+      category: "Business",
+      items: [
+        {
+          id: "item-3",
+          image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d",
+        }
+      ]
     },
     { 
-      id: "4", 
+      id: "look-4", 
       title: "Weekend Comfort", 
       image: "https://images.unsplash.com/photo-1485968579580-b6d095142e6e",
       price: "$179.99",
-      category: "Casual"
+      category: "Casual",
+      items: [
+        {
+          id: "item-4",
+          image: "https://images.unsplash.com/photo-1485968579580-b6d095142e6e",
+        }
+      ]
     },
   ];
 
