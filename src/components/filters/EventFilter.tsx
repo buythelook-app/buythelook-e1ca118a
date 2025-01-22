@@ -7,6 +7,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
+import { useState } from "react";
+import { useToast } from "../ui/use-toast";
 
 interface EventFilterProps {
   date: Date | undefined;
@@ -14,13 +16,36 @@ interface EventFilterProps {
   onSyncCalendar: () => void;
 }
 
+type EventType = "birthday" | "dateNight" | "party" | "workEvent" | null;
+
 export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterProps) => {
+  const [selectedEvent, setSelectedEvent] = useState<EventType>(null);
+  const { toast } = useToast();
+
+  const handleEventSelect = (event: EventType) => {
+    setSelectedEvent(event);
+    toast({
+      title: "Event Selected",
+      description: `You selected: ${event?.charAt(0).toUpperCase()}${event?.slice(1).replace(/([A-Z])/g, ' $1')}`,
+    });
+  };
+
+  const handleDateSelect = (newDate: Date | undefined) => {
+    onDateSelect(newDate);
+    if (newDate) {
+      toast({
+        title: "Date Selected",
+        description: `Selected date: ${newDate.toLocaleDateString()}`,
+      });
+    }
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" className="w-full">
           <span className="mr-2">📅</span>
-          Select Event
+          {selectedEvent ? `${selectedEvent} - ${date?.toLocaleDateString() || 'Select Date'}` : 'Select Event'}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
@@ -29,19 +54,35 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
         </DialogHeader>
         <div className="space-y-4 p-4">
           <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline" className="p-4">
+            <Button 
+              variant={selectedEvent === "birthday" ? "default" : "outline"} 
+              className="p-4"
+              onClick={() => handleEventSelect("birthday")}
+            >
               <span className="text-3xl mb-2 block">🎂</span>
               <span className="text-sm">Birthday</span>
             </Button>
-            <Button variant="outline" className="p-4">
+            <Button 
+              variant={selectedEvent === "dateNight" ? "default" : "outline"} 
+              className="p-4"
+              onClick={() => handleEventSelect("dateNight")}
+            >
               <span className="text-3xl mb-2 block">💑</span>
               <span className="text-sm">Date Night</span>
             </Button>
-            <Button variant="outline" className="p-4">
+            <Button 
+              variant={selectedEvent === "party" ? "default" : "outline"} 
+              className="p-4"
+              onClick={() => handleEventSelect("party")}
+            >
               <span className="text-3xl mb-2 block">🎉</span>
               <span className="text-sm">Party</span>
             </Button>
-            <Button variant="outline" className="p-4">
+            <Button 
+              variant={selectedEvent === "workEvent" ? "default" : "outline"} 
+              className="p-4"
+              onClick={() => handleEventSelect("workEvent")}
+            >
               <span className="text-3xl mb-2 block">💼</span>
               <span className="text-sm">Work Event</span>
             </Button>
@@ -58,7 +99,7 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
           <Calendar
             mode="single"
             selected={date}
-            onSelect={onDateSelect}
+            onSelect={handleDateSelect}
             className="rounded-md border"
           />
         </div>
