@@ -34,14 +34,16 @@ export const LookActions = ({ look }: LookActionsProps) => {
   };
 
   return (
-    <div>
+    <div className="bg-netflix-card p-6 rounded-lg shadow-lg">
       <p className="text-2xl text-netflix-accent mb-4">{look.price}</p>
       <div className="flex gap-4">
         <Button
           variant={isFavorite ? "destructive" : "secondary"}
           onClick={handleToggleFavorite}
+          className="w-full md:w-auto"
         >
-          <Heart className="h-4 w-4" />
+          <Heart className="h-4 w-4 mr-2" />
+          {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
         </Button>
       </div>
     </div>

@@ -14,11 +14,11 @@ export const StyleRulers = ({
   onColorIntensityChange,
 }: StyleRulersProps) => {
   return (
-    <div className="space-y-6 bg-netflix-card p-6 rounded-lg">
+    <div className="space-y-6 bg-netflix-card p-6 rounded-lg shadow-lg">
       <h3 className="text-xl font-semibold mb-4">Style Analysis</h3>
       
-      <div className="space-y-4">
-        <div className="space-y-2">
+      <div className="space-y-6">
+        <div className="space-y-3">
           <div className="flex justify-between items-center">
             <label className="text-sm font-medium">Elegance</label>
             <span className="text-sm text-netflix-text/60">{elegance}%</span>
@@ -36,7 +36,7 @@ export const StyleRulers = ({
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex justify-between items-center">
             <label className="text-sm font-medium">Color Intensity</label>
             <span className="text-sm text-netflix-text/60">{colorIntensity}%</span>

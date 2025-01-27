@@ -42,7 +42,6 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
       return;
     }
 
-    // Add only selected items individually
     const selectedItemsData = look.items
       .filter(item => selectedItems.includes(item.id))
       .map(item => ({
@@ -54,8 +53,6 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
     
     addItems(selectedItemsData);
     toast.success('Selected items added to cart');
-
-    // Reset selection after adding to cart
     setSelectedItems([]);
   };
 
@@ -77,13 +74,13 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 bg-netflix-card p-6 rounded-lg shadow-lg">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h2 className="text-xl font-semibold">Items in this Look</h2>
-        <div className="flex gap-4">
+        <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
           <Button
             onClick={handleAddToCart}
-            className="bg-netflix-accent hover:bg-netflix-accent/80"
+            className="bg-netflix-accent hover:bg-netflix-accent/80 w-full md:w-auto"
             disabled={selectedItems.length === 0}
           >
             Add Selected to Cart
@@ -91,7 +88,7 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
           <Button
             onClick={handleAddCompleteLook}
             variant="outline"
-            className="border-netflix-accent text-netflix-accent hover:bg-netflix-accent/10"
+            className="border-netflix-accent text-netflix-accent hover:bg-netflix-accent/10 w-full md:w-auto"
           >
             Add Complete Look
           </Button>
@@ -102,7 +99,7 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
         {look.items.map((item) => (
           <div 
             key={item.id}
-            className="flex items-center gap-4 bg-netflix-background p-4 rounded-lg group relative"
+            className="flex items-center gap-4 bg-netflix-background p-4 rounded-lg group relative hover:bg-netflix-card/80 transition-colors"
           >
             <Checkbox
               id={`item-${item.id}`}
@@ -114,14 +111,14 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
               alt={item.title}
               className="w-20 h-20 object-cover rounded-md"
             />
-            <div>
+            <div className="flex-1">
               <label 
                 htmlFor={`item-${item.id}`}
-                className="font-medium cursor-pointer"
+                className="font-medium cursor-pointer block"
               >
                 {item.title}
               </label>
-              <p className="text-netflix-accent">{item.price}</p>
+              <p className="text-netflix-accent text-sm">{item.price}</p>
             </div>
           </div>
         ))}

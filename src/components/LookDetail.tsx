@@ -77,7 +77,7 @@ const featuredLooks = [
 export const LookDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [elegance, setElegance] = useState(75); // Default value for Business Professional look
+  const [elegance, setElegance] = useState(75);
   const [colorIntensity, setColorIntensity] = useState(60);
 
   const look = featuredLooks.find(look => look.id === id);
@@ -95,40 +95,42 @@ export const LookDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
-      <div className="container mx-auto">
+    <div className="min-h-screen bg-netflix-background text-netflix-text p-4 md:p-6">
+      <div className="container mx-auto max-w-7xl">
         <Button 
           variant="ghost" 
           onClick={() => navigate('/home')}
-          className="mb-6"
+          className="mb-4 md:mb-6"
         >
           ← Back
         </Button>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="md:col-span-2">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
             <LookHeader 
               title={look.title}
               description={look.description}
               image={look.image}
             />
             
-            <div className="mt-6">
+            <div className="mt-4 md:mt-6">
               <LookActions look={look} />
             </div>
 
-            <div className="mt-6">
+            <div className="mt-4 md:mt-6">
               <LookItemsList look={look} />
             </div>
           </div>
 
-          <div className="md:col-span-1">
-            <StyleRulers
-              elegance={elegance}
-              colorIntensity={colorIntensity}
-              onEleganceChange={handleEleganceChange}
-              onColorIntensityChange={handleColorIntensityChange}
-            />
+          <div className="lg:col-span-1 order-first lg:order-last">
+            <div className="sticky top-4">
+              <StyleRulers
+                elegance={elegance}
+                colorIntensity={colorIntensity}
+                onEleganceChange={handleEleganceChange}
+                onColorIntensityChange={handleColorIntensityChange}
+              />
+            </div>
           </div>
         </div>
       </div>
