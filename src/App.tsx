@@ -12,6 +12,7 @@ import { Contact } from "@/components/Contact";
 import { Auth } from "@/pages/Auth";
 import { Entrance } from "@/pages/Entrance";
 import { Cart } from "@/components/Cart";
+import { Checkout } from "@/components/Checkout";
 import { Profile } from "@/components/Profile";
 import { Orders } from "@/components/Orders";
 import { WishList } from "@/components/WishList";
@@ -39,6 +40,7 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/wishlist" element={<WishList />} />

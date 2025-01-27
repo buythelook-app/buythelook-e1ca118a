@@ -1,4 +1,5 @@
 import { Button } from "../ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface CartSummaryProps {
   total: number;
@@ -6,6 +7,8 @@ interface CartSummaryProps {
 }
 
 export const CartSummary = ({ total, onClearCart }: CartSummaryProps) => {
+  const navigate = useNavigate();
+
   return (
     <div className="border-t border-gray-700 pt-4 mt-4">
       <div className="flex justify-between items-center mb-4">
@@ -16,7 +19,9 @@ export const CartSummary = ({ total, onClearCart }: CartSummaryProps) => {
         <Button variant="outline" onClick={onClearCart}>
           Clear Cart
         </Button>
-        <Button variant="outline">Checkout</Button>
+        <Button variant="outline" onClick={() => navigate("/checkout")}>
+          Checkout
+        </Button>
       </div>
     </div>
   );
