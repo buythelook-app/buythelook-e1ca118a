@@ -42,37 +42,37 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
       return;
     }
 
-    if (selectedItems.length === look.items.length) {
-      // If all items are selected, add as a complete look
-      const lookItems = look.items.map(item => ({
-        ...item,
-        lookId: look.id
+    // Add only selected items individually
+    const selectedItemsData = look.items
+      .filter(item => selectedItems.includes(item.id))
+      .map(item => ({
+        id: item.id,
+        title: item.title,
+        price: item.price,
+        image: item.image
       }));
-      
-      addLook({
-        id: look.id,
-        title: look.title,
-        items: lookItems,
-        totalPrice: look.price
-      });
-      
-      toast.success('Complete look added to cart');
-    } else {
-      // Add only selected items individually
-      const selectedItemsData = look.items
-        .filter(item => selectedItems.includes(item.id))
-        .map(item => ({
-          id: item.id,
-          title: item.title,
-          price: item.price,
-          image: item.image
-        }));
-      
-      addItems(selectedItemsData);
-      toast.success('Selected items added to cart');
-    }
+    
+    addItems(selectedItemsData);
+    toast.success('Selected items added to cart');
 
     // Reset selection after adding to cart
+    setSelectedItems([]);
+  };
+
+  const handleAddCompleteLook = () => {
+    const lookItems = look.items.map(item => ({
+      ...item,
+      lookId: look.id
+    }));
+    
+    addLook({
+      id: look.id,
+      title: look.title,
+      items: lookItems,
+      totalPrice: look.price
+    });
+    
+    toast.success('Complete look added to cart');
     setSelectedItems([]);
   };
 
@@ -80,12 +80,22 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Items in this Look</h2>
-        <Button
-          onClick={handleAddToCart}
-          className="bg-netflix-accent hover:bg-netflix-accent/80"
-        >
-          Add Selected to Cart
-        </Button>
+        <div className="flex gap-4">
+          <Button
+            onClick={handleAddToCart}
+            className="bg-netflix-accent hover:bg-netflix-accent/80"
+            disabled={selectedItems.length === 0}
+          >
+            Add Selected to Cart
+          </Button>
+          <Button
+            onClick={handleAddCompleteLook}
+            variant="outline"
+            className="border-netflix-accent text-netflix-accent hover:bg-netflix-accent/10"
+          >
+            Add Complete Look
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
