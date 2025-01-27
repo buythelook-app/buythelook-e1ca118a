@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useCartStore } from "./Cart";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { HomeButton } from "./HomeButton";
+import { Card, CardContent } from "./ui/card";
 
 // Import the looks data from Index
 const featuredLooks = [
@@ -172,43 +173,45 @@ export const LookDetail = () => {
               </div>
             </div>
 
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Included Items</h2>
-              <div className="space-y-4">
-                {look.items.map((item) => (
-                  <div 
-                    key={item.id}
-                    className="flex items-center gap-4 bg-netflix-card p-4 rounded-lg group relative"
-                  >
-                    <img 
-                      src={item.image} 
-                      alt={item.title}
-                      className="w-20 h-20 object-cover rounded-md"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-medium">{item.title}</h3>
-                      <p className="text-netflix-accent">{item.price}</p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleAddItemToCart(item)}
-                      className="text-netflix-text hover:text-netflix-accent transition-colors"
+            <Card className="bg-netflix-card border-netflix-accent">
+              <CardContent className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Items in this Look</h2>
+                <div className="space-y-4">
+                  {look.items.map((item) => (
+                    <div 
+                      key={item.id}
+                      className="flex items-center gap-4 bg-netflix-background p-4 rounded-lg group relative hover:bg-netflix-card/80 transition-colors"
                     >
-                      <ShoppingCart className="h-5 w-5" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-6 p-4 border border-netflix-accent rounded-lg bg-netflix-card/50">
-                <Button
-                  onClick={handleAddLookToCart}
-                  className="w-full"
-                >
-                  Add Complete Look to Cart
-                </Button>
-              </div>
-            </div>
+                      <img 
+                        src={item.image} 
+                        alt={item.title}
+                        className="w-20 h-20 object-cover rounded-md"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-medium">{item.title}</h3>
+                        <p className="text-netflix-accent">{item.price}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleAddItemToCart(item)}
+                        className="text-netflix-text hover:text-netflix-accent transition-colors"
+                      >
+                        <ShoppingCart className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6">
+                  <Button
+                    onClick={handleAddLookToCart}
+                    className="w-full"
+                  >
+                    Add Complete Look to Cart
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
