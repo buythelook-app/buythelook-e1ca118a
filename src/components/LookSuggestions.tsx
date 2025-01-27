@@ -3,40 +3,72 @@ import { LookCard } from "./LookCard";
 import { HomeButton } from "./HomeButton";
 import { useNavigate } from "react-router-dom";
 
-// Sample data for look suggestions
+// Updated sample data to match the structure from Index.tsx
 const sampleSuggestions = [
   {
-    id: "1",
+    id: "look-1",
     title: "Casual Summer Look",
     description: "Perfect for a sunny day out",
     image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
-    price: "89.99",
+    price: "$89.99",
     category: "Casual",
+    items: [
+      {
+        id: "item-1",
+        title: "Summer T-Shirt",
+        price: "$29.99",
+        image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png"
+      }
+    ]
   },
   {
-    id: "2",
+    id: "look-2",
     title: "Business Professional",
     description: "Elegant office attire",
     image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
-    price: "149.99",
+    price: "$149.99",
     category: "Work",
+    items: [
+      {
+        id: "item-2",
+        title: "Business Suit",
+        price: "$149.99",
+        image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png"
+      }
+    ]
   },
   {
-    id: "3",
+    id: "look-3",
     title: "Evening Elegance",
     description: "Perfect for special occasions",
     image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
-    price: "199.99",
+    price: "$199.99",
     category: "Party",
+    items: [
+      {
+        id: "item-3",
+        title: "Evening Dress",
+        price: "$199.99",
+        image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png"
+      }
+    ]
   },
   {
-    id: "4",
+    id: "look-4",
     title: "Weekend Casual",
     description: "Comfortable and stylish",
     image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
-    price: "79.99",
+    price: "$79.99",
     category: "Casual",
-  },
+    items: [
+      {
+        id: "item-4",
+        title: "Weekend Outfit",
+        price: "$79.99",
+        image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png"
+      }
+    ]
+  }
 ];
 
 export const LookSuggestions = () => {
