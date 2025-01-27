@@ -4,8 +4,9 @@ import { HomeButton } from "./HomeButton";
 import { LookHeader } from "./look/LookHeader";
 import { LookActions } from "./look/LookActions";
 import { LookItemsList } from "./look/LookItemsList";
+import { StyleRulers } from "./look/StyleRulers";
+import { useState } from "react";
 
-// Import the looks data from Index
 const featuredLooks = [
   { 
     id: "look-1", 
@@ -76,12 +77,22 @@ const featuredLooks = [
 export const LookDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [elegance, setElegance] = useState(75); // Default value for Business Professional look
+  const [colorIntensity, setColorIntensity] = useState(60);
 
   const look = featuredLooks.find(look => look.id === id);
 
   if (!look) {
     return <div>Look not found</div>;
   }
+
+  const handleEleganceChange = (value: number[]) => {
+    setElegance(value[0]);
+  };
+
+  const handleColorIntensityChange = (value: number[]) => {
+    setColorIntensity(value[0]);
+  };
 
   return (
     <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
@@ -94,18 +105,31 @@ export const LookDetail = () => {
           ← Back
         </Button>
 
-        <LookHeader 
-          title={look.title}
-          description={look.description}
-          image={look.image}
-        />
-        
-        <div className="mt-6">
-          <LookActions look={look} />
-        </div>
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="md:col-span-2">
+            <LookHeader 
+              title={look.title}
+              description={look.description}
+              image={look.image}
+            />
+            
+            <div className="mt-6">
+              <LookActions look={look} />
+            </div>
 
-        <div className="mt-6">
-          <LookItemsList look={look} />
+            <div className="mt-6">
+              <LookItemsList look={look} />
+            </div>
+          </div>
+
+          <div className="md:col-span-1">
+            <StyleRulers
+              elegance={elegance}
+              colorIntensity={colorIntensity}
+              onEleganceChange={handleEleganceChange}
+              onColorIntensityChange={handleColorIntensityChange}
+            />
+          </div>
         </div>
       </div>
       <HomeButton />
