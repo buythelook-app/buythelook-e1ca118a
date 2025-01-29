@@ -62,6 +62,9 @@ export const validateQuizStep = (step: number, formData: QuizFormData): boolean 
     case 8:
     case 9:
     case 10:
+    case 11:
+    case 12:
+    case 13:
       return true; // Style comparison steps don't require validation
     default:
       return true;
@@ -70,6 +73,7 @@ export const validateQuizStep = (step: number, formData: QuizFormData): boolean 
 
 export const analyzeStyleWithAI = async (formData: QuizFormData) => {
   try {
+    // Convert measurements to numbers and handle potential NaN values
     const measurements = {
       height: parseFloat(formData.height) || 0,
       weight: parseFloat(formData.weight) || 0,
@@ -78,14 +82,19 @@ export const analyzeStyleWithAI = async (formData: QuizFormData) => {
     };
 
     // Get the final preferred style (the last one selected)
-    const finalStyle = formData.stylePreferences[formData.stylePreferences.length - 1] || 'casual';
+    const finalStyle = formData.stylePreferences[formData.stylePreferences.length - 1];
+    
+    if (!finalStyle) {
+      throw new Error('No style preference selected');
+    }
 
     const requestData = {
       bodyShape: formData.bodyShape || 'average',
       colorPreferences: formData.colorPreferences.length > 0 ? formData.colorPreferences : ['neutral'],
-      stylePreferences: [finalStyle], // Send only the final preferred style
+      stylePreferences: [finalStyle],
       measurements,
       gender: formData.gender || 'neutral',
+      requireItems: ['top', 'bottom', 'shoes', 'accessory', 'sunglasses', 'outerwear']
     };
 
     console.log('Sending request to AI:', requestData);
@@ -107,6 +116,11 @@ export const analyzeStyleWithAI = async (formData: QuizFormData) => {
 
     const data = await response.json();
     console.log('AI Response:', data);
+    
+    if (!data || !data.recommendations) {
+      throw new Error('Invalid response from style analysis');
+    }
+
     return data;
   } catch (error) {
     console.error('Style analysis error:', error);
