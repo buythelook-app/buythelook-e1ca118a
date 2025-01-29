@@ -19,7 +19,7 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-2">
           <img 
-            src={style1.image} 
+            src="/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png"
             alt={style1.name} 
             className="w-full h-[300px] object-cover rounded-lg hover:scale-105 transition-transform cursor-pointer"
             onClick={() => onSelect(style1.name)}
@@ -28,7 +28,7 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
         </div>
         <div className="space-y-2">
           <img 
-            src={style2.image} 
+            src="/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png"
             alt={style2.name} 
             className="w-full h-[300px] object-cover rounded-lg hover:scale-105 transition-transform cursor-pointer"
             onClick={() => onSelect(style2.name)}

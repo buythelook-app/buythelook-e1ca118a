@@ -3,12 +3,12 @@ import { DropdownMenuLabel } from "../ui/dropdown-menu";
 import { Style } from "./StyleFilterButton";
 
 const STYLES = [
-  { id: "classic", name: "Classic", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
-  { id: "sportive", name: "Sportive", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
-  { id: "elegant", name: "Elegant", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
-  { id: "minimalist", name: "Minimalist", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
-  { id: "romantic", name: "Romantic", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
-  { id: "boohoo", name: "Boohoo", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+  { id: "classic", name: "Classic", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
+  { id: "sportive", name: "Sportive", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
+  { id: "elegant", name: "Elegant", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
+  { id: "minimalist", name: "Minimalist", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
+  { id: "romantic", name: "Romantic", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
+  { id: "boohoo", name: "Boohoo", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
 ];
 
 interface StylePreferencesFilterProps {
