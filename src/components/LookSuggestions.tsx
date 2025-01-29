@@ -1,22 +1,24 @@
 import { useEffect, useState } from "react";
-import { LookCard } from "./LookCard";
 import { HomeButton } from "./HomeButton";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "./ui/use-toast";
+import { LookCanvas } from "./LookCanvas";
 
-interface Look {
+interface OutfitItem {
   id: string;
   title: string;
   description: string;
   image: string;
   price: string;
-  category: string;
-  items: Array<{
-    id: string;
-    title: string;
-    price: string;
-    image: string;
-  }>;
+  type: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear';
+}
+
+interface Look {
+  id: string;
+  title: string;
+  description: string;
+  items: OutfitItem[];
+  totalPrice: string;
 }
 
 export const LookSuggestions = () => {
@@ -44,7 +46,10 @@ export const LookSuggestions = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: styleAnalysis,
+          body: JSON.stringify({
+            ...JSON.parse(styleAnalysis),
+            requireItems: ['top', 'bottom', 'shoes', 'accessory', 'sunglasses', 'outerwear']
+          }),
         });
 
         if (!response.ok) {
@@ -83,14 +88,23 @@ export const LookSuggestions = () => {
     <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
       <div className="container mx-auto">
         <h1 className="text-2xl font-semibold mb-6">Your Personalized Look Suggestions</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {suggestions.map((look) => (
             <div 
-              key={look.id} 
-              onClick={() => navigate(`/look/${look.id}`)}
-              className="cursor-pointer"
+              key={look.id}
+              className="bg-netflix-card p-6 rounded-lg shadow-lg"
             >
-              <LookCard {...look} />
+              <h2 className="text-xl font-semibold mb-4">{look.title}</h2>
+              <div className="mb-4">
+                <LookCanvas items={look.items} />
+              </div>
+              <p className="text-netflix-accent font-semibold">Total: {look.totalPrice}</p>
+              <button
+                onClick={() => navigate(`/look/${look.id}`)}
+                className="w-full mt-4 bg-netflix-accent text-white py-2 rounded-lg hover:bg-netflix-accent/90 transition-colors"
+              >
+                View Details
+              </button>
             </div>
           ))}
         </div>

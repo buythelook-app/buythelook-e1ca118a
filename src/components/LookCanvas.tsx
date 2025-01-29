@@ -1,15 +1,24 @@
 import { useEffect, useRef } from "react";
 
+interface OutfitItem {
+  id: string;
+  image: string;
+  type: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear';
+  position?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
+
 interface LookCanvasProps {
-  items: Array<{
-    id: string;
-    image: string;
-  }>;
+  items: OutfitItem[];
   width?: number;
   height?: number;
 }
 
-export const LookCanvas = ({ items, width = 400, height = 400 }: LookCanvasProps) => {
+export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -22,25 +31,33 @@ export const LookCanvas = ({ items, width = 400, height = 400 }: LookCanvasProps
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
+    // Define default positions for each item type
+    const defaultPositions = {
+      top: { x: width * 0.25, y: height * 0.1, width: width * 0.5, height: height * 0.25 },
+      bottom: { x: width * 0.25, y: height * 0.4, width: width * 0.5, height: height * 0.3 },
+      dress: { x: width * 0.25, y: height * 0.1, width: width * 0.5, height: height * 0.6 },
+      shoes: { x: width * 0.25, y: height * 0.75, width: width * 0.2, height: height * 0.15 },
+      accessory: { x: width * 0.1, y: height * 0.1, width: width * 0.15, height: height * 0.15 },
+      sunglasses: { x: width * 0.75, y: height * 0.1, width: width * 0.15, height: height * 0.1 },
+      outerwear: { x: width * 0.75, y: height * 0.25, width: width * 0.2, height: height * 0.4 }
+    };
+
     // Load and draw all images
     const loadImages = async () => {
       try {
-        for (let i = 0; i < items.length; i++) {
+        for (const item of items) {
           const img = new Image();
-          img.src = items[i].image;
+          img.src = item.image;
           await new Promise((resolve, reject) => {
             img.onload = resolve;
             img.onerror = reject;
           });
 
-          // Calculate position for each item (you can adjust this logic)
-          const x = (i % 2) * (width / 2);
-          const y = Math.floor(i / 2) * (height / 2);
-          const itemWidth = width / 2;
-          const itemHeight = height / 2;
-
-          // Draw the image maintaining aspect ratio
-          ctx.drawImage(img, x, y, itemWidth, itemHeight);
+          // Get position based on item type or use provided position
+          const position = item.position || defaultPositions[item.type];
+          if (position) {
+            ctx.drawImage(img, position.x, position.y, position.width, position.height);
+          }
         }
       } catch (error) {
         console.error('Error loading images:', error);
@@ -55,7 +72,7 @@ export const LookCanvas = ({ items, width = 400, height = 400 }: LookCanvasProps
       ref={canvasRef}
       width={width}
       height={height}
-      className="border rounded-lg shadow-lg"
+      className="border rounded-lg shadow-lg bg-white"
     />
   );
 };
