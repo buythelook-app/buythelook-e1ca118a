@@ -3,16 +3,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { Bot, Sparkles } from "lucide-react";
 
 export const SignUpForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [isAIAssisted, setIsAIAssisted] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isAIAssisted) {
+      toast({
+        title: "AI Profile Creation",
+        description: "Creating personalized profile suggestions...",
+      });
+    }
+
     // TODO: Implement actual authentication logic
     toast({
       title: "Success",
@@ -35,6 +45,7 @@ export const SignUpForm = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
+            className="bg-black/5"
           />
         </div>
         <div className="space-y-2">
@@ -44,6 +55,7 @@ export const SignUpForm = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            className="bg-black/5"
           />
         </div>
         <div className="space-y-2">
@@ -53,8 +65,18 @@ export const SignUpForm = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            className="bg-black/5"
           />
         </div>
+        <Button 
+          type="button"
+          variant="outline"
+          className="w-full flex items-center justify-center gap-2"
+          onClick={() => setIsAIAssisted(!isAIAssisted)}
+        >
+          {isAIAssisted ? <Bot className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+          {isAIAssisted ? "AI Profile Creation Enabled" : "Enable AI Profile Creation"}
+        </Button>
         <Button type="submit" className="w-full bg-netflix-accent hover:bg-netflix-accent/90">
           Create Account
         </Button>
