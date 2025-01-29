@@ -49,9 +49,9 @@ export const LookSuggestions = () => {
         // Generate looks based on the analysis
         const generatedLooks: Look[] = [{
           id: '1',
-          title: `${analysis.styleProfile} Look`,
-          description: `A ${analysis.styleProfile.toLowerCase()} outfit that matches your style preferences`,
-          style: analysis.styleProfile,
+          title: `${analysis.analysis.styleProfile || 'Personalized'} Look`,
+          description: `A ${(analysis.analysis.styleProfile || 'personalized').toLowerCase()} outfit that matches your style preferences`,
+          style: analysis.analysis.styleProfile || 'Personalized',
           totalPrice: "$299.99",
           items: [
             {
