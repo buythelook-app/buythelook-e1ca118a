@@ -7,7 +7,7 @@ import { QuizContainer } from "./quiz/QuizContainer";
 import { QuizProvider, useQuizContext } from "./quiz/QuizContext";
 import { QuizStepRenderer } from "./quiz/QuizStepRenderer";
 
-const TOTAL_STEPS = 10;
+const TOTAL_STEPS = 13; // Increased from 10 to 13 to accommodate all style comparisons
 
 const QuizContent = () => {
   const { step, handleNext, handleBack, handleSubmit } = useQuizContext();

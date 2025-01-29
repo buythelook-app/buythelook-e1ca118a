@@ -27,34 +27,35 @@ export const QuizStepRenderer = () => {
 
   const getStyleComparison = (step: number) => {
     const currentPreference = formData.stylePreferences[0];
+    const stepIndex = step - 8; // Adjust for the first 7 steps
     
-    // If we have a current preference, show it against a new option
     if (currentPreference) {
+      // Get remaining styles that haven't been compared yet
       const remainingStyles = allStyles.filter(style => 
         style.name !== currentPreference && 
         !formData.stylePreferences.includes(style.name)
       );
       
-      // If we've shown all options, keep the last preferred style
-      if (remainingStyles.length === 0) {
+      // If we still have styles to compare
+      if (remainingStyles.length > 0) {
         return {
           style1: allStyles.find(s => s.name === currentPreference)!,
-          style2: allStyles.find(s => s.name !== currentPreference)!
+          style2: remainingStyles[stepIndex % remainingStyles.length]
         };
       }
       
-      // Show current preference against a random new option
+      // If we've compared all styles, show the final preference against a random different style
+      const otherStyles = allStyles.filter(s => s.name !== currentPreference);
       return {
         style1: allStyles.find(s => s.name === currentPreference)!,
-        style2: remainingStyles[Math.floor(Math.random() * remainingStyles.length)]
+        style2: otherStyles[Math.floor(Math.random() * otherStyles.length)]
       };
     }
     
-    // For first comparison, show two random options
-    const randomIndex = Math.floor(Math.random() * (allStyles.length - 1));
+    // For first comparison, show first two styles
     return {
-      style1: allStyles[randomIndex],
-      style2: allStyles[randomIndex + 1]
+      style1: allStyles[0],
+      style2: allStyles[1]
     };
   };
 
@@ -111,6 +112,9 @@ export const QuizStepRenderer = () => {
     case 8:
     case 9:
     case 10:
+    case 11:
+    case 12:
+    case 13:
       const comparison = getStyleComparison(step);
       return (
         <StyleComparisonStep
