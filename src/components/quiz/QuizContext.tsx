@@ -1,28 +1,8 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-
-interface QuizFormData {
-  gender: string;
-  height: string;
-  weight: string;
-  waist: string;
-  chest: string;
-  bodyShape: string;
-  photo: File | null;
-  colorPreferences: string[];
-  stylePreferences: string[];
-}
-
-interface QuizContextType {
-  formData: QuizFormData;
-  setFormData: React.Dispatch<React.SetStateAction<QuizFormData>>;
-  step: number;
-  setStep: React.Dispatch<React.SetStateAction<number>>;
-  handleNext: () => void;
-  handleBack: () => void;
-  handleSubmit: () => void;
-}
+import { QuizContextType, QuizFormData } from "./types";
+import { loadQuizData, saveQuizData, validateQuizStep, analyzeStyleWithAI } from "./quizUtils";
 
 const QuizContext = createContext<QuizContextType | undefined>(undefined);
 
@@ -34,79 +14,18 @@ export const useQuizContext = () => {
   return context;
 };
 
-const STORAGE_KEY = 'style-quiz-data';
-
 export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
-  
-  // Initialize form data from localStorage or use default values
-  const [formData, setFormData] = useState<QuizFormData>(() => {
-    const savedData = localStorage.getItem(STORAGE_KEY);
-    if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      // Photo can't be stored in localStorage, so we need to handle it separately
-      return { ...parsedData, photo: null };
-    }
-    return {
-      gender: "",
-      height: "",
-      weight: "",
-      waist: "",
-      chest: "",
-      bodyShape: "",
-      photo: null,
-      colorPreferences: [],
-      stylePreferences: [],
-    };
-  });
+  const [formData, setFormData] = useState<QuizFormData>(loadQuizData);
 
-  // Save form data to localStorage whenever it changes
   useEffect(() => {
-    const dataToSave = { ...formData };
-    delete dataToSave.photo; // Remove photo before saving as it can't be serialized
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    saveQuizData(formData);
   }, [formData]);
 
-  const analyzeStyleWithAI = async () => {
-    try {
-      const response = await fetch('https://preview--ai-bundle-construct-20.lovable.app/api/analyze-style', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          bodyShape: formData.bodyShape,
-          colorPreferences: formData.colorPreferences,
-          stylePreferences: formData.stylePreferences,
-          measurements: {
-            height: formData.height,
-            weight: formData.weight,
-            waist: formData.waist,
-            chest: formData.chest,
-          }
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to analyze style');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Style analysis error:', error);
-      toast({
-        title: "Style Analysis Error",
-        description: "Failed to analyze your style preferences. Please try again.",
-        variant: "destructive",
-      });
-      return null;
-    }
-  };
-
   const handleNext = () => {
-    if (!validateCurrentStep()) {
+    if (!validateQuizStep(step, formData)) {
       toast({
         title: "Please fill in all required fields",
         variant: "destructive",
@@ -121,7 +40,7 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const handleSubmit = async () => {
-    if (!validateCurrentStep()) {
+    if (!validateQuizStep(step, formData)) {
       toast({
         title: "Please fill in all required fields",
         variant: "destructive",
@@ -134,40 +53,22 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
       description: "Our AI is processing your preferences.",
     });
 
-    const styleAnalysis = await analyzeStyleWithAI();
-    
-    if (styleAnalysis) {
+    try {
+      const styleAnalysis = await analyzeStyleWithAI(formData);
+      
       toast({
         title: "Analysis complete!",
         description: "We've created your personalized style profile.",
       });
       localStorage.setItem('styleAnalysis', JSON.stringify(styleAnalysis));
       navigate('/suggestions');
-    }
-  };
-
-  const validateCurrentStep = () => {
-    switch (step) {
-      case 1:
-        return formData.gender !== "";
-      case 2:
-        return formData.height !== "";
-      case 3:
-        return formData.weight !== "";
-      case 4:
-        return formData.waist !== "" && formData.chest !== "";
-      case 5:
-        return formData.bodyShape !== "";
-      case 6:
-        return true;
-      case 7:
-        return formData.colorPreferences.length > 0;
-      case 8:
-      case 9:
-      case 10:
-        return true;
-      default:
-        return true;
+    } catch (error) {
+      console.error('Style analysis error:', error);
+      toast({
+        title: "Style Analysis Error",
+        description: "Failed to analyze your style preferences. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
