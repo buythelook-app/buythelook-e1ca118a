@@ -2,88 +2,87 @@ import { useEffect, useState } from "react";
 import { LookCard } from "./LookCard";
 import { HomeButton } from "./HomeButton";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "./ui/use-toast";
 
-// Updated sample data to match the structure from Index.tsx
-const sampleSuggestions = [
-  {
-    id: "look-1",
-    title: "Casual Summer Look",
-    description: "Perfect for a sunny day out",
-    image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
-    price: "$89.99",
-    category: "Casual",
-    items: [
-      {
-        id: "item-1",
-        title: "Summer T-Shirt",
-        price: "$29.99",
-        image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png"
-      }
-    ]
-  },
-  {
-    id: "look-2",
-    title: "Business Professional",
-    description: "Elegant office attire",
-    image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
-    price: "$149.99",
-    category: "Work",
-    items: [
-      {
-        id: "item-2",
-        title: "Business Suit",
-        price: "$149.99",
-        image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png"
-      }
-    ]
-  },
-  {
-    id: "look-3",
-    title: "Evening Elegance",
-    description: "Perfect for special occasions",
-    image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
-    price: "$199.99",
-    category: "Party",
-    items: [
-      {
-        id: "item-3",
-        title: "Evening Dress",
-        price: "$199.99",
-        image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png"
-      }
-    ]
-  },
-  {
-    id: "look-4",
-    title: "Weekend Casual",
-    description: "Comfortable and stylish",
-    image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
-    price: "$79.99",
-    category: "Casual",
-    items: [
-      {
-        id: "item-4",
-        title: "Weekend Outfit",
-        price: "$79.99",
-        image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png"
-      }
-    ]
-  }
-];
+interface Look {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  price: string;
+  category: string;
+  items: Array<{
+    id: string;
+    title: string;
+    price: string;
+    image: string;
+  }>;
+}
 
 export const LookSuggestions = () => {
-  const [suggestions, setSuggestions] = useState(sampleSuggestions);
+  const [suggestions, setSuggestions] = useState<Look[]>([]);
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // In a real application, this would fetch from an API
-    setSuggestions(sampleSuggestions);
-  }, []);
+    const fetchAISuggestions = async () => {
+      try {
+        const styleAnalysis = localStorage.getItem('styleAnalysis');
+        if (!styleAnalysis) {
+          toast({
+            title: "No style analysis found",
+            description: "Please complete the style quiz first.",
+            variant: "destructive",
+          });
+          navigate('/quiz');
+          return;
+        }
+
+        const response = await fetch('https://preview--ai-bundle-construct-20.lovable.app/api/generate-looks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: styleAnalysis,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch suggestions');
+        }
+
+        const data = await response.json();
+        setSuggestions(data.looks);
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load style suggestions. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAISuggestions();
+  }, [navigate, toast]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-netflix-background text-netflix-text p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-netflix-accent mx-auto mb-4"></div>
+          <p>Generating your personalized style suggestions...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
       <div className="container mx-auto">
-        <h1 className="text-2xl font-semibold mb-6">Look Suggestions</h1>
+        <h1 className="text-2xl font-semibold mb-6">Your Personalized Look Suggestions</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {suggestions.map((look) => (
             <div 

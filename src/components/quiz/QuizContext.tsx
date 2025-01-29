@@ -50,6 +50,42 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
     stylePreferences: [],
   });
 
+  const analyzeStyleWithAI = async () => {
+    try {
+      const response = await fetch('https://preview--ai-bundle-construct-20.lovable.app/api/analyze-style', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bodyShape: formData.bodyShape,
+          colorPreferences: formData.colorPreferences,
+          stylePreferences: formData.stylePreferences,
+          measurements: {
+            height: formData.height,
+            weight: formData.weight,
+            waist: formData.waist,
+            chest: formData.chest,
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to analyze style');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Style analysis error:', error);
+      toast({
+        title: "Style Analysis Error",
+        description: "Failed to analyze your style preferences. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
   const handleNext = () => {
     if (!validateCurrentStep()) {
       toast({
@@ -65,7 +101,7 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
     setStep((prev) => prev - 1);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateCurrentStep()) {
       toast({
         title: "Please fill in all required fields",
@@ -73,11 +109,23 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
       });
       return;
     }
+
     toast({
-      title: "Quiz completed!",
-      description: "We'll prepare your personalized style recommendations.",
+      title: "Analyzing your style...",
+      description: "Our AI is processing your preferences.",
     });
-    navigate('/home');
+
+    const styleAnalysis = await analyzeStyleWithAI();
+    
+    if (styleAnalysis) {
+      toast({
+        title: "Analysis complete!",
+        description: "We've created your personalized style profile.",
+      });
+      // Store the analysis results in localStorage for use in suggestions
+      localStorage.setItem('styleAnalysis', JSON.stringify(styleAnalysis));
+      navigate('/suggestions');
+    }
   };
 
   const validateCurrentStep = () => {
