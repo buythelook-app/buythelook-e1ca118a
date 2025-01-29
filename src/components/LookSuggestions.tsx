@@ -19,6 +19,7 @@ interface Look {
   description: string;
   items: OutfitItem[];
   totalPrice: string;
+  style: string;
 }
 
 export const LookSuggestions = () => {
@@ -94,7 +95,12 @@ export const LookSuggestions = () => {
               key={look.id}
               className="bg-netflix-card p-6 rounded-lg shadow-lg"
             >
-              <h2 className="text-xl font-semibold mb-4">{look.title}</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">{look.title}</h2>
+                <span className="px-3 py-1 bg-netflix-accent/20 rounded-full text-sm">
+                  {look.style}
+                </span>
+              </div>
               <div className="mb-4">
                 <LookCanvas items={look.items} />
               </div>
