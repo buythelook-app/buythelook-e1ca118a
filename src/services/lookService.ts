@@ -5,7 +5,7 @@ export const fallbackItems: OutfitItem[] = [
     id: '1',
     title: 'Classic White Blouse',
     description: 'A timeless piece for your wardrobe',
-    image: '/placeholder.svg',
+    image: 'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7',
     price: '$49.99',
     type: 'top'
   },
@@ -13,7 +13,7 @@ export const fallbackItems: OutfitItem[] = [
     id: '2',
     title: 'Black Trousers',
     description: 'Elegant and versatile',
-    image: '/placeholder.svg',
+    image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e',
     price: '$69.99',
     type: 'bottom'
   }
@@ -21,7 +21,7 @@ export const fallbackItems: OutfitItem[] = [
 
 export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   try {
-    const response = await fetch('https://preview--ai-bundle-construct-20.lovable.app/api/dashboard/items');
+    const response = await fetch('http://preview--ai-bundle-construct-20.lovable.app/dashboard');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -29,7 +29,16 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
     if (!Array.isArray(data)) {
       throw new Error('Invalid data format');
     }
-    return data;
+    
+    // Map the API response to our DashboardItem type
+    return data.map(item => ({
+      id: item.id || String(Math.random()),
+      name: item.name || 'Fashion Item',
+      description: item.description || 'Stylish piece for your wardrobe',
+      image: item.image || fallbackItems[0].image,
+      price: item.price || "$49.99",
+      type: item.type || 'top'
+    }));
   } catch (error) {
     console.error('Error fetching dashboard items:', error);
     return fallbackItems.map(item => ({
@@ -47,7 +56,7 @@ export const mapDashboardItemToOutfitItem = (item: DashboardItem): OutfitItem =>
   id: item.id || String(Math.random()),
   title: item.name || 'Fashion Item',
   description: item.description || 'Stylish piece for your wardrobe',
-  image: item.image || '/placeholder.svg',
+  image: item.image || fallbackItems[0].image,
   price: item.price || "$49.99",
   type: item.type || 'top'
 });
