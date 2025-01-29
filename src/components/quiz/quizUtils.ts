@@ -54,7 +54,6 @@ export const validateQuizStep = (step: number, formData: QuizFormData): boolean 
 
 export const analyzeStyleWithAI = async (formData: QuizFormData) => {
   try {
-    // Format measurements as numbers
     const measurements = {
       height: parseFloat(formData.height) || 0,
       weight: parseFloat(formData.weight) || 0,
@@ -62,26 +61,15 @@ export const analyzeStyleWithAI = async (formData: QuizFormData) => {
       chest: parseFloat(formData.chest) || 0,
     };
 
-    // Ensure we have at least one style preference
-    const stylePreferences = formData.stylePreferences.length > 0 
-      ? formData.stylePreferences 
-      : ['casual']; // Default style if none selected
-
-    // Ensure we have at least one color preference
-    const colorPreferences = formData.colorPreferences.length > 0 
-      ? formData.colorPreferences 
-      : ['neutral']; // Default color if none selected
+    // Get the final preferred style (the last one selected)
+    const finalStyle = formData.stylePreferences[formData.stylePreferences.length - 1] || 'casual';
 
     const requestData = {
       bodyShape: formData.bodyShape || 'average',
-      colorPreferences,
-      stylePreferences,
+      colorPreferences: formData.colorPreferences.length > 0 ? formData.colorPreferences : ['neutral'],
+      stylePreferences: [finalStyle], // Send only the final preferred style
       measurements,
       gender: formData.gender || 'neutral',
-      preferences: {
-        colors: colorPreferences,
-        styles: stylePreferences,
-      }
     };
 
     console.log('Sending request to AI:', requestData);
@@ -90,7 +78,6 @@ export const analyzeStyleWithAI = async (formData: QuizFormData) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
       },
       body: JSON.stringify(requestData),
     });

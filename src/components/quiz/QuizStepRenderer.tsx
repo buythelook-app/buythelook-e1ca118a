@@ -6,29 +6,58 @@ import { PhotoUploadStep } from "./PhotoUploadStep";
 import { ColorPreferencesStep } from "./ColorPreferencesStep";
 import { StyleComparisonStep } from "./StyleComparisonStep";
 
-const styleComparisons = [
-  {
-    style1: { name: "Modern", image: "/placeholder.svg" },
-    style2: { name: "Classy", image: "/placeholder.svg" }
-  },
-  {
-    style1: { name: "Boo Hoo", image: "/placeholder.svg" },
-    style2: { name: "Nordic", image: "/placeholder.svg" }
-  },
-  {
-    style1: { name: "Sporty", image: "/placeholder.svg" },
-    style2: { name: "Elegance", image: "/placeholder.svg" }
-  }
+const allStyles = [
+  { name: "Modern", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
+  { name: "Classy", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
+  { name: "Boo Hoo", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
+  { name: "Nordic", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
+  { name: "Sporty", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
+  { name: "Elegance", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" }
 ];
 
 export const QuizStepRenderer = () => {
   const { step, formData, setFormData } = useQuizContext();
 
   const handleStyleSelect = (selectedStyle: string) => {
+    const currentPreferences = formData.stylePreferences;
+    let newPreferences: string[];
+
+    if (currentPreferences.length === 0) {
+      // First selection
+      newPreferences = [selectedStyle];
+    } else {
+      // Keep only the most recently selected style
+      newPreferences = [selectedStyle];
+    }
+
     setFormData(prev => ({
       ...prev,
-      stylePreferences: [...prev.stylePreferences, selectedStyle]
+      stylePreferences: newPreferences
     }));
+  };
+
+  const getStyleComparison = (step: number) => {
+    const previousStyle = formData.stylePreferences[0];
+    const remainingStyles = allStyles.filter(style => 
+      style.name !== previousStyle && 
+      !formData.stylePreferences.includes(style.name)
+    );
+    
+    // If we have a previous selection, show it against a new option
+    if (previousStyle && remainingStyles.length > 0) {
+      const newStyleOption = remainingStyles[Math.floor(Math.random() * remainingStyles.length)];
+      return {
+        style1: allStyles.find(s => s.name === previousStyle)!,
+        style2: newStyleOption
+      };
+    }
+    
+    // For first comparison or if we need new options
+    const randomIndex = Math.floor(Math.random() * (allStyles.length - 1));
+    return {
+      style1: allStyles[randomIndex],
+      style2: allStyles[randomIndex + 1]
+    };
   };
 
   switch (step) {
@@ -84,11 +113,11 @@ export const QuizStepRenderer = () => {
     case 8:
     case 9:
     case 10:
-      const comparisonIndex = step - 8;
+      const comparison = getStyleComparison(step);
       return (
         <StyleComparisonStep
-          style1={styleComparisons[comparisonIndex].style1}
-          style2={styleComparisons[comparisonIndex].style2}
+          style1={comparison.style1}
+          style2={comparison.style2}
           onSelect={handleStyleSelect}
         />
       );
