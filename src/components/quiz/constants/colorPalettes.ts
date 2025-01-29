@@ -19,22 +19,10 @@ export const colorPalettes: Record<string, ColorPalette> = {
     accent: '#6E59A5',
     neutral: '#C8C8C9'
   },
-  bright: {
-    primary: '#1EAEDB',
-    secondary: '#33C3F0',
-    accent: '#0FA0CE',
-    neutral: '#F6F6F7'
-  },
   dark: {
     primary: '#1A1F2C',
     secondary: '#403E43',
     accent: '#8B5CF6',
     neutral: '#8E9196'
-  },
-  pastel: {
-    primary: '#F2FCE2',
-    secondary: '#FEF7CD',
-    accent: '#FFDEE2',
-    neutral: '#E5DEFF'
   }
 };

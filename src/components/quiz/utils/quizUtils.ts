@@ -2,6 +2,9 @@ import { QuizFormData } from '../types';
 import { StyleAnalysis } from '../types/styleTypes';
 import { colorPalettes } from '../constants/colorPalettes';
 import { styleRecommendations } from '../constants/styleRecommendations';
+import { loadQuizData, saveQuizData, STORAGE_KEY } from './storageUtils';
+
+export { loadQuizData, saveQuizData, STORAGE_KEY };
 
 export const analyzeStyleWithAI = (formData: QuizFormData): StyleAnalysis => {
   try {
@@ -41,28 +44,4 @@ export const analyzeStyleWithAI = (formData: QuizFormData): StyleAnalysis => {
     console.error('Error in analyzeStyleWithAI:', error);
     throw new Error('Failed to analyze style preferences');
   }
-};
-
-export const loadQuizData = (): QuizFormData => {
-  try {
-    const savedData = localStorage.getItem('style-quiz-data');
-    if (savedData) {
-      return JSON.parse(savedData);
-    }
-  } catch (error) {
-    console.error('Error loading quiz data:', error);
-  }
-  
-  // Return default values if no data is found or there's an error
-  return {
-    gender: "",
-    height: "",
-    weight: "",
-    waist: "",
-    chest: "",
-    bodyShape: "",
-    photo: null,
-    colorPreferences: [],
-    stylePreferences: []
-  };
 };
