@@ -19,12 +19,14 @@ interface EventFilterProps {
 
 type EventType = "birthday" | "dateNight" | "party" | "workEvent" | null;
 
-const EVENT_TO_STYLES: Record<EventType, Style[]> = {
+// Define the record type without including null
+type EventStylesRecord = Record<Exclude<EventType, null>, Style[]>;
+
+const EVENT_TO_STYLES: EventStylesRecord = {
   birthday: ["classic"],
   dateNight: ["romantic"],
   party: ["romantic", "boohoo", "minimalist"],
   workEvent: ["classic", "minimalist", "classic"],
-  null: []
 };
 
 export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterProps) => {
@@ -35,7 +37,7 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
     setSelectedEvent(event);
     
     // Get recommended styles for the event
-    const recommendedStyles = EVENT_TO_STYLES[event];
+    const recommendedStyles = event ? EVENT_TO_STYLES[event] : [];
     
     // Call the AI model endpoint with the event and recommended styles
     try {
