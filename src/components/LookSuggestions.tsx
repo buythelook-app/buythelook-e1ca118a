@@ -33,6 +33,25 @@ interface Look {
   style: string;
 }
 
+const fallbackItems: OutfitItem[] = [
+  {
+    id: '1',
+    title: 'Classic White Blouse',
+    description: 'A timeless piece for your wardrobe',
+    image: '/placeholder.svg',
+    price: '$49.99',
+    type: 'top'
+  },
+  {
+    id: '2',
+    title: 'Black Trousers',
+    description: 'Elegant and versatile',
+    image: '/placeholder.svg',
+    price: '$69.99',
+    type: 'bottom'
+  }
+];
+
 export const LookSuggestions = () => {
   const [suggestions, setSuggestions] = useState<Look[]>([]);
   const navigate = useNavigate();
@@ -42,6 +61,7 @@ export const LookSuggestions = () => {
   useEffect(() => {
     const generateSuggestions = async () => {
       try {
+        // Get style analysis from localStorage
         const styleAnalysis = localStorage.getItem('styleAnalysis');
         if (!styleAnalysis) {
           toast({
@@ -53,30 +73,55 @@ export const LookSuggestions = () => {
           return;
         }
 
+        // Parse and analyze style
         const parsedAnalysis = JSON.parse(styleAnalysis) as QuizFormData;
         const analysis = analyzeStyleWithAI(parsedAnalysis);
         console.log('Style analysis:', analysis);
 
-        // Fetch items from the AI Bundle dashboard
-        const response = await fetch('https://preview--ai-bundle-construct-20.lovable.app/api/dashboard/items');
-        const dashboardItems: DashboardItem[] = await response.json();
-        console.log('Dashboard items:', dashboardItems);
+        // Fetch items from API with error handling
+        let dashboardItems: DashboardItem[] = [];
+        try {
+          const response = await fetch('https://preview--ai-bundle-construct-20.lovable.app/api/dashboard/items');
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          if (!Array.isArray(data)) {
+            throw new Error('Invalid data format');
+          }
+          dashboardItems = data;
+          console.log('Dashboard items:', dashboardItems);
+        } catch (error) {
+          console.error('Error fetching dashboard items:', error);
+          // Use fallback items if API fails
+          dashboardItems = fallbackItems.map(item => ({
+            id: item.id,
+            name: item.title,
+            description: item.description,
+            image: item.image,
+            price: item.price,
+            type: item.type
+          }));
+        }
         
-        // Map dashboard items to our format and create looks
+        // Map items to looks with validation
         const generatedLooks: Look[] = [{
           id: '1',
           title: `${analysis.analysis.styleProfile} Look`,
           description: `A ${analysis.analysis.styleProfile.toLowerCase()} outfit that matches your style preferences`,
           style: analysis.analysis.styleProfile,
           totalPrice: "$299.99",
-          items: dashboardItems.map((item) => ({
-            id: item.id || String(Math.random()),
-            title: item.name || 'Fashion Item',
-            description: item.description || 'Stylish piece for your wardrobe',
-            image: item.image || '/placeholder.svg',
-            price: item.price || "$49.99",
-            type: item.type || 'top'
-          })).slice(0, 6) // Limit to 6 items per look
+          items: dashboardItems
+            .filter(item => item && item.type && item.name) // Validate required fields
+            .map((item) => ({
+              id: item.id || String(Math.random()),
+              title: item.name || 'Fashion Item',
+              description: item.description || 'Stylish piece for your wardrobe',
+              image: item.image || '/placeholder.svg',
+              price: item.price || "$49.99",
+              type: item.type || 'top'
+            }))
+            .slice(0, 6) // Limit to 6 items per look
         }];
 
         setSuggestions(generatedLooks);
@@ -87,6 +132,16 @@ export const LookSuggestions = () => {
           description: "Failed to generate style suggestions. Please try again.",
           variant: "destructive",
         });
+        
+        // Set fallback suggestion
+        setSuggestions([{
+          id: '1',
+          title: 'Classic Look',
+          description: 'A timeless outfit for any occasion',
+          style: 'Classic',
+          totalPrice: "$119.98",
+          items: fallbackItems
+        }]);
       } finally {
         setIsLoading(false);
       }
