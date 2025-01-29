@@ -9,7 +9,7 @@ export const styleRecommendations: Record<string, StyleRecommendations> = {
     sunglasses: { type: "Wayfarer", color: "black", style: "modern" },
     outerwear: { type: "Bomber Jacket", color: "black", style: "sleek" }
   },
-  Classy: {
+  Classic: {
     top: { type: "Blouse", color: "white", style: "elegant" },
     bottom: { type: "Trousers", color: "navy", style: "tailored" },
     shoes: { type: "Heels", color: "black", style: "classic" },
@@ -32,21 +32,5 @@ export const styleRecommendations: Record<string, StyleRecommendations> = {
     accessory: { type: "Sports Watch", color: "black", style: "digital" },
     sunglasses: { type: "Sport Wrap", color: "black", style: "performance" },
     outerwear: { type: "Track Jacket", color: "navy", style: "athletic" }
-  },
-  "Boo Hoo": {
-    top: { type: "Crop Top", color: "pink", style: "trendy" },
-    bottom: { type: "Mini Skirt", color: "black", style: "fitted" },
-    shoes: { type: "Platform Boots", color: "black", style: "chunky" },
-    accessory: { type: "Choker", color: "silver", style: "edgy" },
-    sunglasses: { type: "Cat Eye", color: "black", style: "dramatic" },
-    outerwear: { type: "Leather Jacket", color: "black", style: "cropped" }
-  },
-  Elegance: {
-    top: { type: "Silk Blouse", color: "ivory", style: "flowing" },
-    bottom: { type: "Pencil Skirt", color: "black", style: "fitted" },
-    shoes: { type: "Pumps", color: "nude", style: "pointed" },
-    accessory: { type: "Diamond Studs", color: "silver", style: "classic" },
-    sunglasses: { type: "Oversized", color: "tortoise", style: "luxury" },
-    outerwear: { type: "Trench Coat", color: "beige", style: "classic" }
   }
 };
