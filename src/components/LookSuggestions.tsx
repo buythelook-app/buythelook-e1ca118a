@@ -46,64 +46,26 @@ export const LookSuggestions = () => {
 
         const parsedAnalysis = JSON.parse(styleAnalysis) as QuizFormData;
         const analysis = analyzeStyleWithAI(parsedAnalysis);
+
+        // Fetch items from the AI Bundle dashboard
+        const response = await fetch('https://preview--ai-bundle-construct-20.lovable.app/api/dashboard/items');
+        const dashboardItems = await response.json();
         
-        // Generate looks based on the analysis
+        // Map dashboard items to our format and create looks
         const generatedLooks: Look[] = [{
           id: '1',
           title: `${analysis.analysis.styleProfile} Look`,
           description: `A ${analysis.analysis.styleProfile.toLowerCase()} outfit that matches your style preferences`,
           style: analysis.analysis.styleProfile,
           totalPrice: "$299.99",
-          items: [
-            {
-              id: 'top1',
-              title: analysis.recommendations.top.type,
-              description: `A ${analysis.recommendations.top.color} ${analysis.recommendations.top.style} top`,
-              image: '/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png',
-              price: "$49.99",
-              type: 'top'
-            },
-            {
-              id: 'bottom1',
-              title: analysis.recommendations.bottom.type,
-              description: `${analysis.recommendations.bottom.color} ${analysis.recommendations.bottom.style} bottom`,
-              image: '/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png',
-              price: "$69.99",
-              type: 'bottom'
-            },
-            {
-              id: 'shoes1',
-              title: analysis.recommendations.shoes.type,
-              description: `${analysis.recommendations.shoes.color} ${analysis.recommendations.shoes.style} shoes`,
-              image: '/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png',
-              price: "$89.99",
-              type: 'shoes'
-            },
-            {
-              id: 'accessory1',
-              title: analysis.recommendations.accessory.type,
-              description: `${analysis.recommendations.accessory.color} ${analysis.recommendations.accessory.style} accessory`,
-              image: '/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png',
-              price: "$29.99",
-              type: 'accessory'
-            },
-            {
-              id: 'sunglasses1',
-              title: analysis.recommendations.sunglasses.type,
-              description: `${analysis.recommendations.sunglasses.color} ${analysis.recommendations.sunglasses.style} sunglasses`,
-              image: '/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png',
-              price: "$19.99",
-              type: 'sunglasses'
-            },
-            {
-              id: 'outerwear1',
-              title: analysis.recommendations.outerwear.type,
-              description: `${analysis.recommendations.outerwear.color} ${analysis.recommendations.outerwear.style} outerwear`,
-              image: '/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png',
-              price: "$39.99",
-              type: 'outerwear'
-            }
-          ]
+          items: dashboardItems.map((item: any) => ({
+            id: item.id || String(Math.random()),
+            title: item.name || 'Fashion Item',
+            description: item.description || 'Stylish piece for your wardrobe',
+            image: item.image || '/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png',
+            price: item.price || "$49.99",
+            type: item.type || 'top'
+          })).slice(0, 6) // Limit to 6 items per look
         }];
 
         setSuggestions(generatedLooks);
