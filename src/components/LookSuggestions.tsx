@@ -44,20 +44,17 @@ export const LookSuggestions = () => {
         const dashboardItems = await fetchDashboardItems();
         const mappedItems = dashboardItems
           .filter(item => item && item.type && item.name)
-          .map(mapDashboardItemToOutfitItem)
-          .slice(0, 6);
+          .map(mapDashboardItemToOutfitItem);
 
-        const gridLooks: GridLook[] = [{
-          id: '1',
-          image: mappedItems[0]?.image || '/placeholder.svg',
-          title: `${analysis.analysis.styleProfile} Look`,
-          price: "$299.99",
-          category: analysis.analysis.styleProfile,
-          items: mappedItems.map(item => ({
-            id: item.id,
-            image: item.image
-          }))
-        }];
+        // Create grid looks from dashboard items
+        const gridLooks: GridLook[] = mappedItems.map((item, index) => ({
+          id: item.id,
+          image: item.image,
+          title: item.title,
+          price: item.price,
+          category: item.type,
+          items: [{ id: item.id, image: item.image }]
+        }));
 
         setSuggestions(gridLooks);
       } catch (error) {
@@ -70,7 +67,7 @@ export const LookSuggestions = () => {
         
         setSuggestions([{
           id: '1',
-          image: '/placeholder.svg',
+          image: fallbackItems[0].image,
           title: 'Classic Look',
           price: "$119.98",
           category: 'Classic',
