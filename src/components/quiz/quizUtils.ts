@@ -72,23 +72,41 @@ export const validateQuizStep = (step: number, formData: QuizFormData): boolean 
 };
 
 const colorPalettes = {
+  warm: {
+    primary: '#F97316',
+    secondary: '#FEC6A1',
+    accent: '#D946EF',
+    neutral: '#FDE1D3'
+  },
+  cool: {
+    primary: '#0EA5E9',
+    secondary: '#D3E4FD',
+    accent: '#8B5CF6',
+    neutral: '#E5DEFF'
+  },
+  neutral: {
+    primary: '#8E9196',
+    secondary: '#F1F0FB',
+    accent: '#6E59A5',
+    neutral: '#C8C8C9'
+  },
+  bright: {
+    primary: '#1EAEDB',
+    secondary: '#33C3F0',
+    accent: '#0FA0CE',
+    neutral: '#F6F6F7'
+  },
   dark: {
     primary: '#1A1F2C',
     secondary: '#403E43',
     accent: '#8B5CF6',
     neutral: '#8E9196'
   },
-  light: {
-    primary: '#FFFFFF',
-    secondary: '#F6F6F7',
-    accent: '#1EAEDB',
-    neutral: '#C8C8C9'
-  },
-  neutral: {
-    primary: '#8E9196',
-    secondary: '#9F9EA1',
-    accent: '#6E59A5',
-    neutral: '#F1F0FB'
+  pastel: {
+    primary: '#F2FCE2',
+    secondary: '#FEF7CD',
+    accent: '#FFDEE2',
+    neutral: '#E5DEFF'
   }
 };
 
@@ -145,6 +163,8 @@ const styleRecommendations = {
 
 export const analyzeStyleWithAI = async (formData: QuizFormData) => {
   try {
+    console.log('Submitting form data:', formData);
+
     const measurements = {
       height: parseFloat(formData.height) || 0,
       weight: parseFloat(formData.weight) || 0,
@@ -152,31 +172,17 @@ export const analyzeStyleWithAI = async (formData: QuizFormData) => {
       chest: parseFloat(formData.chest) || 0,
     };
 
-    const finalStyle = formData.stylePreferences[formData.stylePreferences.length - 1];
+    // Get the final style preference
+    const finalStyle = formData.stylePreferences[formData.stylePreferences.length - 1] || 'Classy';
     
-    if (!finalStyle) {
-      throw new Error('No style preference selected');
-    }
-
     // Get color palette based on user preferences
     const colorPreference = formData.colorPreferences[0] || 'neutral';
     const selectedPalette = colorPalettes[colorPreference as keyof typeof colorPalettes];
     
     // Get style recommendations based on final style choice
-    const styleRecs = styleRecommendations[finalStyle as keyof typeof styleRecommendations];
+    const styleRecs = styleRecommendations[finalStyle as keyof typeof styleRecommendations] || styleRecommendations.Classy;
 
-    if (!styleRecs) {
-      throw new Error('Invalid style selection');
-    }
-
-    console.log('Generated local style analysis:', {
-      styleProfile: finalStyle,
-      colorPalette: selectedPalette,
-      recommendations: styleRecs
-    });
-
-    return {
-      recommendations: styleRecs,
+    const analysis = {
       analysis: {
         styleProfile: finalStyle,
         colorPalette: selectedPalette,
@@ -185,8 +191,12 @@ export const analyzeStyleWithAI = async (formData: QuizFormData) => {
           bottom: measurements.waist > 90 ? "comfort" : "fitted",
           shoes: "true to size"
         }
-      }
+      },
+      recommendations: styleRecs
     };
+
+    console.log('Generated local style analysis:', analysis);
+    return analysis;
 
   } catch (error) {
     console.error('Style analysis error:', error);
