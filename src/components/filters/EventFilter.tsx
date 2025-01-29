@@ -9,6 +9,7 @@ import {
 } from "../ui/dialog";
 import { useState } from "react";
 import { useToast } from "../ui/use-toast";
+import { Style } from "./StyleFilterButton";
 
 interface EventFilterProps {
   date: Date | undefined;
@@ -18,16 +19,55 @@ interface EventFilterProps {
 
 type EventType = "birthday" | "dateNight" | "party" | "workEvent" | null;
 
+const EVENT_TO_STYLES: Record<EventType, Style[]> = {
+  birthday: ["classic"],
+  dateNight: ["romantic"],
+  party: ["romantic", "boohoo", "minimalist"],
+  workEvent: ["classic", "minimalist", "classic"],
+  null: []
+};
+
 export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterProps) => {
   const [selectedEvent, setSelectedEvent] = useState<EventType>(null);
   const { toast } = useToast();
 
-  const handleEventSelect = (event: EventType) => {
+  const handleEventSelect = async (event: EventType) => {
     setSelectedEvent(event);
-    toast({
-      title: "Event Selected",
-      description: `You selected: ${event?.charAt(0).toUpperCase()}${event?.slice(1).replace(/([A-Z])/g, ' $1')}`,
-    });
+    
+    // Get recommended styles for the event
+    const recommendedStyles = EVENT_TO_STYLES[event];
+    
+    // Call the AI model endpoint with the event and recommended styles
+    try {
+      const response = await fetch('https://preview--ai-bundle-construct-20.lovable.app/api/style-recommendations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          event,
+          recommendedStyles,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get style recommendations');
+      }
+
+      const data = await response.json();
+      
+      toast({
+        title: "Event Style Selected",
+        description: `Recommended styles for ${event}: ${recommendedStyles.join(', ')}`,
+      });
+    } catch (error) {
+      console.error('Error getting style recommendations:', error);
+      toast({
+        title: "Error",
+        description: "Failed to get style recommendations. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDateSelect = (newDate: Date | undefined) => {
