@@ -19,40 +19,38 @@ export const QuizStepRenderer = () => {
   const { step, formData, setFormData } = useQuizContext();
 
   const handleStyleSelect = (selectedStyle: string) => {
-    const currentPreferences = formData.stylePreferences;
-    let newPreferences: string[];
-
-    if (currentPreferences.length === 0) {
-      // First selection
-      newPreferences = [selectedStyle];
-    } else {
-      // Keep only the most recently selected style
-      newPreferences = [selectedStyle];
-    }
-
     setFormData(prev => ({
       ...prev,
-      stylePreferences: newPreferences
+      stylePreferences: [selectedStyle]
     }));
   };
 
   const getStyleComparison = (step: number) => {
-    const previousStyle = formData.stylePreferences[0];
-    const remainingStyles = allStyles.filter(style => 
-      style.name !== previousStyle && 
-      !formData.stylePreferences.includes(style.name)
-    );
+    const currentPreference = formData.stylePreferences[0];
     
-    // If we have a previous selection, show it against a new option
-    if (previousStyle && remainingStyles.length > 0) {
-      const newStyleOption = remainingStyles[Math.floor(Math.random() * remainingStyles.length)];
+    // If we have a current preference, show it against a new option
+    if (currentPreference) {
+      const remainingStyles = allStyles.filter(style => 
+        style.name !== currentPreference && 
+        !formData.stylePreferences.includes(style.name)
+      );
+      
+      // If we've shown all options, keep the last preferred style
+      if (remainingStyles.length === 0) {
+        return {
+          style1: allStyles.find(s => s.name === currentPreference)!,
+          style2: allStyles.find(s => s.name !== currentPreference)!
+        };
+      }
+      
+      // Show current preference against a random new option
       return {
-        style1: allStyles.find(s => s.name === previousStyle)!,
-        style2: newStyleOption
+        style1: allStyles.find(s => s.name === currentPreference)!,
+        style2: remainingStyles[Math.floor(Math.random() * remainingStyles.length)]
       };
     }
     
-    // For first comparison or if we need new options
+    // For first comparison, show two random options
     const randomIndex = Math.floor(Math.random() * (allStyles.length - 1));
     return {
       style1: allStyles[randomIndex],
