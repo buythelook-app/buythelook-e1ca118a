@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,21 +34,40 @@ export const useQuizContext = () => {
   return context;
 };
 
+const STORAGE_KEY = 'style-quiz-data';
+
 export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState<QuizFormData>({
-    gender: "",
-    height: "",
-    weight: "",
-    waist: "",
-    chest: "",
-    bodyShape: "",
-    photo: null,
-    colorPreferences: [],
-    stylePreferences: [],
+  
+  // Initialize form data from localStorage or use default values
+  const [formData, setFormData] = useState<QuizFormData>(() => {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      // Photo can't be stored in localStorage, so we need to handle it separately
+      return { ...parsedData, photo: null };
+    }
+    return {
+      gender: "",
+      height: "",
+      weight: "",
+      waist: "",
+      chest: "",
+      bodyShape: "",
+      photo: null,
+      colorPreferences: [],
+      stylePreferences: [],
+    };
   });
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    const dataToSave = { ...formData };
+    delete dataToSave.photo; // Remove photo before saving as it can't be serialized
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+  }, [formData]);
 
   const analyzeStyleWithAI = async () => {
     try {
@@ -122,7 +141,6 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
         title: "Analysis complete!",
         description: "We've created your personalized style profile.",
       });
-      // Store the analysis results in localStorage for use in suggestions
       localStorage.setItem('styleAnalysis', JSON.stringify(styleAnalysis));
       navigate('/suggestions');
     }
