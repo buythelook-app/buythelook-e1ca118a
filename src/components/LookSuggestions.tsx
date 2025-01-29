@@ -6,6 +6,15 @@ import { LookCanvas } from "./LookCanvas";
 import { analyzeStyleWithAI } from "./quiz/utils/quizUtils";
 import { QuizFormData } from "./quiz/types";
 
+interface DashboardItem {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
+  price: string;
+  type: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear';
+}
+
 interface OutfitItem {
   id: string;
   title: string;
@@ -46,10 +55,12 @@ export const LookSuggestions = () => {
 
         const parsedAnalysis = JSON.parse(styleAnalysis) as QuizFormData;
         const analysis = analyzeStyleWithAI(parsedAnalysis);
+        console.log('Style analysis:', analysis);
 
         // Fetch items from the AI Bundle dashboard
         const response = await fetch('https://preview--ai-bundle-construct-20.lovable.app/api/dashboard/items');
-        const dashboardItems = await response.json();
+        const dashboardItems: DashboardItem[] = await response.json();
+        console.log('Dashboard items:', dashboardItems);
         
         // Map dashboard items to our format and create looks
         const generatedLooks: Look[] = [{
@@ -58,11 +69,11 @@ export const LookSuggestions = () => {
           description: `A ${analysis.analysis.styleProfile.toLowerCase()} outfit that matches your style preferences`,
           style: analysis.analysis.styleProfile,
           totalPrice: "$299.99",
-          items: dashboardItems.map((item: any) => ({
+          items: dashboardItems.map((item) => ({
             id: item.id || String(Math.random()),
             title: item.name || 'Fashion Item',
             description: item.description || 'Stylish piece for your wardrobe',
-            image: item.image || '/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png',
+            image: item.image || '/placeholder.svg',
             price: item.price || "$49.99",
             type: item.type || 'top'
           })).slice(0, 6) // Limit to 6 items per look
