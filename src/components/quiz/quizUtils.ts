@@ -3,10 +3,18 @@ import { QuizFormData } from "./types";
 export const STORAGE_KEY = 'style-quiz-data';
 
 export const loadQuizData = (): QuizFormData => {
-  const savedData = localStorage.getItem(STORAGE_KEY);
-  if (savedData) {
-    const parsedData = JSON.parse(savedData);
-    return { ...parsedData, photo: null };
+  try {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
+      console.log("Loading saved quiz data:", savedData);
+      const parsedData = JSON.parse(savedData);
+      return {
+        ...parsedData,
+        photo: null // Photo can't be stored in localStorage
+      };
+    }
+  } catch (error) {
+    console.error("Error loading quiz data:", error);
   }
   return {
     gender: "",
@@ -22,12 +30,20 @@ export const loadQuizData = (): QuizFormData => {
 };
 
 export const saveQuizData = (formData: QuizFormData) => {
-  const dataToSave = { ...formData };
-  delete (dataToSave as any).photo;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+  try {
+    const dataToSave = {
+      ...formData,
+      photo: null // Remove photo before saving to localStorage
+    };
+    console.log("Saving quiz data:", dataToSave);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+  } catch (error) {
+    console.error("Error saving quiz data:", error);
+  }
 };
 
 export const validateQuizStep = (step: number, formData: QuizFormData): boolean => {
+  console.log("Validating step", step, "with data:", formData);
   switch (step) {
     case 1:
       return formData.gender !== "";
@@ -40,13 +56,13 @@ export const validateQuizStep = (step: number, formData: QuizFormData): boolean 
     case 5:
       return formData.bodyShape !== "";
     case 6:
-      return true;
+      return true; // Photo is optional
     case 7:
       return formData.colorPreferences.length > 0;
     case 8:
     case 9:
     case 10:
-      return true;
+      return true; // Style comparison steps don't require validation
     default:
       return true;
   }
@@ -78,6 +94,7 @@ export const analyzeStyleWithAI = async (formData: QuizFormData) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       body: JSON.stringify(requestData),
     });

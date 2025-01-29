@@ -18,9 +18,28 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState<QuizFormData>(loadQuizData);
+  const [formData, setFormData] = useState<QuizFormData>(() => {
+    const savedData = loadQuizData();
+    if (Object.keys(savedData).length > 0) {
+      console.log("Loaded saved data:", savedData);
+      return savedData;
+    }
+    return {
+      gender: "",
+      height: "",
+      weight: "",
+      waist: "",
+      chest: "",
+      bodyShape: "",
+      photo: null,
+      colorPreferences: [],
+      stylePreferences: [],
+    };
+  });
 
+  // Save data whenever it changes
   useEffect(() => {
+    console.log("Saving form data:", formData);
     saveQuizData(formData);
   }, [formData]);
 
@@ -54,6 +73,7 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     try {
+      console.log("Submitting form data:", formData);
       const styleAnalysis = await analyzeStyleWithAI(formData);
       
       toast({
