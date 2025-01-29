@@ -3,7 +3,8 @@ import { HomeButton } from "./HomeButton";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "./ui/use-toast";
 import { LookCanvas } from "./LookCanvas";
-import { analyzeStyleWithAI } from "../components/quiz/quizUtils";
+import { analyzeStyleWithAI } from "./quiz/utils/quizUtils";
+import { QuizFormData } from "./quiz/types";
 
 interface OutfitItem {
   id: string;
@@ -43,15 +44,15 @@ export const LookSuggestions = () => {
           return;
         }
 
-        const parsedAnalysis = JSON.parse(styleAnalysis);
-        const analysis = await analyzeStyleWithAI(parsedAnalysis);
+        const parsedAnalysis = JSON.parse(styleAnalysis) as QuizFormData;
+        const analysis = analyzeStyleWithAI(parsedAnalysis);
         
         // Generate looks based on the analysis
         const generatedLooks: Look[] = [{
           id: '1',
-          title: `${analysis.analysis.styleProfile || 'Personalized'} Look`,
-          description: `A ${(analysis.analysis.styleProfile || 'personalized').toLowerCase()} outfit that matches your style preferences`,
-          style: analysis.analysis.styleProfile || 'Personalized',
+          title: `${analysis.analysis.styleProfile} Look`,
+          description: `A ${analysis.analysis.styleProfile.toLowerCase()} outfit that matches your style preferences`,
+          style: analysis.analysis.styleProfile,
           totalPrice: "$299.99",
           items: [
             {
