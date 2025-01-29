@@ -53,30 +53,26 @@ export const validateQuizStep = (step: number, formData: QuizFormData): boolean 
 };
 
 export const analyzeStyleWithAI = async (formData: QuizFormData) => {
-  // Format measurements as numbers
-  const measurements = {
-    height: parseFloat(formData.height) || 0,
-    weight: parseFloat(formData.weight) || 0,
-    waist: parseFloat(formData.waist) || 0,
-    chest: parseFloat(formData.chest) || 0,
-  };
+  try {
+    // Format measurements as numbers
+    const measurements = {
+      height: parseFloat(formData.height) || 0,
+      weight: parseFloat(formData.weight) || 0,
+      waist: parseFloat(formData.waist) || 0,
+      chest: parseFloat(formData.chest) || 0,
+    };
 
-  // Ensure we have at least one style preference
-  const stylePreferences = formData.stylePreferences.length > 0 
-    ? formData.stylePreferences 
-    : ['casual']; // Default style if none selected
+    // Ensure we have at least one style preference
+    const stylePreferences = formData.stylePreferences.length > 0 
+      ? formData.stylePreferences 
+      : ['casual']; // Default style if none selected
 
-  // Ensure we have at least one color preference
-  const colorPreferences = formData.colorPreferences.length > 0 
-    ? formData.colorPreferences 
-    : ['neutral']; // Default color if none selected
+    // Ensure we have at least one color preference
+    const colorPreferences = formData.colorPreferences.length > 0 
+      ? formData.colorPreferences 
+      : ['neutral']; // Default color if none selected
 
-  const response = await fetch('https://preview--ai-bundle-construct-20.lovable.app/api/analyze-style', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
+    const requestData = {
       bodyShape: formData.bodyShape || 'average',
       colorPreferences,
       stylePreferences,
@@ -86,13 +82,30 @@ export const analyzeStyleWithAI = async (formData: QuizFormData) => {
         colors: colorPreferences,
         styles: stylePreferences,
       }
-    }),
-  });
+    };
 
-  if (!response.ok) {
-    console.error('API Response:', await response.text());
-    throw new Error('Failed to analyze style');
+    console.log('Sending request to AI:', requestData);
+
+    const response = await fetch('https://preview--ai-bundle-construct-20.lovable.app/api/analyze-style', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(requestData),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`Failed to analyze style: ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('AI Response:', data);
+    return data;
+  } catch (error) {
+    console.error('Style analysis error:', error);
+    throw error;
   }
-
-  return response.json();
 };
