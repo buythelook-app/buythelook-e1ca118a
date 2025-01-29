@@ -5,33 +5,38 @@ import { styleRecommendations } from '../constants/styleRecommendations';
 
 export const analyzeStyleWithAI = (formData: QuizFormData): StyleAnalysis => {
   try {
-    console.log('Analyzing style with form data:', formData);
+    console.log('Submitting form data:', formData);
+
+    // Ensure we have default values
+    const stylePreferences = formData.stylePreferences || ['Classic'];
+    const colorPreferences = formData.colorPreferences || ['neutral'];
     
-    // Determine style profile based on preferences
-    const styleProfile = formData.stylePreferences[formData.stylePreferences.length - 1] || 'Classic';
+    // Get the last selected style or default to Classic
+    const finalStyle = stylePreferences[stylePreferences.length - 1] || 'Classic';
     
-    // Get color palette based on preferences
-    const colorPreference = formData.colorPreferences[0] || 'neutral';
-    const selectedPalette = colorPalettes[colorPreference];
+    // Get the first color preference or default to neutral
+    const colorPreference = colorPreferences[0] || 'neutral';
     
-    // Get style recommendations
-    const recommendations = styleRecommendations[styleProfile] || styleRecommendations.Classic;
+    // Get corresponding palette and recommendations
+    const selectedPalette = colorPalettes[colorPreference] || colorPalettes.neutral;
+    const styleRecs = styleRecommendations[finalStyle] || styleRecommendations.Classic;
 
     const analysis: StyleAnalysis = {
       analysis: {
-        styleProfile: styleProfile,
+        styleProfile: finalStyle,
         colorPalette: selectedPalette,
         fitRecommendations: {
-          top: "regular",
-          bottom: "regular",
+          top: formData.chest ? (parseInt(formData.chest) > 100 ? "relaxed" : "regular") : "regular",
+          bottom: formData.waist ? (parseInt(formData.waist) > 90 ? "comfort" : "fitted") : "regular",
           shoes: "true to size"
         }
       },
-      recommendations: recommendations
+      recommendations: styleRecs
     };
 
-    console.log('Generated style analysis:', analysis);
+    console.log('Generated local style analysis:', analysis);
     return analysis;
+
   } catch (error) {
     console.error('Error in analyzeStyleWithAI:', error);
     throw new Error('Failed to analyze style preferences');
@@ -42,16 +47,13 @@ export const loadQuizData = (): QuizFormData => {
   try {
     const savedData = localStorage.getItem('style-quiz-data');
     if (savedData) {
-      console.log("Loading saved quiz data:", savedData);
-      const parsedData = JSON.parse(savedData);
-      return {
-        ...parsedData,
-        photo: null
-      };
+      return JSON.parse(savedData);
     }
   } catch (error) {
-    console.error("Error loading quiz data:", error);
+    console.error('Error loading quiz data:', error);
   }
+  
+  // Return default values if no data is found or there's an error
   return {
     gender: "",
     height: "",
@@ -61,6 +63,6 @@ export const loadQuizData = (): QuizFormData => {
     bodyShape: "",
     photo: null,
     colorPreferences: [],
-    stylePreferences: [],
+    stylePreferences: []
   };
 };
