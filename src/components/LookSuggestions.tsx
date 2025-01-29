@@ -9,8 +9,17 @@ import { LookGrid } from "./LookGrid";
 import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
 
+interface GridLook {
+  id: string;
+  image: string;
+  title: string;
+  price: string;
+  category: string;
+  items: { id: string; image: string; }[];
+}
+
 export const LookSuggestions = () => {
-  const [suggestions, setSuggestions] = useState<Look[]>([]);
+  const [suggestions, setSuggestions] = useState<GridLook[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -18,7 +27,6 @@ export const LookSuggestions = () => {
   useEffect(() => {
     const generateSuggestions = async () => {
       try {
-        // Get style analysis from localStorage
         const styleAnalysis = localStorage.getItem('styleAnalysis');
         if (!styleAnalysis) {
           toast({
@@ -30,28 +38,28 @@ export const LookSuggestions = () => {
           return;
         }
 
-        // Parse and analyze style
         const parsedAnalysis = JSON.parse(styleAnalysis) as QuizFormData;
         const analysis = analyzeStyleWithAI(parsedAnalysis);
-        console.log('Style analysis:', analysis);
-
-        // Fetch and process items
-        const dashboardItems = await fetchDashboardItems();
         
-        // Create looks with validated items
-        const generatedLooks: Look[] = [{
+        const dashboardItems = await fetchDashboardItems();
+        const mappedItems = dashboardItems
+          .filter(item => item && item.type && item.name)
+          .map(mapDashboardItemToOutfitItem)
+          .slice(0, 6);
+
+        const gridLooks: GridLook[] = [{
           id: '1',
+          image: mappedItems[0]?.image || '/placeholder.svg',
           title: `${analysis.analysis.styleProfile} Look`,
-          description: `A ${analysis.analysis.styleProfile.toLowerCase()} outfit that matches your style preferences`,
-          style: analysis.analysis.styleProfile,
-          totalPrice: "$299.99",
-          items: dashboardItems
-            .filter(item => item && item.type && item.name)
-            .map(mapDashboardItemToOutfitItem)
-            .slice(0, 6)
+          price: "$299.99",
+          category: analysis.analysis.styleProfile,
+          items: mappedItems.map(item => ({
+            id: item.id,
+            image: item.image
+          }))
         }];
 
-        setSuggestions(generatedLooks);
+        setSuggestions(gridLooks);
       } catch (error) {
         console.error('Error generating suggestions:', error);
         toast({
@@ -60,14 +68,16 @@ export const LookSuggestions = () => {
           variant: "destructive",
         });
         
-        // Set fallback suggestion
         setSuggestions([{
           id: '1',
+          image: '/placeholder.svg',
           title: 'Classic Look',
-          description: 'A timeless outfit for any occasion',
-          style: 'Classic',
-          totalPrice: "$119.98",
-          items: fallbackItems
+          price: "$119.98",
+          category: 'Classic',
+          items: fallbackItems.map(item => ({
+            id: item.id,
+            image: item.image
+          }))
         }]);
       } finally {
         setIsLoading(false);
