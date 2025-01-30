@@ -18,18 +18,20 @@ export const QuizNavigation = ({
   onComplete,
 }: QuizNavigationProps) => {
   return (
-    <div className="flex justify-between mt-8">
-      {currentStep > 1 && (
-        <Button
-          onClick={onBack}
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft size={16} />
-          Back
-        </Button>
-      )}
-      <div className="ml-auto">
+    <div className="flex justify-between mt-8 w-full">
+      <div className="flex-1">
+        {currentStep > 1 && (
+          <Button
+            onClick={onBack}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft size={16} />
+            Back
+          </Button>
+        )}
+      </div>
+      <div className="flex-1 flex justify-end">
         {currentStep < totalSteps ? (
           <Button
             onClick={onNext}
