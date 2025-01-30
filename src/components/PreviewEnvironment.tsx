@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { LookGrid } from "./LookGrid";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { transformImageUrl, validateImageUrl } from "@/utils/imageUtils";
 
 interface PreviewItem {
@@ -23,18 +24,30 @@ export const PreviewEnvironment = () => {
     queryKey: ['previewItems'],
     queryFn: async () => {
       try {
-        const response = await fetch(`${PREVIEW_BASE_URL}/dashboard`);
+        console.log('Attempting to fetch from:', `${PREVIEW_BASE_URL}/dashboard`);
+        const response = await fetch(`${PREVIEW_BASE_URL}/dashboard`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+          mode: 'cors', // Explicitly request CORS
+        });
+        
         if (!response.ok) {
-          throw new Error('Failed to fetch preview items');
+          const errorText = await response.text();
+          console.error('Server response:', errorText);
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
         const data = await response.json();
+        console.log('Received data:', data);
         return data;
       } catch (error) {
-        console.error('Error fetching preview items:', error);
+        console.error('Detailed error:', error);
         throw error;
       }
     },
-    retry: 2,
+    retry: 1, // Reduce retries to avoid too many failed attempts
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false,
   });
@@ -58,9 +71,21 @@ export const PreviewEnvironment = () => {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <p className="text-red-500 mb-4">Failed to load preview items</p>
-        <Button onClick={() => navigate('/')}>Go Back</Button>
+      <div className="container mx-auto px-4 py-8">
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>Connection Error</AlertTitle>
+          <AlertDescription>
+            Unable to connect to the preview environment. This could be because:
+            <ul className="list-disc pl-4 mt-2">
+              <li>The preview environment is not currently running</li>
+              <li>There might be CORS restrictions</li>
+              <li>The server might be temporarily unavailable</li>
+            </ul>
+          </AlertDescription>
+        </Alert>
+        <div className="text-center">
+          <Button onClick={() => navigate('/')}>Return Home</Button>
+        </div>
       </div>
     );
   }
