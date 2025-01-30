@@ -32,8 +32,15 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
     return data.items || [];
   } catch (error) {
     console.error('Error fetching dashboard items:', error);
-    // For now, return an empty array instead of fallback items to see if we get any items from API
-    return [];
+    // Return fallback items mapped to DashboardItem format
+    return fallbackItems.map(item => ({
+      id: item.id,
+      name: item.title,
+      description: item.description,
+      image: item.image,
+      price: item.price,
+      type: item.type
+    }));
   }
 };
 
