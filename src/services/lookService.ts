@@ -72,7 +72,7 @@ export const mapDashboardItemToOutfitItem = (item: DashboardItem): OutfitItem =>
     title: item.name,
     description: item.description || 'Stylish piece for your wardrobe',
     image: item.image || '',
-    price: item.price || '$49.99',
+    price: typeof item.price === 'number' ? item.price.toString() : (item.price || '$49.99'),
     type: item.type
   };
 };
