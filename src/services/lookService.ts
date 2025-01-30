@@ -40,11 +40,20 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   }
 };
 
-export const mapDashboardItemToOutfitItem = (item: DashboardItem): OutfitItem => ({
-  id: item.id || String(Math.random()),
-  title: item.name || 'Fashion Item',
-  description: item.description || 'Stylish piece for your wardrobe',
-  image: `https://preview--ai-bundle-construct-20.lovable.app${item.image}` || fallbackItems[0].image,
-  price: item.price || "$49.99",
-  type: item.type || 'top'
-});
+export const mapDashboardItemToOutfitItem = (item: DashboardItem): OutfitItem => {
+  // Check if the image path is already a full URL
+  const imageUrl = item.image?.startsWith('http') 
+    ? item.image 
+    : item.image 
+      ? `https://preview--ai-bundle-construct-20.lovable.app${item.image}`
+      : fallbackItems[0].image;
+
+  return {
+    id: item.id || String(Math.random()),
+    title: item.name || 'Fashion Item',
+    description: item.description || 'Stylish piece for your wardrobe',
+    image: imageUrl,
+    price: item.price || "$49.99",
+    type: item.type || 'top'
+  };
+};
