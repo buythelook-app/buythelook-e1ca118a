@@ -23,35 +23,33 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   try {
     const response = await fetch('https://preview--ai-bundle-construct-20.lovable.app/dashboard');
     if (!response.ok) {
+      console.error('API response not ok:', await response.text());
       throw new Error('Failed to fetch dashboard items');
     }
     const data = await response.json();
-    console.log('Fetched dashboard items:', data.items); // Debug log
+    console.log('Raw API response:', data); // Debug the entire response
+    console.log('Fetched dashboard items:', data.items); // Debug the items array
     return data.items || [];
   } catch (error) {
     console.error('Error fetching dashboard items:', error);
-    return fallbackItems.map(item => ({
-      id: item.id,
-      name: item.title,
-      description: item.description,
-      image: item.image,
-      price: item.price,
-      type: item.type
-    }));
+    // For now, return an empty array instead of fallback items to see if we get any items from API
+    return [];
   }
 };
 
 export const mapDashboardItemToOutfitItem = (item: DashboardItem): OutfitItem => {
   console.log('Mapping item:', item); // Debug log
   
-  // Ensure we're using the image from the model data
-  const imageUrl = item.image || fallbackItems[0].image;
+  if (!item || !item.image) {
+    console.error('Invalid item or missing image:', item);
+    return fallbackItems[0];
+  }
   
   return {
     id: item.id || String(Math.random()),
     title: item.name || 'Fashion Item',
     description: item.description || 'Stylish piece for your wardrobe',
-    image: imageUrl,
+    image: item.image,
     price: item.price || "$49.99",
     type: item.type || 'top'
   };
