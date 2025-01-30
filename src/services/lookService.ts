@@ -26,6 +26,7 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
       throw new Error('Failed to fetch dashboard items');
     }
     const data = await response.json();
+    console.log('Fetched dashboard items:', data.items); // Debug log
     return data.items || [];
   } catch (error) {
     console.error('Error fetching dashboard items:', error);
@@ -41,13 +42,11 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
 };
 
 export const mapDashboardItemToOutfitItem = (item: DashboardItem): OutfitItem => {
-  // Check if the image path is already a full URL
-  const imageUrl = item.image?.startsWith('http') 
-    ? item.image 
-    : item.image 
-      ? `https://preview--ai-bundle-construct-20.lovable.app${item.image}`
-      : fallbackItems[0].image;
-
+  console.log('Mapping item:', item); // Debug log
+  
+  // Ensure we're using the image from the model data
+  const imageUrl = item.image || fallbackItems[0].image;
+  
   return {
     id: item.id || String(Math.random()),
     title: item.name || 'Fashion Item',
