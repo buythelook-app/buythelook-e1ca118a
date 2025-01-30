@@ -4,16 +4,10 @@ const BASE_URL = 'http://review--ai-bundle-construct-20.lovable.app';
 
 const transformImageUrl = (url: string) => {
   if (!url) return '';
-  // Keep both transformations to support existing URLs
-  return url
-    .replace(
-      'http://preview--ai-bundle-construct-20.lovable.app',
-      'https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com'
-    )
-    .replace(
-      'http://review--ai-bundle-construct-20.lovable.app',
-      'https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com'
-    );
+  return url.replace(
+    'http://review--ai-bundle-construct-20.lovable.app',
+    'https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com'
+  );
 };
 
 export const fallbackItems: DashboardItem[] = [
@@ -59,9 +53,7 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
         item.id && 
         item.name &&
         item.image &&
-        (item.image.startsWith('http://review--ai-bundle-construct-20.lovable.app') ||
-         item.image.startsWith('http://preview--ai-bundle-construct-20.lovable.app') ||
-         item.image.startsWith('https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com'));
+        item.image.startsWith('http://review--ai-bundle-construct-20.lovable.app');
       
       if (!isValid) {
         console.log('Filtered out invalid item:', item);
