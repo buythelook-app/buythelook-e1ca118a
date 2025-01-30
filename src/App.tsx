@@ -20,7 +20,6 @@ import { StyleGuide } from "@/components/StyleGuide";
 import { AboutApp } from "@/components/AboutApp";
 import { OurRules } from "@/components/OurRules";
 import { MyList } from "@/components/MyList";
-import { PreviewEnvironment } from "@/components/PreviewEnvironment";
 
 const queryClient = new QueryClient();
 
@@ -49,7 +48,6 @@ function App() {
             <Route path="/about" element={<AboutApp />} />
             <Route path="/rules" element={<OurRules />} />
             <Route path="/my-list" element={<MyList />} />
-            <Route path="/preview" element={<PreviewEnvironment />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
