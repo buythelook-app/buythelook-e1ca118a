@@ -53,6 +53,7 @@ export const LookSuggestions = () => {
             .filter(item => {
               const isValid = item && 
                 item.image && 
+                item.name &&
                 item.image.startsWith('http://preview--ai-bundle-construct-20.lovable.app');
               console.log(`Item ${item?.id} validation:`, isValid, item);
               return isValid;
@@ -60,7 +61,7 @@ export const LookSuggestions = () => {
             .map(item => ({
               id: item.id,
               image: item.image,
-              title: item.name || 'Fashion Item',
+              title: item.name,
               price: item.price || '$99.99',
               category: item.type || 'Fashion',
               items: [{ id: item.id, image: item.image }]

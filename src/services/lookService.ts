@@ -1,9 +1,9 @@
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 
-export const fallbackItems: OutfitItem[] = [
+export const fallbackItems: DashboardItem[] = [
   {
     id: '1',
-    title: 'Classic White Blouse',
+    name: 'Classic White Blouse',
     description: 'A timeless piece for your wardrobe',
     image: 'http://preview--ai-bundle-construct-20.lovable.app/images/classic-blouse.jpg',
     price: '$49.99',
@@ -11,7 +11,7 @@ export const fallbackItems: OutfitItem[] = [
   },
   {
     id: '2',
-    title: 'Black Trousers',
+    name: 'Black Trousers',
     description: 'Elegant and versatile',
     image: 'http://preview--ai-bundle-construct-20.lovable.app/images/black-trousers.jpg',
     price: '$69.99',
@@ -41,6 +41,7 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
     const validItems = data.filter(item => {
       const isValid = item && 
         item.id && 
+        item.name &&
         item.image &&
         item.image.startsWith('http://preview--ai-bundle-construct-20.lovable.app');
       
@@ -63,10 +64,10 @@ export const mapDashboardItemToOutfitItem = (item: DashboardItem): OutfitItem =>
   console.log('Mapping dashboard item to outfit item:', item);
   return {
     id: item.id,
-    title: item.name || 'Fashion Item',
+    title: item.name,
     description: item.description || 'Stylish piece for your wardrobe',
-    image: item.image,
+    image: item.image || '',
     price: item.price || '$49.99',
-    type: item.type || 'fashion'
+    type: item.type
   };
 };

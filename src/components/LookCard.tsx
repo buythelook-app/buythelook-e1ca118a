@@ -3,6 +3,7 @@ import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useCartStore } from "./Cart";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
+import { AspectRatio } from "./ui/aspect-ratio";
 
 interface LookCardProps {
   id: string;
@@ -56,17 +57,17 @@ export const LookCard = ({ id, image, title, price, category, items = [] }: Look
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden h-full">
-      <div className="relative aspect-[3/4] overflow-hidden">
+      <AspectRatio ratio={3/4} className="relative overflow-hidden">
         <img 
           src={image} 
           alt={title}
-          className="w-full h-full object-cover object-center"
+          className="absolute inset-0 w-full h-full object-cover object-center"
           onError={(e) => {
             console.error(`Error loading image: ${image}`);
             e.currentTarget.src = '/placeholder.svg';
           }}
         />
-      </div>
+      </AspectRatio>
       <div className="p-4">
         <div className="flex justify-between items-start">
           <div>
