@@ -4,7 +4,9 @@ import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { LookGrid } from "./LookGrid";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { transformImageUrl, validateImageUrl } from "@/utils/imageUtils";
+import { checkHealth, fetchPreviewItems } from "@/services/previewService";
+import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface PreviewItem {
   id: string;
@@ -15,50 +17,44 @@ interface PreviewItem {
   items: { id: string; image: string; }[];
 }
 
-const PREVIEW_BASE_URL = 'http://preview--ai-bundle-construct-20.lovable.app';
-
 export const PreviewEnvironment = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const { data: previewItems, isLoading, error } = useQuery({
-    queryKey: ['previewItems'],
-    queryFn: async () => {
-      try {
-        console.log('Attempting to fetch from:', `${PREVIEW_BASE_URL}/dashboard`);
-        const response = await fetch(`${PREVIEW_BASE_URL}/dashboard`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          },
-          mode: 'cors', // Explicitly request CORS
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Server response:', errorText);
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Received data:', data);
-        return data;
-      } catch (error) {
-        console.error('Detailed error:', error);
-        throw error;
-      }
-    },
-    retry: 1, // Reduce retries to avoid too many failed attempts
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    refetchOnWindowFocus: false,
+  // Health check query
+  const { data: healthStatus } = useQuery({
+    queryKey: ['previewHealth'],
+    queryFn: checkHealth,
+    retry: 1,
+    staleTime: 1000 * 60, // 1 minute
   });
 
-  const processedItems: PreviewItem[] = previewItems?.map((item: any) => ({
-    id: item.id || String(Math.random()),
-    image: item.image || '/placeholder.svg',
-    title: item.name || 'Untitled Item',
-    price: item.price || '$99.99',
+  // Items query
+  const { data: previewData, isLoading, error } = useQuery({
+    queryKey: ['previewItems'],
+    queryFn: fetchPreviewItems,
+    retry: 3,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: healthStatus?.status === 'ok',
+  });
+
+  useEffect(() => {
+    if (healthStatus?.status === 'error') {
+      toast({
+        title: "Preview Environment Error",
+        description: healthStatus.message || "The preview environment is currently unavailable",
+        variant: "destructive",
+      });
+    }
+  }, [healthStatus, toast]);
+
+  const processedItems: PreviewItem[] = previewData?.items?.map((item) => ({
+    id: item.id,
+    image: item.image,
+    title: item.name,
+    price: typeof item.price === 'number' ? `$${item.price.toFixed(2)}` : item.price || '$99.99',
     category: item.type || 'Fashion',
-    items: [{ id: item.id || String(Math.random()), image: item.image || '/placeholder.svg' }]
+    items: [{ id: item.id, image: item.image }]
   })) || [];
 
   if (isLoading) {
@@ -69,7 +65,7 @@ export const PreviewEnvironment = () => {
     );
   }
 
-  if (error) {
+  if (error || healthStatus?.status === 'error') {
     return (
       <div className="container mx-auto px-4 py-8">
         <Alert variant="destructive" className="mb-4">
@@ -78,7 +74,7 @@ export const PreviewEnvironment = () => {
             Unable to connect to the preview environment. This could be because:
             <ul className="list-disc pl-4 mt-2">
               <li>The preview environment is not currently running</li>
-              <li>There might be CORS restrictions</li>
+              <li>There might be network connectivity issues</li>
               <li>The server might be temporarily unavailable</li>
             </ul>
           </AlertDescription>
