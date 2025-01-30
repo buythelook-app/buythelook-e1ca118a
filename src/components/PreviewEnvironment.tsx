@@ -52,11 +52,7 @@ export const PreviewEnvironment = () => {
     id: item.id,
     image: item.image,
     title: item.name,
-    price: typeof item.price === 'number' 
-      ? `$${item.price.toString()}`
-      : typeof item.price === 'string' 
-        ? item.price 
-        : '$99.99',
+    price: typeof item.price === 'number' ? `$${item.price.toFixed(2)}` : item.price || '$99.99',
     category: item.type || 'Fashion',
     items: [{ id: item.id, image: item.image }]
   })) || [];

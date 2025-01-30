@@ -1,63 +1,87 @@
+import { Sparkles, Heart, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState } from "react";
+import { ShippingAddress } from "./ShippingAddress";
 import { UserDropdownMenu } from "./navbar/UserDropdownMenu";
 import { useCalendarSync } from "./navbar/CalendarSync";
-import { LayoutDashboard, ShoppingBag, Calendar, Settings } from "lucide-react";
+import { useFavoritesStore } from "@/stores/useFavoritesStore";
+import { useCartStore } from "./Cart";
+import { Badge } from "./ui/badge";
 
 export const Navbar = () => {
+  const isAuthenticated = true;
+  const [showShippingAddress, setShowShippingAddress] = useState(false);
   const { handleCalendarSync } = useCalendarSync();
+  const { favorites } = useFavoritesStore();
+  const { items, looks } = useCartStore();
 
-  const handleAddressClick = () => {
-    // Handle address click
-    console.log("Address clicked");
-  };
+  const totalLooks = favorites.length;
+  const displayCount = totalLooks > 9 ? '9+' : totalLooks.toString();
+
+  const totalCartItems = items.length + looks.length;
+  const cartDisplayCount = totalCartItems > 9 ? '9+' : totalCartItems.toString();
 
   return (
-    <nav className="border-b bg-card">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-8">
-            <Link to="/" className="text-xl font-semibold">
-              Fashion App
+    <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
+      <div className="container mx-auto flex items-center justify-between">
+        <Link to="/" className="text-2xl font-display text-netflix-accent">
+          Buy the Look
+        </Link>
+        <div className="flex items-center space-x-8">
+          {isAuthenticated ? (
+            <>
+              <Link to="/cart" className="hover:text-netflix-accent relative">
+                <ShoppingCart className="h-6 w-6 text-white" />
+                {totalCartItems > 0 && (
+                  <Badge 
+                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-netflix-accent text-[10px]"
+                  >
+                    {cartDisplayCount}
+                  </Badge>
+                )}
+              </Link>
+              <Link to="/my-list" className="hover:text-netflix-accent relative">
+                <Heart className="h-6 w-6" />
+                {totalLooks > 0 && (
+                  <Badge 
+                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-netflix-accent text-[10px]"
+                  >
+                    {displayCount}
+                  </Badge>
+                )}
+              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="hover:text-netflix-accent">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="" />
+                    <AvatarFallback>
+                      <Sparkles className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <UserDropdownMenu 
+                  onAddressClick={() => setShowShippingAddress(true)}
+                  handleCalendarSync={handleCalendarSync}
+                />
+              </DropdownMenu>
+            </>
+          ) : (
+            <Link to="/auth" className="hover:text-netflix-accent">
+              <Sparkles size={24} />
             </Link>
-            <div className="hidden md:flex space-x-4">
-              <Link 
-                to="/dashboard" 
-                className="flex items-center space-x-2 text-sm font-medium hover:text-primary"
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                <span>Dashboard</span>
-              </Link>
-              <Link 
-                to="/look-suggestions" 
-                className="flex items-center space-x-2 text-sm font-medium hover:text-primary"
-              >
-                <ShoppingBag className="h-4 w-4" />
-                <span>Suggestions</span>
-              </Link>
-              <Link 
-                to="/calendar" 
-                className="flex items-center space-x-2 text-sm font-medium hover:text-primary"
-              >
-                <Calendar className="h-4 w-4" />
-                <span>Calendar</span>
-              </Link>
-              <Link 
-                to="/settings" 
-                className="flex items-center space-x-2 text-sm font-medium hover:text-primary"
-              >
-                <Settings className="h-4 w-4" />
-                <span>Settings</span>
-              </Link>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <UserDropdownMenu 
-              onAddressClick={handleAddressClick}
-              handleCalendarSync={handleCalendarSync}
-            />
-          </div>
+          )}
         </div>
       </div>
+
+      <ShippingAddress 
+        isOpen={showShippingAddress} 
+        onClose={() => setShowShippingAddress(false)} 
+      />
     </nav>
   );
 };

@@ -62,7 +62,7 @@ export const LookSuggestions = () => {
               id: item.id,
               image: transformImageUrl(item.image),
               title: item.name,
-              price: typeof item.price === 'number' ? item.price.toString() : (item.price || '$99.99'),
+              price: item.price || '$99.99',
               category: item.type || 'Fashion',
               items: [{ id: item.id, image: transformImageUrl(item.image) }]
             }));

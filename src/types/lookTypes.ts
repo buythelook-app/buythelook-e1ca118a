@@ -3,7 +3,7 @@ export interface DashboardItem {
   name: string;
   description?: string;
   image?: string;
-  price: string | number;
+  price?: string;
   type: string;
 }
 
