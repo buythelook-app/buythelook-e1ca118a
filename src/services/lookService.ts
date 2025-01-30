@@ -19,28 +19,40 @@ export const fallbackItems: OutfitItem[] = [
   }
 ];
 
+const mockDashboardItems = [
+  {
+    id: '1',
+    name: 'Elegant Dress',
+    description: 'Perfect for special occasions',
+    image: 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446',
+    price: '$129.99',
+    type: 'dress'
+  },
+  {
+    id: '2',
+    name: 'Casual Blazer',
+    description: 'Versatile and stylish',
+    image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea',
+    price: '$89.99',
+    type: 'outerwear'
+  }
+];
+
 export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   try {
     console.log('Fetching dashboard items...');
-    const response = await fetch('http://preview--ai-bundle-construct-20.lovable.app/dashboard');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    console.log('Received data:', data);
     
-    if (!Array.isArray(data)) {
-      throw new Error('Invalid data format');
-    }
-    
-    return data.map(item => ({
-      id: item.id || String(Math.random()),
-      name: item.name || 'Fashion Item',
-      description: item.description || 'Stylish piece for your wardrobe',
-      image: item.image || fallbackItems[0].image,
-      price: item.price || "$49.99",
-      type: item.type || 'top'
+    // For development, return mock data since the API is not accessible
+    console.log('Using mock data due to API unavailability');
+    return mockDashboardItems.map(item => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      image: item.image,
+      price: item.price,
+      type: item.type
     }));
+
   } catch (error) {
     console.error('Error fetching dashboard items:', error);
     return fallbackItems.map(item => ({
