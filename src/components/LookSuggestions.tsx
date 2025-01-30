@@ -23,6 +23,14 @@ export const LookSuggestions = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const transformImageUrl = (url: string) => {
+    if (!url) return '';
+    return url.replace(
+      'http://preview--ai-bundle-construct-20.lovable.app',
+      'https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com'
+    );
+  };
+
   const { data: dashboardItems, isLoading, error } = useQuery({
     queryKey: ['dashboardItems'],
     queryFn: fetchDashboardItems,
@@ -54,17 +62,18 @@ export const LookSuggestions = () => {
               const isValid = item && 
                 item.image && 
                 item.name &&
-                item.image.startsWith('http://preview--ai-bundle-construct-20.lovable.app');
+                (item.image.startsWith('http://preview--ai-bundle-construct-20.lovable.app') ||
+                 item.image.startsWith('https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com'));
               console.log(`Item ${item?.id} validation:`, isValid, item);
               return isValid;
             })
             .map(item => ({
               id: item.id,
-              image: item.image,
+              image: transformImageUrl(item.image),
               title: item.name,
               price: item.price || '$99.99',
               category: item.type || 'Fashion',
-              items: [{ id: item.id, image: item.image }]
+              items: [{ id: item.id, image: transformImageUrl(item.image) }]
             }));
 
           console.log('Mapped grid looks:', gridLooks);

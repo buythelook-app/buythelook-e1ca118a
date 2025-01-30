@@ -1,11 +1,19 @@
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 
+const transformImageUrl = (url: string) => {
+  if (!url) return '';
+  return url.replace(
+    'http://preview--ai-bundle-construct-20.lovable.app',
+    'https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com'
+  );
+};
+
 export const fallbackItems: DashboardItem[] = [
   {
     id: '1',
     name: 'Classic White Blouse',
     description: 'A timeless piece for your wardrobe',
-    image: 'http://preview--ai-bundle-construct-20.lovable.app/images/classic-blouse.jpg',
+    image: transformImageUrl('http://preview--ai-bundle-construct-20.lovable.app/images/classic-blouse.jpg'),
     price: '$49.99',
     type: 'top'
   },
@@ -13,7 +21,7 @@ export const fallbackItems: DashboardItem[] = [
     id: '2',
     name: 'Black Trousers',
     description: 'Elegant and versatile',
-    image: 'http://preview--ai-bundle-construct-20.lovable.app/images/black-trousers.jpg',
+    image: transformImageUrl('http://preview--ai-bundle-construct-20.lovable.app/images/black-trousers.jpg'),
     price: '$69.99',
     type: 'bottom'
   }
@@ -22,7 +30,7 @@ export const fallbackItems: DashboardItem[] = [
 export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   try {
     console.log('Fetching dashboard items...');
-    const response = await fetch('http://preview--ai-bundle-construct-20.lovable.app/dashboard');
+    const response = await fetch('https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com/dashboard');
     
     if (!response.ok) {
       console.error('API response not ok:', await response.text());
@@ -37,20 +45,24 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
       throw new Error('Invalid data format');
     }
     
-    // Filter out items without required properties and ensure image URLs are from the correct domain
+    // Filter out items without required properties and transform image URLs
     const validItems = data.filter(item => {
       const isValid = item && 
         item.id && 
         item.name &&
         item.image &&
-        item.image.startsWith('http://preview--ai-bundle-construct-20.lovable.app');
+        (item.image.startsWith('http://preview--ai-bundle-construct-20.lovable.app') ||
+         item.image.startsWith('https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com'));
       
       if (!isValid) {
         console.log('Filtered out invalid item:', item);
       }
       
       return isValid;
-    });
+    }).map(item => ({
+      ...item,
+      image: transformImageUrl(item.image)
+    }));
     
     console.log('Filtered valid items:', validItems);
     return validItems;
@@ -66,7 +78,7 @@ export const mapDashboardItemToOutfitItem = (item: DashboardItem): OutfitItem =>
     id: item.id,
     title: item.name,
     description: item.description || 'Stylish piece for your wardrobe',
-    image: item.image || '',
+    image: transformImageUrl(item.image) || '',
     price: item.price || '$49.99',
     type: item.type
   };
