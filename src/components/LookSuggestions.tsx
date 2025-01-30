@@ -27,6 +27,9 @@ export const LookSuggestions = () => {
   const { data: dashboardItems, isLoading, error } = useQuery({
     queryKey: ['dashboardItems'],
     queryFn: fetchDashboardItems,
+    retry: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {

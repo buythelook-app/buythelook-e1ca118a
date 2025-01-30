@@ -21,7 +21,7 @@ export const fallbackItems: OutfitItem[] = [
 
 export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   try {
-    const response = await fetch('http://preview--ai-bundle-construct-20.lovable.app/dashboard');
+    const response = await fetch('https://preview--ai-bundle-construct-20.lovable.app/dashboard');
     if (!response.ok) {
       throw new Error('Failed to fetch dashboard items');
     }
