@@ -1,9 +1,16 @@
 import { Link } from "react-router-dom";
 import { UserDropdownMenu } from "./navbar/UserDropdownMenu";
-import { CalendarSync } from "./navbar/CalendarSync";
+import { useCalendarSync } from "./navbar/CalendarSync";
 import { LayoutDashboard, ShoppingBag, Calendar, Settings } from "lucide-react";
 
 export const Navbar = () => {
+  const { handleCalendarSync } = useCalendarSync();
+
+  const handleAddressClick = () => {
+    // Handle address click
+    console.log("Address clicked");
+  };
+
   return (
     <nav className="border-b bg-card">
       <div className="container mx-auto px-4">
@@ -44,8 +51,10 @@ export const Navbar = () => {
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <CalendarSync />
-            <UserDropdownMenu />
+            <UserDropdownMenu 
+              onAddressClick={handleAddressClick}
+              handleCalendarSync={handleCalendarSync}
+            />
           </div>
         </div>
       </div>
