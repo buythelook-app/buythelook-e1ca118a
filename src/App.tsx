@@ -1,59 +1,22 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import { StyleQuiz } from "@/components/StyleQuiz";
-import { LookSuggestions } from "@/components/LookSuggestions";
-import { LookDetail } from "@/components/LookDetail";
-import { FAQ } from "@/components/FAQ";
-import { Contact } from "@/components/Contact";
-import { Auth } from "@/pages/Auth";
-import { Entrance } from "@/pages/Entrance";
-import { Cart } from "@/components/Cart";
-import { Checkout } from "@/components/Checkout";
-import { Profile } from "@/components/Profile";
-import { Orders } from "@/components/Orders";
-import { WishList } from "@/components/WishList";
-import { StyleGuide } from "@/components/StyleGuide";
-import { AboutApp } from "@/components/AboutApp";
-import { OurRules } from "@/components/OurRules";
-import { MyList } from "@/components/MyList";
-import { PreviewEnvironment } from "@/components/PreviewEnvironment";
-
-const queryClient = new QueryClient();
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Navbar } from "./components/Navbar";
+import { Dashboard } from "./components/Dashboard";
+import { LookSuggestions } from "./components/LookSuggestions";
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+    <Router>
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main>
           <Routes>
-            <Route path="/" element={<Entrance />} />
-            <Route path="/home" element={<Index />} />
-            <Route path="/quiz" element={<StyleQuiz />} />
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/suggestions" element={<LookSuggestions />} />
-            <Route path="/look/:id" element={<LookDetail />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/orders" element={<Orders />} />
-            <Route path="/wishlist" element={<WishList />} />
-            <Route path="/style-guide" element={<StyleGuide />} />
-            <Route path="/about" element={<AboutApp />} />
-            <Route path="/rules" element={<OurRules />} />
-            <Route path="/my-list" element={<MyList />} />
-            <Route path="/preview" element={<PreviewEnvironment />} />
           </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+        </main>
+      </div>
+    </Router>
   );
 }
 
