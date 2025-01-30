@@ -8,6 +8,7 @@ import { LookGrid } from "./LookGrid";
 import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { transformImageUrl, validateImageUrl } from "@/utils/imageUtils";
 
 interface GridLook {
   id: string;
@@ -22,18 +23,6 @@ export const LookSuggestions = () => {
   const [suggestions, setSuggestions] = useState<GridLook[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  const transformImageUrl = (url: string) => {
-    if (!url) return '';
-    // Handle both http and https URLs
-    return url.replace(
-      'http://preview--ai-bundle-construct-20.lovable.app',
-      'https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com'
-    ).replace(
-      'https://preview--ai-bundle-construct-20.lovable.app',
-      'https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com'
-    );
-  };
 
   const { data: dashboardItems, isLoading, error } = useQuery({
     queryKey: ['dashboardItems'],
@@ -60,15 +49,12 @@ export const LookSuggestions = () => {
         if (dashboardItems && Array.isArray(dashboardItems)) {
           console.log('Processing dashboard items:', dashboardItems);
           
-          // Filter and map items to GridLook format
           const gridLooks: GridLook[] = dashboardItems
             .filter(item => {
               const isValid = item && 
                 item.image && 
                 item.name &&
-                (item.image.startsWith('http://preview--ai-bundle-construct-20.lovable.app') ||
-                 item.image.startsWith('https://preview--ai-bundle-construct-20.lovable.app') ||
-                 item.image.startsWith('https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com'));
+                validateImageUrl(item.image);
               console.log(`Item ${item?.id} validation:`, isValid, item);
               return isValid;
             })
