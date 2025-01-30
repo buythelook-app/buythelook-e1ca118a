@@ -55,12 +55,16 @@ export const LookCard = ({ id, image, title, price, category, items = [] }: Look
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden h-full">
       <div className="relative aspect-[3/4] overflow-hidden">
         <img 
           src={image} 
           alt={title}
-          className="w-full h-full object-cover object-center transform transition-transform duration-300 hover:scale-105"
+          className="w-full h-full object-cover object-center"
+          onError={(e) => {
+            console.error(`Error loading image: ${image}`);
+            e.currentTarget.src = '/placeholder.svg';
+          }}
         />
       </div>
       <div className="p-4">

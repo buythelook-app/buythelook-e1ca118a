@@ -26,7 +26,7 @@ export const LookSuggestions = () => {
   const { data: dashboardItems, isLoading, error } = useQuery({
     queryKey: ['dashboardItems'],
     queryFn: fetchDashboardItems,
-    retry: false,
+    retry: 2,
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false,
   });
@@ -45,19 +45,18 @@ export const LookSuggestions = () => {
           return;
         }
 
-        const parsedAnalysis = JSON.parse(styleAnalysis) as QuizFormData;
-        const analysis = analyzeStyleWithAI(parsedAnalysis);
-        
         if (dashboardItems && Array.isArray(dashboardItems)) {
           console.log('Processing dashboard items:', dashboardItems);
           
           // Filter and map items to GridLook format
           const gridLooks: GridLook[] = dashboardItems
-            .filter(item => 
-              item && 
-              item.image && 
-              item.image.startsWith('http://preview--ai-bundle-construct-20.lovable.app')
-            )
+            .filter(item => {
+              const isValid = item && 
+                item.image && 
+                item.image.startsWith('http://preview--ai-bundle-construct-20.lovable.app');
+              console.log(`Item ${item?.id} validation:`, isValid, item);
+              return isValid;
+            })
             .map(item => ({
               id: item.id,
               image: item.image,
@@ -67,7 +66,7 @@ export const LookSuggestions = () => {
               items: [{ id: item.id, image: item.image }]
             }));
 
-          console.log('Filtered grid looks:', gridLooks);
+          console.log('Mapped grid looks:', gridLooks);
           setSuggestions(gridLooks);
         }
       } catch (error) {
