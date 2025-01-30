@@ -5,7 +5,7 @@ export const fallbackItems: OutfitItem[] = [
     id: '1',
     title: 'Classic White Blouse',
     description: 'A timeless piece for your wardrobe',
-    image: 'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7',
+    image: 'http://preview--ai-bundle-construct-20.lovable.app/images/classic-blouse.jpg',
     price: '$49.99',
     type: 'top'
   },
@@ -13,7 +13,7 @@ export const fallbackItems: OutfitItem[] = [
     id: '2',
     title: 'Black Trousers',
     description: 'Elegant and versatile',
-    image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e',
+    image: 'http://preview--ai-bundle-construct-20.lovable.app/images/black-trousers.jpg',
     price: '$69.99',
     type: 'bottom'
   }
@@ -27,19 +27,20 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
       throw new Error('Failed to fetch dashboard items');
     }
     const data = await response.json();
-    console.log('Raw API response:', data); // Debug the entire response
+    console.log('Raw API response:', data);
     
     if (!data.items || !Array.isArray(data.items)) {
       console.error('Invalid data format received:', data);
       throw new Error('Invalid data format');
     }
     
-    // Filter out items without required properties
+    // Filter out items without required properties and ensure image URLs are from the correct domain
     const validItems = data.items.filter(item => 
       item && 
       item.id && 
       item.name && 
       item.image && 
+      item.image.startsWith('http://preview--ai-bundle-construct-20.lovable.app') &&
       item.type
     );
     
@@ -47,7 +48,6 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
     return validItems;
   } catch (error) {
     console.error('Error fetching dashboard items:', error);
-    // Return fallback items mapped to DashboardItem format
     return fallbackItems.map(item => ({
       id: item.id,
       name: item.title,
@@ -60,10 +60,10 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
 };
 
 export const mapDashboardItemToOutfitItem = (item: DashboardItem): OutfitItem => {
-  console.log('Mapping item:', item); // Debug log
+  console.log('Mapping item:', item);
   
-  if (!item || !item.image) {
-    console.error('Invalid item or missing image:', item);
+  if (!item || !item.image || !item.image.startsWith('http://preview--ai-bundle-construct-20.lovable.app')) {
+    console.error('Invalid item or incorrect image domain:', item);
     return fallbackItems[0];
   }
   

@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { analyzeStyleWithAI } from "@/utils/styleAnalysis";
 import { QuizFormData } from "@/components/quiz/types";
 import { Look } from "@/types/lookTypes";
-import { fetchDashboardItems, mapDashboardItemToOutfitItem, fallbackItems } from "@/services/lookService";
+import { fetchDashboardItems, mapDashboardItemToOutfitItem } from "@/services/lookService";
 import { LookGrid } from "./LookGrid";
 import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
@@ -49,21 +49,26 @@ export const LookSuggestions = () => {
         const parsedAnalysis = JSON.parse(styleAnalysis) as QuizFormData;
         const analysis = analyzeStyleWithAI(parsedAnalysis);
         
-        if (dashboardItems) {
-          const mappedItems = dashboardItems
-            .filter(item => item && item.type && item.name)
-            .map(mapDashboardItemToOutfitItem);
+        if (dashboardItems && Array.isArray(dashboardItems)) {
+          console.log('Processing dashboard items:', dashboardItems);
+          
+          // Filter and map items to GridLook format
+          const gridLooks: GridLook[] = dashboardItems
+            .filter(item => 
+              item && 
+              item.image && 
+              item.image.startsWith('http://preview--ai-bundle-construct-20.lovable.app')
+            )
+            .map(item => ({
+              id: item.id,
+              image: item.image,
+              title: item.name || 'Fashion Item',
+              price: item.price || '$99.99',
+              category: item.type || 'Fashion',
+              items: [{ id: item.id, image: item.image }]
+            }));
 
-          // Create grid looks from dashboard items
-          const gridLooks: GridLook[] = mappedItems.map((item, index) => ({
-            id: item.id,
-            image: item.image,
-            title: item.title,
-            price: item.price,
-            category: item.type,
-            items: [{ id: item.id, image: item.image }]
-          }));
-
+          console.log('Filtered grid looks:', gridLooks);
           setSuggestions(gridLooks);
         }
       } catch (error) {
@@ -73,18 +78,6 @@ export const LookSuggestions = () => {
           description: "Failed to generate style suggestions. Please try again.",
           variant: "destructive",
         });
-        
-        setSuggestions([{
-          id: '1',
-          image: fallbackItems[0].image,
-          title: 'Classic Look',
-          price: "$119.98",
-          category: 'Classic',
-          items: fallbackItems.map(item => ({
-            id: item.id,
-            image: item.image
-          }))
-        }]);
       }
     };
 
