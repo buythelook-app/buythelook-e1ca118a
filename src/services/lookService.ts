@@ -44,7 +44,7 @@ export const mapDashboardItemToOutfitItem = (item: DashboardItem): OutfitItem =>
   id: item.id || String(Math.random()),
   title: item.name || 'Fashion Item',
   description: item.description || 'Stylish piece for your wardrobe',
-  image: item.image || fallbackItems[0].image,
+  image: `https://preview--ai-bundle-construct-20.lovable.app${item.image}` || fallbackItems[0].image,
   price: item.price || "$49.99",
   type: item.type || 'top'
 });
