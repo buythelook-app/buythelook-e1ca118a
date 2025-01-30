@@ -21,16 +21,16 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 flex flex-col">
       <h2 className="text-2xl font-display font-semibold mb-6">
         {formData.stylePreferences.length > 0 
           ? "Do you prefer your current style or this new option?" 
           : "Which style do you prefer?"}
       </h2>
-      <div className="grid grid-cols-2 gap-6">
-        <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-6 flex-1">
+        <div className="flex flex-col space-y-2">
           <div 
-            className={`relative cursor-pointer group ${
+            className={`relative cursor-pointer group flex-1 ${
               isSelected(style1.name) ? 'ring-4 ring-netflix-accent' : ''
             }`}
             onClick={() => onSelect(style1.name)}
@@ -38,7 +38,7 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
             <img 
               src={style1.image}
               alt={style1.name} 
-              className={`w-full h-[300px] object-cover rounded-lg transition-transform ${
+              className={`w-full h-full object-cover rounded-lg transition-transform ${
                 isSelected(style1.name) ? 'scale-[1.02]' : 'group-hover:scale-105'
               }`}
             />
@@ -52,9 +52,9 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
           </div>
           <p className="text-center font-medium text-lg">{style1.name}</p>
         </div>
-        <div className="space-y-2">
+        <div className="flex flex-col space-y-2">
           <div 
-            className={`relative cursor-pointer group ${
+            className={`relative cursor-pointer group flex-1 ${
               isSelected(style2.name) ? 'ring-4 ring-netflix-accent' : ''
             }`}
             onClick={() => onSelect(style2.name)}
@@ -62,7 +62,7 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
             <img 
               src={style2.image}
               alt={style2.name} 
-              className={`w-full h-[300px] object-cover rounded-lg transition-transform ${
+              className={`w-full h-full object-cover rounded-lg transition-transform ${
                 isSelected(style2.name) ? 'scale-[1.02]' : 'group-hover:scale-105'
               }`}
             />

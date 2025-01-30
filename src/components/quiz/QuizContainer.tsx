@@ -22,7 +22,7 @@ export const QuizContainer = ({ children }: QuizContainerProps) => {
           Back
         </Button>
 
-        <div className="bg-netflix-card rounded-lg p-8">
+        <div className="bg-netflix-card rounded-lg p-8 min-h-[600px] flex flex-col">
           {children}
         </div>
       </div>
