@@ -21,15 +21,30 @@ export const fallbackItems: OutfitItem[] = [
 
 export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   try {
-    const response = await fetch('https://preview--ai-bundle-construct-20.lovable.app/dashboard');
+    const response = await fetch('http://preview--ai-bundle-construct-20.lovable.app/dashboard');
     if (!response.ok) {
       console.error('API response not ok:', await response.text());
       throw new Error('Failed to fetch dashboard items');
     }
     const data = await response.json();
     console.log('Raw API response:', data); // Debug the entire response
-    console.log('Fetched dashboard items:', data.items); // Debug the items array
-    return data.items || [];
+    
+    if (!data.items || !Array.isArray(data.items)) {
+      console.error('Invalid data format received:', data);
+      throw new Error('Invalid data format');
+    }
+    
+    // Filter out items without required properties
+    const validItems = data.items.filter(item => 
+      item && 
+      item.id && 
+      item.name && 
+      item.image && 
+      item.type
+    );
+    
+    console.log('Filtered valid items:', validItems);
+    return validItems;
   } catch (error) {
     console.error('Error fetching dashboard items:', error);
     // Return fallback items mapped to DashboardItem format
