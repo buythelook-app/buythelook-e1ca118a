@@ -114,7 +114,14 @@ export const LookDetail = () => {
             />
             
             <div className="mt-4 md:mt-6">
-              <LookActions look={look} />
+              <LookActions
+                id={look.id}
+                image={look.image}
+                title={look.title}
+                price={look.price}
+                category={look.category}
+                items={look.items}
+              />
             </div>
 
             <div className="mt-4 md:mt-6">
