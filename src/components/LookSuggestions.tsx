@@ -8,6 +8,7 @@ import { fetchDashboardItems, mapDashboardItemToOutfitItem, fallbackItems } from
 import { LookGrid } from "./LookGrid";
 import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 interface GridLook {
   id: string;
@@ -20,9 +21,13 @@ interface GridLook {
 
 export const LookSuggestions = () => {
   const [suggestions, setSuggestions] = useState<GridLook[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const { data: dashboardItems, isLoading, error } = useQuery({
+    queryKey: ['dashboardItems'],
+    queryFn: fetchDashboardItems,
+  });
 
   useEffect(() => {
     const generateSuggestions = async () => {
@@ -41,22 +46,23 @@ export const LookSuggestions = () => {
         const parsedAnalysis = JSON.parse(styleAnalysis) as QuizFormData;
         const analysis = analyzeStyleWithAI(parsedAnalysis);
         
-        const dashboardItems = await fetchDashboardItems();
-        const mappedItems = dashboardItems
-          .filter(item => item && item.type && item.name)
-          .map(mapDashboardItemToOutfitItem);
+        if (dashboardItems) {
+          const mappedItems = dashboardItems
+            .filter(item => item && item.type && item.name)
+            .map(mapDashboardItemToOutfitItem);
 
-        // Create grid looks from dashboard items
-        const gridLooks: GridLook[] = mappedItems.map((item, index) => ({
-          id: item.id,
-          image: item.image,
-          title: item.title,
-          price: item.price,
-          category: item.type,
-          items: [{ id: item.id, image: item.image }]
-        }));
+          // Create grid looks from dashboard items
+          const gridLooks: GridLook[] = mappedItems.map((item, index) => ({
+            id: item.id,
+            image: item.image,
+            title: item.title,
+            price: item.price,
+            category: item.type,
+            items: [{ id: item.id, image: item.image }]
+          }));
 
-        setSuggestions(gridLooks);
+          setSuggestions(gridLooks);
+        }
       } catch (error) {
         console.error('Error generating suggestions:', error);
         toast({
@@ -76,18 +82,27 @@ export const LookSuggestions = () => {
             image: item.image
           }))
         }]);
-      } finally {
-        setIsLoading(false);
       }
     };
 
-    generateSuggestions();
-  }, [navigate, toast]);
+    if (dashboardItems) {
+      generateSuggestions();
+    }
+  }, [dashboardItems, navigate, toast]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <p className="text-red-500 mb-4">Failed to load suggestions</p>
+        <Button onClick={() => navigate('/quiz')}>Take Style Quiz</Button>
       </div>
     );
   }
