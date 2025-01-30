@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { UserDropdownMenu } from "./navbar/UserDropdownMenu";
 import { useCalendarSync } from "./navbar/CalendarSync";
 import { LayoutDashboard, ShoppingBag, Calendar, Settings } from "lucide-react";
+import { DropdownMenu } from "./ui/dropdown-menu";
 
 export const Navbar = () => {
   const { handleCalendarSync } = useCalendarSync();
@@ -28,7 +29,7 @@ export const Navbar = () => {
                 <span>Dashboard</span>
               </Link>
               <Link 
-                to="/look-suggestions" 
+                to="/suggestions" 
                 className="flex items-center space-x-2 text-sm font-medium hover:text-primary"
               >
                 <ShoppingBag className="h-4 w-4" />
@@ -51,10 +52,12 @@ export const Navbar = () => {
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <UserDropdownMenu 
-              onAddressClick={handleAddressClick}
-              handleCalendarSync={handleCalendarSync}
-            />
+            <DropdownMenu>
+              <UserDropdownMenu 
+                onAddressClick={handleAddressClick}
+                handleCalendarSync={handleCalendarSync}
+              />
+            </DropdownMenu>
           </div>
         </div>
       </div>
