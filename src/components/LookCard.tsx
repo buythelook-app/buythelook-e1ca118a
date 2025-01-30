@@ -55,16 +55,28 @@ export const LookCard = ({ id, image, title, price, category, items = [] }: Look
     toast.success('Look added to cart');
   };
 
+  // Placeholder images from Unsplash based on category
+  const getPlaceholderImage = () => {
+    switch (category.toLowerCase()) {
+      case 'top':
+        return 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b';
+      case 'bottom':
+        return 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d';
+      default:
+        return 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158';
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden h-full">
       <AspectRatio ratio={3/4} className="relative overflow-hidden">
         <img 
           src={image} 
           alt={title}
-          className="absolute inset-0 w-full h-full object-cover object-center"
+          className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-300"
           onError={(e) => {
-            console.error(`Error loading image: ${image}`);
-            e.currentTarget.src = '/placeholder.svg';
+            console.log(`Falling back to placeholder for: ${title}`);
+            e.currentTarget.src = getPlaceholderImage();
           }}
         />
       </AspectRatio>
