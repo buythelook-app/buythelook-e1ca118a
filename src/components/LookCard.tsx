@@ -55,24 +55,26 @@ export const LookCard = ({ id, image, title, price, category, items = [] }: Look
   };
 
   return (
-    <div className="look-card group">
-      <img 
-        src={image} 
-        alt={title} 
-        className="w-full h-[400px] object-cover rounded-lg transition-transform duration-300 group-hover:scale-105" 
-      />
-      <div className="look-card-content rounded-lg">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="relative aspect-[3/4] overflow-hidden">
+        <img 
+          src={image} 
+          alt={title}
+          className="w-full h-full object-cover object-center transform transition-transform duration-300 hover:scale-105"
+        />
+      </div>
+      <div className="p-4">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm text-netflix-accent font-medium mb-1 tracking-wide uppercase">{category}</p>
-            <h3 className="text-lg font-display font-semibold mb-1 text-white">{title}</h3>
-            <p className="text-sm text-white/90 font-medium">{price}</p>
+            <p className="text-sm text-purple-600 font-medium mb-1 tracking-wide uppercase">{category}</p>
+            <h3 className="text-lg font-semibold mb-1 text-gray-900">{title}</h3>
+            <p className="text-sm text-gray-700 font-medium">{price}</p>
           </div>
           <div className="flex gap-2">
             <Button
               variant="ghost"
               size="icon"
-              className={`hover:text-netflix-accent transition-colors ${isInCart ? 'text-white' : ''}`}
+              className={`hover:text-purple-600 transition-colors ${isInCart ? 'text-purple-600' : ''}`}
               onClick={handleAddToCart}
             >
               <ShoppingCart 
@@ -83,7 +85,7 @@ export const LookCard = ({ id, image, title, price, category, items = [] }: Look
             <Button
               variant="ghost"
               size="icon" 
-              className="hover:text-netflix-accent transition-colors"
+              className="hover:text-purple-600 transition-colors"
               onClick={handleFavoriteClick}
             >
               <Heart 
