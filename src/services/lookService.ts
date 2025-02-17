@@ -65,6 +65,16 @@ const generateOutfit = async (bodyStructure: string, style: string, mood: string
   }
 };
 
+// Helper function to transform a product into a DashboardItem
+const transformProductToDashboardItem = (product: any, type: string): DashboardItem => ({
+  id: String(product.product_id),
+  name: product.product_name,
+  description: `${product.materials_description || ''} - ${product.colour}`,
+  image: product.image?.urls?.[0] || '/placeholder.svg',
+  price: `$${product.price?.toFixed(2)}`,
+  type: product.product_family_en?.toLowerCase() || type
+});
+
 export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   try {
     const quizData = localStorage.getItem('styleAnalysis');
@@ -88,20 +98,25 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
     console.log('Full API response:', response);
 
     // Ensure we have valid data before transforming
-    if (!response || !response.data || !Array.isArray(response.data)) {
+    if (!response?.success || !response?.data) {
       console.error('Invalid API response structure:', response);
       return [];
     }
     
     // Transform the API response into DashboardItems
-    return response.data.map((item: any) => ({
-      id: item.id || String(Math.random()),
-      name: item.name || 'Stylish Item',
-      description: item.description || 'Perfect for your style',
-      image: item.image || '/placeholder.svg',
-      price: item.price || '$99.99',
-      type: item.type || 'fashion'
-    }));
+    const { top, bottom, shoes } = response.data;
+    const items: DashboardItem[] = [];
+
+    if (top) items.push(transformProductToDashboardItem(top, 'top'));
+    if (bottom) items.push(transformProductToDashboardItem(bottom, 'bottom'));
+    if (shoes) items.push(transformProductToDashboardItem(shoes, 'shoes'));
+
+    // Store recommendations in localStorage for use in other components
+    if (response.data.recommendations) {
+      localStorage.setItem('style-recommendations', JSON.stringify(response.data.recommendations));
+    }
+
+    return items;
   } catch (error) {
     console.error('Error in fetchDashboardItems:', error);
     return [];
