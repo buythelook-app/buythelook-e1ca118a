@@ -1,30 +1,18 @@
+
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 
 const BASE_URL = 'https://preview--ai-bundle-construct-20.lovable.app';
 
 const transformImageUrl = (url: string) => {
   if (!url) return '';
+  if (url.startsWith('http://review--ai-bundle-construct-20.lovable.app')) {
+    return url.replace(
+      'http://review--ai-bundle-construct-20.lovable.app',
+      'https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com'
+    );
+  }
   return url;
 };
-
-export const fallbackItems: DashboardItem[] = [
-  {
-    id: '1',
-    name: 'Classic White Blouse',
-    description: 'A timeless piece for your wardrobe',
-    image: `${BASE_URL}/api/items/1/image`,
-    price: '$49.99',
-    type: 'top'
-  },
-  {
-    id: '2',
-    name: 'Black Trousers',
-    description: 'Elegant and versatile',
-    image: `${BASE_URL}/api/items/2/image`,
-    price: '$69.99',
-    type: 'bottom'
-  }
-];
 
 export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   try {
@@ -39,29 +27,39 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
     const data = await response.json();
     console.log('Raw API response:', data);
     
-    if (!data || !data.items || !Array.isArray(data.items)) {
+    if (!data || !Array.isArray(data)) {
       console.error('Invalid data format received:', data);
       throw new Error('Invalid data format');
     }
     
-    const validItems = data.items.filter(item => {
-      const isValid = item && 
-        item.id && 
-        item.name &&
-        item.image;
-      
-      if (!isValid) {
-        console.log('Filtered out invalid item:', item);
-      }
-      
-      return isValid;
-    });
+    // Transform the data to match our DashboardItem type
+    const validItems = data
+      .filter(item => {
+        const isValid = item && 
+          item.id && 
+          item.name &&
+          item.image;
+        
+        if (!isValid) {
+          console.log('Filtered out invalid item:', item);
+        }
+        
+        return isValid;
+      })
+      .map(item => ({
+        id: item.id.toString(),
+        name: item.name,
+        description: item.description || '',
+        image: transformImageUrl(item.image),
+        price: item.price || '$99.99',
+        type: item.type || 'fashion'
+      }));
     
-    console.log('Filtered valid items:', validItems);
-    return validItems.length > 0 ? validItems : fallbackItems;
+    console.log('Transformed valid items:', validItems);
+    return validItems;
   } catch (error) {
     console.error('Error fetching dashboard items:', error);
-    return fallbackItems;
+    throw error; // Let the error propagate to be handled by the UI
   }
 };
 
