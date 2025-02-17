@@ -59,8 +59,14 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
 
     try {
       console.log("Submitting form data:", formData);
+      // Include current mood in the formData before analysis
       const currentMood = localStorage.getItem('current-mood');
-      const styleAnalysis = await analyzeStyleWithAI(formData, currentMood as any);
+      const dataToAnalyze = {
+        ...formData,
+        mood: currentMood || 'neutral'
+      };
+      
+      const styleAnalysis = await analyzeStyleWithAI(dataToAnalyze);
       
       // Save both the quiz data and the analysis
       localStorage.setItem('style-quiz-data', JSON.stringify(formData));
