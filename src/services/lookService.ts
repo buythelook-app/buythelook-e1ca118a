@@ -1,5 +1,6 @@
 
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
+import { supabase } from "@/integrations/supabase/client";
 
 const BASE_URL = 'https://preview--ai-bundle-construct-20.lovable.app';
 
@@ -14,7 +15,63 @@ const transformImageUrl = (url: string) => {
   return url;
 };
 
-// Fallback items in case the API fails
+// Fetch all available items from Supabase
+const fetchAllItems = async (): Promise<DashboardItem[]> => {
+  const { data, error } = await supabase
+    .from('items')
+    .select('*');
+
+  if (error) {
+    console.error('Error fetching items from Supabase:', error);
+    return [];
+  }
+
+  return data.map(item => ({
+    id: item.id,
+    name: item.name,
+    description: item.description || '',
+    image: transformImageUrl(item.image),
+    price: item.price || '$99.99',
+    type: item.type || 'fashion'
+  }));
+};
+
+// Generate AI suggestions based on available items and user preferences
+const generateAISuggestions = async (preferences: any, availableItems: DashboardItem[]): Promise<DashboardItem[]> => {
+  try {
+    console.log('Generating AI suggestions with preferences:', preferences);
+    const response = await fetch(`${BASE_URL}/api/generate-outfits`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        preferences,
+        availableItems // Pass the available items to the AI
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate suggestions');
+    }
+
+    const suggestionsData = await response.json();
+    return suggestionsData.map((item: any) => ({
+      id: item.id.toString(),
+      name: item.name,
+      description: item.description || '',
+      image: transformImageUrl(item.image),
+      price: item.price || '$99.99',
+      type: item.type || 'fashion'
+    }));
+  } catch (error) {
+    console.error('Error generating AI suggestions:', error);
+    return [];
+  }
+};
+
+// Fallback items in case everything fails
 const fallbackItems: DashboardItem[] = [
   {
     id: '1',
@@ -36,89 +93,44 @@ const fallbackItems: DashboardItem[] = [
 
 export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   try {
+    // First, fetch all available items from Supabase
+    const availableItems = await fetchAllItems();
+    
+    if (availableItems.length === 0) {
+      console.error('No items available in database');
+      return fallbackItems;
+    }
+
     // Get the quiz data to send to the AI
     const savedQuizData = localStorage.getItem('style-quiz-data');
     if (!savedQuizData) {
       console.error('No quiz data found');
-      return fallbackItems;
+      return availableItems; // Return all items if no quiz data
     }
 
     const quizData = JSON.parse(savedQuizData);
     
-    console.log('Fetching AI suggestions with quiz data:', quizData);
-    const response = await fetch(`${BASE_URL}/api/generate-outfits`, {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        preferences: {
-          gender: quizData.gender,
-          style: quizData.stylePreferences[0] || 'Elegant',
-          colors: quizData.colorPreferences || ['neutral'],
-          bodyShape: quizData.bodyShape,
-        }
-      })
-    });
-    
-    if (!response.ok) {
-      console.error('API response not ok:', response.status, response.statusText);
-      const text = await response.text();
-      console.error('Response body:', text);
-      return fallbackItems;
+    // Generate AI suggestions based on preferences and available items
+    const suggestions = await generateAISuggestions({
+      gender: quizData.gender,
+      style: quizData.stylePreferences[0] || 'Elegant',
+      colors: quizData.colorPreferences || ['neutral'],
+      bodyShape: quizData.bodyShape,
+    }, availableItems);
+
+    if (suggestions.length > 0) {
+      return suggestions;
     }
-    
-    let data;
-    try {
-      const text = await response.text();
-      console.log('Raw response text:', text);
-      data = JSON.parse(text);
-    } catch (parseError) {
-      console.error('Error parsing JSON:', parseError);
-      return fallbackItems;
-    }
-    
-    console.log('Parsed API response:', data);
-    
-    if (!data || !Array.isArray(data)) {
-      console.error('Invalid data format received:', data);
-      return fallbackItems;
-    }
-    
-    // Transform the data to match our DashboardItem type
-    const validItems = data
-      .filter(item => {
-        const isValid = item && 
-          item.id && 
-          item.name &&
-          item.image;
-        
-        if (!isValid) {
-          console.log('Filtered out invalid item:', item);
-        }
-        
-        return isValid;
-      })
-      .map(item => ({
-        id: item.id.toString(),
-        name: item.name,
-        description: item.description || '',
-        image: transformImageUrl(item.image),
-        price: item.price || '$99.99',
-        type: item.type || 'fashion'
-      }));
-    
-    console.log('Transformed valid items:', validItems);
-    return validItems.length > 0 ? validItems : fallbackItems;
+
+    // If AI generation fails, return all available items
+    return availableItems.length > 0 ? availableItems : fallbackItems;
   } catch (error) {
-    console.error('Error fetching dashboard items:', error);
+    console.error('Error in fetchDashboardItems:', error);
     return fallbackItems;
   }
 };
 
 export const mapDashboardItemToOutfitItem = (item: DashboardItem): OutfitItem => {
-  console.log('Mapping dashboard item to outfit item:', item);
   return {
     id: item.id,
     title: item.name,
