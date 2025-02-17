@@ -36,9 +36,12 @@ export const LookSuggestions = () => {
   useEffect(() => {
     const generateSuggestions = async () => {
       try {
-        // Check for existing quiz data first
+        // Check for existing quiz data and log it
         const savedQuizData = localStorage.getItem('style-quiz-data');
+        console.log('Retrieved quiz data:', savedQuizData);
+
         if (!savedQuizData) {
+          console.log('No quiz data found');
           toast({
             title: "No Style Profile Found",
             description: "Please complete the style quiz first to get personalized suggestions.",
@@ -48,14 +51,27 @@ export const LookSuggestions = () => {
           return;
         }
 
-        // Parse the saved quiz data
-        const quizData: QuizFormData = JSON.parse(savedQuizData);
+        // Parse and validate quiz data
+        let quizData: QuizFormData;
+        try {
+          quizData = JSON.parse(savedQuizData);
+          console.log('Parsed quiz data:', quizData);
+        } catch (e) {
+          console.error('Error parsing quiz data:', e);
+          localStorage.removeItem('style-quiz-data'); // Clear invalid data
+          navigate('/quiz');
+          return;
+        }
 
-        // Check if quiz data is complete
-        if (!quizData.gender || !quizData.bodyShape || quizData.stylePreferences.length === 0) {
+        // More lenient validation - check if we have at least some data
+        const hasBasicData = quizData.gender || quizData.bodyShape || (quizData.stylePreferences && quizData.stylePreferences.length > 0);
+        console.log('Has basic quiz data:', hasBasicData);
+
+        if (!hasBasicData) {
+          console.log('Quiz data is incomplete');
           toast({
             title: "Incomplete Style Profile",
-            description: "Please complete all sections of the style quiz.",
+            description: "Please complete the style quiz to get personalized suggestions.",
             variant: "destructive",
           });
           navigate('/quiz');
@@ -65,6 +81,7 @@ export const LookSuggestions = () => {
         // Generate or retrieve style analysis
         let styleAnalysis = localStorage.getItem('styleAnalysis');
         if (!styleAnalysis) {
+          console.log('Generating new style analysis');
           const newAnalysis = await analyzeStyleWithAI(quizData);
           styleAnalysis = JSON.stringify(newAnalysis);
           localStorage.setItem('styleAnalysis', styleAnalysis);
@@ -77,8 +94,7 @@ export const LookSuggestions = () => {
             .filter(item => {
               const isValid = item && 
                 item.image && 
-                item.name &&
-                validateImageUrl(item.image);
+                item.name;
               console.log(`Item ${item?.id} validation:`, isValid, item);
               return isValid;
             })
