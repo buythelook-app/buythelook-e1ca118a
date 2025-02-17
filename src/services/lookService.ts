@@ -70,7 +70,7 @@ const transformProductToDashboardItem = (product: any, type: string): DashboardI
   id: String(product.product_id),
   name: product.product_name,
   description: `${product.materials_description || ''} - ${product.colour}`,
-  image: product.image?.urls?.[0] || '/placeholder.svg',
+  image: Array.isArray(product.image) ? product.image[0] : '/placeholder.svg',
   price: `$${product.price?.toFixed(2)}`,
   type: product.product_family_en?.toLowerCase() || type
 });
@@ -111,9 +111,12 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
     if (bottom) items.push(transformProductToDashboardItem(bottom, 'bottom'));
     if (shoes) items.push(transformProductToDashboardItem(shoes, 'shoes'));
 
-    // Store recommendations in localStorage for use in other components
+    // Store recommendations and color information in localStorage for use in other components
     if (response.data.recommendations) {
       localStorage.setItem('style-recommendations', JSON.stringify(response.data.recommendations));
+    }
+    if (response.data.colors) {
+      localStorage.setItem('outfit-colors', JSON.stringify(response.data.colors));
     }
 
     return items;
