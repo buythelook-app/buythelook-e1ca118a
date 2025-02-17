@@ -1,12 +1,14 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { analyzeStyleWithAI } from "@/utils/styleAnalysis";
+import { QuizFormData } from "@/components/quiz/types";
 import { fetchDashboardItems } from "@/services/lookService";
 import { LookGrid } from "./LookGrid";
 import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { transformImageUrl, validateImageUrl } from "@/utils/imageUtils";
 
 interface GridLook {
   id: string;
@@ -18,11 +20,12 @@ interface GridLook {
 }
 
 export const LookSuggestions = () => {
+  const [suggestions, setSuggestions] = useState<GridLook[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { data: looks, isLoading, error } = useQuery({
-    queryKey: ['looks'],
+  const { data: dashboardItems, isLoading, error } = useQuery({
+    queryKey: ['dashboardItems'],
     queryFn: fetchDashboardItems,
     retry: 2,
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -30,17 +33,57 @@ export const LookSuggestions = () => {
   });
 
   useEffect(() => {
-    const styleAnalysis = localStorage.getItem('styleAnalysis');
-    if (!styleAnalysis) {
-      toast({
-        title: "No Style Analysis",
-        description: "Please complete the style quiz first.",
-        variant: "destructive",
-      });
-      navigate('/quiz');
-      return;
+    const generateSuggestions = async () => {
+      try {
+        const styleAnalysis = localStorage.getItem('styleAnalysis');
+        if (!styleAnalysis) {
+          toast({
+            title: "No Style Analysis",
+            description: "Please complete the style quiz first.",
+            variant: "destructive",
+          });
+          navigate('/quiz');
+          return;
+        }
+
+        if (dashboardItems && Array.isArray(dashboardItems)) {
+          console.log('Processing dashboard items:', dashboardItems);
+          
+          const gridLooks: GridLook[] = dashboardItems
+            .filter(item => {
+              const isValid = item && 
+                item.image && 
+                item.name &&
+                validateImageUrl(item.image);
+              console.log(`Item ${item?.id} validation:`, isValid, item);
+              return isValid;
+            })
+            .map(item => ({
+              id: item.id,
+              image: transformImageUrl(item.image),
+              title: item.name,
+              price: item.price || '$99.99',
+              category: item.type || 'Fashion',
+              items: [{ id: item.id, image: transformImageUrl(item.image) }]
+            }));
+
+          console.log('Mapped grid looks:', gridLooks);
+          setSuggestions(gridLooks);
+        }
+      } catch (error) {
+        console.error('Error generating suggestions:', error);
+        toast({
+          title: "Error",
+          description: "Failed to generate style suggestions. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    if (dashboardItems) {
+      generateSuggestions();
     }
-  }, [navigate, toast]);
+  }, [dashboardItems, navigate, toast]);
 
   if (isLoading) {
     return (
@@ -59,20 +102,11 @@ export const LookSuggestions = () => {
     );
   }
 
-  const gridLooks: GridLook[] = (looks || []).map(item => ({
-    id: item.id,
-    image: item.image,
-    title: item.name,
-    price: item.price || '$99.99',
-    category: item.type || 'Fashion',
-    items: [{ id: item.id, image: item.image }]
-  }));
-
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Your Style Suggestions</h1>
-      {gridLooks.length > 0 ? (
-        <LookGrid looks={gridLooks} />
+      {suggestions.length > 0 ? (
+        <LookGrid looks={suggestions} />
       ) : (
         <div className="text-center">
           <p className="text-lg text-gray-600 mb-4">No suggestions available.</p>

@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -38,10 +37,26 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
     };
   });
 
+  // Save data whenever it changes
   useEffect(() => {
     console.log("Saving form data:", formData);
     saveQuizData(formData);
   }, [formData]);
+
+  const handleNext = () => {
+    if (!validateQuizStep(step, formData)) {
+      toast({
+        title: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    setStep((prev) => prev + 1);
+  };
+
+  const handleBack = () => {
+    setStep((prev) => prev - 1);
+  };
 
   const handleSubmit = async () => {
     if (!validateQuizStep(step, formData)) {
@@ -59,24 +74,13 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
 
     try {
       console.log("Submitting form data:", formData);
-      // Include current mood in the formData before analysis
-      const currentMood = localStorage.getItem('current-mood');
-      const dataToAnalyze = {
-        ...formData,
-        mood: currentMood || 'neutral'
-      };
-      
-      const styleAnalysis = await analyzeStyleWithAI(dataToAnalyze);
-      
-      // Save both the quiz data and the analysis
-      localStorage.setItem('style-quiz-data', JSON.stringify(formData));
-      localStorage.setItem('styleAnalysis', JSON.stringify(styleAnalysis));
+      const styleAnalysis = await analyzeStyleWithAI(formData);
       
       toast({
         title: "Analysis complete!",
         description: "We've created your personalized style profile.",
       });
-      
+      localStorage.setItem('styleAnalysis', JSON.stringify(styleAnalysis));
       navigate('/suggestions');
     } catch (error) {
       console.error('Style analysis error:', error);
@@ -95,8 +99,8 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
         setFormData,
         step,
         setStep,
-        handleNext: () => setStep(prev => prev + 1),
-        handleBack: () => setStep(prev => prev - 1),
+        handleNext,
+        handleBack,
         handleSubmit,
       }}
     >

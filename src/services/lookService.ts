@@ -1,97 +1,72 @@
-
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
-import { supabase } from "@/lib/supabase";
 
-const generateAILooks = async (preferences: {
-  bodyShape: string;
-  stylePreferences: string[];
-  mood: string | null;
-}) => {
-  try {
-    console.log('Generating AI looks with preferences:', preferences);
-    
-    // Start with a base query
-    let query = supabase.from('items').select('*');
-    
-    // Build a more complex filter for combining body shape and style preferences
-    const conditions = [];
-    
-    if (preferences.bodyShape) {
-      conditions.push(`type.ilike.%${preferences.bodyShape}%`);
-    }
-    
-    if (preferences.stylePreferences?.length > 0) {
-      // Handle style preferences as an OR condition
-      const styleConditions = preferences.stylePreferences.map(style => 
-        `type.ilike.%${style}%`
-      );
-      conditions.push(`or(${styleConditions.join(',')})`);
-    }
+const BASE_URL = 'https://preview--ai-bundle-construct-20.lovable.app';
 
-    // Apply the combined filters if we have any
-    if (conditions.length > 0) {
-      query = query.or(conditions.join(','));
-    }
-
-    const { data: items, error } = await query;
-
-    if (error) {
-      console.error('Supabase query error:', error);
-      throw error;
-    }
-
-    console.log('Retrieved items:', items);
-
-    // Transform items into the expected format
-    return items.map(item => ({
-      id: item.id,
-      name: item.name,
-      description: item.description,
-      image: item.image,
-      price: item.price,
-      type: item.type
-    }));
-  } catch (error) {
-    console.error('Error generating looks:', error);
-    throw error;
-  }
+const transformImageUrl = (url: string) => {
+  if (!url) return '';
+  return url;
 };
+
+export const fallbackItems: DashboardItem[] = [
+  {
+    id: '1',
+    name: 'Classic White Blouse',
+    description: 'A timeless piece for your wardrobe',
+    image: `${BASE_URL}/api/items/1/image`,
+    price: '$49.99',
+    type: 'top'
+  },
+  {
+    id: '2',
+    name: 'Black Trousers',
+    description: 'Elegant and versatile',
+    image: `${BASE_URL}/api/items/2/image`,
+    price: '$69.99',
+    type: 'bottom'
+  }
+];
 
 export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   try {
-    const quizData = localStorage.getItem('style-quiz-data');
-    const currentMood = localStorage.getItem('current-mood');
+    console.log('Fetching dashboard items from:', `${BASE_URL}/api/items`);
+    const response = await fetch(`${BASE_URL}/api/items`);
     
-    if (!quizData) {
-      console.error('No quiz data found');
-      return [];
+    if (!response.ok) {
+      console.error('API response not ok:', await response.text());
+      throw new Error('Failed to fetch dashboard items');
     }
-
-    const parsedQuizData = JSON.parse(quizData);
-    console.log('Retrieved quiz data:', parsedQuizData);
     
-    // Generate looks using Supabase and AI preferences
-    const generatedLooks = await generateAILooks({
-      bodyShape: parsedQuizData.bodyShape,
-      stylePreferences: parsedQuizData.stylePreferences,
-      mood: currentMood,
+    const data = await response.json();
+    console.log('Raw API response:', data);
+    
+    if (!data || !data.items || !Array.isArray(data.items)) {
+      console.error('Invalid data format received:', data);
+      throw new Error('Invalid data format');
+    }
+    
+    const validItems = data.items.filter(item => {
+      const isValid = item && 
+        item.id && 
+        item.name &&
+        item.image;
+      
+      if (!isValid) {
+        console.log('Filtered out invalid item:', item);
+      }
+      
+      return isValid;
     });
-
-    return generatedLooks.map((item: any) => ({
-      id: item.id,
-      name: item.name,
-      description: item.description || '',
-      image: item.image || '/placeholder.svg',
-      price: item.price || '$99.99',
-      type: item.type || 'fashion',
-    }));
+    
+    console.log('Filtered valid items:', validItems);
+    return validItems.length > 0 ? validItems : fallbackItems;
   } catch (error) {
-    console.error('Error in fetchDashboardItems:', error);
-    return [];
+    console.error('Error fetching dashboard items:', error);
+    return fallbackItems;
   }
 };
 
 export const mapDashboardItemToOutfitItem = (item: DashboardItem): OutfitItem => {
+  console.log('Mapping dashboard item to outfit item:', item);
   return {
     id: item.id,
     title: item.name,
