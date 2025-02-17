@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { LookCard } from "./LookCard";
 import { Button } from "./ui/button";
@@ -36,12 +37,12 @@ export const LookGrid = ({ looks }: LookGridProps) => {
       
       <div className="flex justify-center mt-12">
         <Button 
-          onClick={() => navigate('/look-suggestions')}
+          onClick={() => navigate('/suggestions')}
           className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white gap-2"
           size="lg"
         >
           <ShoppingBag className="h-4 w-4" />
-          For more personal looks
+          Generate More Looks
         </Button>
       </div>
     </div>
