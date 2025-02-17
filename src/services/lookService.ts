@@ -30,15 +30,30 @@ const mapStyle = (style: string): "classic" | "romantic" | "minimalist" | "casua
   return styleMap[style.toLowerCase()] || "casual";
 };
 
+// Helper function to validate mood
+const validateMood = (mood: string | null): string => {
+  const validMoods = [
+    "mystery", "quiet", "elegant", "energized", 
+    "flowing", "optimist", "calm", "romantic", 
+    "unique", "sweet", "childish", "passionate", 
+    "powerful"
+  ];
+  
+  if (!mood || !validMoods.includes(mood.toLowerCase())) {
+    return "energized"; // default mood
+  }
+  return mood.toLowerCase();
+};
+
 const generateOutfit = async (bodyStructure: string, style: string, mood: string) => {
   try {
-    // Log the actual values being sent to the API
-    const params = {
+    const requestBody = {
       bodyStructure,
       style,
-      mood: mood.toLowerCase() // Ensure mood is lowercase
+      mood: validateMood(mood)
     };
-    console.log('Generating outfit with params:', params);
+    
+    console.log('Generating outfit with params:', requestBody);
     
     const response = await fetch(API_URL, {
       method: 'POST',
@@ -46,7 +61,7 @@ const generateOutfit = async (bodyStructure: string, style: string, mood: string
         'Content-Type': 'application/json',
         'apikey': API_KEY
       },
-      body: JSON.stringify(params)
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
@@ -80,7 +95,6 @@ const transformProductToDashboardItem = (product: any, type: string): DashboardI
 export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   try {
     const quizData = localStorage.getItem('styleAnalysis');
-    // Get the current mood directly before the API call
     const currentMood = localStorage.getItem('current-mood');
     
     if (!quizData) {
@@ -90,16 +104,15 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
 
     const parsedQuizData = JSON.parse(quizData);
     console.log('Retrieved quiz data:', parsedQuizData);
-    console.log('Current mood:', currentMood); // Log the current mood
+    console.log('Current mood:', currentMood);
     
     // Extract style preferences and body shape from quiz data
     const bodyShape = mapBodyShape(parsedQuizData.analysis?.bodyShape || '');
     const style = mapStyle(parsedQuizData.analysis?.styleProfile || '');
-    // Use the current mood or fallback to 'energized'
-    const mood = currentMood || 'energized';
+    const mood = currentMood; // Use the current mood directly
 
     // Generate outfit using the API
-    const response = await generateOutfit(bodyShape, style, mood);
+    const response = await generateOutfit(bodyShape, style, mood || 'energized');
     console.log('Full API response:', response);
 
     // Ensure we have valid data before transforming
