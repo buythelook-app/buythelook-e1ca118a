@@ -8,9 +8,9 @@ interface LogoProps {
 
 export const Logo = ({ className, size = "md" }: LogoProps) => {
   const sizes = {
-    sm: "h-8",
-    md: "h-12",
-    lg: "h-16"
+    sm: "h-12",
+    md: "h-20",
+    lg: "h-32"
   };
 
   return (
@@ -18,7 +18,8 @@ export const Logo = ({ className, size = "md" }: LogoProps) => {
       <img 
         src="/lovable-uploads/49120b89-0825-4ee5-b58f-9afadf263a51.png"
         alt="Buy the Look Logo"
-        className={cn("mr-2", sizes[size])}
+        className={cn("mr-2", sizes[size], "mix-blend-multiply")}
+        style={{ background: 'transparent' }}
       />
     </div>
   );
