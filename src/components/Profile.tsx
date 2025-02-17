@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CreditCard, Package, Settings, User, Apple } from "lucide-react";
 import { HomeButton } from "./HomeButton";
+import { CreditCardForm } from "./payments/CreditCardForm";
+import { useState } from "react";
 
-// Mock orders data
 const mockOrders = [
   { id: 1, date: "2024-01-01", total: 150, status: "Delivered" },
   { id: 2, date: "2024-02-01", total: 200, status: "Processing" },
@@ -17,6 +18,7 @@ const mockOrders = [
 
 export const Profile = () => {
   const { toast } = useToast();
+  const [showCreditCardForm, setShowCreditCardForm] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +34,9 @@ export const Profile = () => {
         <div className="container max-w-3xl mx-auto">
           <Card className="bg-netflix-card border-netflix-accent">
             <CardHeader>
-              <CardTitle className="text-2xl font-display font-bold text-netflix-accent">Buy The Look</CardTitle>
+              <CardTitle className="text-2xl font-display font-bold text-netflix-accent">
+                Buy The Look
+              </CardTitle>
               <div className="flex items-center gap-4 mt-4">
                 <Avatar className="h-20 w-20">
                   <AvatarImage src="" />
@@ -137,19 +141,31 @@ export const Profile = () => {
                 <TabsContent value="payments">
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Payment Methods</h3>
-                    <div className="flex flex-col gap-4">
-                      <button className="flex items-center gap-2 bg-netflix-background hover:bg-netflix-background/80 text-netflix-text px-6 py-3 rounded-lg transition-colors w-full">
-                        <CreditCard className="w-6 h-6" />
-                        <span>Credit Card</span>
-                      </button>
-                      <button className="flex items-center gap-2 bg-netflix-background hover:bg-netflix-background/80 text-netflix-text px-6 py-3 rounded-lg transition-colors w-full">
-                        <Apple className="w-6 h-6" />
-                        <span>Apple Pay</span>
-                      </button>
-                    </div>
-                    <Button className="w-full bg-netflix-accent hover:bg-netflix-accent/90 mt-4">
-                      Add New Payment Method
-                    </Button>
+                    {showCreditCardForm ? (
+                      <CreditCardForm onClose={() => setShowCreditCardForm(false)} />
+                    ) : (
+                      <div className="flex flex-col gap-4">
+                        <button
+                          className="flex items-center gap-2 bg-netflix-background hover:bg-netflix-background/80 text-netflix-text px-6 py-3 rounded-lg transition-colors w-full"
+                          onClick={() => setShowCreditCardForm(true)}
+                        >
+                          <CreditCard className="w-6 h-6" />
+                          <span>Credit Card</span>
+                        </button>
+                        <button className="flex items-center gap-2 bg-netflix-background hover:bg-netflix-background/80 text-netflix-text px-6 py-3 rounded-lg transition-colors w-full">
+                          <Apple className="w-6 h-6" />
+                          <span>Apple Pay</span>
+                        </button>
+                      </div>
+                    )}
+                    {!showCreditCardForm && (
+                      <Button
+                        className="w-full bg-netflix-accent hover:bg-netflix-accent/90 mt-4"
+                        onClick={() => setShowCreditCardForm(true)}
+                      >
+                        Add New Payment Method
+                      </Button>
+                    )}
                   </div>
                 </TabsContent>
 
