@@ -1,3 +1,4 @@
+
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 
 const API_URL = 'https://mwsblnposuyhrgzrtoyo.supabase.co/functions/v1/generate-outfit';
@@ -102,15 +103,33 @@ const transformProductToDashboardItem = (product: any, type: string): DashboardI
   
   // Try to get image from product
   if (product.image) {
-    if (Array.isArray(product.image) && product.image.length > 0) {
-      imageUrl = product.image[0];
-    } else if (typeof product.image === 'string') {
-      imageUrl = product.image;
+    try {
+      // If image is a string that contains JSON array
+      if (typeof product.image === 'string' && product.image.startsWith('[')) {
+        const imageArray = JSON.parse(product.image);
+        if (Array.isArray(imageArray) && imageArray.length > 0) {
+          imageUrl = imageArray[0];
+        }
+      } 
+      // If image is already an array
+      else if (Array.isArray(product.image) && product.image.length > 0) {
+        imageUrl = product.image[0];
+      }
+      // If image is a direct URL string
+      else if (typeof product.image === 'string') {
+        imageUrl = product.image;
+      }
+    } catch (error) {
+      console.error('Error parsing image:', error);
+      imageUrl = fallbackImages[type as keyof typeof fallbackImages] || fallbackImages.default;
     }
   } else {
     // Use type-specific fallback image
     imageUrl = fallbackImages[type as keyof typeof fallbackImages] || fallbackImages.default;
   }
+
+  console.log('Product:', product);
+  console.log('Selected image URL:', imageUrl);
 
   return {
     id: String(product.product_id),
