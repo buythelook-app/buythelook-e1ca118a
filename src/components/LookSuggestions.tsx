@@ -23,11 +23,18 @@ interface OutfitItem {
   description: string;
 }
 
+interface OutfitColors {
+  top: string;
+  bottom: string;
+  shoes: string;
+  [key: string]: string;
+}
+
 export const LookSuggestions = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [recommendations, setRecommendations] = useState<string[]>([]);
-  const [outfitColors, setOutfitColors] = useState<any>(null);
+  const [outfitColors, setOutfitColors] = useState<OutfitColors | null>(null);
 
   const { data: dashboardItems, isLoading, error } = useQuery({
     queryKey: ['dashboardItems'],
@@ -46,7 +53,12 @@ export const LookSuggestions = () => {
       setRecommendations(JSON.parse(storedRecommendations));
     }
     if (storedColors) {
-      setOutfitColors(JSON.parse(storedColors));
+      try {
+        const parsedColors = JSON.parse(storedColors) as OutfitColors;
+        setOutfitColors(parsedColors);
+      } catch (e) {
+        console.error('Error parsing outfit colors:', e);
+      }
     }
   }, [dashboardItems]);
 
@@ -66,6 +78,14 @@ export const LookSuggestions = () => {
       </div>
     );
   }
+
+  // Function to ensure color string is a valid CSS color
+  const validateColor = (color: string): string => {
+    // Check if it's a valid hex color or CSS color name
+    const isValidColor = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color) || 
+                        CSS.supports('color', color);
+    return isValidColor ? color : '#CCCCCC'; // fallback to a neutral gray
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -124,7 +144,7 @@ export const LookSuggestions = () => {
                 <div key={piece} className="text-center">
                   <div 
                     className="w-16 h-16 rounded-full mb-2" 
-                    style={{ backgroundColor: color }}
+                    style={{ backgroundColor: validateColor(color as string) }}
                   />
                   <p className="text-sm capitalize">{piece}</p>
                 </div>
