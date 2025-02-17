@@ -1,72 +1,103 @@
+
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 
-const BASE_URL = 'https://preview--ai-bundle-construct-20.lovable.app';
+const AI_BUNDLE_API = 'https://preview--ai-bundle-construct-20.lovable.app/api';
 
-const transformImageUrl = (url: string) => {
-  if (!url) return '';
-  return url;
+export const generateLooks = async (preferences: {
+  bodyShape: string;
+  stylePreferences: string[];
+  mood: string | null;
+}) => {
+  try {
+    console.log('Sending preferences to AI Bundle API:', preferences);
+    
+    const response = await fetch(`${AI_BUNDLE_API}/generate-looks`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(preferences),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate looks');
+    }
+
+    const data = await response.json();
+    console.log('Received generated looks:', data);
+    return data;
+  } catch (error) {
+    console.error('Error generating looks:', error);
+    throw error;
+  }
 };
 
-export const fallbackItems: DashboardItem[] = [
-  {
-    id: '1',
-    name: 'Classic White Blouse',
-    description: 'A timeless piece for your wardrobe',
-    image: `${BASE_URL}/api/items/1/image`,
-    price: '$49.99',
-    type: 'top'
-  },
-  {
-    id: '2',
-    name: 'Black Trousers',
-    description: 'Elegant and versatile',
-    image: `${BASE_URL}/api/items/2/image`,
-    price: '$69.99',
-    type: 'bottom'
+export const fetchLookDetails = async (productIds: string[]) => {
+  try {
+    const response = await fetch(`${AI_BUNDLE_API}/products`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ productIds }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch look details');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching look details:', error);
+    throw error;
   }
-];
+};
 
 export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   try {
-    console.log('Fetching dashboard items from:', `${BASE_URL}/api/items`);
-    const response = await fetch(`${BASE_URL}/api/items`);
+    // Get quiz data and current mood
+    const quizData = localStorage.getItem('style-quiz-data');
+    const currentMood = localStorage.getItem('current-mood');
     
-    if (!response.ok) {
-      console.error('API response not ok:', await response.text());
-      throw new Error('Failed to fetch dashboard items');
+    if (!quizData) {
+      console.error('No quiz data found');
+      return [];
     }
+
+    const parsedQuizData = JSON.parse(quizData);
+    console.log('Retrieved quiz data:', quizData);
     
-    const data = await response.json();
-    console.log('Raw API response:', data);
-    
-    if (!data || !data.items || !Array.isArray(data.items)) {
-      console.error('Invalid data format received:', data);
-      throw new Error('Invalid data format');
-    }
-    
-    const validItems = data.items.filter(item => {
-      const isValid = item && 
-        item.id && 
-        item.name &&
-        item.image;
-      
-      if (!isValid) {
-        console.log('Filtered out invalid item:', item);
-      }
-      
-      return isValid;
+    // Generate looks using AI Bundle API
+    const generatedLooks = await generateLooks({
+      bodyShape: parsedQuizData.bodyShape,
+      stylePreferences: parsedQuizData.stylePreferences,
+      mood: currentMood,
     });
+
+    if (!generatedLooks || !generatedLooks.productIds) {
+      console.error('Invalid response from AI Bundle API');
+      return [];
+    }
+
+    // Fetch full details for the generated looks
+    const lookDetails = await fetchLookDetails(generatedLooks.productIds);
     
-    console.log('Filtered valid items:', validItems);
-    return validItems.length > 0 ? validItems : fallbackItems;
+    return lookDetails.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description || '',
+      image: item.image || '/placeholder.svg',
+      price: item.price || '$99.99',
+      type: item.type || 'fashion',
+    }));
   } catch (error) {
-    console.error('Error fetching dashboard items:', error);
-    return fallbackItems;
+    console.error('Error in fetchDashboardItems:', error);
+    return [];
   }
 };
 
 export const mapDashboardItemToOutfitItem = (item: DashboardItem): OutfitItem => {
-  console.log('Mapping dashboard item to outfit item:', item);
   return {
     id: item.id,
     title: item.name,
