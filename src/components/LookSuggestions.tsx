@@ -1,28 +1,33 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { analyzeStyleWithAI } from "@/utils/styleAnalysis";
-import { QuizFormData } from "@/components/quiz/types";
 import { fetchDashboardItems } from "@/services/lookService";
-import { LookGrid } from "./LookGrid";
 import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { transformImageUrl, validateImageUrl } from "@/utils/imageUtils";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
-interface GridLook {
+interface OutfitItem {
   id: string;
   image: string;
-  title: string;
+  name: string;
   price: string;
-  category: string;
-  items: { id: string; image: string; }[];
+  type: string;
+  description: string;
 }
 
 export const LookSuggestions = () => {
-  const [suggestions, setSuggestions] = useState<GridLook[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [outfitColors, setOutfitColors] = useState<any>(null);
 
   const { data: dashboardItems, isLoading, error } = useQuery({
     queryKey: ['dashboardItems'],
@@ -33,57 +38,17 @@ export const LookSuggestions = () => {
   });
 
   useEffect(() => {
-    const generateSuggestions = async () => {
-      try {
-        const styleAnalysis = localStorage.getItem('styleAnalysis');
-        if (!styleAnalysis) {
-          toast({
-            title: "No Style Analysis",
-            description: "Please complete the style quiz first.",
-            variant: "destructive",
-          });
-          navigate('/quiz');
-          return;
-        }
-
-        if (dashboardItems && Array.isArray(dashboardItems)) {
-          console.log('Processing dashboard items:', dashboardItems);
-          
-          const gridLooks: GridLook[] = dashboardItems
-            .filter(item => {
-              const isValid = item && 
-                item.image && 
-                item.name &&
-                validateImageUrl(item.image);
-              console.log(`Item ${item?.id} validation:`, isValid, item);
-              return isValid;
-            })
-            .map(item => ({
-              id: item.id,
-              image: transformImageUrl(item.image),
-              title: item.name,
-              price: item.price || '$99.99',
-              category: item.type || 'Fashion',
-              items: [{ id: item.id, image: transformImageUrl(item.image) }]
-            }));
-
-          console.log('Mapped grid looks:', gridLooks);
-          setSuggestions(gridLooks);
-        }
-      } catch (error) {
-        console.error('Error generating suggestions:', error);
-        toast({
-          title: "Error",
-          description: "Failed to generate style suggestions. Please try again.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    if (dashboardItems) {
-      generateSuggestions();
+    // Retrieve stored recommendations and colors
+    const storedRecommendations = localStorage.getItem('style-recommendations');
+    const storedColors = localStorage.getItem('outfit-colors');
+    
+    if (storedRecommendations) {
+      setRecommendations(JSON.parse(storedRecommendations));
     }
-  }, [dashboardItems, navigate, toast]);
+    if (storedColors) {
+      setOutfitColors(JSON.parse(storedColors));
+    }
+  }, [dashboardItems]);
 
   if (isLoading) {
     return (
@@ -104,14 +69,69 @@ export const LookSuggestions = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Your Style Suggestions</h1>
-      {suggestions.length > 0 ? (
-        <LookGrid looks={suggestions} />
-      ) : (
-        <div className="text-center">
-          <p className="text-lg text-gray-600 mb-4">No suggestions available.</p>
-          <Button onClick={() => navigate('/quiz')}>Take Style Quiz</Button>
-        </div>
+      <h1 className="text-3xl font-bold mb-8">Your Personalized Outfit</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {dashboardItems?.map((item) => (
+          <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="text-lg">{item.name}</CardTitle>
+              <CardDescription>{item.type.toUpperCase()}</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="relative aspect-square">
+                <img 
+                  src={item.image} 
+                  alt={item.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = '/placeholder.svg';
+                  }}
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-4">
+                  <p className="font-semibold">{item.price}</p>
+                  <p className="text-sm opacity-90">{item.description}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {recommendations.length > 0 && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Style Recommendations</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="list-disc pl-5 space-y-2">
+              {recommendations.map((recommendation, index) => (
+                <li key={index} className="text-gray-700">{recommendation}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {outfitColors && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Color Palette</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4">
+              {Object.entries(outfitColors).map(([piece, color]) => (
+                <div key={piece} className="text-center">
+                  <div 
+                    className="w-16 h-16 rounded-full mb-2" 
+                    style={{ backgroundColor: color }}
+                  />
+                  <p className="text-sm capitalize">{piece}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
