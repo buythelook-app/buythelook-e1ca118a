@@ -58,7 +58,7 @@ const generateOutfit = async (bodyStructure: string, style: string, mood: string
       throw new Error(data.error || 'Failed to generate outfit');
     }
 
-    return data.data;
+    return data;  // Return the entire data object
   } catch (error) {
     console.error('Error in generateOutfit:', error);
     throw error;
@@ -84,10 +84,17 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
     const mood = currentMood || 'energized';
 
     // Generate outfit using the API
-    const outfitData = await generateOutfit(bodyShape, style, mood);
+    const response = await generateOutfit(bodyShape, style, mood);
+    console.log('Full API response:', response);
+
+    // Ensure we have valid data before transforming
+    if (!response || !response.data || !Array.isArray(response.data)) {
+      console.error('Invalid API response structure:', response);
+      return [];
+    }
     
     // Transform the API response into DashboardItems
-    return outfitData.items.map((item: any) => ({
+    return response.data.map((item: any) => ({
       id: item.id || String(Math.random()),
       name: item.name || 'Stylish Item',
       description: item.description || 'Perfect for your style',
