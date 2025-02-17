@@ -25,9 +25,10 @@ const mapStyle = (style: string): "classic" | "romantic" | "minimalist" | "casua
     minimal: "minimalist",
     casual: "casual",
     bohemian: "boohoo",
-    athletic: "sporty"
+    athletic: "sporty",
+    Elegance: "classic" // Added mapping for capitalized version
   };
-  return styleMap[style.toLowerCase()] || "casual";
+  return styleMap[style] || "casual";
 };
 
 // Helper function to validate mood
@@ -59,13 +60,19 @@ const generateOutfit = async (bodyStructure: string, style: string, mood: string
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': API_KEY
+        'apikey': API_KEY,
+        'Authorization': `Bearer ${API_KEY}`,
+        'Accept': 'application/json'
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(requestBody),
+      mode: 'cors',
+      credentials: 'omit'
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API request failed: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
