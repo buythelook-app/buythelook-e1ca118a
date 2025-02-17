@@ -1,3 +1,4 @@
+
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -6,6 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
+import { useEffect } from "react";
 
 export type Mood = "mystery" | "quiet" | "elegant" | "energized" | "flowing" | "optimist" | 
            "calm" | "romantic" | "unique" | "sweet" | "childish" | "passionate" | "powerful";
@@ -32,6 +34,19 @@ interface MoodFilterProps {
 }
 
 export const MoodFilter = ({ selectedMood, onMoodSelect }: MoodFilterProps) => {
+  useEffect(() => {
+    // Initialize from localStorage if exists
+    const storedMood = localStorage.getItem('current-mood') as Mood;
+    if (storedMood && !selectedMood) {
+      onMoodSelect(storedMood);
+    }
+  }, [selectedMood, onMoodSelect]);
+
+  const handleMoodSelect = (mood: Mood) => {
+    onMoodSelect(mood);
+    localStorage.setItem('current-mood', mood);
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -57,9 +72,9 @@ export const MoodFilter = ({ selectedMood, onMoodSelect }: MoodFilterProps) => {
           {(Object.keys(moodIcons) as Mood[]).map((mood) => (
             <Button
               key={mood}
-              variant="outline"
+              variant={selectedMood === mood ? "default" : "outline"}
               className="p-4 h-auto hover:bg-netflix-accent/10 transition-colors"
-              onClick={() => onMoodSelect(mood)}
+              onClick={() => handleMoodSelect(mood)}
             >
               <span className="mr-2 text-lg">{moodIcons[mood]}</span>
               <span className="text-sm capitalize">{mood}</span>

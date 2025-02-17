@@ -1,12 +1,23 @@
+
 import { HeroSection } from "@/components/HeroSection";
 import { LookSection } from "@/components/LookSection";
 import { Navbar } from "@/components/Navbar";
 import { FilterOptions } from "@/components/filters/FilterOptions";
 import { LookCanvas } from "@/components/LookCanvas";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import type { Mood } from "@/components/filters/MoodFilter";
+import { MoodFilter } from "@/components/filters/MoodFilter";
 
 export default function Index() {
   const navigate = useNavigate();
+  const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
+
+  const handleMoodSelect = (mood: Mood) => {
+    setSelectedMood(mood);
+    localStorage.setItem('current-mood', mood);
+  };
+
   const featuredLooks = [
     { 
       id: "look-1", 
@@ -122,6 +133,9 @@ export default function Index() {
       <Navbar />
       <HeroSection />
       <main className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <MoodFilter selectedMood={selectedMood} onMoodSelect={handleMoodSelect} />
+        </div>
         <FilterOptions />
         <section className="py-16">
           <div className="container mx-auto px-4">
