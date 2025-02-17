@@ -3,7 +3,8 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { QuizContextType, QuizFormData } from "./types";
-import { loadQuizData, saveQuizData, validateQuizStep, analyzeStyleWithAI } from "./quizUtils";
+import { loadQuizData, saveQuizData, validateQuizStep } from "./quizUtils";
+import { analyzeStyleWithAI } from "@/utils/styleAnalysis";
 
 const QuizContext = createContext<QuizContextType | undefined>(undefined);
 
@@ -59,8 +60,7 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
 
     try {
       console.log("Submitting form data:", formData);
-      const currentMood = localStorage.getItem('current-mood');
-      const styleAnalysis = await analyzeStyleWithAI(formData, currentMood as any);
+      const styleAnalysis = await analyzeStyleWithAI(formData);
       
       // Save both the quiz data and the analysis
       localStorage.setItem('style-quiz-data', JSON.stringify(formData));
