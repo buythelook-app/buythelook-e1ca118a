@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -35,15 +36,38 @@ export const LookSuggestions = () => {
   useEffect(() => {
     const generateSuggestions = async () => {
       try {
-        const styleAnalysis = localStorage.getItem('styleAnalysis');
-        if (!styleAnalysis) {
+        // Check for existing quiz data first
+        const savedQuizData = localStorage.getItem('style-quiz-data');
+        if (!savedQuizData) {
           toast({
-            title: "No Style Analysis",
-            description: "Please complete the style quiz first.",
+            title: "No Style Profile Found",
+            description: "Please complete the style quiz first to get personalized suggestions.",
             variant: "destructive",
           });
           navigate('/quiz');
           return;
+        }
+
+        // Parse the saved quiz data
+        const quizData: QuizFormData = JSON.parse(savedQuizData);
+
+        // Check if quiz data is complete
+        if (!quizData.gender || !quizData.bodyShape || quizData.stylePreferences.length === 0) {
+          toast({
+            title: "Incomplete Style Profile",
+            description: "Please complete all sections of the style quiz.",
+            variant: "destructive",
+          });
+          navigate('/quiz');
+          return;
+        }
+
+        // Generate or retrieve style analysis
+        let styleAnalysis = localStorage.getItem('styleAnalysis');
+        if (!styleAnalysis) {
+          const newAnalysis = await analyzeStyleWithAI(quizData);
+          styleAnalysis = JSON.stringify(newAnalysis);
+          localStorage.setItem('styleAnalysis', styleAnalysis);
         }
 
         if (dashboardItems && Array.isArray(dashboardItems)) {
