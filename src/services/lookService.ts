@@ -10,18 +10,27 @@ const generateAILooks = async (preferences: {
   try {
     console.log('Generating AI looks with preferences:', preferences);
     
-    // Query items from Supabase based on preferences
-    let query = supabase.from('items')
-      .select('*');
+    // Start with a base query
+    let query = supabase.from('items').select('*');
     
-    // Add filters based on preferences
+    // Build a more complex filter for combining body shape and style preferences
+    const conditions = [];
+    
     if (preferences.bodyShape) {
-      // You might want to adjust this based on your data structure
-      query = query.ilike('type', `%${preferences.bodyShape}%`);
+      conditions.push(`type.ilike.%${preferences.bodyShape}%`);
+    }
+    
+    if (preferences.stylePreferences?.length > 0) {
+      // Handle style preferences as an OR condition
+      const styleConditions = preferences.stylePreferences.map(style => 
+        `type.ilike.%${style}%`
+      );
+      conditions.push(`or(${styleConditions.join(',')})`);
     }
 
-    if (preferences.stylePreferences?.length > 0) {
-      query = query.in('type', preferences.stylePreferences);
+    // Apply the combined filters if we have any
+    if (conditions.length > 0) {
+      query = query.or(conditions.join(','));
     }
 
     const { data: items, error } = await query;
@@ -30,6 +39,8 @@ const generateAILooks = async (preferences: {
       console.error('Supabase query error:', error);
       throw error;
     }
+
+    console.log('Retrieved items:', items);
 
     // Transform items into the expected format
     return items.map(item => ({
