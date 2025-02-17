@@ -1,8 +1,8 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import { useToast } from "../ui/use-toast";
-import { MoodFilter, type Mood } from "./MoodFilter";
 import { EventFilter } from "./EventFilter";
 import { BudgetFilter } from "./BudgetFilter";
 
@@ -11,7 +11,6 @@ export const FilterOptions = () => {
   const [budget, setBudget] = useState<number>(100);
   const [isUnlimited, setIsUnlimited] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
-  const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const { toast } = useToast();
 
   const handleBudgetChange = (value: number[]) => {
@@ -34,14 +33,6 @@ export const FilterOptions = () => {
     }
   };
 
-  const handleMoodSelect = (mood: Mood) => {
-    setSelectedMood(mood);
-    toast({
-      title: "Mood Selected",
-      description: `Your selected mood: ${mood}`,
-    });
-  };
-
   const handleSyncCalendar = () => {
     toast({
       title: "Calendar Sync",
@@ -51,11 +42,6 @@ export const FilterOptions = () => {
 
   return (
     <div className="space-y-6 mb-8">
-      <MoodFilter 
-        selectedMood={selectedMood}
-        onMoodSelect={handleMoodSelect}
-      />
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <EventFilter
           date={date}
