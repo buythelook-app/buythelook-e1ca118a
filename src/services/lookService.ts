@@ -1,8 +1,15 @@
-
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 
 const API_URL = 'https://mwsblnposuyhrgzrtoyo.supabase.co/functions/v1/generate-outfit';
 const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13c2JsbnBvc3V5aHJnenJ0b3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4OTUyOTYsImV4cCI6MjA1MzQ3MTI5Nn0.gyU3tLyZ_1yY82BKkii8EyeaGzFn9muZR6G6ELJocQk';
+
+// Fallback images from Unsplash for different item types
+const fallbackImages = {
+  top: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901',
+  bottom: 'https://images.unsplash.com/photo-1721322800607-8c38375eef04',
+  shoes: 'https://images.unsplash.com/photo-1535268647677-300dbf3d78d1',
+  default: 'https://images.unsplash.com/photo-1485833077593-4278bba3f11f'
+};
 
 // Helper function to map body shapes to API expected format
 const mapBodyShape = (shape: string): "X" | "V" | "H" | "O" | "A" => {
@@ -90,14 +97,30 @@ const generateOutfit = async (bodyStructure: string, style: string, mood: string
 };
 
 // Helper function to transform a product into a DashboardItem
-const transformProductToDashboardItem = (product: any, type: string): DashboardItem => ({
-  id: String(product.product_id),
-  name: product.product_name,
-  description: `${product.materials_description || ''} - ${product.colour}`,
-  image: Array.isArray(product.image) ? product.image[0] : '/placeholder.svg',
-  price: `$${product.price?.toFixed(2)}`,
-  type: product.product_family_en?.toLowerCase() || type
-});
+const transformProductToDashboardItem = (product: any, type: string): DashboardItem => {
+  let imageUrl = fallbackImages.default;
+  
+  // Try to get image from product
+  if (product.image) {
+    if (Array.isArray(product.image) && product.image.length > 0) {
+      imageUrl = product.image[0];
+    } else if (typeof product.image === 'string') {
+      imageUrl = product.image;
+    }
+  } else {
+    // Use type-specific fallback image
+    imageUrl = fallbackImages[type as keyof typeof fallbackImages] || fallbackImages.default;
+  }
+
+  return {
+    id: String(product.product_id),
+    name: product.product_name || `${type.charAt(0).toUpperCase() + type.slice(1)} Item`,
+    description: `${product.materials_description || ''} - ${product.colour || 'Various colors'}`,
+    image: imageUrl,
+    price: product.price ? `$${Number(product.price).toFixed(2)}` : '$49.99',
+    type: product.product_family_en?.toLowerCase() || type
+  };
+};
 
 export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   try {
