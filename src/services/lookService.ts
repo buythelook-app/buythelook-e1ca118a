@@ -36,19 +36,37 @@ const fallbackItems: DashboardItem[] = [
 
 export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   try {
-    console.log('Fetching dashboard items from:', `${BASE_URL}/api/items`);
-    const response = await fetch(`${BASE_URL}/api/items`, {
+    // Get the quiz data to send to the AI
+    const savedQuizData = localStorage.getItem('style-quiz-data');
+    if (!savedQuizData) {
+      console.error('No quiz data found');
+      return fallbackItems;
+    }
+
+    const quizData = JSON.parse(savedQuizData);
+    
+    console.log('Fetching AI suggestions with quiz data:', quizData);
+    const response = await fetch(`${BASE_URL}/api/generate-outfits`, {
+      method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        preferences: {
+          gender: quizData.gender,
+          style: quizData.stylePreferences[0] || 'Elegant',
+          colors: quizData.colorPreferences || ['neutral'],
+          bodyShape: quizData.bodyShape,
+        }
+      })
     });
     
     if (!response.ok) {
       console.error('API response not ok:', response.status, response.statusText);
       const text = await response.text();
       console.error('Response body:', text);
-      return fallbackItems; // Return fallback items instead of throwing
+      return fallbackItems;
     }
     
     let data;
@@ -58,14 +76,14 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
       data = JSON.parse(text);
     } catch (parseError) {
       console.error('Error parsing JSON:', parseError);
-      return fallbackItems; // Return fallback items on parse error
+      return fallbackItems;
     }
     
     console.log('Parsed API response:', data);
     
     if (!data || !Array.isArray(data)) {
       console.error('Invalid data format received:', data);
-      return fallbackItems; // Return fallback items on invalid format
+      return fallbackItems;
     }
     
     // Transform the data to match our DashboardItem type
@@ -95,7 +113,7 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
     return validItems.length > 0 ? validItems : fallbackItems;
   } catch (error) {
     console.error('Error fetching dashboard items:', error);
-    return fallbackItems; // Return fallback items on any error
+    return fallbackItems;
   }
 };
 
