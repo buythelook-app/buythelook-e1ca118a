@@ -32,7 +32,13 @@ const mapStyle = (style: string): "classic" | "romantic" | "minimalist" | "casua
 
 const generateOutfit = async (bodyStructure: string, style: string, mood: string) => {
   try {
-    console.log('Generating outfit with params:', { bodyStructure, style, mood });
+    // Log the actual values being sent to the API
+    const params = {
+      bodyStructure,
+      style,
+      mood: mood.toLowerCase() // Ensure mood is lowercase
+    };
+    console.log('Generating outfit with params:', params);
     
     const response = await fetch(API_URL, {
       method: 'POST',
@@ -40,11 +46,7 @@ const generateOutfit = async (bodyStructure: string, style: string, mood: string
         'Content-Type': 'application/json',
         'apikey': API_KEY
       },
-      body: JSON.stringify({
-        bodyStructure,
-        style,
-        mood
-      })
+      body: JSON.stringify(params)
     });
 
     if (!response.ok) {
@@ -58,7 +60,7 @@ const generateOutfit = async (bodyStructure: string, style: string, mood: string
       throw new Error(data.error || 'Failed to generate outfit');
     }
 
-    return data;  // Return the entire data object
+    return data;
   } catch (error) {
     console.error('Error in generateOutfit:', error);
     throw error;
@@ -78,6 +80,7 @@ const transformProductToDashboardItem = (product: any, type: string): DashboardI
 export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   try {
     const quizData = localStorage.getItem('styleAnalysis');
+    // Get the current mood directly before the API call
     const currentMood = localStorage.getItem('current-mood');
     
     if (!quizData) {
@@ -87,10 +90,12 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
 
     const parsedQuizData = JSON.parse(quizData);
     console.log('Retrieved quiz data:', parsedQuizData);
+    console.log('Current mood:', currentMood); // Log the current mood
     
     // Extract style preferences and body shape from quiz data
     const bodyShape = mapBodyShape(parsedQuizData.analysis?.bodyShape || '');
     const style = mapStyle(parsedQuizData.analysis?.styleProfile || '');
+    // Use the current mood or fallback to 'energized'
     const mood = currentMood || 'energized';
 
     // Generate outfit using the API
