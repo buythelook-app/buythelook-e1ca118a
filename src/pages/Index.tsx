@@ -1,10 +1,8 @@
-
 import { HeroSection } from "@/components/HeroSection";
 import { LookSection } from "@/components/LookSection";
 import { Navbar } from "@/components/Navbar";
 import { FilterOptions } from "@/components/filters/FilterOptions";
 import { LookCanvas } from "@/components/LookCanvas";
-import { Logo } from "@/components/Logo";
 import { useNavigate } from "react-router-dom";
 
 export default function Index() {
@@ -122,11 +120,6 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-netflix-background">
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center mb-8">
-          <Logo size="lg" className="animate-fade-in" />
-        </div>
-      </div>
       <HeroSection />
       <main className="container mx-auto px-4 py-8">
         <FilterOptions />
