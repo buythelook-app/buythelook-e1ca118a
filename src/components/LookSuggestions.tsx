@@ -36,12 +36,27 @@ export const LookSuggestions = () => {
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [outfitColors, setOutfitColors] = useState<OutfitColors | null>(null);
 
+  // Check if quiz data exists
+  const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
+
+  useEffect(() => {
+    if (!hasQuizData) {
+      toast({
+        title: "Style Quiz Required",
+        description: "Please complete the style quiz first to get personalized suggestions.",
+        variant: "destructive",
+      });
+      navigate('/quiz');
+    }
+  }, [hasQuizData, navigate, toast]);
+
   const { data: dashboardItems, isLoading, error } = useQuery({
     queryKey: ['dashboardItems'],
     queryFn: fetchDashboardItems,
     retry: 2,
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false,
+    enabled: hasQuizData, // Only fetch if quiz data exists
   });
 
   useEffect(() => {
@@ -61,6 +76,16 @@ export const LookSuggestions = () => {
     }
   }, [dashboardItems]);
 
+  if (!hasQuizData) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <h2 className="text-2xl font-bold mb-4">Style Quiz Required</h2>
+        <p className="text-gray-600 mb-8">Please complete the style quiz to get personalized outfit suggestions.</p>
+        <Button onClick={() => navigate('/quiz')}>Take Style Quiz</Button>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -69,11 +94,11 @@ export const LookSuggestions = () => {
     );
   }
 
-  if (error) {
+  if (error || !dashboardItems?.length) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <p className="text-red-500 mb-4">Failed to load suggestions</p>
-        <Button onClick={() => navigate('/quiz')}>Take Style Quiz</Button>
+        <p className="text-red-500 mb-4">Unable to load outfit suggestions</p>
+        <Button onClick={() => navigate('/quiz')}>Retake Style Quiz</Button>
       </div>
     );
   }
@@ -89,15 +114,18 @@ export const LookSuggestions = () => {
       <h1 className="text-3xl font-bold mb-8 text-center">Your Curated Look</h1>
       
       <div className="bg-white rounded-lg shadow-xl p-8 mb-8">
-        <div className="space-y-8">
-          {dashboardItems?.map((item) => (
+        <div className="space-y-12">
+          {dashboardItems.map((item) => (
             <div key={item.id} className="group">
-              <div className="aspect-[3/4] overflow-hidden rounded-lg mb-4">
+              <div className="relative aspect-[4/5] overflow-hidden rounded-lg mb-4">
                 <img 
                   src={item.image} 
                   alt={item.name}
                   className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-300"
                 />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                  <p className="text-white text-lg font-medium">{item.type.toUpperCase()}</p>
+                </div>
               </div>
               <div className="space-y-2">
                 <h3 className="text-xl font-semibold">{item.name}</h3>
