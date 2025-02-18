@@ -45,14 +45,14 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     console.log('Drawing items:', items);
 
-    // Define default positions for each item type with larger sizes
+    // Define default positions for each item type with larger sizes and side-by-side positioning
     const defaultPositions = {
-      outerwear: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.35 },
-      top: { x: width * 0.1, y: height * 0.15, width: width * 0.8, height: height * 0.35 },
-      bottom: { x: width * 0.15, y: height * 0.32, width: width * 0.7, height: height * 0.4 },
+      outerwear: { x: width * 0.55, y: height * 0.02, width: width * 0.4, height: height * 0.35 },
+      top: { x: width * 0.1, y: height * 0.02, width: width * 0.4, height: height * 0.35 },
+      bottom: { x: width * 0.15, y: height * 0.32, width: width * 0.35, height: height * 0.4 },
       dress: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.7 },
-      shoes: { x: width * 0.25, y: height * 0.5, width: width * 0.5, height: height * 0.15 },
-      accessory: { x: width * 0.3, y: height * 0.45, width: width * 0.4, height: height * 0.2 },
+      shoes: { x: width * 0.55, y: height * 0.32, width: width * 0.35, height: height * 0.15 },
+      accessory: { x: width * 0.55, y: height * 0.45, width: width * 0.35, height: height * 0.2 },
       sunglasses: { x: width * 0.3, y: height * 0.02, width: width * 0.4, height: height * 0.15 }
     };
 
