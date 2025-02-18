@@ -39,13 +39,13 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     // Define default positions for each item type - tighter professional layout
     const defaultPositions = {
-      outerwear: { x: width * 0.25, y: height * 0.01, width: width * 0.5, height: height * 0.2 }, // coat at top
-      top: { x: width * 0.25, y: height * 0.15, width: width * 0.5, height: height * 0.15 }, // shirt right below coat
-      bottom: { x: width * 0.3, y: height * 0.25, width: width * 0.4, height: height * 0.25 }, // pants/skirt immediately below
-      dress: { x: width * 0.25, y: height * 0.1, width: width * 0.5, height: height * 0.45 }, // dress with proper spacing
-      shoes: { x: width * 0.35, y: height * 0.45, width: width * 0.3, height: height * 0.1 }, // shoes closer to outfit
-      accessory: { x: width * 0.4, y: height * 0.52, width: width * 0.2, height: height * 0.1 }, // accessories right after
-      sunglasses: { x: width * 0.4, y: height * 0.01, width: width * 0.2, height: height * 0.06 } // sunglasses at top
+      outerwear: { x: width * 0.25, y: height * 0.02, width: width * 0.5, height: height * 0.22 }, // restore original height
+      top: { x: width * 0.25, y: height * 0.23, width: width * 0.5, height: height * 0.18 }, // original height, closer to coat
+      bottom: { x: width * 0.3, y: height * 0.40, width: width * 0.4, height: height * 0.28 }, // original height, closer up
+      dress: { x: width * 0.25, y: height * 0.1, width: width * 0.5, height: height * 0.55 }, // keep original dress proportions
+      shoes: { x: width * 0.35, y: height * 0.67, width: width * 0.3, height: height * 0.12 }, // original size, closer to outfit
+      accessory: { x: width * 0.4, y: height * 0.78, width: width * 0.2, height: height * 0.12 }, // original size
+      sunglasses: { x: width * 0.4, y: height * 0.02, width: width * 0.2, height: height * 0.08 } // original proportions
     };
 
     // Load and draw all images
