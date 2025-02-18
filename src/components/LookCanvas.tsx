@@ -47,13 +47,13 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     // Define default positions for each item type with larger sizes
     const defaultPositions = {
-      outerwear: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.35 },
-      top: { x: width * 0.1, y: height * 0.15, width: width * 0.8, height: height * 0.35 },
-      bottom: { x: width * 0.15, y: height * 0.32, width: width * 0.7, height: height * 0.4 },
-      dress: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.7 },
-      shoes: { x: width * 0.25, y: height * 0.5, width: width * 0.5, height: height * 0.15 },
-      accessory: { x: width * 0.3, y: height * 0.45, width: width * 0.4, height: height * 0.2 },
-      sunglasses: { x: width * 0.3, y: height * 0.02, width: width * 0.4, height: height * 0.15 }
+      outerwear: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.45 },
+      top: { x: width * 0.05, y: height * 0.1, width: width * 0.9, height: height * 0.45 },
+      bottom: { x: width * 0.1, y: height * 0.32, width: width * 0.8, height: height * 0.5 },
+      dress: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.85 },
+      shoes: { x: width * 0.2, y: height * 0.65, width: width * 0.6, height: height * 0.25 },
+      accessory: { x: width * 0.25, y: height * 0.45, width: width * 0.5, height: height * 0.3 },
+      sunglasses: { x: width * 0.25, y: height * 0.02, width: width * 0.5, height: height * 0.2 }
     };
 
     // Load and draw all images
