@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 
 interface OutfitItem {
@@ -28,6 +29,14 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Set canvas resolution to be higher for better quality
+    const scale = window.devicePixelRatio || 1;
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+    
+    // Scale the context to match the high-resolution canvas
+    ctx.scale(scale, scale);
+
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
@@ -39,13 +48,13 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     // Define default positions for each item type - original proportions with better spacing
     const defaultPositions = {
-      outerwear: { x: width * 0.2, y: height * 0.02, width: width * 0.6, height: height * 0.3 }, // original larger size
-      top: { x: width * 0.2, y: height * 0.31, width: width * 0.6, height: height * 0.25 }, // original proportions
-      bottom: { x: width * 0.25, y: height * 0.55, width: width * 0.5, height: height * 0.35 }, // original tall proportion
-      dress: { x: width * 0.2, y: height * 0.15, width: width * 0.6, height: height * 0.6 }, // original full-length
-      shoes: { x: width * 0.3, y: height * 0.89, width: width * 0.4, height: height * 0.1 }, // original shoe size
-      accessory: { x: width * 0.35, y: height * 0.85, width: width * 0.3, height: height * 0.15 }, // original accessory size
-      sunglasses: { x: width * 0.35, y: height * 0.02, width: width * 0.3, height: height * 0.1 } // original sunglasses size
+      outerwear: { x: width * 0.2, y: height * 0.02, width: width * 0.6, height: height * 0.3 },
+      top: { x: width * 0.2, y: height * 0.31, width: width * 0.6, height: height * 0.25 },
+      bottom: { x: width * 0.25, y: height * 0.55, width: width * 0.5, height: height * 0.35 },
+      dress: { x: width * 0.2, y: height * 0.15, width: width * 0.6, height: height * 0.6 },
+      shoes: { x: width * 0.3, y: height * 0.89, width: width * 0.4, height: height * 0.1 },
+      accessory: { x: width * 0.35, y: height * 0.85, width: width * 0.3, height: height * 0.15 },
+      sunglasses: { x: width * 0.35, y: height * 0.02, width: width * 0.3, height: height * 0.1 }
     };
 
     // Load and draw all images
@@ -82,7 +91,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
             if (position) {
               console.log('Drawing item with position:', position);
 
-              // Create an offscreen canvas for image processing
+              // Create an offscreen canvas for image processing with original dimensions
               const offscreenCanvas = document.createElement('canvas');
               const offscreenCtx = offscreenCanvas.getContext('2d');
               if (!offscreenCtx) {
@@ -90,12 +99,12 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                 continue;
               }
 
-              // Set offscreen canvas size
+              // Use original image dimensions for the offscreen canvas
               offscreenCanvas.width = img.width;
               offscreenCanvas.height = img.height;
 
-              // Draw the original image to offscreen canvas
-              offscreenCtx.drawImage(img, 0, 0);
+              // Draw the original image to offscreen canvas at full resolution
+              offscreenCtx.drawImage(img, 0, 0, img.width, img.height);
 
               // Remove background (more aggressive white and light color removal)
               const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
@@ -118,13 +127,29 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               }
               offscreenCtx.putImageData(imageData, 0, 0);
 
-              // Draw the processed image to main canvas
+              // Draw the processed image to main canvas while maintaining aspect ratio
+              const aspectRatio = img.width / img.height;
+              let drawWidth = position.width;
+              let drawHeight = position.height;
+
+              // Adjust dimensions to maintain aspect ratio
+              if (drawWidth / drawHeight > aspectRatio) {
+                drawWidth = drawHeight * aspectRatio;
+              } else {
+                drawHeight = drawWidth / aspectRatio;
+              }
+
+              // Center the image within its allocated space
+              const centerX = position.x + (position.width - drawWidth) / 2;
+              const centerY = position.y + (position.height - drawHeight) / 2;
+
+              // Draw the image with preserved aspect ratio
               ctx.drawImage(
                 offscreenCanvas,
-                position.x,
-                position.y,
-                position.width,
-                position.height
+                centerX,
+                centerY,
+                drawWidth,
+                drawHeight
               );
               
               console.log('Successfully drew item:', item.type);
@@ -149,7 +174,12 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       width={width}
       height={height}
       className="border rounded-lg shadow-lg bg-white"
-      style={{ maxWidth: '100%', height: 'auto' }}
+      style={{ 
+        maxWidth: '100%', 
+        height: 'auto',
+        width: `${width}px`,
+        height: `${height}px`
+      }}
     />
   );
 };
