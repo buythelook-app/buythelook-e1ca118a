@@ -45,7 +45,6 @@ export const LookSuggestions = () => {
   });
 
   useEffect(() => {
-    // Retrieve stored recommendations and colors
     const storedRecommendations = localStorage.getItem('style-recommendations');
     const storedColors = localStorage.getItem('outfit-colors');
     
@@ -79,52 +78,44 @@ export const LookSuggestions = () => {
     );
   }
 
-  // Function to ensure color string is a valid CSS color
   const validateColor = (color: string): string => {
-    // Check if it's a valid hex color or CSS color name
     const isValidColor = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color) || 
                         CSS.supports('color', color);
-    return isValidColor ? color : '#CCCCCC'; // fallback to a neutral gray
+    return isValidColor ? color : '#CCCCCC';
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Your Personalized Outfit</h1>
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <h1 className="text-3xl font-bold mb-8 text-center">Your Curated Look</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {dashboardItems?.map((item) => (
-          <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="text-lg">{item.name}</CardTitle>
-              <CardDescription>{item.type.toUpperCase()}</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="relative aspect-square">
+      <div className="bg-white rounded-lg shadow-xl p-8 mb-8">
+        <div className="space-y-8">
+          {dashboardItems?.map((item) => (
+            <div key={item.id} className="group">
+              <div className="aspect-[3/4] overflow-hidden rounded-lg mb-4">
                 <img 
                   src={item.image} 
                   alt={item.name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = '/placeholder.svg';
-                  }}
+                  className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-300"
                 />
-                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-4">
-                  <p className="font-semibold">{item.price}</p>
-                  <p className="text-sm opacity-90">{item.description}</p>
-                </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
+              <div className="space-y-2">
+                <h3 className="text-xl font-semibold">{item.name}</h3>
+                <p className="text-gray-600">{item.description}</p>
+                <p className="text-lg font-medium">{item.price}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {recommendations.length > 0 && (
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Style Recommendations</CardTitle>
+            <CardTitle>Styling Tips</CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="list-disc pl-5 space-y-2">
+            <ul className="space-y-2">
               {recommendations.map((recommendation, index) => (
                 <li key={index} className="text-gray-700">{recommendation}</li>
               ))}
@@ -134,17 +125,17 @@ export const LookSuggestions = () => {
       )}
 
       {outfitColors && (
-        <Card className="mb-8">
+        <Card>
           <CardHeader>
             <CardTitle>Color Palette</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4">
+            <div className="flex gap-4 justify-center">
               {Object.entries(outfitColors).map(([piece, color]) => (
                 <div key={piece} className="text-center">
                   <div 
                     className="w-16 h-16 rounded-full mb-2" 
-                    style={{ backgroundColor: validateColor(color as string) }}
+                    style={{ backgroundColor: validateColor(color) }}
                   />
                   <p className="text-sm capitalize">{piece}</p>
                 </div>
