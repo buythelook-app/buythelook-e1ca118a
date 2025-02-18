@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 
 interface OutfitItem {
@@ -38,12 +37,12 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     console.log('Drawing items:', items);
 
-    // Define default positions for each item type - now closer together
+    // Define default positions for each item type - tighter composition
     const defaultPositions = {
-      top: { x: width * 0.25, y: height * 0.1, width: width * 0.5, height: height * 0.35 },
-      bottom: { x: width * 0.25, y: height * 0.42, width: width * 0.5, height: height * 0.35 },
-      dress: { x: width * 0.25, y: height * 0.1, width: width * 0.5, height: height * 0.75 },
-      shoes: { x: width * 0.35, y: height * 0.78, width: width * 0.3, height: height * 0.2 },
+      top: { x: width * 0.25, y: height * 0.15, width: width * 0.5, height: height * 0.3 },
+      bottom: { x: width * 0.25, y: height * 0.35, width: width * 0.5, height: height * 0.4 },
+      dress: { x: width * 0.25, y: height * 0.15, width: width * 0.5, height: height * 0.65 },
+      shoes: { x: width * 0.35, y: height * 0.72, width: width * 0.3, height: height * 0.2 },
       accessory: { x: width * 0.1, y: height * 0.05, width: width * 0.15, height: height * 0.15 },
       sunglasses: { x: width * 0.75, y: height * 0.05, width: width * 0.15, height: height * 0.1 },
       outerwear: { x: width * 0.75, y: height * 0.2, width: width * 0.2, height: height * 0.4 }
