@@ -37,15 +37,15 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     console.log('Drawing items:', items);
 
-    // Define default positions for each item type - tighter professional layout
+    // Define default positions for each item type - original proportions with better spacing
     const defaultPositions = {
-      outerwear: { x: width * 0.25, y: height * 0.02, width: width * 0.5, height: height * 0.22 }, // restore original height
-      top: { x: width * 0.25, y: height * 0.23, width: width * 0.5, height: height * 0.18 }, // original height, closer to coat
-      bottom: { x: width * 0.3, y: height * 0.40, width: width * 0.4, height: height * 0.28 }, // original height, closer up
-      dress: { x: width * 0.25, y: height * 0.1, width: width * 0.5, height: height * 0.55 }, // keep original dress proportions
-      shoes: { x: width * 0.35, y: height * 0.67, width: width * 0.3, height: height * 0.12 }, // original size, closer to outfit
-      accessory: { x: width * 0.4, y: height * 0.78, width: width * 0.2, height: height * 0.12 }, // original size
-      sunglasses: { x: width * 0.4, y: height * 0.02, width: width * 0.2, height: height * 0.08 } // original proportions
+      outerwear: { x: width * 0.2, y: height * 0.02, width: width * 0.6, height: height * 0.3 }, // original larger size
+      top: { x: width * 0.2, y: height * 0.31, width: width * 0.6, height: height * 0.25 }, // original proportions
+      bottom: { x: width * 0.25, y: height * 0.55, width: width * 0.5, height: height * 0.35 }, // original tall proportion
+      dress: { x: width * 0.2, y: height * 0.15, width: width * 0.6, height: height * 0.6 }, // original full-length
+      shoes: { x: width * 0.3, y: height * 0.89, width: width * 0.4, height: height * 0.1 }, // original shoe size
+      accessory: { x: width * 0.35, y: height * 0.85, width: width * 0.3, height: height * 0.15 }, // original accessory size
+      sunglasses: { x: width * 0.35, y: height * 0.02, width: width * 0.3, height: height * 0.1 } // original sunglasses size
     };
 
     // Load and draw all images
