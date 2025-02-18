@@ -37,15 +37,15 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     console.log('Drawing items:', items);
 
-    // Define default positions for each item type - vertical layout like the reference image
+    // Define default positions for each item type - improved vertical layout to match reference
     const defaultPositions = {
-      outerwear: { x: width * 0.25, y: height * 0.05, width: width * 0.5, height: height * 0.3 }, // coat at top
-      top: { x: width * 0.25, y: height * 0.25, width: width * 0.5, height: height * 0.25 }, // middle layer
-      bottom: { x: width * 0.25, y: height * 0.45, width: width * 0.5, height: height * 0.35 }, // pants below
-      dress: { x: width * 0.25, y: height * 0.15, width: width * 0.5, height: height * 0.65 },
-      shoes: { x: width * 0.25, y: height * 0.8, width: width * 0.3, height: height * 0.15 }, // shoes at bottom
-      accessory: { x: width * 0.6, y: height * 0.75, width: width * 0.25, height: height * 0.2 }, // bag on the right bottom
-      sunglasses: { x: width * 0.6, y: height * 0.1, width: width * 0.15, height: height * 0.1 }
+      outerwear: { x: width * 0.15, y: height * 0.02, width: width * 0.7, height: height * 0.25 }, // coat at very top, wider
+      top: { x: width * 0.2, y: height * 0.22, width: width * 0.6, height: height * 0.2 }, // shirt below coat
+      bottom: { x: width * 0.25, y: height * 0.4, width: width * 0.5, height: height * 0.3 }, // pants/skirt centered
+      dress: { x: width * 0.2, y: height * 0.1, width: width * 0.6, height: height * 0.6 }, // dress takes more vertical space
+      shoes: { x: width * 0.3, y: height * 0.68, width: width * 0.4, height: height * 0.15 }, // shoes closer to bottom items
+      accessory: { x: width * 0.35, y: height * 0.82, width: width * 0.3, height: height * 0.15 }, // accessories at bottom
+      sunglasses: { x: width * 0.35, y: height * 0.02, width: width * 0.3, height: height * 0.08 } // sunglasses at top
     };
 
     // Load and draw all images
