@@ -1,4 +1,3 @@
-
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 
 const API_URL = 'https://mwsblnposuyhrgzrtoyo.supabase.co/functions/v1/generate-outfit';
@@ -34,7 +33,7 @@ const mapStyle = (style: string): "classic" | "romantic" | "minimalist" | "casua
     casual: "casual",
     bohemian: "boohoo",
     athletic: "sporty",
-    Elegance: "classic" // Added mapping for capitalized version
+    Elegance: "classic"
   };
   return styleMap[style] || "casual";
 };
@@ -49,7 +48,7 @@ const validateMood = (mood: string | null): string => {
   ];
   
   if (!mood || !validMoods.includes(mood.toLowerCase())) {
-    return "energized"; // default mood
+    return "energized";
   }
   return mood.toLowerCase();
 };
@@ -145,28 +144,33 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   try {
     const quizData = localStorage.getItem('styleAnalysis');
     const currentMood = localStorage.getItem('current-mood');
+    const styleAnalysis = quizData ? JSON.parse(quizData) : null;
     
-    if (!quizData) {
-      console.error('No quiz data found');
+    console.log('Retrieved quiz data:', styleAnalysis);
+    console.log('Current mood:', currentMood);
+    
+    if (!styleAnalysis?.analysis) {
+      console.error('Invalid style analysis data');
       return [];
     }
 
-    const parsedQuizData = JSON.parse(quizData);
-    console.log('Retrieved quiz data:', parsedQuizData);
-    console.log('Current mood:', currentMood);
+    // Extract body shape from quiz data
+    const bodyShape = styleAnalysis.analysis.bodyShape || 'H';
     
-    // Extract style preferences and body shape from quiz data
-    const bodyShape = mapBodyShape(parsedQuizData.analysis?.bodyShape || '');
-    const style = mapStyle(parsedQuizData.analysis?.styleProfile || '');
-    const mood = currentMood; // Use the current mood directly
+    // Use the style profile from analysis
+    const style = styleAnalysis.analysis.styleProfile || 'classic';
+    
+    // Use the current mood or default to 'energized'
+    const mood = currentMood || 'energized';
+
+    console.log('Generating outfit with:', { bodyShape, style, mood });
 
     // Generate outfit using the API
-    const response = await generateOutfit(bodyShape, style, mood || 'energized');
-    console.log('Full API response:', response);
+    const response = await generateOutfit(bodyShape, style, mood);
+    console.log('API response:', response);
 
-    // Ensure we have valid data before transforming
-    if (!response?.success || !response?.data) {
-      console.error('Invalid API response structure:', response);
+    if (!response?.data) {
+      console.error('Invalid API response:', response);
       return [];
     }
     
@@ -178,7 +182,7 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
     if (bottom) items.push(transformProductToDashboardItem(bottom, 'bottom'));
     if (shoes) items.push(transformProductToDashboardItem(shoes, 'shoes'));
 
-    // Store recommendations and color information in localStorage for use in other components
+    // Store recommendations and color information
     if (response.data.recommendations) {
       localStorage.setItem('style-recommendations', JSON.stringify(response.data.recommendations));
     }
@@ -189,7 +193,7 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
     return items;
   } catch (error) {
     console.error('Error in fetchDashboardItems:', error);
-    return [];
+    throw error;
   }
 };
 

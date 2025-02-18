@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -9,7 +8,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -36,8 +34,24 @@ export const LookSuggestions = () => {
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [outfitColors, setOutfitColors] = useState<OutfitColors | null>(null);
 
-  // Check if quiz data exists
   const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
+
+  const { data: dashboardItems, isLoading, error, refetch } = useQuery({
+    queryKey: ['dashboardItems'],
+    queryFn: fetchDashboardItems,
+    retry: 2,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false,
+    enabled: hasQuizData,
+    onError: (error) => {
+      console.error('Error fetching suggestions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load outfit suggestions. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
 
   useEffect(() => {
     if (!hasQuizData) {
@@ -47,25 +61,20 @@ export const LookSuggestions = () => {
         variant: "destructive",
       });
       navigate('/quiz');
+      return;
     }
-  }, [hasQuizData, navigate, toast]);
 
-  const { data: dashboardItems, isLoading, error } = useQuery({
-    queryKey: ['dashboardItems'],
-    queryFn: fetchDashboardItems,
-    retry: 2,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    refetchOnWindowFocus: false,
-    enabled: hasQuizData, // Only fetch if quiz data exists
-  });
-
-  useEffect(() => {
     const storedRecommendations = localStorage.getItem('style-recommendations');
     const storedColors = localStorage.getItem('outfit-colors');
     
     if (storedRecommendations) {
-      setRecommendations(JSON.parse(storedRecommendations));
+      try {
+        setRecommendations(JSON.parse(storedRecommendations));
+      } catch (e) {
+        console.error('Error parsing recommendations:', e);
+      }
     }
+    
     if (storedColors) {
       try {
         const parsedColors = JSON.parse(storedColors) as OutfitColors;
@@ -74,7 +83,18 @@ export const LookSuggestions = () => {
         console.error('Error parsing outfit colors:', e);
       }
     }
-  }, [dashboardItems]);
+  }, [hasQuizData, navigate, toast]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'current-mood') {
+        refetch();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [refetch]);
 
   if (!hasQuizData) {
     return (
@@ -98,7 +118,10 @@ export const LookSuggestions = () => {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <p className="text-red-500 mb-4">Unable to load outfit suggestions</p>
-        <Button onClick={() => navigate('/quiz')}>Retake Style Quiz</Button>
+        <div className="space-x-4">
+          <Button onClick={() => refetch()} variant="outline">Try Again</Button>
+          <Button onClick={() => navigate('/quiz')}>Retake Style Quiz</Button>
+        </div>
       </div>
     );
   }
