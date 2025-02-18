@@ -37,15 +37,15 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     console.log('Drawing items:', items);
 
-    // Define default positions for each item type - improved vertical layout to match reference
+    // Define default positions for each item type - tighter vertical layout with original proportions
     const defaultPositions = {
-      outerwear: { x: width * 0.15, y: height * 0.02, width: width * 0.7, height: height * 0.25 }, // coat at very top, wider
-      top: { x: width * 0.2, y: height * 0.22, width: width * 0.6, height: height * 0.2 }, // shirt below coat
-      bottom: { x: width * 0.25, y: height * 0.4, width: width * 0.5, height: height * 0.3 }, // pants/skirt centered
-      dress: { x: width * 0.2, y: height * 0.1, width: width * 0.6, height: height * 0.6 }, // dress takes more vertical space
-      shoes: { x: width * 0.3, y: height * 0.68, width: width * 0.4, height: height * 0.15 }, // shoes closer to bottom items
-      accessory: { x: width * 0.35, y: height * 0.82, width: width * 0.3, height: height * 0.15 }, // accessories at bottom
-      sunglasses: { x: width * 0.35, y: height * 0.02, width: width * 0.3, height: height * 0.08 } // sunglasses at top
+      outerwear: { x: width * 0.25, y: height * 0.02, width: width * 0.5, height: height * 0.22 }, // coat at top
+      top: { x: width * 0.25, y: height * 0.20, width: width * 0.5, height: height * 0.18 }, // shirt closer to coat
+      bottom: { x: width * 0.3, y: height * 0.35, width: width * 0.4, height: height * 0.28 }, // pants/skirt with original proportions
+      dress: { x: width * 0.25, y: height * 0.1, width: width * 0.5, height: height * 0.55 }, // dress maintains proportions
+      shoes: { x: width * 0.35, y: height * 0.62, width: width * 0.3, height: height * 0.12 }, // shoes closer to pants
+      accessory: { x: width * 0.4, y: height * 0.73, width: width * 0.2, height: height * 0.12 }, // accessories more compact
+      sunglasses: { x: width * 0.4, y: height * 0.02, width: width * 0.2, height: height * 0.08 } // sunglasses smaller and centered
     };
 
     // Load and draw all images
