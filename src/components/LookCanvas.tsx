@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 
 interface OutfitItem {
@@ -126,23 +127,35 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               }
               offscreenCtx.putImageData(imageData, 0, 0);
 
-              // Draw the processed image to main canvas while maintaining aspect ratio
+              // Calculate aspect ratio and dimensions
               const aspectRatio = img.width / img.height;
               let drawWidth = position.width;
               let drawHeight = position.height;
 
-              // Adjust dimensions to maintain aspect ratio
               if (drawWidth / drawHeight > aspectRatio) {
                 drawWidth = drawHeight * aspectRatio;
               } else {
                 drawHeight = drawWidth / aspectRatio;
               }
 
-              // Center the image within its allocated space
+              // Center the image
               const centerX = position.x + (position.width - drawWidth) / 2;
               const centerY = position.y + (position.height - drawHeight) / 2;
 
-              // Draw the image with preserved aspect ratio
+              // Save the current context state
+              ctx.save();
+
+              // If it's shoes, apply rotation
+              if (item.type === 'shoes') {
+                // Translate to the center of where we want to draw
+                ctx.translate(centerX + drawWidth / 2, centerY + drawHeight / 2);
+                // Rotate by -25 degrees (converted to radians)
+                ctx.rotate(-25 * Math.PI / 180);
+                // Translate back
+                ctx.translate(-(centerX + drawWidth / 2), -(centerY + drawHeight / 2));
+              }
+
+              // Draw the image
               ctx.drawImage(
                 offscreenCanvas,
                 centerX,
@@ -150,6 +163,9 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                 drawWidth,
                 drawHeight
               );
+
+              // Restore the context state
+              ctx.restore();
               
               console.log('Successfully drew item:', item.type);
             } else {
