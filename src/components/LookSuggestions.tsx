@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -55,6 +54,30 @@ export const LookSuggestions = () => {
       }
     }
   });
+
+  const mapItemType = (type: string): 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' => {
+    const typeMap: { [key: string]: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' } = {
+      'shirt': 'top',
+      'blouse': 'top',
+      't-shirt': 'top',
+      'skirt': 'bottom',
+      'pants': 'bottom',
+      'jeans': 'bottom',
+      'shorts': 'bottom',
+      'dress': 'dress',
+      'heel shoe': 'shoes',
+      'shoes': 'shoes',
+      'sneakers': 'shoes',
+      'boots': 'shoes',
+      'necklace': 'accessory',
+      'bracelet': 'accessory',
+      'sunglasses': 'sunglasses',
+      'jacket': 'outerwear',
+      'coat': 'outerwear'
+    };
+
+    return typeMap[type.toLowerCase()] || 'top';
+  };
 
   useEffect(() => {
     if (!hasQuizData) {
@@ -136,10 +159,10 @@ export const LookSuggestions = () => {
   };
 
   // Transform dashboardItems to the format expected by LookCanvas
-  const canvasItems = dashboardItems.map(item => ({
+  const canvasItems = dashboardItems?.map(item => ({
     id: item.id,
     image: item.image,
-    type: item.type.toLowerCase() as 'top' | 'bottom' | 'shoes'
+    type: mapItemType(item.type)
   }));
 
   return (
