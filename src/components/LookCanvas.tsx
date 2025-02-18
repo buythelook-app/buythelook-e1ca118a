@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 
 interface OutfitItem {
@@ -46,15 +45,15 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     console.log('Drawing items:', items);
 
-    // Define default positions for each item type - original proportions with better spacing
+    // Define default positions for each item type with larger sizes
     const defaultPositions = {
-      outerwear: { x: width * 0.2, y: height * 0.02, width: width * 0.6, height: height * 0.3 },
-      top: { x: width * 0.2, y: height * 0.31, width: width * 0.6, height: height * 0.25 },
-      bottom: { x: width * 0.25, y: height * 0.55, width: width * 0.5, height: height * 0.35 },
-      dress: { x: width * 0.2, y: height * 0.15, width: width * 0.6, height: height * 0.6 },
-      shoes: { x: width * 0.3, y: height * 0.89, width: width * 0.4, height: height * 0.1 },
-      accessory: { x: width * 0.35, y: height * 0.85, width: width * 0.3, height: height * 0.15 },
-      sunglasses: { x: width * 0.35, y: height * 0.02, width: width * 0.3, height: height * 0.1 }
+      outerwear: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.4 },
+      top: { x: width * 0.1, y: height * 0.31, width: width * 0.8, height: height * 0.35 },
+      bottom: { x: width * 0.15, y: height * 0.55, width: width * 0.7, height: height * 0.4 },
+      dress: { x: width * 0.1, y: height * 0.15, width: width * 0.8, height: height * 0.7 },
+      shoes: { x: width * 0.25, y: height * 0.89, width: width * 0.5, height: height * 0.15 },
+      accessory: { x: width * 0.3, y: height * 0.85, width: width * 0.4, height: height * 0.2 },
+      sunglasses: { x: width * 0.3, y: height * 0.02, width: width * 0.4, height: height * 0.15 }
     };
 
     // Load and draw all images
@@ -171,12 +170,9 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
   return (
     <canvas
       ref={canvasRef}
-      width={width}
-      height={height}
       className="border rounded-lg shadow-lg bg-white"
       style={{ 
-        maxWidth: '100%', 
-        height: 'auto',
+        maxWidth: '100%',
         width: `${width}px`,
         height: `${height}px`
       }}
