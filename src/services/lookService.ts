@@ -132,9 +132,9 @@ const transformProductToDashboardItem = (product: any, type: string): DashboardI
   console.log('Selected image URL:', imageUrl);
 
   return {
-    id: String(product.product_id),
+    id: String(product.product_id || Math.random().toString()),
     name: product.product_name || `${type.charAt(0).toUpperCase() + type.slice(1)} Item`,
-    description: `${product.materials_description || ''} - ${product.colour || 'Various colors'}`,
+    description: `${product.materials_description || ''} ${product.colour ? `- ${product.colour}` : ''}`.trim(),
     image: imageUrl,
     price: product.price ? `$${Number(product.price).toFixed(2)}` : '$49.99',
     type: product.product_family_en?.toLowerCase() || type
