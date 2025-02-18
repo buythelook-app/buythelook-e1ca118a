@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 
 interface OutfitItem {
@@ -47,16 +48,50 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       try {
         for (const item of items) {
           const img = new Image();
+          img.crossOrigin = "anonymous"; // Handle CORS
           img.src = item.image;
           await new Promise((resolve, reject) => {
             img.onload = resolve;
-            img.onerror = reject;
+            img.onerror = (e) => {
+              console.error('Error loading image:', item.image, e);
+              reject(e);
+            };
           });
 
           // Get position based on item type or use provided position
           const position = item.position || defaultPositions[item.type];
           if (position) {
-            ctx.drawImage(img, position.x, position.y, position.width, position.height);
+            // Create an offscreen canvas for image processing
+            const offscreenCanvas = document.createElement('canvas');
+            const offscreenCtx = offscreenCanvas.getContext('2d');
+            if (!offscreenCtx) continue;
+
+            // Set offscreen canvas size
+            offscreenCanvas.width = img.width;
+            offscreenCanvas.height = img.height;
+
+            // Draw the original image to offscreen canvas
+            offscreenCtx.drawImage(img, 0, 0);
+
+            // Remove background (simple white background removal)
+            const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+              // If pixel is white or very close to white
+              if (data[i] > 250 && data[i + 1] > 250 && data[i + 2] > 250) {
+                data[i + 3] = 0; // Set alpha to 0
+              }
+            }
+            offscreenCtx.putImageData(imageData, 0, 0);
+
+            // Draw the processed image to main canvas
+            ctx.drawImage(
+              offscreenCanvas,
+              position.x,
+              position.y,
+              position.width,
+              position.height
+            );
           }
         }
       } catch (error) {
