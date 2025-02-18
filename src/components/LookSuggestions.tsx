@@ -170,7 +170,7 @@ export const LookSuggestions = () => {
       <h1 className="text-3xl font-bold mb-8 text-center">Your Curated Look</h1>
       
       <div className="mb-8 flex justify-center">
-        <LookCanvas items={canvasItems} width={600} height={800} />
+        <LookCanvas items={canvasItems} width={400} height={600} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
