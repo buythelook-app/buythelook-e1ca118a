@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -5,6 +6,7 @@ import { fetchDashboardItems } from "@/services/lookService";
 import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { LookCanvas } from "./LookCanvas";
 import {
   Card,
   CardContent,
@@ -40,16 +42,17 @@ export const LookSuggestions = () => {
     queryKey: ['dashboardItems'],
     queryFn: fetchDashboardItems,
     retry: 2,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
     enabled: hasQuizData,
-    onError: (error) => {
-      console.error('Error fetching suggestions:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load outfit suggestions. Please try again.",
-        variant: "destructive",
-      });
+    meta: {
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to load outfit suggestions. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   });
 
@@ -132,32 +135,33 @@ export const LookSuggestions = () => {
     return isValidColor ? color : '#CCCCCC';
   };
 
+  // Transform dashboardItems to the format expected by LookCanvas
+  const canvasItems = dashboardItems.map(item => ({
+    id: item.id,
+    image: item.image,
+    type: item.type.toLowerCase() as 'top' | 'bottom' | 'shoes'
+  }));
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <h1 className="text-3xl font-bold mb-8 text-center">Your Curated Look</h1>
       
-      <div className="bg-white rounded-lg shadow-xl p-8 mb-8">
-        <div className="space-y-12">
-          {dashboardItems.map((item) => (
-            <div key={item.id} className="group">
-              <div className="relative aspect-[4/5] overflow-hidden rounded-lg mb-4">
-                <img 
-                  src={item.image} 
-                  alt={item.name}
-                  className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                  <p className="text-white text-lg font-medium">{item.type.toUpperCase()}</p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold">{item.name}</h3>
-                <p className="text-gray-600">{item.description}</p>
-                <p className="text-lg font-medium">{item.price}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="mb-8 flex justify-center">
+        <LookCanvas items={canvasItems} width={600} height={800} />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {dashboardItems.map((item) => (
+          <Card key={item.id} className="overflow-hidden">
+            <CardHeader>
+              <CardTitle className="text-lg">{item.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-sm mb-2">{item.description}</p>
+              <p className="text-lg font-medium">{item.price}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {recommendations.length > 0 && (
