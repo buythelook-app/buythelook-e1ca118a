@@ -38,15 +38,15 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     console.log('Drawing items:', items);
 
-    // Define default positions for each item type
+    // Define default positions for each item type - now closer together
     const defaultPositions = {
-      top: { x: width * 0.25, y: height * 0.2, width: width * 0.5, height: height * 0.3 },
-      bottom: { x: width * 0.25, y: height * 0.5, width: width * 0.5, height: height * 0.35 },
-      dress: { x: width * 0.25, y: height * 0.15, width: width * 0.5, height: height * 0.7 },
-      shoes: { x: width * 0.35, y: height * 0.8, width: width * 0.3, height: height * 0.15 },
-      accessory: { x: width * 0.1, y: height * 0.1, width: width * 0.15, height: height * 0.15 },
-      sunglasses: { x: width * 0.75, y: height * 0.1, width: width * 0.15, height: height * 0.1 },
-      outerwear: { x: width * 0.75, y: height * 0.25, width: width * 0.2, height: height * 0.4 }
+      top: { x: width * 0.25, y: height * 0.1, width: width * 0.5, height: height * 0.35 },
+      bottom: { x: width * 0.25, y: height * 0.42, width: width * 0.5, height: height * 0.35 },
+      dress: { x: width * 0.25, y: height * 0.1, width: width * 0.5, height: height * 0.75 },
+      shoes: { x: width * 0.35, y: height * 0.78, width: width * 0.3, height: height * 0.2 },
+      accessory: { x: width * 0.1, y: height * 0.05, width: width * 0.15, height: height * 0.15 },
+      sunglasses: { x: width * 0.75, y: height * 0.05, width: width * 0.15, height: height * 0.1 },
+      outerwear: { x: width * 0.75, y: height * 0.2, width: width * 0.2, height: height * 0.4 }
     };
 
     // Load and draw all images
@@ -98,13 +98,23 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               // Draw the original image to offscreen canvas
               offscreenCtx.drawImage(img, 0, 0);
 
-              // Remove background (simple white background removal)
+              // Remove background (more aggressive white and light color removal)
               const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
               const data = imageData.data;
               for (let i = 0; i < data.length; i += 4) {
-                // If pixel is white or very close to white
-                if (data[i] > 240 && data[i + 1] > 240 && data[i + 2] > 240) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                
+                // Check if pixel is white or very light colored
+                if (r > 225 && g > 225 && b > 225) {
                   data[i + 3] = 0; // Set alpha to 0
+                }
+                
+                // Also remove very light gray pixels
+                const avgColor = (r + g + b) / 3;
+                if (avgColor > 240 && Math.abs(r - g) < 10 && Math.abs(g - b) < 10) {
+                  data[i + 3] = 0;
                 }
               }
               offscreenCtx.putImageData(imageData, 0, 0);
