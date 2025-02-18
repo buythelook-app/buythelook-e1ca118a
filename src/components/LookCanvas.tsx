@@ -105,7 +105,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               // Draw the original image to offscreen canvas at full resolution
               offscreenCtx.drawImage(img, 0, 0, img.width, img.height);
 
-              // Remove background (more aggressive white and light color removal)
+              // Remove background (more aggressive white and gray color removal)
               const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
               const data = imageData.data;
               for (let i = 0; i < data.length; i += 4) {
@@ -113,14 +113,14 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                 const g = data[i + 1];
                 const b = data[i + 2];
                 
-                // Check if pixel is white or very light colored
-                if (r > 225 && g > 225 && b > 225) {
+                // Check if pixel is white, light gray, or medium gray
+                if (r > 220 && g > 220 && b > 220) {
                   data[i + 3] = 0; // Set alpha to 0
                 }
                 
-                // Also remove very light gray pixels
+                // Remove gray pixels (where R, G, and B values are close to each other)
                 const avgColor = (r + g + b) / 3;
-                if (avgColor > 240 && Math.abs(r - g) < 10 && Math.abs(g - b) < 10) {
+                if (avgColor > 180 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15 && Math.abs(r - b) < 15) {
                   data[i + 3] = 0;
                 }
               }
