@@ -32,12 +32,18 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
+    // Draw background to make canvas visible
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    console.log('Drawing items:', items);
+
     // Define default positions for each item type
     const defaultPositions = {
-      top: { x: width * 0.25, y: height * 0.1, width: width * 0.5, height: height * 0.25 },
-      bottom: { x: width * 0.25, y: height * 0.4, width: width * 0.5, height: height * 0.3 },
-      dress: { x: width * 0.25, y: height * 0.1, width: width * 0.5, height: height * 0.6 },
-      shoes: { x: width * 0.25, y: height * 0.75, width: width * 0.2, height: height * 0.15 },
+      top: { x: width * 0.25, y: height * 0.2, width: width * 0.5, height: height * 0.3 },
+      bottom: { x: width * 0.25, y: height * 0.5, width: width * 0.5, height: height * 0.35 },
+      dress: { x: width * 0.25, y: height * 0.15, width: width * 0.5, height: height * 0.7 },
+      shoes: { x: width * 0.35, y: height * 0.8, width: width * 0.3, height: height * 0.15 },
       accessory: { x: width * 0.1, y: height * 0.1, width: width * 0.15, height: height * 0.15 },
       sunglasses: { x: width * 0.75, y: height * 0.1, width: width * 0.15, height: height * 0.1 },
       outerwear: { x: width * 0.75, y: height * 0.25, width: width * 0.2, height: height * 0.4 }
@@ -47,55 +53,81 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     const loadImages = async () => {
       try {
         for (const item of items) {
+          console.log('Loading image for item:', item);
+          
           const img = new Image();
-          img.crossOrigin = "anonymous"; // Handle CORS
-          img.src = item.image;
-          await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = (e) => {
-              console.error('Error loading image:', item.image, e);
-              reject(e);
-            };
-          });
+          img.crossOrigin = "anonymous";
+          
+          // Add a timestamp to prevent caching
+          const timestamp = new Date().getTime();
+          const imageUrl = item.image.includes('?') 
+            ? `${item.image}&t=${timestamp}` 
+            : `${item.image}?t=${timestamp}`;
+          
+          img.src = imageUrl;
 
-          // Get position based on item type or use provided position
-          const position = item.position || defaultPositions[item.type];
-          if (position) {
-            // Create an offscreen canvas for image processing
-            const offscreenCanvas = document.createElement('canvas');
-            const offscreenCtx = offscreenCanvas.getContext('2d');
-            if (!offscreenCtx) continue;
+          try {
+            await new Promise((resolve, reject) => {
+              img.onload = () => {
+                console.log('Image loaded successfully:', imageUrl);
+                resolve(null);
+              };
+              img.onerror = (e) => {
+                console.error('Error loading image:', imageUrl, e);
+                reject(e);
+              };
+            });
 
-            // Set offscreen canvas size
-            offscreenCanvas.width = img.width;
-            offscreenCanvas.height = img.height;
+            // Get position based on item type or use provided position
+            const position = item.position || defaultPositions[item.type];
+            if (position) {
+              console.log('Drawing item with position:', position);
 
-            // Draw the original image to offscreen canvas
-            offscreenCtx.drawImage(img, 0, 0);
-
-            // Remove background (simple white background removal)
-            const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-            const data = imageData.data;
-            for (let i = 0; i < data.length; i += 4) {
-              // If pixel is white or very close to white
-              if (data[i] > 250 && data[i + 1] > 250 && data[i + 2] > 250) {
-                data[i + 3] = 0; // Set alpha to 0
+              // Create an offscreen canvas for image processing
+              const offscreenCanvas = document.createElement('canvas');
+              const offscreenCtx = offscreenCanvas.getContext('2d');
+              if (!offscreenCtx) {
+                console.error('Could not get offscreen context');
+                continue;
               }
-            }
-            offscreenCtx.putImageData(imageData, 0, 0);
 
-            // Draw the processed image to main canvas
-            ctx.drawImage(
-              offscreenCanvas,
-              position.x,
-              position.y,
-              position.width,
-              position.height
-            );
+              // Set offscreen canvas size
+              offscreenCanvas.width = img.width;
+              offscreenCanvas.height = img.height;
+
+              // Draw the original image to offscreen canvas
+              offscreenCtx.drawImage(img, 0, 0);
+
+              // Remove background (simple white background removal)
+              const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+              const data = imageData.data;
+              for (let i = 0; i < data.length; i += 4) {
+                // If pixel is white or very close to white
+                if (data[i] > 240 && data[i + 1] > 240 && data[i + 2] > 240) {
+                  data[i + 3] = 0; // Set alpha to 0
+                }
+              }
+              offscreenCtx.putImageData(imageData, 0, 0);
+
+              // Draw the processed image to main canvas
+              ctx.drawImage(
+                offscreenCanvas,
+                position.x,
+                position.y,
+                position.width,
+                position.height
+              );
+              
+              console.log('Successfully drew item:', item.type);
+            } else {
+              console.error('No position found for item type:', item.type);
+            }
+          } catch (imgError) {
+            console.error('Error processing image:', imgError);
           }
         }
       } catch (error) {
-        console.error('Error loading images:', error);
+        console.error('Error in loadImages:', error);
       }
     };
 
@@ -108,6 +140,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       width={width}
       height={height}
       className="border rounded-lg shadow-lg bg-white"
+      style={{ maxWidth: '100%', height: 'auto' }}
     />
   );
 };
