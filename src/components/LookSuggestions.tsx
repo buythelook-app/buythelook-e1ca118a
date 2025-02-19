@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { fetchDashboardItems } from "@/services/lookService";
 import { Button } from "./ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShoppingCart } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { LookCanvas } from "./LookCanvas";
+import { useCartStore } from "./Cart";
 import {
   Card,
   CardContent,
@@ -34,6 +35,7 @@ export const LookSuggestions = () => {
   const { toast } = useToast();
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [outfitColors, setOutfitColors] = useState<OutfitColors | null>(null);
+  const { addItems } = useCartStore();
 
   const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
 
@@ -54,6 +56,24 @@ export const LookSuggestions = () => {
       }
     }
   });
+
+  const handleAddToCart = () => {
+    if (dashboardItems && dashboardItems.length > 0) {
+      const itemsToAdd = dashboardItems.map(item => ({
+        id: item.id,
+        title: item.name,
+        price: item.price,
+        image: item.image
+      }));
+      
+      addItems(itemsToAdd);
+      toast({
+        title: "Success",
+        description: "Items added to cart",
+      });
+      navigate('/cart');
+    }
+  };
 
   const mapItemType = (type: string): 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' => {
     const typeMap: { [key: string]: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' } = {
@@ -158,7 +178,6 @@ export const LookSuggestions = () => {
     return isValidColor ? color : '#CCCCCC';
   };
 
-  // Transform dashboardItems to the format expected by LookCanvas
   const canvasItems = dashboardItems?.map(item => ({
     id: item.id,
     image: item.image,
@@ -167,7 +186,16 @@ export const LookSuggestions = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-8 text-center">Your Curated Look</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Your Curated Look</h1>
+        <Button 
+          onClick={handleAddToCart}
+          className="bg-netflix-accent hover:bg-netflix-accent/80"
+        >
+          <ShoppingCart className="mr-2" />
+          Add to Cart
+        </Button>
+      </div>
       
       <div className="mb-8 flex justify-center">
         <LookCanvas items={canvasItems} width={300} height={400} />
