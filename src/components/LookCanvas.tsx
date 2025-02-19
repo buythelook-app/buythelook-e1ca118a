@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 interface OutfitItem {
   id: string;
   image: string;
-  type: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear';
+  type: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' | 'cart';
   position?: {
     x: number;
     y: number;
@@ -53,7 +53,8 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       dress: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.95 },
       shoes: { x: width * 0.15, y: height * 0.65, width: width * 0.7, height: height * 0.3 },
       accessory: { x: width * 0.2, y: height * 0.45, width: width * 0.6, height: height * 0.4 },
-      sunglasses: { x: width * 0.2, y: height * 0.02, width: width * 0.6, height: height * 0.25 }
+      sunglasses: { x: width * 0.2, y: height * 0.02, width: width * 0.6, height: height * 0.25 },
+      cart: { x: width * 0.35, y: height * 0.02, width: width * 0.3, height: height * 0.15 }
     };
 
     // Load and draw all images
