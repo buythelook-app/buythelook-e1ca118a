@@ -188,15 +188,17 @@ export const LookSuggestions = () => {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <h1 className="text-3xl font-bold mb-8">Your Curated Look</h1>
       
-      <div className="mb-8 flex flex-col items-center relative">
-        <Button 
-          onClick={() => handleAddToCart(dashboardItems)}
-          className="bg-netflix-accent hover:bg-netflix-accent/80 absolute -top-12 right-0 z-10 shadow-lg"
-        >
-          <ShoppingCart className="mr-2" />
-          Add All to Cart
-        </Button>
-        <LookCanvas items={canvasItems} width={300} height={400} />
+      <div className="mb-8 flex flex-col items-center">
+        <div className="relative w-[300px] bg-white rounded-lg shadow-lg">
+          <Button 
+            onClick={() => handleAddToCart(dashboardItems)}
+            className="bg-netflix-accent hover:bg-netflix-accent/80 absolute top-4 right-4 z-10 shadow-lg"
+          >
+            <ShoppingCart className="mr-2" />
+            Add All to Cart
+          </Button>
+          <LookCanvas items={canvasItems} width={300} height={400} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
