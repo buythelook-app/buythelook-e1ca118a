@@ -190,13 +190,15 @@ export const LookSuggestions = () => {
       
       <div className="mb-8 flex flex-col items-center">
         <div className="relative w-[300px] bg-white rounded-lg shadow-lg">
-          <Button 
-            onClick={() => handleAddToCart(dashboardItems)}
-            className="bg-netflix-accent hover:bg-netflix-accent/80 absolute top-4 right-4 z-10 shadow-lg"
-          >
-            <ShoppingCart className="mr-2" />
-            Add All to Cart
-          </Button>
+          <div className="absolute top-4 left-0 right-0 flex justify-center z-10">
+            <Button 
+              onClick={() => handleAddToCart(dashboardItems)}
+              className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg"
+            >
+              <ShoppingCart className="mr-2" />
+              Add All to Cart
+            </Button>
+          </div>
           <LookCanvas items={canvasItems} width={300} height={400} />
         </div>
       </div>
