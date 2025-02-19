@@ -149,8 +149,8 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               if (item.type === 'shoes') {
                 // Translate to the center of where we want to draw
                 ctx.translate(centerX + drawWidth / 2, centerY + drawHeight / 2);
-                // Rotate by 110 degrees (converted to radians)
-                ctx.rotate(110 * Math.PI / 180);
+                // Rotate by 70 degrees (converted to radians)
+                ctx.rotate(70 * Math.PI / 180);
                 // Translate back
                 ctx.translate(-(centerX + drawWidth / 2), -(centerY + drawHeight / 2));
               }
