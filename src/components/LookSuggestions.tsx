@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -57,7 +58,7 @@ export const LookSuggestions = () => {
     }
   });
 
-  const handleAddToCart = (items: OutfitItem[] | OutfitItem) => {
+  const handleAddToCart = (items: Array<any> | any) => {
     const itemsToAdd = Array.isArray(items) ? items : [items];
     const cartItems = itemsToAdd.map(item => ({
       id: item.id,
@@ -190,7 +191,7 @@ export const LookSuggestions = () => {
       <div className="mb-8 flex flex-col items-center relative">
         <Button 
           onClick={() => handleAddToCart(dashboardItems)}
-          className="bg-netflix-accent hover:bg-netflix-accent/80 absolute -top-2 right-0 z-10"
+          className="bg-netflix-accent hover:bg-netflix-accent/80 absolute -top-2 right-0 z-10 shadow-lg"
         >
           <ShoppingCart className="mr-2" />
           Add All to Cart
@@ -204,10 +205,10 @@ export const LookSuggestions = () => {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">{item.name}</CardTitle>
               <Button
-                variant="ghost"
+                variant="secondary"
                 size="icon"
                 onClick={() => handleAddToCart(item)}
-                className="hover:text-netflix-accent"
+                className="bg-white/10 hover:bg-netflix-accent/20 hover:text-netflix-accent rounded-full shadow-md"
               >
                 <ShoppingCart className="h-5 w-5" />
               </Button>
