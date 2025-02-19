@@ -191,7 +191,7 @@ export const LookSuggestions = () => {
       <div className="mb-8 flex flex-col items-center relative">
         <Button 
           onClick={() => handleAddToCart(dashboardItems)}
-          className="bg-netflix-accent hover:bg-netflix-accent/80 absolute -top-2 right-0 z-10 shadow-lg"
+          className="bg-netflix-accent hover:bg-netflix-accent/80 absolute -top-12 right-0 z-10 shadow-lg"
         >
           <ShoppingCart className="mr-2" />
           Add All to Cart
