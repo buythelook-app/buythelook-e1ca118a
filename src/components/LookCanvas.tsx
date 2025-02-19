@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 
 interface OutfitItem {
@@ -52,7 +51,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       top: { x: width * 0.02, y: height * 0.05, width: width * 0.96, height: height * 0.6 },
       bottom: { x: width * 0.05, y: height * 0.32, width: width * 0.9, height: height * 0.65 },
       dress: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.95 },
-      shoes: { x: width * 0.25, y: height * 0.58, width: width * 0.7, height: height * 0.3 },
+      shoes: { x: width * 0.2, y: height * 0.75, width: width * 0.6, height: height * 0.2 },
       accessory: { x: width * 0.2, y: height * 0.45, width: width * 0.6, height: height * 0.4 },
       sunglasses: { x: width * 0.2, y: height * 0.02, width: width * 0.6, height: height * 0.25 }
     };
@@ -145,17 +144,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               // Save the current context state
               ctx.save();
 
-              // If it's shoes, apply rotation
-              if (item.type === 'shoes') {
-                // Translate to the center of where we want to draw
-                ctx.translate(centerX + drawWidth / 2, centerY + drawHeight / 2);
-                // Rotate by 35 degrees (converted to radians)
-                ctx.rotate(35 * Math.PI / 180);
-                // Translate back
-                ctx.translate(-(centerX + drawWidth / 2), -(centerY + drawHeight / 2));
-              }
-
-              // Draw the image
+              // Draw the image (removing rotation for shoes)
               ctx.drawImage(
                 offscreenCanvas,
                 centerX,
