@@ -57,22 +57,21 @@ export const LookSuggestions = () => {
     }
   });
 
-  const handleAddToCart = () => {
-    if (dashboardItems && dashboardItems.length > 0) {
-      const itemsToAdd = dashboardItems.map(item => ({
-        id: item.id,
-        title: item.name,
-        price: item.price,
-        image: item.image
-      }));
-      
-      addItems(itemsToAdd);
-      toast({
-        title: "Success",
-        description: "Items added to cart",
-      });
-      navigate('/cart');
-    }
+  const handleAddToCart = (items: OutfitItem[] | OutfitItem) => {
+    const itemsToAdd = Array.isArray(items) ? items : [items];
+    const cartItems = itemsToAdd.map(item => ({
+      id: item.id,
+      title: item.name,
+      price: item.price,
+      image: item.image
+    }));
+    
+    addItems(cartItems);
+    toast({
+      title: "Success",
+      description: Array.isArray(items) ? "All items added to cart" : "Item added to cart",
+    });
+    navigate('/cart');
   };
 
   const mapItemType = (type: string): 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' => {
@@ -186,26 +185,32 @@ export const LookSuggestions = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Your Curated Look</h1>
+      <h1 className="text-3xl font-bold mb-8">Your Curated Look</h1>
+      
+      <div className="mb-8 flex flex-col items-center relative">
         <Button 
-          onClick={handleAddToCart}
-          className="bg-netflix-accent hover:bg-netflix-accent/80"
+          onClick={() => handleAddToCart(dashboardItems)}
+          className="bg-netflix-accent hover:bg-netflix-accent/80 absolute -top-2 right-0 z-10"
         >
           <ShoppingCart className="mr-2" />
-          Add to Cart
+          Add All to Cart
         </Button>
-      </div>
-      
-      <div className="mb-8 flex justify-center">
         <LookCanvas items={canvasItems} width={300} height={400} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {dashboardItems.map((item) => (
           <Card key={item.id} className="overflow-hidden">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">{item.name}</CardTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleAddToCart(item)}
+                className="hover:text-netflix-accent"
+              >
+                <ShoppingCart className="h-5 w-5" />
+              </Button>
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 text-sm mb-2">{item.description}</p>
