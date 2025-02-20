@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export type Mood = "mystery" | "quiet" | "elegant" | "energized" | "flowing" | "optimist" | 
            "calm" | "romantic" | "unique" | "sweet" | "childish" | "passionate" | "powerful";
@@ -34,6 +34,8 @@ interface MoodFilterProps {
 }
 
 export const MoodFilter = ({ selectedMood, onMoodSelect }: MoodFilterProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+
   useEffect(() => {
     // Initialize from localStorage if exists
     const storedMood = localStorage.getItem('current-mood') as Mood;
@@ -45,12 +47,13 @@ export const MoodFilter = ({ selectedMood, onMoodSelect }: MoodFilterProps) => {
   const handleMoodSelect = (mood: Mood) => {
     onMoodSelect(mood);
     localStorage.setItem('current-mood', mood);
+    setIsOpen(false); // Close the dialog after selection
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">
+        <Button variant="outline" className="w-full" onClick={() => setIsOpen(true)}>
           {selectedMood ? (
             <>
               <span className="mr-2 text-lg">{moodIcons[selectedMood]}</span>
