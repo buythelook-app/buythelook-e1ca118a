@@ -196,7 +196,7 @@ export const LookSuggestions = () => {
               className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg"
             >
               <ShoppingCart className="mr-2" />
-              Add All to Cart
+              Buy the look
             </Button>
           </div>
           <LookCanvas items={canvasItems} width={300} height={400} />
