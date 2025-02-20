@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -8,6 +7,7 @@ import { Loader2, ShoppingCart } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { LookCanvas } from "./LookCanvas";
 import { useCartStore } from "./Cart";
+import { HomeButton } from "./HomeButton";
 import {
   Card,
   CardContent,
@@ -185,81 +185,84 @@ export const LookSuggestions = () => {
   }));
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-8">Your Curated Look</h1>
-      
-      <div className="mb-8 flex flex-col items-center">
-        <div className="relative w-[300px] bg-white rounded-lg shadow-lg">
-          <div className="absolute top-4 left-0 right-0 flex justify-center z-10">
-            <Button 
-              onClick={() => handleAddToCart(dashboardItems)}
-              className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg"
-            >
-              <ShoppingCart className="mr-2" />
-              Buy the look
-            </Button>
-          </div>
-          <LookCanvas items={canvasItems} width={300} height={400} />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {dashboardItems.map((item) => (
-          <Card key={item.id} className="overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">{item.name}</CardTitle>
-              <Button
-                variant="secondary"
-                size="icon"
-                onClick={() => handleAddToCart(item)}
-                className="bg-white/10 hover:bg-netflix-accent/20 hover:text-netflix-accent rounded-full shadow-md"
+    <>
+      <HomeButton />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <h1 className="text-3xl font-bold mb-8">Your Curated Look</h1>
+        
+        <div className="mb-8 flex flex-col items-center">
+          <div className="relative w-[300px] bg-white rounded-lg shadow-lg">
+            <div className="absolute top-4 left-0 right-0 flex justify-center z-10">
+              <Button 
+                onClick={() => handleAddToCart(dashboardItems)}
+                className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg"
               >
-                <ShoppingCart className="h-5 w-5" />
+                <ShoppingCart className="mr-2" />
+                Buy the look
               </Button>
+            </div>
+            <LookCanvas items={canvasItems} width={300} height={400} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {dashboardItems.map((item) => (
+            <Card key={item.id} className="overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-lg">{item.name}</CardTitle>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  onClick={() => handleAddToCart(item)}
+                  className="bg-white/10 hover:bg-netflix-accent/20 hover:text-netflix-accent rounded-full shadow-md"
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 text-sm mb-2">{item.description}</p>
+                <p className="text-lg font-medium">{item.price}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {recommendations.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Styling Tips</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600 text-sm mb-2">{item.description}</p>
-              <p className="text-lg font-medium">{item.price}</p>
+              <ul className="space-y-2">
+                {recommendations.map((recommendation, index) => (
+                  <li key={index} className="text-gray-700">{recommendation}</li>
+                ))}
+              </ul>
             </CardContent>
           </Card>
-        ))}
+        )}
+
+        {outfitColors && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Color Palette</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4 justify-center">
+                {Object.entries(outfitColors).map(([piece, color]) => (
+                  <div key={piece} className="text-center">
+                    <div 
+                      className="w-16 h-16 rounded-full mb-2" 
+                      style={{ backgroundColor: validateColor(color) }}
+                    />
+                    <p className="text-sm capitalize">{piece}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
-
-      {recommendations.length > 0 && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Styling Tips</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {recommendations.map((recommendation, index) => (
-                <li key={index} className="text-gray-700">{recommendation}</li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
-
-      {outfitColors && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Color Palette</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4 justify-center">
-              {Object.entries(outfitColors).map(([piece, color]) => (
-                <div key={piece} className="text-center">
-                  <div 
-                    className="w-16 h-16 rounded-full mb-2" 
-                    style={{ backgroundColor: validateColor(color) }}
-                  />
-                  <p className="text-sm capitalize">{piece}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+    </>
   );
 };
