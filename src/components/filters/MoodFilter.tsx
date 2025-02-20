@@ -57,7 +57,7 @@ export const MoodFilter = ({ selectedMood, onMoodSelect }: MoodFilterProps) => {
           {selectedMood ? (
             <>
               <span className="mr-2 text-lg">{moodIcons[selectedMood]}</span>
-              <span className="capitalize">{selectedMood}</span>
+              <span>Mood</span>
             </>
           ) : (
             <>
