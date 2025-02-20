@@ -1,3 +1,4 @@
+
 import { Button } from "../ui/button";
 import { Calendar } from "../ui/calendar";
 import {
@@ -20,6 +21,7 @@ interface EventFilterProps {
 
 export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterProps) => {
   const [selectedEvent, setSelectedEvent] = useState<EventType>(null);
+  const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
   const handleEventSelect = async (event: EventType) => {
@@ -49,6 +51,11 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
         title: "Event Style Selected",
         description: `Recommended styles for ${event}: ${recommendedStyles.join(', ')}`,
       });
+
+      // Only close if date is already selected
+      if (date) {
+        setIsOpen(false);
+      }
     } catch (error) {
       console.error('Error getting style recommendations:', error);
       toast({
@@ -66,13 +73,18 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
         title: "Date Selected",
         description: `Selected date: ${newDate.toLocaleDateString()}`,
       });
+      
+      // Only close if event is already selected
+      if (selectedEvent) {
+        setIsOpen(false);
+      }
     }
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">
+        <Button variant="outline" className="w-full" onClick={() => setIsOpen(true)}>
           <span className="mr-2">📅</span>
           {selectedEvent ? `${selectedEvent} - ${date?.toLocaleDateString() || 'Select Date'}` : 'Select Event'}
         </Button>
