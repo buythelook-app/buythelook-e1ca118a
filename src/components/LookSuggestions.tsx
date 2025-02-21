@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { fetchDashboardItems } from "@/services/lookService";
 import { Button } from "./ui/button";
-import { Loader2, ShoppingCart } from "lucide-react";
+import { Loader2, ShoppingCart, Shuffle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { LookCanvas } from "./LookCanvas";
 import { useCartStore } from "./Cart";
@@ -142,6 +143,14 @@ export const LookSuggestions = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [refetch]);
 
+  const handleTryDifferentLook = () => {
+    refetch();
+    toast({
+      title: "Generating New Look",
+      description: "Finding a different style combination for you...",
+    });
+  };
+
   if (!hasQuizData) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
@@ -192,13 +201,21 @@ export const LookSuggestions = () => {
         
         <div className="mb-8 flex flex-col items-center">
           <div className="relative w-[300px] bg-white rounded-lg shadow-lg">
-            <div className="absolute top-4 left-0 right-0 flex justify-center z-10">
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4 z-10">
               <Button 
                 onClick={() => handleAddToCart(dashboardItems)}
                 className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg"
               >
                 <ShoppingCart className="mr-2" />
                 Buy the look
+              </Button>
+              <Button
+                onClick={handleTryDifferentLook}
+                variant="secondary"
+                className="shadow-lg"
+              >
+                <Shuffle className="mr-2" />
+                Try a different look
               </Button>
             </div>
             <LookCanvas items={canvasItems} width={300} height={400} />
