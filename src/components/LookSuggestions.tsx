@@ -201,21 +201,21 @@ export const LookSuggestions = () => {
         
         <div className="mb-8 flex flex-col items-center">
           <div className="relative w-[300px] bg-white rounded-lg shadow-lg">
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4 z-10">
+            <div className="absolute bottom-4 left-4 right-4 flex justify-between gap-2 z-10">
               <Button 
                 onClick={() => handleAddToCart(dashboardItems)}
-                className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg"
+                className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-sm"
               >
-                <ShoppingCart className="mr-2" />
+                <ShoppingCart className="mr-2 h-4 w-4" />
                 Buy the look
               </Button>
               <Button
                 onClick={handleTryDifferentLook}
                 variant="secondary"
-                className="shadow-lg"
+                className="shadow-lg flex-1 text-sm"
               >
-                <Shuffle className="mr-2" />
-                Try a different look
+                <Shuffle className="mr-2 h-4 w-4" />
+                Try different
               </Button>
             </div>
             <LookCanvas items={canvasItems} width={300} height={400} />
