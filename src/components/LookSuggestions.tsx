@@ -77,19 +77,24 @@ export const LookSuggestions = () => {
   };
 
   const mapItemType = (type: string): 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' => {
-    const lowerType = type.toLowerCase().trim();
-    
-    if (
-      lowerType.includes('pants') || 
-      lowerType.includes('skirt') || 
-      lowerType.includes('shorts') || 
-      lowerType.includes('jeans') ||
-      lowerType.includes('trousers')
-    ) {
-      return 'bottom';
+    if (!type) {
+      console.warn('Empty type received in mapItemType');
+      return 'top';
     }
 
-    const typeMap: { [key: string]: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' } = {
+    const lowerType = type.toLowerCase().trim().replace(/\s+/g, ' ');
+    
+    console.log('Mapping type:', type, 'Normalized to:', lowerType);
+
+    const bottomKeywords = ['pants', 'skirt', 'shorts', 'jeans', 'trousers', 'bottom'];
+    for (const keyword of bottomKeywords) {
+      if (lowerType.includes(keyword)) {
+        console.log(`Found bottom keyword: ${keyword} in type: ${lowerType}`);
+        return 'bottom';
+      }
+    }
+
+    const typeMap: Record<string, 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear'> = {
       'shirt': 'top',
       'blouse': 'top',
       't-shirt': 'top',
@@ -108,7 +113,14 @@ export const LookSuggestions = () => {
       'coat': 'outerwear'
     };
 
-    return typeMap[lowerType] || 'top';
+    const mappedType = typeMap[lowerType];
+    console.log(`Type map result for ${lowerType}:`, mappedType);
+
+    if (!mappedType) {
+      console.warn(`No exact match found for type: ${lowerType}, defaulting to top`);
+    }
+
+    return mappedType || 'top';
   };
 
   useEffect(() => {
@@ -210,8 +222,9 @@ export const LookSuggestions = () => {
   };
 
   const canvasItems = dashboardItems?.map(item => {
+    console.log('Processing item:', item);
     const mappedType = mapItemType(item.type);
-    console.log(`Mapping item type: ${item.type} -> ${mappedType}`);
+    console.log(`Final mapping: ${item.type} -> ${mappedType}`);
     return {
       id: item.id,
       image: item.image,

@@ -29,28 +29,35 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Set up canvas with device pixel ratio
     const scale = window.devicePixelRatio || 1;
     canvas.width = width * scale;
     canvas.height = height * scale;
     ctx.scale(scale, scale);
 
+    // Clear and set background
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
+    // Sort items in correct rendering order
+    const renderOrder = { outerwear: 0, top: 1, bottom: 2, shoes: 3 };
     const sortedItems = [...items].sort((a, b) => {
-      const order = { outerwear: 0, top: 1, bottom: 2, shoes: 3 };
-      return (order[a.type] || 0) - (order[b.type] || 0);
+      const orderA = renderOrder[a.type] ?? 999;
+      const orderB = renderOrder[b.type] ?? 999;
+      return orderA - orderB;
     });
 
-    console.log('Drawing items:', sortedItems);
+    console.log('Items before sorting:', items);
+    console.log('Sorted items for rendering:', sortedItems);
 
+    // Define positions with clear spacing
     const defaultPositions = {
-      outerwear: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.35 },
-      top: { x: width * 0.1, y: 0, width: width * 0.8, height: height * 0.35 },
-      bottom: { x: width * 0.1, y: height * 0.35, width: width * 0.8, height: height * 0.35 },
+      outerwear: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.4 },
+      top: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.3 },
+      bottom: { x: width * 0.1, y: height * 0.4, width: width * 0.8, height: height * 0.3 }, // Distinct position for bottom
       dress: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.75 },
-      shoes: { x: width * 0.2, y: height * 0.7, width: width * 0.6, height: height * 0.25 },
+      shoes: { x: width * 0.2, y: height * 0.75, width: width * 0.6, height: height * 0.2 },
       accessory: { x: width * 0.1, y: height * 0.4, width: width * 0.8, height: height * 0.45 },
       sunglasses: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.45 },
       cart: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.45 }
