@@ -51,13 +51,13 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     console.log('Items before sorting:', items);
     console.log('Sorted items for rendering:', sortedItems);
 
-    // Define positions with clear spacing - made items closer together
+    // Define positions with clear spacing - adjusted shoe size
     const defaultPositions = {
       outerwear: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
       top: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
-      bottom: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 }, // Moved up
+      bottom: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
       dress: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.9 },
-      shoes: { x: width * 0.15, y: height * 0.5, width: width * 0.7, height: height * 0.35 }, // Moved up
+      shoes: { x: width * 0.15, y: height * 0.5, width: width * 0.7, height: height * 0.3 }, // Reduced height
       accessory: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
       sunglasses: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
       cart: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 }
