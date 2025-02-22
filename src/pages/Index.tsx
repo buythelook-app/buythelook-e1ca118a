@@ -58,25 +58,22 @@ export default function Index() {
   const groupItemsByOutfit = (items: any[] = []) => {
     if (!items || items.length === 0) return [];
     
-    const tops = items.filter(item => item.type.toLowerCase() === 'top');
-    const bottoms = items.filter(item => item.type.toLowerCase() === 'bottom');
-    const shoes = items.filter(item => item.type.toLowerCase() === 'shoes');
+    const top = items.find(item => item.type.toLowerCase() === 'top');
+    const bottom = items.find(item => item.type.toLowerCase() === 'bottom');
+    const shoes = items.find(item => item.type.toLowerCase() === 'shoes');
 
-    console.log('Separated items:', { tops, bottoms, shoes });
+    console.log('Selected items:', { top, bottom, shoes });
 
-    const outfits: any[] = [];
-    const maxOutfits = Math.min(tops.length, bottoms.length, shoes.length);
-
-    for (let i = 0; i < maxOutfits; i++) {
-      outfits.push({
-        top: tops[i],
-        bottom: bottoms[i],
-        shoes: shoes[i]
-      });
+    if (top && bottom && shoes) {
+      return [{
+        top,
+        bottom,
+        shoes
+      }];
     }
     
-    console.log('Created outfits:', outfits);
-    return outfits;
+    console.log('Could not create outfit - missing pieces');
+    return [];
   };
 
   const generateFeaturedLooks = (): Look[] => {
