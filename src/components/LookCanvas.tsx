@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 
 interface OutfitItem {
@@ -46,14 +45,14 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     console.log('Drawing items:', sortedItems);
 
     const defaultPositions = {
-      outerwear: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.4 },
-      top: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.4 },
-      bottom: { x: width * 0.05, y: height * 0.35, width: width * 0.9, height: height * 0.4 },
-      dress: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.75 },
-      shoes: { x: width * 0.15, y: height * 0.7, width: width * 0.7, height: height * 0.28 },
-      accessory: { x: width * 0.05, y: height * 0.35, width: width * 0.9, height: height * 0.4 },
-      sunglasses: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.4 },
-      cart: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.4 }
+      outerwear: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.45 },
+      top: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.45 },
+      bottom: { x: width * 0.1, y: height * 0.4, width: width * 0.8, height: height * 0.45 },
+      dress: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.75 },
+      shoes: { x: width * 0.2, y: height * 0.6, width: width * 0.6, height: height * 0.3 },
+      accessory: { x: width * 0.1, y: height * 0.4, width: width * 0.8, height: height * 0.45 },
+      sunglasses: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.45 },
+      cart: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.45 }
     };
 
     const loadImages = async () => {
@@ -97,7 +96,6 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               offscreenCanvas.width = img.width;
               offscreenCanvas.height = img.height;
 
-              // For shoes, focus on the center of the image
               if (item.type === 'shoes') {
                 const cropX = img.width * 0.15;
                 const cropWidth = img.width * 0.7;
@@ -116,19 +114,16 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
               const data = imageData.data;
               
-              // Enhanced background removal with different thresholds for shoes
               if (item.type === 'shoes') {
                 for (let i = 0; i < data.length; i += 4) {
                   const r = data[i];
                   const g = data[i + 1];
                   const b = data[i + 2];
                   
-                  // Remove white and light backgrounds
                   if (r > 240 && g > 240 && b > 240) {
                     data[i + 3] = 0;
                   }
                   
-                  // Remove gray backgrounds
                   const avgColor = (r + g + b) / 3;
                   if (avgColor > 200 && Math.abs(r - g) < 10 && Math.abs(g - b) < 10 && Math.abs(r - b) < 10) {
                     data[i + 3] = 0;
