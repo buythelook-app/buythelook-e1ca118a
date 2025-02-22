@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { fetchDashboardItems } from "@/services/lookService";
+import { fetchFirstOutfitSuggestion } from "@/services/lookService";
 import { Button } from "./ui/button";
 import { Loader2, ShoppingCart, Shuffle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -42,8 +43,8 @@ export const LookSuggestions = () => {
   const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
 
   const { data: dashboardItems, isLoading, error, refetch } = useQuery({
-    queryKey: ['dashboardItems'],
-    queryFn: fetchDashboardItems,
+    queryKey: ['firstOutfitSuggestion'],
+    queryFn: fetchFirstOutfitSuggestion,
     retry: 2,
     staleTime: 0,
     refetchOnWindowFocus: false,
