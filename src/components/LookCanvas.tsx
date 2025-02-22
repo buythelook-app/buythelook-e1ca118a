@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 
 interface OutfitItem {
@@ -51,16 +50,16 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     console.log('Items before sorting:', items);
     console.log('Sorted items for rendering:', sortedItems);
 
-    // Define positions with clear spacing
+    // Define positions with clear spacing - made items bigger and closer
     const defaultPositions = {
-      outerwear: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.4 },
-      top: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.3 },
-      bottom: { x: width * 0.1, y: height * 0.4, width: width * 0.8, height: height * 0.3 }, // Distinct position for bottom
-      dress: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.75 },
-      shoes: { x: width * 0.2, y: height * 0.75, width: width * 0.6, height: height * 0.2 },
-      accessory: { x: width * 0.1, y: height * 0.4, width: width * 0.8, height: height * 0.45 },
-      sunglasses: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.45 },
-      cart: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.45 }
+      outerwear: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.45 },
+      top: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.45 },
+      bottom: { x: width * 0.05, y: height * 0.35, width: width * 0.9, height: height * 0.45 },
+      dress: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.85 },
+      shoes: { x: width * 0.15, y: height * 0.7, width: width * 0.7, height: height * 0.28 },
+      accessory: { x: width * 0.05, y: height * 0.35, width: width * 0.9, height: height * 0.45 },
+      sunglasses: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.45 },
+      cart: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.45 }
     };
 
     const loadImages = async () => {
