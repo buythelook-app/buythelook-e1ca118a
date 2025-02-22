@@ -1,3 +1,4 @@
+
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Slider } from "../ui/slider";
@@ -8,6 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
+import { useState } from "react";
 
 interface BudgetFilterProps {
   budget: number;
@@ -22,8 +24,20 @@ export const BudgetFilter = ({
   onBudgetChange, 
   onInputChange 
 }: BudgetFilterProps) => {
+  const [open, setOpen] = useState(false);
+
+  const handleBudgetChange = (value: number[]) => {
+    onBudgetChange(value);
+    setOpen(false); // Close the dialog after setting budget
+  };
+
+  const handleInputChange = (value: number) => {
+    onInputChange(value);
+    setOpen(false); // Close the dialog after manual input
+  };
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="w-full">
           <span className="mr-2">💰</span>
@@ -44,7 +58,7 @@ export const BudgetFilter = ({
             </div>
             <Slider
               value={[budget]}
-              onValueChange={onBudgetChange}
+              onValueChange={handleBudgetChange}
               min={100}
               max={1000}
               step={50}
@@ -61,7 +75,7 @@ export const BudgetFilter = ({
               onChange={(e) => {
                 const value = parseInt(e.target.value);
                 if (!isNaN(value)) {
-                  onInputChange(value);
+                  handleInputChange(value);
                 }
               }}
               placeholder={isUnlimited ? "Unlimited budget" : "Enter amount"}
