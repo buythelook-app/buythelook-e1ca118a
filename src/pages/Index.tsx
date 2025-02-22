@@ -1,3 +1,4 @@
+
 import { HeroSection } from "@/components/HeroSection";
 import { LookSection } from "@/components/LookSection";
 import { Navbar } from "@/components/Navbar";
@@ -39,20 +40,20 @@ export default function Index() {
     }
   }, []);
 
-  const { data: suggestedItems, isLoading, refetch } = useQuery({
+  const { data: suggestedItems, isLoading } = useQuery({
     queryKey: ['dashboardItems', selectedMood],
-    queryFn: fetchDashboardItems,
-    enabled: !!userStyle,
-    staleTime: 0,
-    onSuccess: (data) => {
-      console.log('Fetched suggested items:', data);
-      if (data.length === 0) {
+    queryFn: async () => {
+      const items = await fetchDashboardItems();
+      if (items.length === 0) {
         toast({
           title: "No items found",
           description: "We couldn't find any items matching your style. Please try adjusting your preferences.",
         });
       }
-    }
+      return items;
+    },
+    enabled: !!userStyle,
+    staleTime: 0,
   });
 
   // Helper function to get different combinations of items
