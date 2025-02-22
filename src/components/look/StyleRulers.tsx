@@ -15,14 +15,14 @@ export const StyleRulers = ({
   onColorIntensityChange,
 }: StyleRulersProps) => {
   return (
-    <div className="space-y-6 bg-white p-6 rounded-lg shadow-lg">
-      <h3 className="text-xl font-semibold mb-4 text-gray-900">Style Analysis</h3>
+    <div className="space-y-6 bg-white p-8 rounded-lg shadow-xl border-2 border-gray-100">
+      <h3 className="text-2xl font-semibold mb-6 text-gray-900">Style Analysis</h3>
       
-      <div className="space-y-6">
-        <div className="space-y-3">
+      <div className="space-y-8">
+        <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <label className="text-sm font-medium text-gray-700">Elegance</label>
-            <span className="text-sm text-gray-500">{elegance}%</span>
+            <label className="text-base font-semibold text-gray-800">Elegance</label>
+            <span className="text-base font-medium text-netflix-accent">{elegance}%</span>
           </div>
           <Slider
             defaultValue={[elegance]}
@@ -31,16 +31,16 @@ export const StyleRulers = ({
             onValueChange={onEleganceChange}
             className="w-full"
           />
-          <div className="flex justify-between text-xs text-gray-500">
+          <div className="flex justify-between text-sm font-medium text-gray-600">
             <span>Casual</span>
             <span>Elegant</span>
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <label className="text-sm font-medium text-gray-700">Color Intensity</label>
-            <span className="text-sm text-gray-500">{colorIntensity}%</span>
+            <label className="text-base font-semibold text-gray-800">Color Intensity</label>
+            <span className="text-base font-medium text-netflix-accent">{colorIntensity}%</span>
           </div>
           <Slider
             defaultValue={[colorIntensity]}
@@ -49,7 +49,7 @@ export const StyleRulers = ({
             onValueChange={onColorIntensityChange}
             className="w-full"
           />
-          <div className="flex justify-between text-xs text-gray-500">
+          <div className="flex justify-between text-sm font-medium text-gray-600">
             <span>Muted</span>
             <span>Vibrant</span>
           </div>
