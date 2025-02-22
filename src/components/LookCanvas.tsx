@@ -44,7 +44,14 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
-    console.log('Drawing items:', items);
+    // Sort items so shoes are drawn last
+    const sortedItems = [...items].sort((a, b) => {
+      if (a.type === 'shoes') return 1;
+      if (b.type === 'shoes') return -1;
+      return 0;
+    });
+
+    console.log('Drawing items:', sortedItems);
 
     // Define default positions for each item type with adjusted Y positions
     const defaultPositions = {
@@ -52,7 +59,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       top: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
       bottom: { x: width * 0.05, y: height * 0.25, width: width * 0.9, height: height * 0.55 },
       dress: { x: width * 0.02, y: height * 0.01, width: width * 0.96, height: height * 0.85 },
-      shoes: { x: width * 0.15, y: height * 0.75, width: width * 0.7, height: height * 0.2 }, // Moved shoes lower and adjusted size
+      shoes: { x: width * 0.15, y: height * 0.75, width: width * 0.7, height: height * 0.2 },
       accessory: { x: width * 0.2, y: height * 0.35, width: width * 0.6, height: height * 0.4 },
       sunglasses: { x: width * 0.2, y: height * 0.01, width: width * 0.6, height: height * 0.25 },
       cart: { x: width * 0.35, y: height * 0.01, width: width * 0.3, height: height * 0.15 }
@@ -61,7 +68,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     // Load and draw all images
     const loadImages = async () => {
       try {
-        for (const item of items) {
+        for (const item of sortedItems) {  // Use sortedItems instead of items
           console.log('Loading image for item:', item);
           
           const img = new Image();
