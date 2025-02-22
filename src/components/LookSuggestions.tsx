@@ -37,6 +37,7 @@ export const LookSuggestions = () => {
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [outfitColors, setOutfitColors] = useState<OutfitColors | null>(null);
   const { addItems } = useCartStore();
+  const [isRefetching, setIsRefetching] = useState(false);
 
   const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
 
@@ -44,7 +45,7 @@ export const LookSuggestions = () => {
     queryKey: ['dashboardItems'],
     queryFn: fetchDashboardItems,
     retry: 2,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
     refetchOnWindowFocus: false,
     enabled: hasQuizData,
     meta: {
@@ -142,12 +143,23 @@ export const LookSuggestions = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [refetch]);
 
-  const handleTryDifferentLook = () => {
-    refetch();
-    toast({
-      title: "Generating New Look",
-      description: "Finding a different style combination for you...",
-    });
+  const handleTryDifferentLook = async () => {
+    setIsRefetching(true);
+    try {
+      await refetch();
+      toast({
+        title: "New Look Generated",
+        description: "Here's a fresh style combination for you!",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate a new look. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefetching(false);
+    }
   };
 
   if (!hasQuizData) {
@@ -202,11 +214,17 @@ export const LookSuggestions = () => {
           <div className="relative w-[300px]">
             <div className="bg-white rounded-lg shadow-lg overflow-hidden pb-4">
               <div className="relative">
+                {isRefetching ? (
+                  <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-netflix-accent" />
+                  </div>
+                ) : null}
                 <LookCanvas items={canvasItems} width={300} height={480} />
                 <div className="absolute bottom-0 left-4 right-4 flex justify-between gap-2">
                   <Button 
                     onClick={() => handleAddToCart(dashboardItems)}
                     className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
+                    disabled={isRefetching}
                   >
                     <ShoppingCart className="mr-1 h-3 w-3" />
                     Buy the look
@@ -214,6 +232,7 @@ export const LookSuggestions = () => {
                   <Button
                     onClick={handleTryDifferentLook}
                     className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
+                    disabled={isRefetching}
                   >
                     <Shuffle className="mr-1 h-3 w-3" />
                     Try different
@@ -234,6 +253,7 @@ export const LookSuggestions = () => {
                   size="icon"
                   onClick={() => handleAddToCart(item)}
                   className="bg-white/10 hover:bg-netflix-accent/20 hover:text-netflix-accent rounded-full shadow-md"
+                  disabled={isRefetching}
                 >
                   <ShoppingCart className="h-5 w-5" />
                 </Button>
