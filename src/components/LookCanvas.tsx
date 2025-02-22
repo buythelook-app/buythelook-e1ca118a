@@ -51,10 +51,10 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     const defaultPositions = {
       outerwear: { x: width * 0.02, y: height * 0.01, width: width * 0.96, height: height * 0.35 },
-      top: { x: width * 0.02, y: height * 0.05, width: width * 0.96, height: height * 0.3 }, // Moved top slightly down
-      bottom: { x: width * 0.15, y: height * 0.32, width: width * 0.7, height: height * 0.35 }, // Centered horizontally and vertically
+      top: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.35 }, // Original top position
+      bottom: { x: width * 0.05, y: height * 0.38, width: width * 0.9, height: height * 0.35 }, // Original bottom position
       dress: { x: width * 0.02, y: height * 0.01, width: width * 0.96, height: height * 0.85 },
-      shoes: { x: width * 0.25, y: height * 0.65, width: width * 0.5, height: height * 0.2 },
+      shoes: { x: width * 0.25, y: height * 0.65, width: width * 0.5, height: height * 0.2 }, // Keeping the new shoes position
       accessory: { x: width * 0.2, y: height * 0.35, width: width * 0.6, height: height * 0.4 },
       sunglasses: { x: width * 0.2, y: height * 0.01, width: width * 0.6, height: height * 0.25 },
       cart: { x: width * 0.35, y: height * 0.01, width: width * 0.3, height: height * 0.15 }
