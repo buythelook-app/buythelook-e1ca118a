@@ -38,6 +38,8 @@ export const LookSuggestions = () => {
   const [outfitColors, setOutfitColors] = useState<OutfitColors | null>(null);
   const { addItems } = useCartStore();
   const [isRefetching, setIsRefetching] = useState(false);
+  const [elegance, setElegance] = useState(75);
+  const [colorIntensity, setColorIntensity] = useState(60);
 
   const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
 
@@ -121,6 +123,14 @@ export const LookSuggestions = () => {
     }
 
     return mappedType || 'top';
+  };
+
+  const handleEleganceChange = (value: number[]) => {
+    setElegance(value[0]);
+  };
+
+  const handleColorIntensityChange = (value: number[]) => {
+    setColorIntensity(value[0]);
   };
 
   useEffect(() => {
@@ -238,60 +248,73 @@ export const LookSuggestions = () => {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <h1 className="text-3xl font-bold mb-8">Your Curated Look</h1>
         
-        <div className="mb-8 flex flex-col items-center">
-          <div className="relative w-[300px]">
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden pb-4">
-              <div className="relative">
-                {isRefetching ? (
-                  <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-netflix-accent" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2">
+            <div className="mb-8 flex flex-col items-center">
+              <div className="relative w-[300px]">
+                <div className="bg-white rounded-lg shadow-lg overflow-hidden pb-4">
+                  <div className="relative">
+                    {isRefetching ? (
+                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-netflix-accent" />
+                      </div>
+                    ) : null}
+                    <LookCanvas items={canvasItems} width={300} height={480} />
+                    <div className="absolute bottom-0 left-4 right-4 flex justify-between gap-2">
+                      <Button 
+                        onClick={() => handleAddToCart(dashboardItems)}
+                        className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
+                        disabled={isRefetching}
+                      >
+                        <ShoppingCart className="mr-1 h-3 w-3" />
+                        Buy the look
+                      </Button>
+                      <Button
+                        onClick={handleTryDifferentLook}
+                        className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
+                        disabled={isRefetching}
+                      >
+                        <Shuffle className="mr-1 h-3 w-3" />
+                        Try different
+                      </Button>
+                    </div>
                   </div>
-                ) : null}
-                <LookCanvas items={canvasItems} width={300} height={480} />
-                <div className="absolute bottom-0 left-4 right-4 flex justify-between gap-2">
-                  <Button 
-                    onClick={() => handleAddToCart(dashboardItems)}
-                    className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
-                    disabled={isRefetching}
-                  >
-                    <ShoppingCart className="mr-1 h-3 w-3" />
-                    Buy the look
-                  </Button>
-                  <Button
-                    onClick={handleTryDifferentLook}
-                    className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
-                    disabled={isRefetching}
-                  >
-                    <Shuffle className="mr-1 h-3 w-3" />
-                    Try different
-                  </Button>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {dashboardItems.map((item) => (
-            <Card key={item.id} className="overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">{item.name}</CardTitle>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  onClick={() => handleAddToCart(item)}
-                  className="bg-white/10 hover:bg-netflix-accent/20 hover:text-netflix-accent rounded-full shadow-md"
-                  disabled={isRefetching}
-                >
-                  <ShoppingCart className="h-5 w-5" />
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 text-sm mb-2">{item.description}</p>
-                <p className="text-lg font-medium">{item.price}</p>
-              </CardContent>
-            </Card>
-          ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              {dashboardItems.map((item) => (
+                <Card key={item.id} className="overflow-hidden">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-lg">{item.name}</CardTitle>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      onClick={() => handleAddToCart(item)}
+                      className="bg-white/10 hover:bg-netflix-accent/20 hover:text-netflix-accent rounded-full shadow-md"
+                      disabled={isRefetching}
+                    >
+                      <ShoppingCart className="h-5 w-5" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 text-sm mb-2">{item.description}</p>
+                    <p className="text-lg font-medium">{item.price}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          <div className="md:col-span-1">
+            <StyleRulers
+              elegance={elegance}
+              colorIntensity={colorIntensity}
+              onEleganceChange={handleEleganceChange}
+              onColorIntensityChange={handleColorIntensityChange}
+            />
+          </div>
         </div>
 
         {recommendations.length > 0 && (
