@@ -201,7 +201,9 @@ export const LookSuggestions = () => {
         
         <div className="mb-8 flex flex-col items-center">
           <div className="relative w-[300px] bg-white rounded-lg shadow-lg">
-            <div className="absolute bottom-8 left-4 right-4 flex justify-between gap-2 z-10">
+            {/* Increased canvas height to 500px to accommodate buttons */}
+            <LookCanvas items={canvasItems} width={300} height={500} />
+            <div className="absolute bottom-4 left-4 right-4 flex justify-between gap-2">
               <Button 
                 onClick={() => handleAddToCart(dashboardItems)}
                 className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-sm"
@@ -217,7 +219,6 @@ export const LookSuggestions = () => {
                 Try different
               </Button>
             </div>
-            <LookCanvas items={canvasItems} width={300} height={450} />
           </div>
         </div>
 
