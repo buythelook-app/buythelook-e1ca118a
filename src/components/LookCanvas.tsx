@@ -52,14 +52,14 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     // Define positions with clear spacing - made items bigger and closer
     const defaultPositions = {
-      outerwear: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.45 },
-      top: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.45 },
-      bottom: { x: width * 0.05, y: height * 0.35, width: width * 0.9, height: height * 0.45 },
-      dress: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.85 },
-      shoes: { x: width * 0.15, y: height * 0.7, width: width * 0.7, height: height * 0.28 },
-      accessory: { x: width * 0.05, y: height * 0.35, width: width * 0.9, height: height * 0.45 },
-      sunglasses: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.45 },
-      cart: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.45 }
+      outerwear: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
+      top: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
+      bottom: { x: width * 0.02, y: height * 0.35, width: width * 0.96, height: height * 0.5 },
+      dress: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.9 },
+      shoes: { x: width * 0.15, y: height * 0.6, width: width * 0.7, height: height * 0.35 },
+      accessory: { x: width * 0.02, y: height * 0.35, width: width * 0.96, height: height * 0.5 },
+      sunglasses: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
+      cart: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 }
     };
 
     const loadImages = async () => {
