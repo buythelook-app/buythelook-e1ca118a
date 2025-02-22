@@ -77,18 +77,24 @@ export const LookSuggestions = () => {
   };
 
   const mapItemType = (type: string): 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' => {
+    const lowerType = type.toLowerCase().trim();
+    
+    if (
+      lowerType.includes('pants') || 
+      lowerType.includes('skirt') || 
+      lowerType.includes('shorts') || 
+      lowerType.includes('jeans') ||
+      lowerType.includes('trousers')
+    ) {
+      return 'bottom';
+    }
+
     const typeMap: { [key: string]: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' } = {
       'shirt': 'top',
       'blouse': 'top',
       't-shirt': 'top',
       'top': 'top',
       'corset top': 'top',
-      'pants': 'bottom',
-      'jeans': 'bottom',
-      'shorts': 'bottom',
-      'skirt': 'bottom',
-      'barrel pants': 'bottom',
-      'cuffed ankle barrel pants': 'bottom',
       'dress': 'dress',
       'heel shoe': 'shoes',
       'shoes': 'shoes',
@@ -101,11 +107,6 @@ export const LookSuggestions = () => {
       'jacket': 'outerwear',
       'coat': 'outerwear'
     };
-
-    const lowerType = type.toLowerCase();
-    if (lowerType.includes('pants') || lowerType.includes('skirt') || lowerType.includes('shorts') || lowerType.includes('jeans')) {
-      return 'bottom';
-    }
 
     return typeMap[lowerType] || 'top';
   };
@@ -208,11 +209,15 @@ export const LookSuggestions = () => {
     return isValidColor ? color : '#CCCCCC';
   };
 
-  const canvasItems = dashboardItems?.map(item => ({
-    id: item.id,
-    image: item.image,
-    type: mapItemType(item.type)
-  }));
+  const canvasItems = dashboardItems?.map(item => {
+    const mappedType = mapItemType(item.type);
+    console.log(`Mapping item type: ${item.type} -> ${mappedType}`);
+    return {
+      id: item.id,
+      image: item.image,
+      type: mappedType
+    };
+  });
 
   return (
     <>
