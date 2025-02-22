@@ -1,4 +1,3 @@
-
 import { HeroSection } from "@/components/HeroSection";
 import { LookSection } from "@/components/LookSection";
 import { Navbar } from "@/components/Navbar";
@@ -56,29 +55,27 @@ export default function Index() {
     staleTime: 0,
   });
 
-  // Group items by type
   const groupItemsByOutfit = (items: any[] = []) => {
+    if (!items || items.length === 0) return [];
+    
+    const tops = items.filter(item => item.type.toLowerCase() === 'top');
+    const bottoms = items.filter(item => item.type.toLowerCase() === 'bottom');
+    const shoes = items.filter(item => item.type.toLowerCase() === 'shoes');
+
+    console.log('Separated items:', { tops, bottoms, shoes });
+
     const outfits: any[] = [];
-    let currentOutfit: any = { top: null, bottom: null, shoes: null };
+    const maxOutfits = Math.min(tops.length, bottoms.length, shoes.length);
+
+    for (let i = 0; i < maxOutfits; i++) {
+      outfits.push({
+        top: tops[i],
+        bottom: bottoms[i],
+        shoes: shoes[i]
+      });
+    }
     
-    items.forEach((item, index) => {
-      const type = item.type.toLowerCase();
-      
-      if (type === 'top' && !currentOutfit.top) {
-        currentOutfit.top = item;
-      } else if (type === 'bottom' && !currentOutfit.bottom) {
-        currentOutfit.bottom = item;
-      } else if (type === 'shoes' && !currentOutfit.shoes) {
-        currentOutfit.shoes = item;
-      }
-      
-      // When we have a complete outfit or reach the end
-      if (currentOutfit.top && currentOutfit.bottom && currentOutfit.shoes) {
-        outfits.push({ ...currentOutfit });
-        currentOutfit = { top: null, bottom: null, shoes: null };
-      }
-    });
-    
+    console.log('Created outfits:', outfits);
     return outfits;
   };
 
@@ -93,13 +90,14 @@ export default function Index() {
     const outfits = groupItemsByOutfit(suggestedItems);
     
     return occasions.map((occasion, index) => {
-      const outfit = outfits[index] || outfits[0]; // Fallback to first outfit if not enough
+      const outfitIndex = index % outfits.length;
+      const outfit = outfits[outfitIndex];
+      
       if (!outfit) return null;
 
       const lookItems = [];
 
       if (outfit.top) {
-        console.log('Adding top to look:', outfit.top);
         lookItems.push({
           id: outfit.top.id,
           image: outfit.top.image,
@@ -108,7 +106,6 @@ export default function Index() {
       }
 
       if (outfit.bottom) {
-        console.log('Adding bottom to look:', outfit.bottom);
         lookItems.push({
           id: outfit.bottom.id,
           image: outfit.bottom.image,
@@ -117,7 +114,6 @@ export default function Index() {
       }
 
       if (outfit.shoes) {
-        console.log('Adding shoes to look:', outfit.shoes);
         lookItems.push({
           id: outfit.shoes.id,
           image: outfit.shoes.image,
@@ -125,14 +121,17 @@ export default function Index() {
         });
       }
 
-      return {
-        id: `look-${index + 1}`,
-        title: `${occasion} Look`,
-        items: lookItems,
-        price: "$199.99",
-        category: userStyle?.analysis?.styleProfile || "Casual",
-        occasion
-      };
+      if (lookItems.length === 3) {
+        return {
+          id: `look-${index + 1}`,
+          title: `${occasion} Look`,
+          items: lookItems,
+          price: "$199.99",
+          category: userStyle?.analysis?.styleProfile || "Casual",
+          occasion
+        };
+      }
+      return null;
     }).filter(Boolean) as Look[];
   };
 
