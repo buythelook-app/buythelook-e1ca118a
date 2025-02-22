@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 
 interface OutfitItem {
@@ -37,9 +38,10 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
+    // Sort items so shoes are drawn last (on top)
     const sortedItems = [...items].sort((a, b) => {
-      if (a.type === 'shoes') return -1;
-      if (b.type === 'shoes') return 1;
+      if (a.type === 'shoes') return 1;
+      if (b.type === 'shoes') return -1;
       return 0;
     });
 
@@ -50,113 +52,107 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       top: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
       bottom: { x: width * 0.05, y: height * 0.25, width: width * 0.9, height: height * 0.55 },
       dress: { x: width * 0.02, y: height * 0.01, width: width * 0.96, height: height * 0.85 },
-      shoes: { x: width * 0.15, y: height * 0.65, width: width * 0.7, height: height * 0.3 }, // Adjusted height and y position for shoes
+      // Adjusted shoes position to be lower and smaller
+      shoes: { x: width * 0.25, y: height * 0.75, width: width * 0.5, height: height * 0.2 },
       accessory: { x: width * 0.2, y: height * 0.35, width: width * 0.6, height: height * 0.4 },
       sunglasses: { x: width * 0.2, y: height * 0.01, width: width * 0.6, height: height * 0.25 },
       cart: { x: width * 0.35, y: height * 0.01, width: width * 0.3, height: height * 0.15 }
     };
 
     const loadImages = async () => {
-    try {
-      for (const item of sortedItems) {
-        console.log('Loading image for item:', item);
-        
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        
-        const timestamp = new Date().getTime();
-        const imageUrl = item.image.includes('?') 
-          ? `${item.image}&t=${timestamp}` 
-          : `${item.image}?t=${timestamp}`;
-        
-        img.src = imageUrl;
+      try {
+        for (const item of sortedItems) {
+          console.log('Loading image for item:', item);
+          
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          
+          const timestamp = new Date().getTime();
+          const imageUrl = item.image.includes('?') 
+            ? `${item.image}&t=${timestamp}` 
+            : `${item.image}?t=${timestamp}`;
+          
+          img.src = imageUrl;
 
-        try {
-          await new Promise((resolve, reject) => {
-            img.onload = () => {
-              console.log('Image loaded successfully:', imageUrl);
-              resolve(null);
-            };
-            img.onerror = (e) => {
-              console.error('Error loading image:', imageUrl, e);
-              reject(e);
-            };
-          });
+          try {
+            await new Promise((resolve, reject) => {
+              img.onload = () => {
+                console.log('Image loaded successfully:', imageUrl);
+                resolve(null);
+              };
+              img.onerror = (e) => {
+                console.error('Error loading image:', imageUrl, e);
+                reject(e);
+              };
+            });
 
-          const position = item.position || defaultPositions[item.type];
-          if (position) {
-            console.log('Drawing item with position:', position);
+            const position = item.position || defaultPositions[item.type];
+            if (position) {
+              console.log('Drawing item with position:', position);
 
-            const offscreenCanvas = document.createElement('canvas');
-            const offscreenCtx = offscreenCanvas.getContext('2d');
-            if (!offscreenCtx) {
-              console.error('Could not get offscreen context');
-              continue;
-            }
+              const offscreenCanvas = document.createElement('canvas');
+              const offscreenCtx = offscreenCanvas.getContext('2d');
+              if (!offscreenCtx) {
+                console.error('Could not get offscreen context');
+                continue;
+              }
 
-            offscreenCanvas.width = img.width;
-            offscreenCanvas.height = img.height;
+              offscreenCanvas.width = img.width;
+              offscreenCanvas.height = img.height;
 
-            // For shoes, focus on the product area
-            if (item.type === 'shoes') {
-              // Detect the shoe area (assuming it's in the center)
-              const cropX = img.width * 0.1; // 10% margin from left
-              const cropWidth = img.width * 0.8; // Use 80% of width
-              const cropY = img.height * 0.1; // 10% margin from top
-              const cropHeight = img.height * 0.8; // Use 80% of height
+              // For shoes, focus on the center of the image
+              if (item.type === 'shoes') {
+                const cropX = img.width * 0.15; // 15% margin from left
+                const cropWidth = img.width * 0.7; // Use 70% of width
+                const cropY = img.height * 0.15; // 15% margin from top
+                const cropHeight = img.height * 0.7; // Use 70% of height
+                
+                offscreenCtx.drawImage(
+                  img,
+                  cropX, cropY, cropWidth, cropHeight,
+                  0, 0, img.width, img.height
+                );
+              } else {
+                offscreenCtx.drawImage(img, 0, 0, img.width, img.height);
+              }
+
+              const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+              const data = imageData.data;
               
-              offscreenCtx.drawImage(
-                img,
-                cropX, cropY, cropWidth, cropHeight, // Source rectangle
-                0, 0, img.width, img.height // Destination rectangle
-              );
-            } else {
-              offscreenCtx.drawImage(img, 0, 0, img.width, img.height);
-            }
-
-            const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-            const data = imageData.data;
-            
-            // Enhanced background removal for shoes
-            if (item.type === 'shoes') {
-              for (let i = 0; i < data.length; i += 4) {
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
-                
-                // Remove white and light backgrounds
-                if (r > 240 && g > 240 && b > 240) {
-                  data[i + 3] = 0;
+              // Enhanced background removal for shoes
+              if (item.type === 'shoes') {
+                for (let i = 0; i < data.length; i += 4) {
+                  const r = data[i];
+                  const g = data[i + 1];
+                  const b = data[i + 2];
+                  
+                  // Remove white and light backgrounds
+                  if (r > 240 && g > 240 && b > 240) {
+                    data[i + 3] = 0;
+                  }
+                  
+                  // Remove gray backgrounds
+                  const avgColor = (r + g + b) / 3;
+                  if (avgColor > 200 && Math.abs(r - g) < 10 && Math.abs(g - b) < 10 && Math.abs(r - b) < 10) {
+                    data[i + 3] = 0;
+                  }
                 }
-                
-                // Remove gray backgrounds
-                const avgColor = (r + g + b) / 3;
-                if (avgColor > 200 && Math.abs(r - g) < 10 && Math.abs(g - b) < 10 && Math.abs(r - b) < 10) {
-                  data[i + 3] = 0;
-                }
-                
-                // Remove skin tones
-                if ((r > 200 && g > 150 && b > 130) && // Light skin tones
-                    (Math.abs(r - g) < 60 && Math.abs(g - b) < 60)) {
-                  data[i + 3] = 0;
+              } else {
+                for (let i = 0; i < data.length; i += 4) {
+                  const r = data[i];
+                  const g = data[i + 1];
+                  const b = data[i + 2];
+                  
+                  const avgColor = (r + g + b) / 3;
+                  if (avgColor > 180 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15 && Math.abs(r - b) < 15) {
+                    data[i + 3] = 0;
+                  }
                 }
               }
-            } else {
-              for (let i = 0; i < data.length; i += 4) {
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
-                
-                const avgColor = (r + g + b) / 3;
-                if (avgColor > 180 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15 && Math.abs(r - b) < 15) {
-                  data[i + 3] = 0;
-                }
-              }
-            }
-            
-            offscreenCtx.putImageData(imageData, 0, 0);
+              
+              offscreenCtx.putImageData(imageData, 0, 0);
 
-            const aspectRatio = img.width / (item.type === 'shoes' ? img.height : img.height);
+              const aspectRatio = img.width / img.height;
               let drawWidth = position.width;
               let drawHeight = position.height;
 
