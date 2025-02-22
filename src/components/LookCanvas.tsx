@@ -53,7 +53,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     const defaultPositions = {
       outerwear: { x: 0, y: height * 0.05, width: width, height: height * 0.45 },
       top: { x: 0, y: height * 0.05, width: width, height: height * 0.45 },
-      bottom: { x: width * 0.25, y: height * 0.35, width: width * 0.5, height: height * 0.55 }, // Adjusted for pants-like positioning
+      bottom: { x: width * 0.3, y: height * 0.4, width: width * 0.4, height: height * 0.5 }, // Narrower and lower positioned pants
       dress: { x: width * 0.02, y: height * 0.01, width: width * 0.96, height: height * 0.85 },
       shoes: { x: width * 0.2, y: height * 0.7, width: width * 0.6, height: height * 0.25 },
       accessory: { x: width * 0.2, y: height * 0.35, width: width * 0.6, height: height * 0.4 },
