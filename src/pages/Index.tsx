@@ -11,6 +11,7 @@ import { MoodFilter } from "@/components/filters/MoodFilter";
 import { useToast } from "@/hooks/use-toast";
 import { fetchDashboardItems } from "@/services/lookService";
 import { useQuery } from "@tanstack/react-query";
+import { Shuffle } from "lucide-react";
 
 interface Look {
   id: string;
@@ -30,40 +31,84 @@ export default function Index() {
   const { toast } = useToast();
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [userStyle, setUserStyle] = useState<any>(null);
+  const [combinations, setCombinations] = useState<{ [key: string]: number }>({});
 
   useEffect(() => {
-    // Load user style preferences from quiz results
     const styleAnalysis = localStorage.getItem('styleAnalysis');
     if (styleAnalysis) {
       setUserStyle(JSON.parse(styleAnalysis));
     }
   }, []);
 
-  const { data: suggestedItems, isLoading } = useQuery({
+  const { data: suggestedItems, isLoading, refetch } = useQuery({
     queryKey: ['dashboardItems', selectedMood],
     queryFn: fetchDashboardItems,
     enabled: !!userStyle,
     staleTime: 0,
   });
 
+  // Helper function to get different combinations of items
+  const getItemsByType = (items: any[] = [], type: string) => {
+    return items.filter(item => item.type === type);
+  };
+
+  // Generate a different combination for a specific look
+  const generateCombination = (items: any[] = [], occasion: string) => {
+    const tops = getItemsByType(items, 'top');
+    const bottoms = getItemsByType(items, 'bottom');
+    const shoes = getItemsByType(items, 'shoes');
+    const currentCombo = combinations[occasion] || 0;
+
+    return {
+      top: tops[currentCombo % tops.length],
+      bottom: bottoms[currentCombo % bottoms.length],
+      shoes: shoes[currentCombo % shoes.length],
+    };
+  };
+
+  const handleShuffleLook = (occasion: string) => {
+    setCombinations(prev => ({
+      ...prev,
+      [occasion]: (prev[occasion] || 0) + 1
+    }));
+  };
+
   const generateFeaturedLooks = (): Look[] => {
     if (!userStyle || !suggestedItems) return [];
 
-    // Use the fetched items to create different looks based on occasions
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     
-    return occasions.map((occasion, index) => ({
-      id: `look-${index + 1}`,
-      title: `${occasion} Look`,
-      items: suggestedItems.map(item => ({
-        id: item.id,
-        image: item.image,
-        type: item.type as any,
-      })),
-      price: "$199.99",
-      category: userStyle?.analysis?.styleProfile || "Casual",
-      occasion
-    }));
+    return occasions.map((occasion, index) => {
+      const combination = generateCombination(suggestedItems, occasion);
+      const lookItems = [];
+
+      if (combination.top) lookItems.push({
+        id: combination.top.id,
+        image: combination.top.image,
+        type: 'top' as const,
+      });
+
+      if (combination.bottom) lookItems.push({
+        id: combination.bottom.id,
+        image: combination.bottom.image,
+        type: 'bottom' as const,
+      });
+
+      if (combination.shoes) lookItems.push({
+        id: combination.shoes.id,
+        image: combination.shoes.image,
+        type: 'shoes' as const,
+      });
+
+      return {
+        id: `look-${index + 1}`,
+        title: `${occasion} Look`,
+        items: lookItems,
+        price: "$199.99",
+        category: userStyle?.analysis?.styleProfile || "Casual",
+        occasion
+      };
+    });
   };
 
   const handleMoodSelect = (mood: Mood) => {
@@ -120,8 +165,15 @@ export default function Index() {
                     <h3 className="text-xl font-semibold">{look.title}</h3>
                     <span className="text-sm text-netflix-accent">{look.occasion}</span>
                   </div>
-                  <div className="mb-4 bg-white rounded-lg overflow-hidden">
+                  <div className="mb-4 bg-white rounded-lg overflow-hidden relative group">
                     <LookCanvas items={look.items} width={300} height={480} />
+                    <button
+                      onClick={() => handleShuffleLook(look.occasion)}
+                      className="absolute bottom-4 right-4 bg-netflix-accent text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Try different combination"
+                    >
+                      <Shuffle className="w-4 h-4" />
+                    </button>
                   </div>
                   <div className="flex justify-between items-center">
                     <p className="text-netflix-accent font-semibold">{look.price}</p>
