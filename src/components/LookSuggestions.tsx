@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { fetchDashboardItems } from "@/services/lookService";
 import { Button } from "./ui/button";
-import { Loader2, ShoppingCart } from "lucide-react";
+import { Loader2, ShoppingCart, Shuffle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { LookCanvas } from "./LookCanvas";
 import { useCartStore } from "./Cart";
@@ -193,15 +193,6 @@ export const LookSuggestions = () => {
     type: mapItemType(item.type)
   }));
 
-  // Add the "Try Different" button as a canvas item
-  const refreshButtonItem = {
-    id: 'refresh-button',
-    image: '/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png', // Using the refresh icon
-    type: 'cart' as const
-  };
-
-  const allCanvasItems = canvasItems ? [...canvasItems, refreshButtonItem] : [refreshButtonItem];
-
   return (
     <>
       <HomeButton />
@@ -210,18 +201,23 @@ export const LookSuggestions = () => {
         
         <div className="mb-8 flex flex-col items-center">
           <div className="relative w-[300px] bg-white rounded-lg shadow-lg">
-            <div className="absolute bottom-8 left-4 right-4 z-10">
+            <div className="absolute bottom-8 left-4 right-4 flex justify-between gap-2 z-10">
               <Button 
                 onClick={() => handleAddToCart(dashboardItems)}
-                className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg w-full text-sm"
+                className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-sm"
               >
                 <ShoppingCart className="mr-2 h-4 w-4" />
                 Buy the look
               </Button>
+              <Button
+                onClick={handleTryDifferentLook}
+                className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-sm"
+              >
+                <Shuffle className="mr-2 h-4 w-4" />
+                Try different
+              </Button>
             </div>
-            <div onClick={handleTryDifferentLook} className="cursor-pointer">
-              <LookCanvas items={allCanvasItems} width={300} height={450} />
-            </div>
+            <LookCanvas items={canvasItems} width={300} height={450} />
           </div>
         </div>
 
