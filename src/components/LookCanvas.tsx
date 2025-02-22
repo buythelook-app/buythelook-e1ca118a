@@ -48,10 +48,10 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     const defaultPositions = {
       outerwear: { x: width * 0.15, y: height * 0.02, width: width * 0.7, height: height * 0.3 },
-      top: { x: width * 0.15, y: height * 0.02, width: width * 0.7, height: height * 0.3 }, // Top section
-      bottom: { x: width * 0.15, y: height * 0.34, width: width * 0.7, height: height * 0.3 }, // Middle section
+      top: { x: width * 0.15, y: height * 0.02, width: width * 0.7, height: height * 0.3 },
+      bottom: { x: width * 0.15, y: height * 0.34, width: width * 0.7, height: height * 0.3 },
       dress: { x: width * 0.15, y: height * 0.02, width: width * 0.7, height: height * 0.62 },
-      shoes: { x: width * 0.25, y: height * 0.66, width: width * 0.5, height: height * 0.3 }, // Bottom section
+      shoes: { x: width * 0.25, y: height * 0.66, width: width * 0.5, height: height * 0.3 },
       accessory: { x: width * 0.15, y: height * 0.34, width: width * 0.7, height: height * 0.3 },
       sunglasses: { x: width * 0.15, y: height * 0.02, width: width * 0.7, height: height * 0.3 },
       cart: { x: width * 0.15, y: height * 0.02, width: width * 0.7, height: height * 0.3 }
@@ -100,10 +100,10 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
               // For shoes, focus on the center of the image
               if (item.type === 'shoes') {
-                const cropX = img.width * 0.15; // 15% margin from left
-                const cropWidth = img.width * 0.7; // Use 70% of width
-                const cropY = img.height * 0.15; // 15% margin from top
-                const cropHeight = img.height * 0.7; // Use 70% of height
+                const cropX = img.width * 0.15;
+                const cropWidth = img.width * 0.7;
+                const cropY = img.height * 0.15;
+                const cropHeight = img.height * 0.7;
                 
                 offscreenCtx.drawImage(
                   img,
@@ -117,15 +117,34 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
               const data = imageData.data;
               
-              // Enhanced background removal
-              for (let i = 0; i < data.length; i += 4) {
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
-                
-                const avgColor = (r + g + b) / 3;
-                if (avgColor > 240 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15 && Math.abs(r - b) < 15) {
-                  data[i + 3] = 0;
+              // Enhanced background removal with different thresholds for shoes
+              if (item.type === 'shoes') {
+                for (let i = 0; i < data.length; i += 4) {
+                  const r = data[i];
+                  const g = data[i + 1];
+                  const b = data[i + 2];
+                  
+                  // Remove white and light backgrounds
+                  if (r > 240 && g > 240 && b > 240) {
+                    data[i + 3] = 0;
+                  }
+                  
+                  // Remove gray backgrounds
+                  const avgColor = (r + g + b) / 3;
+                  if (avgColor > 200 && Math.abs(r - g) < 10 && Math.abs(g - b) < 10 && Math.abs(r - b) < 10) {
+                    data[i + 3] = 0;
+                  }
+                }
+              } else {
+                for (let i = 0; i < data.length; i += 4) {
+                  const r = data[i];
+                  const g = data[i + 1];
+                  const b = data[i + 2];
+                  
+                  const avgColor = (r + g + b) / 3;
+                  if (avgColor > 180 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15 && Math.abs(r - b) < 15) {
+                    data[i + 3] = 0;
+                  }
                 }
               }
               
