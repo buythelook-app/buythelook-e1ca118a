@@ -38,11 +38,12 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
-    // Sort items to draw bottom items in the middle
+    // Sort items to draw bottom items first, then tops and shoes
     const sortedItems = [...items].sort((a, b) => {
-      if (a.type === 'bottom') return 0;
-      if (a.type === 'top') return -1;
-      if (b.type === 'top') return 1;
+      if (a.type === 'bottom') return -1;
+      if (b.type === 'bottom') return 1;
+      if (a.type === 'top') return 1;
+      if (b.type === 'top') return -1;
       if (a.type === 'shoes') return 1;
       return 0;
     });
