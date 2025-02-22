@@ -56,34 +56,30 @@ export default function Index() {
     staleTime: 0,
   });
 
-  // Helper function to get different combinations of items
-  const getItemsByType = (items: any[] = [], type: string) => {
-    return items.filter(item => item.type === type);
-  };
-
-  // Generate a different combination for a specific look
-  const generateCombination = (items: any[] = [], occasion: string) => {
-    if (!items || items.length === 0) return null;
-
-    const tops = getItemsByType(items, 'top');
-    const bottoms = getItemsByType(items, 'bottom');
-    const shoes = getItemsByType(items, 'shoes');
-    const currentCombo = combinations[occasion] || 0;
-
-    console.log('Available items for combination:', { tops, bottoms, shoes });
-
-    return {
-      top: tops[currentCombo % (tops.length || 1)],
-      bottom: bottoms[currentCombo % (bottoms.length || 1)],
-      shoes: shoes[currentCombo % (shoes.length || 1)],
-    };
-  };
-
-  const handleShuffleLook = (occasion: string) => {
-    setCombinations(prev => ({
-      ...prev,
-      [occasion]: (prev[occasion] || 0) + 1
-    }));
+  // Group items by type
+  const groupItemsByOutfit = (items: any[] = []) => {
+    const outfits: any[] = [];
+    let currentOutfit: any = { top: null, bottom: null, shoes: null };
+    
+    items.forEach((item, index) => {
+      const type = item.type.toLowerCase();
+      
+      if (type === 'top' && !currentOutfit.top) {
+        currentOutfit.top = item;
+      } else if (type === 'bottom' && !currentOutfit.bottom) {
+        currentOutfit.bottom = item;
+      } else if (type === 'shoes' && !currentOutfit.shoes) {
+        currentOutfit.shoes = item;
+      }
+      
+      // When we have a complete outfit or reach the end
+      if (currentOutfit.top && currentOutfit.bottom && currentOutfit.shoes) {
+        outfits.push({ ...currentOutfit });
+        currentOutfit = { top: null, bottom: null, shoes: null };
+      }
+    });
+    
+    return outfits;
   };
 
   const generateFeaturedLooks = (): Look[] => {
@@ -94,36 +90,37 @@ export default function Index() {
 
     console.log('Generating looks with items:', suggestedItems);
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
+    const outfits = groupItemsByOutfit(suggestedItems);
     
     return occasions.map((occasion, index) => {
-      const combination = generateCombination(suggestedItems, occasion);
-      if (!combination) return null;
+      const outfit = outfits[index] || outfits[0]; // Fallback to first outfit if not enough
+      if (!outfit) return null;
 
       const lookItems = [];
 
-      if (combination.top) {
-        console.log('Adding top to look:', combination.top);
+      if (outfit.top) {
+        console.log('Adding top to look:', outfit.top);
         lookItems.push({
-          id: combination.top.id,
-          image: combination.top.image,
+          id: outfit.top.id,
+          image: outfit.top.image,
           type: 'top' as const,
         });
       }
 
-      if (combination.bottom) {
-        console.log('Adding bottom to look:', combination.bottom);
+      if (outfit.bottom) {
+        console.log('Adding bottom to look:', outfit.bottom);
         lookItems.push({
-          id: combination.bottom.id,
-          image: combination.bottom.image,
+          id: outfit.bottom.id,
+          image: outfit.bottom.image,
           type: 'bottom' as const,
         });
       }
 
-      if (combination.shoes) {
-        console.log('Adding shoes to look:', combination.shoes);
+      if (outfit.shoes) {
+        console.log('Adding shoes to look:', outfit.shoes);
         lookItems.push({
-          id: combination.shoes.id,
-          image: combination.shoes.image,
+          id: outfit.shoes.id,
+          image: outfit.shoes.image,
           type: 'shoes' as const,
         });
       }
@@ -142,6 +139,13 @@ export default function Index() {
   const handleMoodSelect = (mood: Mood) => {
     setSelectedMood(mood);
     localStorage.setItem('current-mood', mood);
+  };
+
+  const handleShuffleLook = (occasion: string) => {
+    setCombinations(prev => ({
+      ...prev,
+      [occasion]: (prev[occasion] || 0) + 1
+    }));
   };
 
   if (!userStyle) {
