@@ -200,24 +200,27 @@ export const LookSuggestions = () => {
         <h1 className="text-3xl font-bold mb-8">Your Curated Look</h1>
         
         <div className="mb-8 flex flex-col items-center">
-          <div className="relative w-[300px] bg-white rounded-lg shadow-lg">
-            {/* Increased canvas height to 500px to accommodate buttons */}
-            <LookCanvas items={canvasItems} width={300} height={500} />
-            <div className="absolute bottom-4 left-4 right-4 flex justify-between gap-2">
-              <Button 
-                onClick={() => handleAddToCart(dashboardItems)}
-                className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-sm"
-              >
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                Buy the look
-              </Button>
-              <Button
-                onClick={handleTryDifferentLook}
-                className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-sm"
-              >
-                <Shuffle className="mr-2 h-4 w-4" />
-                Try different
-              </Button>
+          <div className="relative w-[300px]">
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+              <div className="relative">
+                <LookCanvas items={canvasItems} width={300} height={500} />
+                <div className="absolute bottom-4 left-4 right-4 flex justify-between gap-2">
+                  <Button 
+                    onClick={() => handleAddToCart(dashboardItems)}
+                    className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-sm"
+                  >
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Buy the look
+                  </Button>
+                  <Button
+                    onClick={handleTryDifferentLook}
+                    className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-sm"
+                  >
+                    <Shuffle className="mr-2 h-4 w-4" />
+                    Try different
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
