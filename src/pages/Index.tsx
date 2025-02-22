@@ -1,3 +1,4 @@
+
 import { HeroSection } from "@/components/HeroSection";
 import { LookSection } from "@/components/LookSection";
 import { Navbar } from "@/components/Navbar";
@@ -10,7 +11,7 @@ import { MoodFilter } from "@/components/filters/MoodFilter";
 import { useToast } from "@/hooks/use-toast";
 import { fetchDashboardItems } from "@/services/lookService";
 import { useQuery } from "@tanstack/react-query";
-import { Shuffle, ArrowLeft, ArrowRight } from "lucide-react";
+import { Shuffle } from "lucide-react";
 
 interface Look {
   id: string;
@@ -30,7 +31,7 @@ export default function Index() {
   const { toast } = useToast();
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [userStyle, setUserStyle] = useState<any>(null);
-  const [lookVariations, setLookVariations] = useState<{ [key: string]: number }>({});
+  const [combinations, setCombinations] = useState<{ [key: string]: number }>({});
 
   useEffect(() => {
     const styleAnalysis = localStorage.getItem('styleAnalysis');
@@ -57,56 +58,31 @@ export default function Index() {
 
   // Helper function to get different combinations of items
   const getItemsByType = (items: any[] = [], type: string) => {
-    const typeItems = items.filter(item => item.type === type);
-    console.log(`Items of type ${type}:`, typeItems);
-    return typeItems;
+    return items.filter(item => item.type === type);
   };
 
-  // Generate multiple looks for a specific occasion
-  const generateLookVariations = (items: any[] = [], occasion: string) => {
+  // Generate a different combination for a specific look
+  const generateCombination = (items: any[] = [], occasion: string) => {
     if (!items || items.length === 0) return null;
 
     const tops = getItemsByType(items, 'top');
     const bottoms = getItemsByType(items, 'bottom');
     const shoes = getItemsByType(items, 'shoes');
-    const currentVariation = lookVariations[occasion] || 0;
+    const currentCombo = combinations[occasion] || 0;
 
-    console.log('Available items for variations:', { 
-      occasion,
-      tops: tops.length,
-      bottoms: bottoms.length,
-      shoes: shoes.length,
-      currentVariation 
-    });
-
-    // Calculate total possible combinations
-    const maxCombinations = Math.max(tops.length, bottoms.length, shoes.length);
-    const variationIndex = currentVariation % maxCombinations;
+    console.log('Available items for combination:', { tops, bottoms, shoes });
 
     return {
-      top: tops[variationIndex % tops.length],
-      bottom: bottoms[variationIndex % bottoms.length],
-      shoes: shoes[variationIndex % shoes.length],
-      totalVariations: maxCombinations
+      top: tops[currentCombo % (tops.length || 1)],
+      bottom: bottoms[currentCombo % (bottoms.length || 1)],
+      shoes: shoes[currentCombo % (shoes.length || 1)],
     };
   };
 
-  const handleNextVariation = (occasion: string) => {
-    setLookVariations(prev => ({
+  const handleShuffleLook = (occasion: string) => {
+    setCombinations(prev => ({
       ...prev,
-      [occasion]: ((prev[occasion] || 0) + 1)
-    }));
-  };
-
-  const handlePrevVariation = (occasion: string) => {
-    const maxVariations = Math.max(
-        getItemsByType(suggestedItems, 'top')?.length || 1,
-        getItemsByType(suggestedItems, 'bottom')?.length || 1,
-        getItemsByType(suggestedItems, 'shoes')?.length || 1
-    );
-    setLookVariations(prev => ({
-      ...prev,
-      [occasion]: ((prev[occasion] || 0) - 1 + maxVariations) % maxVariations
+      [occasion]: (prev[occasion] || 0) + 1
     }));
   };
 
@@ -120,34 +96,34 @@ export default function Index() {
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     
     return occasions.map((occasion, index) => {
-      const lookData = generateLookVariations(suggestedItems, occasion);
-      if (!lookData) return null;
+      const combination = generateCombination(suggestedItems, occasion);
+      if (!combination) return null;
 
       const lookItems = [];
 
-      if (lookData.top) {
-        console.log('Adding top to look:', lookData.top);
+      if (combination.top) {
+        console.log('Adding top to look:', combination.top);
         lookItems.push({
-          id: lookData.top.id,
-          image: lookData.top.image,
+          id: combination.top.id,
+          image: combination.top.image,
           type: 'top' as const,
         });
       }
 
-      if (lookData.bottom) {
-        console.log('Adding bottom to look:', lookData.bottom);
+      if (combination.bottom) {
+        console.log('Adding bottom to look:', combination.bottom);
         lookItems.push({
-          id: lookData.bottom.id,
-          image: lookData.bottom.image,
+          id: combination.bottom.id,
+          image: combination.bottom.image,
           type: 'bottom' as const,
         });
       }
 
-      if (lookData.shoes) {
-        console.log('Adding shoes to look:', lookData.shoes);
+      if (combination.shoes) {
+        console.log('Adding shoes to look:', combination.shoes);
         lookItems.push({
-          id: lookData.shoes.id,
-          image: lookData.shoes.image,
+          id: combination.shoes.id,
+          image: combination.shoes.image,
           type: 'shoes' as const,
         });
       }
@@ -219,22 +195,13 @@ export default function Index() {
                   </div>
                   <div className="mb-4 bg-white rounded-lg overflow-hidden relative group">
                     <LookCanvas items={look.items} width={300} height={480} />
-                    <div className="absolute bottom-4 right-4 flex gap-2">
-                      <button
-                        onClick={() => handlePrevVariation(look.occasion)}
-                        className="bg-netflix-accent text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Previous look"
-                      >
-                        <ArrowLeft className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleNextVariation(look.occasion)}
-                        className="bg-netflix-accent text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Next look"
-                      >
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleShuffleLook(look.occasion)}
+                      className="absolute bottom-4 right-4 bg-netflix-accent text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Try different combination"
+                    >
+                      <Shuffle className="w-4 h-4" />
+                    </button>
                   </div>
                   <div className="flex justify-between items-center">
                     <p className="text-netflix-accent font-semibold">{look.price}</p>
