@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -200,7 +201,7 @@ export const LookSuggestions = () => {
         
         <div className="mb-8 flex flex-col items-center">
           <div className="relative w-[300px] bg-white rounded-lg shadow-lg">
-            <div className="absolute bottom-4 left-4 right-4 flex justify-between gap-2 z-10">
+            <div className="absolute bottom-8 left-4 right-4 flex justify-between gap-2 z-10">
               <Button 
                 onClick={() => handleAddToCart(dashboardItems)}
                 className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-sm"
