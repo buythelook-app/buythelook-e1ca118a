@@ -62,20 +62,25 @@ export default function Index() {
     const bottoms = items.filter(item => item.type.toLowerCase() === 'bottom');
     const shoes = items.filter(item => item.type.toLowerCase() === 'shoes');
 
-    console.log('Separated items:', { tops, bottoms, shoes });
+    console.log('Available items:', { 
+      tops: tops.length, 
+      bottoms: bottoms.length, 
+      shoes: shoes.length 
+    });
 
     const outfits: any[] = [];
     const maxOutfits = Math.min(tops.length, bottoms.length, shoes.length);
 
     for (let i = 0; i < maxOutfits; i++) {
-      outfits.push({
+      const outfit = {
         top: tops[i],
         bottom: bottoms[i],
         shoes: shoes[i]
-      });
+      };
+      outfits.push(outfit);
     }
     
-    console.log('Created outfits:', outfits);
+    console.log('Created outfits:', outfits.length);
     return outfits;
   };
 
@@ -90,9 +95,7 @@ export default function Index() {
     const outfits = groupItemsByOutfit(suggestedItems);
     
     return occasions.map((occasion, index) => {
-      const outfitIndex = index % outfits.length;
-      const outfit = outfits[outfitIndex];
-      
+      const outfit = outfits[index];
       if (!outfit) return null;
 
       const lookItems = [];
