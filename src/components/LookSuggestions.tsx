@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -8,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { LookCanvas } from "./LookCanvas";
 import { useCartStore } from "./Cart";
 import { HomeButton } from "./HomeButton";
+import { StyleRulers } from "./look/StyleRulers";
 import {
   Card,
   CardContent,
