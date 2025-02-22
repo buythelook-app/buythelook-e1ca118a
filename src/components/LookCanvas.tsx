@@ -44,10 +44,10 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
-    // Sort items so shoes are drawn last
+    // Sort items so shoes are drawn first (at the bottom)
     const sortedItems = [...items].sort((a, b) => {
-      if (a.type === 'shoes') return 1;
-      if (b.type === 'shoes') return -1;
+      if (a.type === 'shoes') return -1;
+      if (b.type === 'shoes') return 1;
       return 0;
     });
 
