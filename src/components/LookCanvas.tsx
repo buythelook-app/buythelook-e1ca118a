@@ -51,13 +51,13 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     console.log('Drawing items:', sortedItems);
 
     const defaultPositions = {
-      outerwear: { x: width * 0.02, y: height * 0.01, width: width * 0.96, height: height * 0.35 },
-      top: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.35 },
-      bottom: { x: width * 0.2, y: height * 0.25, width: width * 0.6, height: height * 0.4 }, // Centered in canvas
+      outerwear: { x: 0, y: height * 0.05, width: width, height: height * 0.45 },
+      top: { x: 0, y: height * 0.05, width: width, height: height * 0.45 },
+      bottom: { x: width * 0.1, y: height * 0.2, width: width * 0.8, height: height * 0.6 }, // Larger and centered
       dress: { x: width * 0.02, y: height * 0.01, width: width * 0.96, height: height * 0.85 },
-      shoes: { x: width * 0.25, y: height * 0.65, width: width * 0.5, height: height * 0.2 },
+      shoes: { x: width * 0.2, y: height * 0.7, width: width * 0.6, height: height * 0.25 }, // Slightly larger shoes
       accessory: { x: width * 0.2, y: height * 0.35, width: width * 0.6, height: height * 0.4 },
-      sunglasses: { x: width * 0.2, y: height * 0.01, width: width * 0.6, height: height * 0.25 },
+      sunglasses: { x: width * 0.2, y: height * 0.05, width: width * 0.6, height: height * 0.25 },
       cart: { x: width * 0.35, y: height * 0.01, width: width * 0.3, height: height * 0.15 }
     };
 
