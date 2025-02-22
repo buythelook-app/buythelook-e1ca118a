@@ -1,4 +1,3 @@
-
 import { HeroSection } from "@/components/HeroSection";
 import { LookSection } from "@/components/LookSection";
 import { Navbar } from "@/components/Navbar";
@@ -45,6 +44,15 @@ export default function Index() {
     queryFn: fetchDashboardItems,
     enabled: !!userStyle,
     staleTime: 0,
+    onSuccess: (data) => {
+      console.log('Fetched suggested items:', data);
+      if (data.length === 0) {
+        toast({
+          title: "No items found",
+          description: "We couldn't find any items matching your style. Please try adjusting your preferences.",
+        });
+      }
+    }
   });
 
   // Helper function to get different combinations of items
@@ -54,15 +62,19 @@ export default function Index() {
 
   // Generate a different combination for a specific look
   const generateCombination = (items: any[] = [], occasion: string) => {
+    if (!items || items.length === 0) return null;
+
     const tops = getItemsByType(items, 'top');
     const bottoms = getItemsByType(items, 'bottom');
     const shoes = getItemsByType(items, 'shoes');
     const currentCombo = combinations[occasion] || 0;
 
+    console.log('Available items for combination:', { tops, bottoms, shoes });
+
     return {
-      top: tops[currentCombo % tops.length],
-      bottom: bottoms[currentCombo % bottoms.length],
-      shoes: shoes[currentCombo % shoes.length],
+      top: tops[currentCombo % (tops.length || 1)],
+      bottom: bottoms[currentCombo % (bottoms.length || 1)],
+      shoes: shoes[currentCombo % (shoes.length || 1)],
     };
   };
 
@@ -74,31 +86,46 @@ export default function Index() {
   };
 
   const generateFeaturedLooks = (): Look[] => {
-    if (!userStyle || !suggestedItems) return [];
+    if (!userStyle || !suggestedItems || suggestedItems.length === 0) {
+      console.log('No items available for looks');
+      return [];
+    }
 
+    console.log('Generating looks with items:', suggestedItems);
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     
     return occasions.map((occasion, index) => {
       const combination = generateCombination(suggestedItems, occasion);
+      if (!combination) return null;
+
       const lookItems = [];
 
-      if (combination.top) lookItems.push({
-        id: combination.top.id,
-        image: combination.top.image,
-        type: 'top' as const,
-      });
+      if (combination.top) {
+        console.log('Adding top to look:', combination.top);
+        lookItems.push({
+          id: combination.top.id,
+          image: combination.top.image,
+          type: 'top' as const,
+        });
+      }
 
-      if (combination.bottom) lookItems.push({
-        id: combination.bottom.id,
-        image: combination.bottom.image,
-        type: 'bottom' as const,
-      });
+      if (combination.bottom) {
+        console.log('Adding bottom to look:', combination.bottom);
+        lookItems.push({
+          id: combination.bottom.id,
+          image: combination.bottom.image,
+          type: 'bottom' as const,
+        });
+      }
 
-      if (combination.shoes) lookItems.push({
-        id: combination.shoes.id,
-        image: combination.shoes.image,
-        type: 'shoes' as const,
-      });
+      if (combination.shoes) {
+        console.log('Adding shoes to look:', combination.shoes);
+        lookItems.push({
+          id: combination.shoes.id,
+          image: combination.shoes.image,
+          type: 'shoes' as const,
+        });
+      }
 
       return {
         id: `look-${index + 1}`,
@@ -108,7 +135,7 @@ export default function Index() {
         category: userStyle?.analysis?.styleProfile || "Casual",
         occasion
       };
-    });
+    }).filter(Boolean) as Look[];
   };
 
   const handleMoodSelect = (mood: Mood) => {

@@ -167,13 +167,13 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
     }
 
     // Extract body shape from quiz data
-    const bodyShape = styleAnalysis.analysis.bodyShape || 'H';
+    const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
     
     // Use the style profile from analysis
-    const style = styleAnalysis.analysis.styleProfile || 'classic';
+    const style = mapStyle(styleAnalysis.analysis.styleProfile || 'classic');
     
     // Use the current mood or default to 'energized'
-    const mood = currentMood || 'energized';
+    const mood = validateMood(currentMood);
 
     console.log('Generating outfit with:', { bodyShape, style, mood });
 
@@ -185,33 +185,62 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
       console.error('Invalid API response:', response);
       return [];
     }
-    
+
     // Transform the API response into DashboardItems
-    const { top, bottom, shoes } = response.data;
     const items: DashboardItem[] = [];
-
-    if (top) items.push(transformProductToDashboardItem(top, 'top'));
-    if (bottom) items.push(transformProductToDashboardItem(bottom, 'bottom'));
     
-    // Special handling for shoes to ensure product-only images
-    if (shoes) {
-      const shoeItem = transformProductToDashboardItem(shoes, 'shoes');
-      // If the shoe image contains a model, try to use a fallback product-only image
-      if (!isProductOnlyShoeImage(shoeItem.image)) {
-        console.log('Detected model in shoe image, using fallback');
-        shoeItem.image = fallbackImages.shoes;
+    if (response.data.top) {
+      const topItem = transformProductToDashboardItem(response.data.top, 'top');
+      console.log('Top item:', topItem);
+      items.push(topItem);
+    }
+    
+    if (response.data.bottom) {
+      const bottomItem = transformProductToDashboardItem(response.data.bottom, 'bottom');
+      console.log('Bottom item:', bottomItem);
+      items.push(bottomItem);
+    }
+    
+    if (response.data.shoes) {
+      const shoesItem = transformProductToDashboardItem(response.data.shoes, 'shoes');
+      console.log('Shoes item:', shoesItem);
+      // Only add if we have a valid image
+      if (shoesItem.image && !shoesItem.image.includes('undefined')) {
+        items.push(shoesItem);
       }
-      items.push(shoeItem);
     }
 
-    // Store recommendations and color information
-    if (response.data.recommendations) {
-      localStorage.setItem('style-recommendations', JSON.stringify(response.data.recommendations));
-    }
-    if (response.data.colors) {
-      localStorage.setItem('outfit-colors', JSON.stringify(response.data.colors));
+    // Add some fallback items if we don't have enough items
+    if (items.length === 0) {
+      items.push({
+        id: '1',
+        name: 'Classic White T-Shirt',
+        description: 'A versatile white t-shirt',
+        image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab',
+        type: 'top',
+        price: '$29.99'
+      });
+      
+      items.push({
+        id: '2',
+        name: 'Blue Jeans',
+        description: 'Classic blue denim jeans',
+        image: 'https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a',
+        type: 'bottom',
+        price: '$59.99'
+      });
+      
+      items.push({
+        id: '3',
+        name: 'Classic Sneakers',
+        description: 'White canvas sneakers',
+        image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772',
+        type: 'shoes',
+        price: '$79.99'
+      });
     }
 
+    console.log('Final items array:', items);
     return items;
   } catch (error) {
     console.error('Error in fetchDashboardItems:', error);
