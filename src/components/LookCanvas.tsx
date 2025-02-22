@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 
 interface OutfitItem {
@@ -38,27 +37,23 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
-    // Updated sorting to draw bottoms after tops
+    // Sort items by vertical position (top to bottom)
     const sortedItems = [...items].sort((a, b) => {
-      if (a.type === 'top') return -1;
-      if (b.type === 'top') return 1;
-      if (a.type === 'bottom') return 1;
-      if (b.type === 'bottom') return -1;
-      if (a.type === 'shoes') return 1;
-      return 0;
+      const order = { top: 1, bottom: 2, shoes: 3 };
+      return (order[a.type] || 0) - (order[b.type] || 0);
     });
 
     console.log('Drawing items:', sortedItems);
 
     const defaultPositions = {
-      outerwear: { x: 0, y: height * 0.05, width: width, height: height * 0.45 },
-      top: { x: 0, y: height * 0.05, width: width, height: height * 0.45 },
-      bottom: { x: width * 0.35, y: height * 0.65, width: width * 0.3, height: height * 0.3 },
-      dress: { x: width * 0.02, y: height * 0.01, width: width * 0.96, height: height * 0.85 },
-      shoes: { x: width * 0.2, y: height * 0.7, width: width * 0.6, height: height * 0.25 },
-      accessory: { x: width * 0.2, y: height * 0.35, width: width * 0.6, height: height * 0.4 },
-      sunglasses: { x: width * 0.2, y: height * 0.05, width: width * 0.6, height: height * 0.25 },
-      cart: { x: width * 0.35, y: height * 0.01, width: width * 0.3, height: height * 0.15 }
+      outerwear: { x: width * 0.25, y: height * 0.05, width: width * 0.5, height: height * 0.25 },
+      top: { x: width * 0.25, y: height * 0.05, width: width * 0.5, height: height * 0.25 }, // Top third
+      bottom: { x: width * 0.25, y: height * 0.35, width: width * 0.5, height: height * 0.25 }, // Middle third
+      dress: { x: width * 0.25, y: height * 0.05, width: width * 0.5, height: height * 0.6 },
+      shoes: { x: width * 0.25, y: height * 0.65, width: width * 0.5, height: height * 0.25 }, // Bottom third
+      accessory: { x: width * 0.25, y: height * 0.35, width: width * 0.5, height: height * 0.25 },
+      sunglasses: { x: width * 0.25, y: height * 0.05, width: width * 0.5, height: height * 0.25 },
+      cart: { x: width * 0.25, y: height * 0.05, width: width * 0.5, height: height * 0.25 }
     };
 
     const loadImages = async () => {
