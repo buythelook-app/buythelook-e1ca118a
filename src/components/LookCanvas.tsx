@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 
 interface OutfitItem {
@@ -58,85 +57,106 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     };
 
     const loadImages = async () => {
-      try {
-        for (const item of sortedItems) {
-          console.log('Loading image for item:', item);
-          
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          
-          const timestamp = new Date().getTime();
-          const imageUrl = item.image.includes('?') 
-            ? `${item.image}&t=${timestamp}` 
-            : `${item.image}?t=${timestamp}`;
-          
-          img.src = imageUrl;
+    try {
+      for (const item of sortedItems) {
+        console.log('Loading image for item:', item);
+        
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        
+        const timestamp = new Date().getTime();
+        const imageUrl = item.image.includes('?') 
+          ? `${item.image}&t=${timestamp}` 
+          : `${item.image}?t=${timestamp}`;
+        
+        img.src = imageUrl;
 
-          try {
-            await new Promise((resolve, reject) => {
-              img.onload = () => {
-                console.log('Image loaded successfully:', imageUrl);
-                resolve(null);
-              };
-              img.onerror = (e) => {
-                console.error('Error loading image:', imageUrl, e);
-                reject(e);
-              };
-            });
+        try {
+          await new Promise((resolve, reject) => {
+            img.onload = () => {
+              console.log('Image loaded successfully:', imageUrl);
+              resolve(null);
+            };
+            img.onerror = (e) => {
+              console.error('Error loading image:', imageUrl, e);
+              reject(e);
+            };
+          });
 
-            const position = item.position || defaultPositions[item.type];
-            if (position) {
-              console.log('Drawing item with position:', position);
+          const position = item.position || defaultPositions[item.type];
+          if (position) {
+            console.log('Drawing item with position:', position);
 
-              const offscreenCanvas = document.createElement('canvas');
-              const offscreenCtx = offscreenCanvas.getContext('2d');
-              if (!offscreenCtx) {
-                console.error('Could not get offscreen context');
-                continue;
-              }
+            const offscreenCanvas = document.createElement('canvas');
+            const offscreenCtx = offscreenCanvas.getContext('2d');
+            if (!offscreenCtx) {
+              console.error('Could not get offscreen context');
+              continue;
+            }
 
-              offscreenCanvas.width = img.width;
-              offscreenCanvas.height = img.height;
+            offscreenCanvas.width = img.width;
+            offscreenCanvas.height = img.height;
 
-              // For shoes, only use the bottom portion of the image
-              if (item.type === 'shoes') {
-                const cropHeight = img.height * 0.6; // Use only 60% of the image height
-                const cropY = img.height * 0.4; // Start from 40% down the image
-                offscreenCtx.drawImage(img, 0, cropY, img.width, cropHeight, 0, 0, img.width, cropHeight);
-              } else {
-                offscreenCtx.drawImage(img, 0, 0, img.width, img.height);
-              }
-
-              const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-              const data = imageData.data;
+            // For shoes, focus on the product area
+            if (item.type === 'shoes') {
+              // Detect the shoe area (assuming it's in the center)
+              const cropX = img.width * 0.1; // 10% margin from left
+              const cropWidth = img.width * 0.8; // Use 80% of width
+              const cropY = img.height * 0.1; // 10% margin from top
+              const cropHeight = img.height * 0.8; // Use 80% of height
               
-              // More aggressive background removal for shoes
+              offscreenCtx.drawImage(
+                img,
+                cropX, cropY, cropWidth, cropHeight, // Source rectangle
+                0, 0, img.width, img.height // Destination rectangle
+              );
+            } else {
+              offscreenCtx.drawImage(img, 0, 0, img.width, img.height);
+            }
+
+            const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+            const data = imageData.data;
+            
+            // Enhanced background removal for shoes
+            if (item.type === 'shoes') {
               for (let i = 0; i < data.length; i += 4) {
                 const r = data[i];
                 const g = data[i + 1];
                 const b = data[i + 2];
                 
-                // Check for white, light gray, or medium gray pixels
-                if (r > 220 && g > 220 && b > 220) {
+                // Remove white and light backgrounds
+                if (r > 240 && g > 240 && b > 240) {
                   data[i + 3] = 0;
                 }
                 
-                // More aggressive gray removal for shoes
-                if (item.type === 'shoes') {
-                  const avgColor = (r + g + b) / 3;
-                  if (avgColor > 160 && Math.abs(r - g) < 20 && Math.abs(g - b) < 20 && Math.abs(r - b) < 20) {
-                    data[i + 3] = 0;
-                  }
-                } else {
-                  const avgColor = (r + g + b) / 3;
-                  if (avgColor > 180 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15 && Math.abs(r - b) < 15) {
-                    data[i + 3] = 0;
-                  }
+                // Remove gray backgrounds
+                const avgColor = (r + g + b) / 3;
+                if (avgColor > 200 && Math.abs(r - g) < 10 && Math.abs(g - b) < 10 && Math.abs(r - b) < 10) {
+                  data[i + 3] = 0;
+                }
+                
+                // Remove skin tones
+                if ((r > 200 && g > 150 && b > 130) && // Light skin tones
+                    (Math.abs(r - g) < 60 && Math.abs(g - b) < 60)) {
+                  data[i + 3] = 0;
                 }
               }
-              offscreenCtx.putImageData(imageData, 0, 0);
+            } else {
+              for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                
+                const avgColor = (r + g + b) / 3;
+                if (avgColor > 180 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15 && Math.abs(r - b) < 15) {
+                  data[i + 3] = 0;
+                }
+              }
+            }
+            
+            offscreenCtx.putImageData(imageData, 0, 0);
 
-              const aspectRatio = img.width / (item.type === 'shoes' ? (img.height * 0.6) : img.height);
+            const aspectRatio = img.width / (item.type === 'shoes' ? img.height : img.height);
               let drawWidth = position.width;
               let drawHeight = position.height;
 

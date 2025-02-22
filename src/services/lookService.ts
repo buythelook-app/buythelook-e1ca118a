@@ -140,6 +140,18 @@ const transformProductToDashboardItem = (product: any, type: string): DashboardI
   };
 };
 
+// Helper function to validate shoe images
+const isProductOnlyShoeImage = (imageUrl: string): boolean => {
+  // Keywords that might indicate a model is in the image
+  const modelIndicators = [
+    'model', 'wearing', 'worn', 'feet', 'person', 'women', 'men',
+    'lifestyle', 'walking', 'running', 'wear'
+  ];
+  
+  const lowerUrl = imageUrl.toLowerCase();
+  return !modelIndicators.some(indicator => lowerUrl.includes(indicator));
+};
+
 export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
   try {
     const quizData = localStorage.getItem('styleAnalysis');
@@ -180,7 +192,17 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
 
     if (top) items.push(transformProductToDashboardItem(top, 'top'));
     if (bottom) items.push(transformProductToDashboardItem(bottom, 'bottom'));
-    if (shoes) items.push(transformProductToDashboardItem(shoes, 'shoes'));
+    
+    // Special handling for shoes to ensure product-only images
+    if (shoes) {
+      const shoeItem = transformProductToDashboardItem(shoes, 'shoes');
+      // If the shoe image contains a model, try to use a fallback product-only image
+      if (!isProductOnlyShoeImage(shoeItem.image)) {
+        console.log('Detected model in shoe image, using fallback');
+        shoeItem.image = fallbackImages.shoes;
+      }
+      items.push(shoeItem);
+    }
 
     // Store recommendations and color information
     if (response.data.recommendations) {
