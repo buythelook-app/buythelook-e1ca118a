@@ -38,11 +38,11 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
-    // Sort items so shirts are drawn first, then bottoms, then shoes
+    // Sort items to draw bottom items in the middle
     const sortedItems = [...items].sort((a, b) => {
+      if (a.type === 'bottom') return 0;
       if (a.type === 'top') return -1;
       if (b.type === 'top') return 1;
-      if (a.type === 'bottom') return 0;
       if (a.type === 'shoes') return 1;
       return 0;
     });
@@ -51,10 +51,10 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     const defaultPositions = {
       outerwear: { x: width * 0.02, y: height * 0.01, width: width * 0.96, height: height * 0.35 },
-      top: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.35 }, // Original top position
-      bottom: { x: width * 0.05, y: height * 0.38, width: width * 0.9, height: height * 0.35 }, // Original bottom position
+      top: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.35 },
+      bottom: { x: width * 0.2, y: height * 0.25, width: width * 0.6, height: height * 0.4 }, // Centered in canvas
       dress: { x: width * 0.02, y: height * 0.01, width: width * 0.96, height: height * 0.85 },
-      shoes: { x: width * 0.25, y: height * 0.65, width: width * 0.5, height: height * 0.2 }, // Keeping the new shoes position
+      shoes: { x: width * 0.25, y: height * 0.65, width: width * 0.5, height: height * 0.2 },
       accessory: { x: width * 0.2, y: height * 0.35, width: width * 0.6, height: height * 0.4 },
       sunglasses: { x: width * 0.2, y: height * 0.01, width: width * 0.6, height: height * 0.25 },
       cart: { x: width * 0.35, y: height * 0.01, width: width * 0.3, height: height * 0.15 }
