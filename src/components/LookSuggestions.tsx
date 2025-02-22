@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -211,8 +210,7 @@ export const LookSuggestions = () => {
               </Button>
               <Button
                 onClick={handleTryDifferentLook}
-                variant="secondary"
-                className="shadow-lg flex-1 text-sm"
+                className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-sm"
               >
                 <Shuffle className="mr-2 h-4 w-4" />
                 Try different
