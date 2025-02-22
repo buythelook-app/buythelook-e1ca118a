@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 
 interface OutfitItem {
@@ -37,7 +38,6 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
-    // Sort items by vertical position (top to bottom)
     const sortedItems = [...items].sort((a, b) => {
       const order = { top: 1, bottom: 2, shoes: 3 };
       return (order[a.type] || 0) - (order[b.type] || 0);
