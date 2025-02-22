@@ -58,30 +58,37 @@ export default function Index() {
   const groupItemsByOutfit = (items: any[] = []) => {
     if (!items || items.length === 0) return [];
     
-    const tops = items.filter(item => item.type.toLowerCase() === 'top');
-    const bottoms = items.filter(item => item.type.toLowerCase() === 'bottom');
-    const shoes = items.filter(item => item.type.toLowerCase() === 'shoes');
+    const uniqueOutfits = [];
+    const usedIds = new Set();
 
-    console.log('Available items:', { 
-      tops: tops.length, 
-      bottoms: bottoms.length, 
-      shoes: shoes.length 
-    });
-
-    const outfits: any[] = [];
-    const maxOutfits = Math.min(tops.length, bottoms.length, shoes.length);
-
-    for (let i = 0; i < maxOutfits; i++) {
-      const outfit = {
-        top: tops[i],
-        bottom: bottoms[i],
-        shoes: shoes[i]
-      };
-      outfits.push(outfit);
-    }
+    const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     
-    console.log('Created outfits:', outfits.length);
-    return outfits;
+    for (const occasion of occasions) {
+      const top = items.find(item => 
+        item.type.toLowerCase() === 'top' && 
+        !usedIds.has(item.id)
+      );
+      
+      const bottom = items.find(item => 
+        item.type.toLowerCase() === 'bottom' && 
+        !usedIds.has(item.id)
+      );
+      
+      const shoes = items.find(item => 
+        item.type.toLowerCase() === 'shoes' && 
+        !usedIds.has(item.id)
+      );
+
+      if (top && bottom && shoes) {
+        uniqueOutfits.push({ top, bottom, shoes });
+        usedIds.add(top.id);
+        usedIds.add(bottom.id);
+        usedIds.add(shoes.id);
+      }
+    }
+
+    console.log('Created unique outfits:', uniqueOutfits.length);
+    return uniqueOutfits;
   };
 
   const generateFeaturedLooks = (): Look[] => {
