@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -82,15 +81,20 @@ export const LookSuggestions = () => {
       'shirt': 'top',
       'blouse': 'top',
       't-shirt': 'top',
-      'skirt': 'bottom',
+      'top': 'top',
+      'corset top': 'top',
       'pants': 'bottom',
       'jeans': 'bottom',
       'shorts': 'bottom',
+      'skirt': 'bottom',
+      'barrel pants': 'bottom',
+      'cuffed ankle barrel pants': 'bottom',
       'dress': 'dress',
       'heel shoe': 'shoes',
       'shoes': 'shoes',
       'sneakers': 'shoes',
       'boots': 'shoes',
+      'slingback shoes': 'shoes',
       'necklace': 'accessory',
       'bracelet': 'accessory',
       'sunglasses': 'sunglasses',
@@ -98,7 +102,12 @@ export const LookSuggestions = () => {
       'coat': 'outerwear'
     };
 
-    return typeMap[type.toLowerCase()] || 'top';
+    const lowerType = type.toLowerCase();
+    if (lowerType.includes('pants') || lowerType.includes('skirt') || lowerType.includes('shorts') || lowerType.includes('jeans')) {
+      return 'bottom';
+    }
+
+    return typeMap[lowerType] || 'top';
   };
 
   useEffect(() => {
