@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -201,22 +200,22 @@ export const LookSuggestions = () => {
         
         <div className="mb-8 flex flex-col items-center">
           <div className="relative w-[300px]">
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden pb-4">
               <div className="relative">
-                <LookCanvas items={canvasItems} width={300} height={500} />
-                <div className="absolute bottom-4 left-4 right-4 flex justify-between gap-2">
+                <LookCanvas items={canvasItems} width={300} height={480} />
+                <div className="absolute bottom-0 left-4 right-4 flex justify-between gap-2">
                   <Button 
                     onClick={() => handleAddToCart(dashboardItems)}
-                    className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-sm"
+                    className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
                   >
-                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    <ShoppingCart className="mr-1 h-3 w-3" />
                     Buy the look
                   </Button>
                   <Button
                     onClick={handleTryDifferentLook}
-                    className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-sm"
+                    className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
                   >
-                    <Shuffle className="mr-2 h-4 w-4" />
+                    <Shuffle className="mr-1 h-3 w-3" />
                     Try different
                   </Button>
                 </div>
