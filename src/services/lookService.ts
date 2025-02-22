@@ -1,3 +1,4 @@
+
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 
 const API_URL = 'https://mwsblnposuyhrgzrtoyo.supabase.co/functions/v1/generate-outfit';
@@ -89,7 +90,6 @@ const extractImageUrl = (product: any): string => {
   if (!product) return '';
   
   try {
-    // Return the first valid image URL
     if (Array.isArray(product.image)) {
       return product.image[0] || '';
     }
@@ -100,17 +100,31 @@ const extractImageUrl = (product: any): string => {
   }
 };
 
-export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
+// Helper function to convert API item to DashboardItem
+const convertToDashboardItem = (item: any, type: string): DashboardItem | null => {
+  if (!item) return null;
+  
+  const imageUrl = extractImageUrl(item);
+  if (!imageUrl) return null;
+
+  return {
+    id: String(item.product_id || Math.random()),
+    name: item.product_name || `${type.charAt(0).toUpperCase() + type.slice(1)} Item`,
+    description: item.description || '',
+    image: imageUrl,
+    price: item.price ? `$${Number(item.price).toFixed(2)}` : '$49.99',
+    type: type
+  };
+};
+
+// Function to get only the first outfit suggestion
+export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => {
   try {
     const quizData = localStorage.getItem('styleAnalysis');
     const currentMood = localStorage.getItem('current-mood');
     const styleAnalysis = quizData ? JSON.parse(quizData) : null;
     
-    console.log('Retrieved quiz data:', styleAnalysis);
-    console.log('Current mood:', currentMood);
-    
     if (!styleAnalysis?.analysis) {
-      console.error('Invalid style analysis data');
       throw new Error('Style analysis data is missing');
     }
 
@@ -118,50 +132,61 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
     const style = mapStyle(styleAnalysis.analysis.styleProfile || 'classic');
     const mood = validateMood(currentMood);
 
-    console.log('Generating outfit with:', { bodyShape, style, mood });
+    const response = await generateOutfit(bodyShape, style, mood);
+    const items: DashboardItem[] = [];
+
+    // Only process the first outfit suggestion
+    if (Array.isArray(response.data) && response.data.length > 0) {
+      const firstOutfit = response.data[0];
+      const top = convertToDashboardItem(firstOutfit.top, 'top');
+      const bottom = convertToDashboardItem(firstOutfit.bottom, 'bottom');
+      const shoes = convertToDashboardItem(firstOutfit.shoes, 'shoes');
+
+      if (top) items.push(top);
+      if (bottom) items.push(bottom);
+      if (shoes) items.push(shoes);
+    }
+
+    console.log('First outfit items:', items);
+    return items;
+  } catch (error) {
+    console.error('Error in fetchFirstOutfitSuggestion:', error);
+    throw error;
+  }
+};
+
+// Function to get all outfit suggestions for the home page
+export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
+  try {
+    const quizData = localStorage.getItem('styleAnalysis');
+    const currentMood = localStorage.getItem('current-mood');
+    const styleAnalysis = quizData ? JSON.parse(quizData) : null;
+    
+    if (!styleAnalysis?.analysis) {
+      throw new Error('Style analysis data is missing');
+    }
+
+    const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
+    const style = mapStyle(styleAnalysis.analysis.styleProfile || 'classic');
+    const mood = validateMood(currentMood);
 
     const response = await generateOutfit(bodyShape, style, mood);
-    console.log('API response:', response);
-
     const items: DashboardItem[] = [];
-    
-    // Handle API response data - the response structure is an array
+
+    // Process all outfit suggestions
     if (Array.isArray(response.data)) {
-      response.data.forEach(item => {
-        if (item.top) {
-          items.push({
-            id: String(item.top.product_id || Math.random()),
-            name: item.top.product_name || 'Top Item',
-            description: item.top.description || '',
-            image: extractImageUrl(item.top),
-            price: item.top.price ? `$${Number(item.top.price).toFixed(2)}` : '$49.99',
-            type: 'top'
-          });
-        }
-        if (item.bottom) {
-          items.push({
-            id: String(item.bottom.product_id || Math.random()),
-            name: item.bottom.product_name || 'Bottom Item',
-            description: item.bottom.description || '',
-            image: extractImageUrl(item.bottom),
-            price: item.bottom.price ? `$${Number(item.bottom.price).toFixed(2)}` : '$59.99',
-            type: 'bottom'
-          });
-        }
-        if (item.shoes) {
-          items.push({
-            id: String(item.shoes.product_id || Math.random()),
-            name: item.shoes.product_name || 'Shoes',
-            description: item.shoes.description || '',
-            image: extractImageUrl(item.shoes),
-            price: item.shoes.price ? `$${Number(item.shoes.price).toFixed(2)}` : '$79.99',
-            type: 'shoes'
-          });
-        }
+      response.data.forEach(outfit => {
+        const top = convertToDashboardItem(outfit.top, 'top');
+        const bottom = convertToDashboardItem(outfit.bottom, 'bottom');
+        const shoes = convertToDashboardItem(outfit.shoes, 'shoes');
+
+        if (top) items.push(top);
+        if (bottom) items.push(bottom);
+        if (shoes) items.push(shoes);
       });
     }
 
-    console.log('Final processed items:', items);
+    console.log('All outfit items:', items);
     return items;
   } catch (error) {
     console.error('Error in fetchDashboardItems:', error);
