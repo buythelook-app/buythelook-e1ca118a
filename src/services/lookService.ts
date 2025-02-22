@@ -1,4 +1,3 @@
-
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 
 const API_URL = 'https://mwsblnposuyhrgzrtoyo.supabase.co/functions/v1/generate-outfit';
@@ -78,10 +77,6 @@ const generateOutfit = async (bodyStructure: string, style: string, mood: string
     const data = await response.json();
     console.log('API response:', data);
     
-    if (!data.success) {
-      throw new Error(data.error || 'Failed to generate outfit');
-    }
-
     return data;
   } catch (error) {
     console.error('Error in generateOutfit:', error);
@@ -94,30 +89,11 @@ const extractImageUrl = (product: any): string => {
   if (!product) return '';
   
   try {
-    if (product.image_urls && Array.isArray(product.image_urls)) {
-      return product.image_urls[0];
+    // Return the first valid image URL
+    if (Array.isArray(product.image)) {
+      return product.image[0] || '';
     }
-    
-    if (typeof product.image === 'string') {
-      if (product.image.startsWith('[')) {
-        const images = JSON.parse(product.image);
-        return Array.isArray(images) && images.length > 0 ? images[0] : '';
-      }
-      if (product.image.startsWith('http')) {
-        return product.image;
-      }
-    }
-
-    if (Array.isArray(product.image) && product.image.length > 0) {
-      return product.image[0];
-    }
-
-    // Try individual image fields if they exist
-    if (product.main_image) return product.main_image;
-    if (product.primary_image) return product.primary_image;
-    if (product.product_image) return product.product_image;
-    
-    return '';
+    return product.image || '';
   } catch (error) {
     console.error('Error extracting image URL:', error);
     return '';
@@ -147,53 +123,42 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
     const response = await generateOutfit(bodyShape, style, mood);
     console.log('API response:', response);
 
-    if (!response?.data) {
-      console.error('Invalid API response:', response);
-      throw new Error('Invalid API response');
-    }
-
     const items: DashboardItem[] = [];
     
-    if (response.data.top) {
-      const imageUrl = extractImageUrl(response.data.top);
-      if (imageUrl) {
-        items.push({
-          id: String(response.data.top.product_id || Math.random()),
-          name: response.data.top.product_name || 'Top Item',
-          description: response.data.top.description || '',
-          image: imageUrl,
-          price: response.data.top.price ? `$${Number(response.data.top.price).toFixed(2)}` : '$49.99',
-          type: 'top'
-        });
-      }
-    }
-    
-    if (response.data.bottom) {
-      const imageUrl = extractImageUrl(response.data.bottom);
-      if (imageUrl) {
-        items.push({
-          id: String(response.data.bottom.product_id || Math.random()),
-          name: response.data.bottom.product_name || 'Bottom Item',
-          description: response.data.bottom.description || '',
-          image: imageUrl,
-          price: response.data.bottom.price ? `$${Number(response.data.bottom.price).toFixed(2)}` : '$59.99',
-          type: 'bottom'
-        });
-      }
-    }
-    
-    if (response.data.shoes) {
-      const imageUrl = extractImageUrl(response.data.shoes);
-      if (imageUrl) {
-        items.push({
-          id: String(response.data.shoes.product_id || Math.random()),
-          name: response.data.shoes.product_name || 'Shoes',
-          description: response.data.shoes.description || '',
-          image: imageUrl,
-          price: response.data.shoes.price ? `$${Number(response.data.shoes.price).toFixed(2)}` : '$79.99',
-          type: 'shoes'
-        });
-      }
+    // Handle API response data - the response structure is an array
+    if (Array.isArray(response.data)) {
+      response.data.forEach(item => {
+        if (item.top) {
+          items.push({
+            id: String(item.top.product_id || Math.random()),
+            name: item.top.product_name || 'Top Item',
+            description: item.top.description || '',
+            image: extractImageUrl(item.top),
+            price: item.top.price ? `$${Number(item.top.price).toFixed(2)}` : '$49.99',
+            type: 'top'
+          });
+        }
+        if (item.bottom) {
+          items.push({
+            id: String(item.bottom.product_id || Math.random()),
+            name: item.bottom.product_name || 'Bottom Item',
+            description: item.bottom.description || '',
+            image: extractImageUrl(item.bottom),
+            price: item.bottom.price ? `$${Number(item.bottom.price).toFixed(2)}` : '$59.99',
+            type: 'bottom'
+          });
+        }
+        if (item.shoes) {
+          items.push({
+            id: String(item.shoes.product_id || Math.random()),
+            name: item.shoes.product_name || 'Shoes',
+            description: item.shoes.description || '',
+            image: extractImageUrl(item.shoes),
+            price: item.shoes.price ? `$${Number(item.shoes.price).toFixed(2)}` : '$79.99',
+            type: 'shoes'
+          });
+        }
+      });
     }
 
     console.log('Final processed items:', items);
