@@ -38,12 +38,12 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
-    // Sort items to draw bottom items first, then tops and shoes
+    // Updated sorting to draw bottoms after tops
     const sortedItems = [...items].sort((a, b) => {
-      if (a.type === 'bottom') return -1;
-      if (b.type === 'bottom') return 1;
-      if (a.type === 'top') return 1;
-      if (b.type === 'top') return -1;
+      if (a.type === 'top') return -1;
+      if (b.type === 'top') return 1;
+      if (a.type === 'bottom') return 1;
+      if (b.type === 'bottom') return -1;
       if (a.type === 'shoes') return 1;
       return 0;
     });
@@ -53,7 +53,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     const defaultPositions = {
       outerwear: { x: 0, y: height * 0.05, width: width, height: height * 0.45 },
       top: { x: 0, y: height * 0.05, width: width, height: height * 0.45 },
-      bottom: { x: width * 0.35, y: height * 0.65, width: width * 0.3, height: height * 0.3 }, // Moved pants even lower
+      bottom: { x: width * 0.35, y: height * 0.65, width: width * 0.3, height: height * 0.3 },
       dress: { x: width * 0.02, y: height * 0.01, width: width * 0.96, height: height * 0.85 },
       shoes: { x: width * 0.2, y: height * 0.7, width: width * 0.6, height: height * 0.25 },
       accessory: { x: width * 0.2, y: height * 0.35, width: width * 0.6, height: height * 0.4 },
