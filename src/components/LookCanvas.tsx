@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 
 interface OutfitItem {
@@ -46,14 +47,14 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     console.log('Drawing items:', sortedItems);
 
     const defaultPositions = {
-      outerwear: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.35 },
-      top: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.35 }, // Top section
-      bottom: { x: width * 0.1, y: height * 0.35, width: width * 0.8, height: height * 0.35 }, // Middle section
-      dress: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.7 },
-      shoes: { x: width * 0.2, y: height * 0.7, width: width * 0.6, height: height * 0.25 }, // Bottom section
-      accessory: { x: width * 0.1, y: height * 0.35, width: width * 0.8, height: height * 0.35 },
-      sunglasses: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.35 },
-      cart: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.35 }
+      outerwear: { x: width * 0.15, y: height * 0.02, width: width * 0.7, height: height * 0.3 },
+      top: { x: width * 0.15, y: height * 0.02, width: width * 0.7, height: height * 0.3 }, // Top section
+      bottom: { x: width * 0.15, y: height * 0.34, width: width * 0.7, height: height * 0.3 }, // Middle section
+      dress: { x: width * 0.15, y: height * 0.02, width: width * 0.7, height: height * 0.62 },
+      shoes: { x: width * 0.25, y: height * 0.66, width: width * 0.5, height: height * 0.3 }, // Bottom section
+      accessory: { x: width * 0.15, y: height * 0.34, width: width * 0.7, height: height * 0.3 },
+      sunglasses: { x: width * 0.15, y: height * 0.02, width: width * 0.7, height: height * 0.3 },
+      cart: { x: width * 0.15, y: height * 0.02, width: width * 0.7, height: height * 0.3 }
     };
 
     const loadImages = async () => {
@@ -116,34 +117,15 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
               const data = imageData.data;
               
-              // Enhanced background removal for shoes
-              if (item.type === 'shoes') {
-                for (let i = 0; i < data.length; i += 4) {
-                  const r = data[i];
-                  const g = data[i + 1];
-                  const b = data[i + 2];
-                  
-                  // Remove white and light backgrounds
-                  if (r > 240 && g > 240 && b > 240) {
-                    data[i + 3] = 0;
-                  }
-                  
-                  // Remove gray backgrounds
-                  const avgColor = (r + g + b) / 3;
-                  if (avgColor > 200 && Math.abs(r - g) < 10 && Math.abs(g - b) < 10 && Math.abs(r - b) < 10) {
-                    data[i + 3] = 0;
-                  }
-                }
-              } else {
-                for (let i = 0; i < data.length; i += 4) {
-                  const r = data[i];
-                  const g = data[i + 1];
-                  const b = data[i + 2];
-                  
-                  const avgColor = (r + g + b) / 3;
-                  if (avgColor > 180 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15 && Math.abs(r - b) < 15) {
-                    data[i + 3] = 0;
-                  }
+              // Enhanced background removal
+              for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                
+                const avgColor = (r + g + b) / 3;
+                if (avgColor > 240 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15 && Math.abs(r - b) < 15) {
+                  data[i + 3] = 0;
                 }
               }
               
