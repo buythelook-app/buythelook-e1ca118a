@@ -39,7 +39,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     ctx.fillRect(0, 0, width, height);
 
     const sortedItems = [...items].sort((a, b) => {
-      const order = { top: 1, bottom: 2, shoes: 3 };
+      const order = { bottom: 1, top: 2, shoes: 3 };  // Changed order to draw bottom first
       return (order[a.type] || 0) - (order[b.type] || 0);
     });
 
@@ -48,7 +48,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     const defaultPositions = {
       outerwear: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.55 },
       top: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.55 },
-      bottom: { x: width * 0.1, y: height * 0.25, width: width * 0.8, height: height * 0.55 },
+      bottom: { x: width * 0.1, y: height * 0.32, width: width * 0.8, height: height * 0.55 },  // Adjusted y position
       dress: { x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.75 },
       shoes: { x: width * 0.2, y: height * 0.6, width: width * 0.6, height: height * 0.3 },
       accessory: { x: width * 0.1, y: height * 0.4, width: width * 0.8, height: height * 0.45 },
