@@ -1,15 +1,8 @@
+
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 
 const API_URL = 'https://mwsblnposuyhrgzrtoyo.supabase.co/functions/v1/generate-outfit';
 const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13c2JsbnBvc3V5aHJnenJ0b3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4OTUyOTYsImV4cCI6MjA1MzQ3MTI5Nn0.gyU3tLyZ_1yY82BKkii8EyeaGzFn9muZR6G6ELJocQk';
-
-// Fallback images from Unsplash for different item types
-const fallbackImages = {
-  top: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901',
-  bottom: 'https://images.unsplash.com/photo-1721322800607-8c38375eef04',
-  shoes: 'https://images.unsplash.com/photo-1535268647677-300dbf3d78d1',
-  default: 'https://images.unsplash.com/photo-1485833077593-4278bba3f11f'
-};
 
 // Helper function to map body shapes to API expected format
 const mapBodyShape = (shape: string): "X" | "V" | "H" | "O" | "A" => {
@@ -96,60 +89,39 @@ const generateOutfit = async (bodyStructure: string, style: string, mood: string
   }
 };
 
-// Helper function to transform a product into a DashboardItem
-const transformProductToDashboardItem = (product: any, type: string): DashboardItem => {
-  let imageUrl = fallbackImages.default;
+// Helper function to extract image URL from product
+const extractImageUrl = (product: any): string => {
+  if (!product) return '';
   
-  // Try to get image from product
-  if (product.image) {
-    try {
-      // If image is a string that contains JSON array
-      if (typeof product.image === 'string' && product.image.startsWith('[')) {
-        const imageArray = JSON.parse(product.image);
-        if (Array.isArray(imageArray) && imageArray.length > 0) {
-          imageUrl = imageArray[0];
-        }
-      } 
-      // If image is already an array
-      else if (Array.isArray(product.image) && product.image.length > 0) {
-        imageUrl = product.image[0];
-      }
-      // If image is a direct URL string
-      else if (typeof product.image === 'string') {
-        imageUrl = product.image;
-      }
-    } catch (error) {
-      console.error('Error parsing image:', error);
-      imageUrl = fallbackImages[type as keyof typeof fallbackImages] || fallbackImages.default;
+  try {
+    if (product.image_urls && Array.isArray(product.image_urls)) {
+      return product.image_urls[0];
     }
-  } else {
-    // Use type-specific fallback image
-    imageUrl = fallbackImages[type as keyof typeof fallbackImages] || fallbackImages.default;
+    
+    if (typeof product.image === 'string') {
+      if (product.image.startsWith('[')) {
+        const images = JSON.parse(product.image);
+        return Array.isArray(images) && images.length > 0 ? images[0] : '';
+      }
+      if (product.image.startsWith('http')) {
+        return product.image;
+      }
+    }
+
+    if (Array.isArray(product.image) && product.image.length > 0) {
+      return product.image[0];
+    }
+
+    // Try individual image fields if they exist
+    if (product.main_image) return product.main_image;
+    if (product.primary_image) return product.primary_image;
+    if (product.product_image) return product.product_image;
+    
+    return '';
+  } catch (error) {
+    console.error('Error extracting image URL:', error);
+    return '';
   }
-
-  console.log('Product:', product);
-  console.log('Selected image URL:', imageUrl);
-
-  return {
-    id: String(product.product_id || Math.random().toString()),
-    name: product.product_name || `${type.charAt(0).toUpperCase() + type.slice(1)} Item`,
-    description: `${product.materials_description || ''} ${product.colour ? `- ${product.colour}` : ''}`.trim(),
-    image: imageUrl,
-    price: product.price ? `$${Number(product.price).toFixed(2)}` : '$49.99',
-    type: product.product_family_en?.toLowerCase() || type
-  };
-};
-
-// Helper function to validate shoe images
-const isProductOnlyShoeImage = (imageUrl: string): boolean => {
-  // Keywords that might indicate a model is in the image
-  const modelIndicators = [
-    'model', 'wearing', 'worn', 'feet', 'person', 'women', 'men',
-    'lifestyle', 'walking', 'running', 'wear'
-  ];
-  
-  const lowerUrl = imageUrl.toLowerCase();
-  return !modelIndicators.some(indicator => lowerUrl.includes(indicator));
 };
 
 export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
@@ -163,84 +135,68 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
     
     if (!styleAnalysis?.analysis) {
       console.error('Invalid style analysis data');
-      return [];
+      throw new Error('Style analysis data is missing');
     }
 
-    // Extract body shape from quiz data
     const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
-    
-    // Use the style profile from analysis
     const style = mapStyle(styleAnalysis.analysis.styleProfile || 'classic');
-    
-    // Use the current mood or default to 'energized'
     const mood = validateMood(currentMood);
 
     console.log('Generating outfit with:', { bodyShape, style, mood });
 
-    // Generate outfit using the API
     const response = await generateOutfit(bodyShape, style, mood);
     console.log('API response:', response);
 
     if (!response?.data) {
       console.error('Invalid API response:', response);
-      return [];
+      throw new Error('Invalid API response');
     }
 
-    // Transform the API response into DashboardItems
     const items: DashboardItem[] = [];
     
     if (response.data.top) {
-      const topItem = transformProductToDashboardItem(response.data.top, 'top');
-      console.log('Top item:', topItem);
-      items.push(topItem);
+      const imageUrl = extractImageUrl(response.data.top);
+      if (imageUrl) {
+        items.push({
+          id: String(response.data.top.product_id || Math.random()),
+          name: response.data.top.product_name || 'Top Item',
+          description: response.data.top.description || '',
+          image: imageUrl,
+          price: response.data.top.price ? `$${Number(response.data.top.price).toFixed(2)}` : '$49.99',
+          type: 'top'
+        });
+      }
     }
     
     if (response.data.bottom) {
-      const bottomItem = transformProductToDashboardItem(response.data.bottom, 'bottom');
-      console.log('Bottom item:', bottomItem);
-      items.push(bottomItem);
+      const imageUrl = extractImageUrl(response.data.bottom);
+      if (imageUrl) {
+        items.push({
+          id: String(response.data.bottom.product_id || Math.random()),
+          name: response.data.bottom.product_name || 'Bottom Item',
+          description: response.data.bottom.description || '',
+          image: imageUrl,
+          price: response.data.bottom.price ? `$${Number(response.data.bottom.price).toFixed(2)}` : '$59.99',
+          type: 'bottom'
+        });
+      }
     }
     
     if (response.data.shoes) {
-      const shoesItem = transformProductToDashboardItem(response.data.shoes, 'shoes');
-      console.log('Shoes item:', shoesItem);
-      // Only add if we have a valid image
-      if (shoesItem.image && !shoesItem.image.includes('undefined')) {
-        items.push(shoesItem);
+      const imageUrl = extractImageUrl(response.data.shoes);
+      if (imageUrl) {
+        items.push({
+          id: String(response.data.shoes.product_id || Math.random()),
+          name: response.data.shoes.product_name || 'Shoes',
+          description: response.data.shoes.description || '',
+          image: imageUrl,
+          price: response.data.shoes.price ? `$${Number(response.data.shoes.price).toFixed(2)}` : '$79.99',
+          type: 'shoes'
+        });
       }
     }
 
-    // Add some fallback items if we don't have enough items
-    if (items.length === 0) {
-      items.push({
-        id: '1',
-        name: 'Classic White T-Shirt',
-        description: 'A versatile white t-shirt',
-        image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab',
-        type: 'top',
-        price: '$29.99'
-      });
-      
-      items.push({
-        id: '2',
-        name: 'Blue Jeans',
-        description: 'Classic blue denim jeans',
-        image: 'https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a',
-        type: 'bottom',
-        price: '$59.99'
-      });
-      
-      items.push({
-        id: '3',
-        name: 'Classic Sneakers',
-        description: 'White canvas sneakers',
-        image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772',
-        type: 'shoes',
-        price: '$79.99'
-      });
-    }
-
-    console.log('Final items array:', items);
+    console.log('Final processed items:', items);
     return items;
   } catch (error) {
     console.error('Error in fetchDashboardItems:', error);
