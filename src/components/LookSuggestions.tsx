@@ -218,7 +218,7 @@ export const LookSuggestions = () => {
                 Try different
               </Button>
             </div>
-            <LookCanvas items={canvasItems} width={300} height={400} />
+            <LookCanvas items={canvasItems} width={300} height={450} />
           </div>
         </div>
 
