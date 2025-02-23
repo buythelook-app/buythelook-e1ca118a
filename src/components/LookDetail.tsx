@@ -62,15 +62,15 @@ export const LookDetail = () => {
               <div className="flex flex-col gap-4">
                 <h2 className="text-2xl font-semibold">{look.title}</h2>
                 <p className="text-gray-400">{look.description}</p>
-                <div className="relative aspect-[3/4] w-full max-w-md mx-auto bg-white rounded-lg overflow-hidden">
+                <div className="relative aspect-[3/4] w-full bg-white rounded-lg overflow-hidden">
                   <LookCanvas 
                     items={look.items.map((item: any) => ({
                       id: item.id,
                       image: item.image,
                       type: item.type
                     }))}
-                    width={400}
-                    height={533}
+                    width={600}
+                    height={800}
                   />
                 </div>
               </div>
