@@ -1,9 +1,11 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Bot, Sparkles } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 export const SignUpForm = () => {
   const [email, setEmail] = useState("");
@@ -23,12 +25,35 @@ export const SignUpForm = () => {
       });
     }
 
-    // TODO: Implement actual authentication logic
-    toast({
-      title: "Success",
-      description: "Account created successfully",
-    });
-    navigate("/");
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Account created successfully",
+      });
+      
+      // Navigate directly to home after successful signup
+      navigate("/home");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

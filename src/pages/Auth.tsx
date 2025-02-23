@@ -14,16 +14,27 @@ export const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        toast({
-          title: "Success",
-          description: "Successfully signed in!",
-        });
+    // Check if user is already authenticated
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/home');
+      }
+    };
+    
+    checkAuth();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
         navigate('/home');
       }
     });
-  }, [navigate, toast]);
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 flex items-center justify-center p-4">
