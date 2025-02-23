@@ -1,4 +1,3 @@
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +12,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 
-// Mock data for orders - you might want to replace this with real data from your backend
 const mockOrders = [
   { id: '1', date: '2024-03-15', total: 299.99, status: 'Delivered' },
   { id: '2', date: '2024-03-10', total: 149.99, status: 'Processing' },
@@ -42,7 +40,11 @@ export const Profile = () => {
       setUserEmail(user.email || "");
       setUserName(user.user_metadata.name || user.email?.split('@')[0] || "");
       
-      // You could fetch additional user profile data from a profiles table here if needed
+      setFormData({
+        firstName: user.user_metadata.firstName || "",
+        lastName: user.user_metadata.lastName || "",
+        phone: user.user_metadata.phone || "",
+      });
     };
 
     getUserData();
@@ -55,20 +57,27 @@ export const Profile = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { error } = await supabase.auth.updateUser({
+      const { data, error } = await supabase.auth.updateUser({
         data: {
-          ...user.user_metadata,
-          ...formData,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          name: `${formData.firstName} ${formData.lastName}`.trim(),
         }
       });
 
       if (error) throw error;
+
+      if (data.user) {
+        setUserName(`${formData.firstName} ${formData.lastName}`.trim() || data.user.email?.split('@')[0] || "");
+      }
 
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully updated.",
       });
     } catch (error) {
+      console.error('Profile update error:', error);
       toast({
         title: "Error",
         description: "Failed to update profile",
