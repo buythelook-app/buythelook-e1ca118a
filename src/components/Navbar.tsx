@@ -31,14 +31,22 @@ export const Navbar = () => {
 
   useEffect(() => {
     const getUserData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setFirstName(user.user_metadata.firstName || user.email?.split('@')[0] || "");
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const name = user.user_metadata?.firstName || user.email?.split('@')[0] || "";
+          console.log("Setting firstName to:", name); // Debug log
+          setFirstName(name);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
       }
     };
 
     getUserData();
   }, []);
+
+  console.log("Current firstName:", firstName); // Debug log
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
