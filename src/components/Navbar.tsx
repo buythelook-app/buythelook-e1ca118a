@@ -1,5 +1,5 @@
 
-import { Sparkles, Heart, ShoppingCart, UserCircle2 } from "lucide-react";
+import { Sparkles, Heart, ShoppingCart, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   DropdownMenu,
@@ -75,7 +75,7 @@ export const Navbar = () => {
                     <Avatar className="h-8 w-8">
                       <AvatarImage src="" />
                       <AvatarFallback>
-                        <UserCircle2 className="h-6 w-6 text-white fill-white" />
+                        <User className="h-6 w-6 text-white fill-white stroke-[1.5]" />
                       </AvatarFallback>
                     </Avatar>
                   </DropdownMenuTrigger>
@@ -91,7 +91,7 @@ export const Navbar = () => {
             </>
           ) : (
             <Link to="/auth" className="hover:text-netflix-accent">
-              <Sparkles size={24} />
+              <User className="h-6 w-6 text-white stroke-[1.5]" />
             </Link>
           )}
         </div>
