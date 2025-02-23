@@ -1,10 +1,9 @@
+
 import { QuizFormData } from './types';
 import { StyleAnalysis } from './types/styleTypes';
 import { colorPalettes } from './constants/colorPalettes';
 import { styleRecommendations } from './constants/styleRecommendations';
-import { loadQuizData, saveQuizData, STORAGE_KEY } from './utils/storageUtils';
-
-export { loadQuizData, saveQuizData, STORAGE_KEY };
+import { supabase } from '@/lib/supabase';
 
 export const validateQuizStep = (step: number, formData: QuizFormData): boolean => {
   console.log("Validating step", step, "with data:", formData);
@@ -37,8 +36,29 @@ export const validateQuizStep = (step: number, formData: QuizFormData): boolean 
 
 export const analyzeStyleWithAI = async (formData: QuizFormData): Promise<StyleAnalysis> => {
   try {
-    console.log('Submitting form data:', formData);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
 
+    // Save quiz results to Supabase
+    const { error: upsertError } = await supabase
+      .from('style_quiz_results')
+      .upsert({
+        user_id: user.id,
+        gender: formData.gender,
+        height: formData.height,
+        weight: formData.weight,
+        waist: formData.waist,
+        chest: formData.chest,
+        body_shape: formData.bodyShape,
+        photo_url: null, // We'll need to implement photo upload to storage
+        color_preferences: formData.colorPreferences,
+        style_preferences: formData.stylePreferences,
+        updated_at: new Date().toISOString()
+      });
+
+    if (upsertError) throw upsertError;
+
+    // Continue with the existing AI analysis
     const measurements = {
       height: parseFloat(formData.height) || 0,
       weight: parseFloat(formData.weight) || 0,
@@ -64,11 +84,39 @@ export const analyzeStyleWithAI = async (formData: QuizFormData): Promise<StyleA
       recommendations: styleRecs
     };
 
-    console.log('Generated local style analysis:', analysis);
     return analysis;
-
   } catch (error) {
     console.error('Style analysis error:', error);
     throw error;
+  }
+};
+
+export const loadStoredQuizData = async (): Promise<QuizFormData | null> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from('style_quiz_results')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (error || !data) return null;
+
+    return {
+      gender: data.gender || "",
+      height: data.height || "",
+      weight: data.weight || "",
+      waist: data.waist || "",
+      chest: data.chest || "",
+      bodyShape: data.body_shape || "",
+      photo: null,
+      colorPreferences: data.color_preferences || [],
+      stylePreferences: data.style_preferences || []
+    };
+  } catch (error) {
+    console.error('Error loading quiz data:', error);
+    return null;
   }
 };

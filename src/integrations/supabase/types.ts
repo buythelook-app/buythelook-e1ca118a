@@ -9,6 +9,67 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      cart_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string | null
+          quantity: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          quantity?: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          quantity?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       items: {
         Row: {
           created_at: string
@@ -36,6 +97,54 @@ export type Database = {
           name?: string
           price?: string | null
           type?: string | null
+        }
+        Relationships: []
+      }
+      style_quiz_results: {
+        Row: {
+          body_shape: string | null
+          chest: string | null
+          color_preferences: string[] | null
+          created_at: string
+          gender: string | null
+          height: string | null
+          id: string
+          photo_url: string | null
+          style_preferences: string[] | null
+          updated_at: string
+          user_id: string | null
+          waist: string | null
+          weight: string | null
+        }
+        Insert: {
+          body_shape?: string | null
+          chest?: string | null
+          color_preferences?: string[] | null
+          created_at?: string
+          gender?: string | null
+          height?: string | null
+          id?: string
+          photo_url?: string | null
+          style_preferences?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+          waist?: string | null
+          weight?: string | null
+        }
+        Update: {
+          body_shape?: string | null
+          chest?: string | null
+          color_preferences?: string[] | null
+          created_at?: string
+          gender?: string | null
+          height?: string | null
+          id?: string
+          photo_url?: string | null
+          style_preferences?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+          waist?: string | null
+          weight?: string | null
         }
         Relationships: []
       }

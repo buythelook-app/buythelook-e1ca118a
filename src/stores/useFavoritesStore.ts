@@ -1,5 +1,7 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase } from '@/lib/supabase';
 
 interface FavoriteLook {
   id: string;
@@ -11,28 +13,82 @@ interface FavoriteLook {
 
 interface FavoritesStore {
   favorites: FavoriteLook[];
-  addFavorite: (look: FavoriteLook) => void;
-  removeFavorite: (id: string) => void;
+  addFavorite: (look: FavoriteLook) => Promise<void>;
+  removeFavorite: (id: string) => Promise<void>;
   isFavorite: (id: string) => boolean;
+  loadFavorites: () => Promise<void>;
 }
 
 export const useFavoritesStore = create<FavoritesStore>()(
   persist(
     (set, get) => ({
       favorites: [],
-      addFavorite: (look) => {
-        set((state) => ({
-          favorites: [...state.favorites, look],
+      loadFavorites: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from('favorites')
+          .select('items(*)')
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error loading favorites:', error);
+          return;
+        }
+
+        const favorites = data.map(fav => ({
+          id: fav.items.id,
+          image: fav.items.image || '',
+          title: fav.items.name || '',
+          price: fav.items.price || '',
+          category: fav.items.type || ''
+        }));
+
+        set({ favorites });
+      },
+      addFavorite: async (look) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
+          .from('favorites')
+          .insert({
+            user_id: user.id,
+            item_id: look.id
+          });
+
+        if (error) {
+          console.error('Error adding favorite:', error);
+          return;
+        }
+
+        set(state => ({
+          favorites: [...state.favorites, look]
         }));
       },
-      removeFavorite: (id) => {
-        set((state) => ({
-          favorites: state.favorites.filter((look) => look.id !== id),
+      removeFavorite: async (id) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
+          .from('favorites')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('item_id', id);
+
+        if (error) {
+          console.error('Error removing favorite:', error);
+          return;
+        }
+
+        set(state => ({
+          favorites: state.favorites.filter(look => look.id !== id)
         }));
       },
       isFavorite: (id) => {
-        return get().favorites.some((look) => look.id === id);
-      },
+        return get().favorites.some(look => look.id === id);
+      }
     }),
     {
       name: 'favorites-storage',

@@ -1,3 +1,4 @@
+
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { create } from 'zustand';
@@ -7,6 +8,7 @@ import { CartItem } from "./cart/CartItem";
 import { LookCartItem } from "./cart/LookCartItem";
 import { CartSummary } from "./cart/CartSummary";
 import { HomeButton } from "./HomeButton";
+import { supabase } from "@/lib/supabase";
 
 interface CartItem {
   id: string;
@@ -26,55 +28,159 @@ interface Look {
 interface CartStore {
   items: CartItem[];
   looks: Look[];
-  addItem: (item: CartItem) => void;
-  addItems: (items: CartItem[]) => void;
-  addLook: (look: Look) => void;
-  removeLook: (lookId: string) => void;
-  removeItem: (itemId: string) => void;
-  removeItemFromLook: (lookId: string, itemId: string) => void;
-  clearCart: () => void;
+  addItem: (item: CartItem) => Promise<void>;
+  addItems: (items: CartItem[]) => Promise<void>;
+  addLook: (look: Look) => Promise<void>;
+  removeLook: (lookId: string) => Promise<void>;
+  removeItem: (itemId: string) => Promise<void>;
+  removeItemFromLook: (lookId: string, itemId: string) => Promise<void>;
+  clearCart: () => Promise<void>;
+  loadCart: () => Promise<void>;
 }
 
 export const useCartStore = create<CartStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       items: [],
       looks: [],
-      addItem: (item) => set((state) => ({ 
-        items: [...state.items, item] 
-      })),
-      addItems: (newItems) => set((state) => ({
-        items: [...state.items, ...newItems]
-      })),
-      addLook: (look) => set((state) => ({ 
-        looks: [...state.looks, look] 
-      })),
-      removeLook: (lookId) => set((state) => ({
-        looks: state.looks.filter((look) => look.id !== lookId)
-      })),
-      removeItem: (itemId) => set((state) => ({
-        items: state.items.filter((item) => item.id !== itemId)
-      })),
-      removeItemFromLook: (lookId, itemId) => set((state) => ({
-        looks: state.looks.map(look => {
-          if (look.id === lookId) {
-            const updatedItems = look.items.filter(item => item.id !== itemId);
-            // If all items are removed, remove the look entirely
-            if (updatedItems.length === 0) {
-              return null;
-            }
-            return {
-              ...look,
-              items: updatedItems
-            };
+      loadCart: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from('cart_items')
+          .select('items(*)')
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error loading cart:', error);
+          return;
+        }
+
+        const cartItems = data.map(item => ({
+          id: item.items.id,
+          image: item.items.image || '',
+          title: item.items.name || '',
+          price: item.items.price || ''
+        }));
+
+        set({ items: cartItems });
+      },
+      addItem: async (item) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
+          .from('cart_items')
+          .insert({
+            user_id: user.id,
+            item_id: item.id
+          });
+
+        if (error) {
+          console.error('Error adding item to cart:', error);
+          return;
+        }
+
+        set(state => ({
+          items: [...state.items, item]
+        }));
+      },
+      addItems: async (newItems) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const cartItems = newItems.map(item => ({
+          user_id: user.id,
+          item_id: item.id
+        }));
+
+        const { error } = await supabase
+          .from('cart_items')
+          .insert(cartItems);
+
+        if (error) {
+          console.error('Error adding items to cart:', error);
+          return;
+        }
+
+        set(state => ({
+          items: [...state.items, ...newItems]
+        }));
+      },
+      addLook: async (look) => {
+        await get().addItems(look.items);
+        set(state => ({ 
+          looks: [...state.looks, look]
+        }));
+      },
+      removeLook: async (lookId) => {
+        const look = get().looks.find(l => l.id === lookId);
+        if (look) {
+          for (const item of look.items) {
+            await get().removeItem(item.id);
           }
-          return look;
-        }).filter((look): look is Look => look !== null)
-      })),
-      clearCart: () => set({ items: [], looks: [] }),
+        }
+        set(state => ({
+          looks: state.looks.filter(l => l.id !== lookId)
+        }));
+      },
+      removeItem: async (itemId) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
+          .from('cart_items')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('item_id', itemId);
+
+        if (error) {
+          console.error('Error removing item from cart:', error);
+          return;
+        }
+
+        set(state => ({
+          items: state.items.filter(item => item.id !== itemId)
+        }));
+      },
+      removeItemFromLook: async (lookId, itemId) => {
+        await get().removeItem(itemId);
+        set(state => ({
+          looks: state.looks.map(look => {
+            if (look.id === lookId) {
+              const updatedItems = look.items.filter(item => item.id !== itemId);
+              if (updatedItems.length === 0) {
+                return null;
+              }
+              return {
+                ...look,
+                items: updatedItems
+              };
+            }
+            return look;
+          }).filter((look): look is Look => look !== null)
+        }));
+      },
+      clearCart: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
+          .from('cart_items')
+          .delete()
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error clearing cart:', error);
+          return;
+        }
+
+        set({ items: [], looks: [] });
+      }
     }),
     {
-      name: 'cart-storage', // unique name for localStorage key
+      name: 'cart-storage',
     }
   )
 );
