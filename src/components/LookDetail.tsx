@@ -45,33 +45,35 @@ export const LookDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-netflix-background text-netflix-text p-4 md:p-6">
+    <div className="min-h-screen bg-[#121212] text-white p-4 md:p-6">
       <div className="container mx-auto max-w-7xl">
         <Button 
           variant="ghost" 
           onClick={() => navigate('/home')}
-          className="mb-4 md:mb-6"
+          className="mb-4 md:mb-6 text-white"
         >
           ← Back
         </Button>
 
         <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <LookHeader 
-              title={look.title}
-              description={look.description}
-              image={look.items[0]?.image}
-            />
-            
-            <div className="mt-4 md:mt-6">
-              <LookActions
-                id={look.id}
-                image={look.items[0]?.image}
+            <div className="bg-[#1E1E1E] p-8 rounded-xl shadow-xl">
+              <LookHeader 
                 title={look.title}
-                price={look.price}
-                category={look.category}
-                items={look.items}
+                description={look.description}
+                image={look.items[0]?.image}
               />
+              
+              <div className="mt-4 md:mt-6">
+                <LookActions
+                  id={look.id}
+                  image={look.items[0]?.image}
+                  title={look.title}
+                  price={look.price}
+                  category={look.category}
+                  items={look.items}
+                />
+              </div>
             </div>
 
             <div className="mt-4 md:mt-6">

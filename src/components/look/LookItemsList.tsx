@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
@@ -90,7 +91,7 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
             variant="outline"
             className="border-netflix-accent text-netflix-accent hover:bg-netflix-accent/10 w-full md:w-auto"
           >
-            Add Complete Look
+            Buy the Look
           </Button>
         </div>
       </div>
@@ -99,7 +100,7 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
         {look.items.map((item) => (
           <div 
             key={item.id}
-            className="flex items-center gap-4 bg-netflix-background p-4 rounded-lg group relative hover:bg-netflix-card/80 transition-colors"
+            className="flex items-center gap-4 p-4 rounded-lg group relative hover:bg-netflix-card/80 transition-colors border border-gray-700"
           >
             <Checkbox
               id={`item-${item.id}`}
@@ -109,7 +110,7 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
             <img 
               src={item.image} 
               alt={item.title}
-              className="w-20 h-20 object-cover rounded-md"
+              className="w-24 h-24 object-contain rounded-md bg-white"
             />
             <div className="flex-1">
               <label 
