@@ -69,15 +69,10 @@ export const Navbar = () => {
                   </Badge>
                 )}
               </Link>
-              <div className="flex flex-col items-center -mt-1">
+              <div className="flex flex-col items-center">
                 <DropdownMenu>
                   <DropdownMenuTrigger className="hover:text-netflix-accent">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src="" />
-                      <AvatarFallback>
-                        <User className="h-5 w-5 text-white fill-white stroke-[1.5]" />
-                      </AvatarFallback>
-                    </Avatar>
+                    <User className="h-6 w-6 text-white fill-white stroke-[1.5]" />
                   </DropdownMenuTrigger>
                   <UserDropdownMenu 
                     onAddressClick={() => setShowShippingAddress(true)}
