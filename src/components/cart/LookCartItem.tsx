@@ -1,3 +1,4 @@
+
 import { Button } from "../ui/button";
 import { Trash2 } from "lucide-react";
 
@@ -6,6 +7,7 @@ interface CartItem {
   image: string;
   title: string;
   price: string;
+  size?: string;
 }
 
 interface LookCartItemProps {
@@ -55,6 +57,9 @@ export const LookCartItem = ({
             <div className="flex-1">
               <p className="font-medium">{item.title}</p>
               <p className="text-sm text-netflix-accent">{item.price}</p>
+              {item.size && (
+                <p className="text-sm text-gray-400">Size: {item.size}</p>
+              )}
             </div>
             <Button
               variant="ghost"

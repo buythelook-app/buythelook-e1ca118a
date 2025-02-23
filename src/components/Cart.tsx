@@ -1,3 +1,4 @@
+
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { create } from 'zustand';
@@ -13,6 +14,7 @@ interface CartItem {
   image: string;
   title: string;
   price: string;
+  size?: string;
   lookId?: string;
 }
 
@@ -74,7 +76,7 @@ export const useCartStore = create<CartStore>()(
       clearCart: () => set({ items: [], looks: [] }),
     }),
     {
-      name: 'cart-storage', // unique name for localStorage key
+      name: 'cart-storage',
     }
   )
 );
