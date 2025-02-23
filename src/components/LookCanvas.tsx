@@ -29,7 +29,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set up canvas 
+    // Set up canvas with device pixel ratio
     const scale = window.devicePixelRatio || 1;
     canvas.width = width * scale;
     canvas.height = height * scale;
@@ -48,72 +48,139 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       return orderA - orderB;
     });
 
-    // Define positions
+    console.log('Items before sorting:', items);
+    console.log('Sorted items for rendering:', sortedItems);
+
+    // Define positions with clear spacing - adjusted shoe size
     const defaultPositions = {
-      outerwear: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.5 },
-      top: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.5 },
-      bottom: { x: width * 0.05, y: height * 0.25, width: width * 0.9, height: height * 0.5 },
-      dress: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.9 },
-      shoes: { x: width * 0.2, y: height * 0.5, width: width * 0.6, height: height * 0.3 },
-      accessory: { x: width * 0.05, y: height * 0.25, width: width * 0.9, height: height * 0.5 },
-      sunglasses: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.5 },
-      cart: { x: width * 0.05, y: height * 0.02, width: width * 0.9, height: height * 0.5 }
+      outerwear: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
+      top: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
+      bottom: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
+      dress: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.9 },
+      shoes: { x: width * 0.15, y: height * 0.5, width: width * 0.7, height: height * 0.3 }, // Reduced height
+      accessory: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
+      sunglasses: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
+      cart: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 }
     };
 
     const loadImages = async () => {
       try {
         for (const item of sortedItems) {
+          console.log('Loading image for item:', item);
+          
           const img = new Image();
           img.crossOrigin = "anonymous";
-          img.src = item.image;
+          
+          const timestamp = new Date().getTime();
+          const imageUrl = item.image.includes('?') 
+            ? `${item.image}&t=${timestamp}` 
+            : `${item.image}?t=${timestamp}`;
+          
+          img.src = imageUrl;
 
-          await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = reject;
-          });
+          try {
+            await new Promise((resolve, reject) => {
+              img.onload = () => {
+                console.log('Image loaded successfully:', imageUrl);
+                resolve(null);
+              };
+              img.onerror = (e) => {
+                console.error('Error loading image:', imageUrl, e);
+                reject(e);
+              };
+            });
 
-          const position = item.position || defaultPositions[item.type];
-          if (position) {
-            const offscreenCanvas = document.createElement('canvas');
-            const offscreenCtx = offscreenCanvas.getContext('2d');
-            
-            if (!offscreenCtx) {
-              console.error('Could not get offscreen context');
-              continue;
-            }
+            const position = item.position || defaultPositions[item.type];
+            if (position) {
+              console.log('Drawing item with position:', position);
 
-            // Match canvas size to image size
-            offscreenCanvas.width = img.width;
-            offscreenCanvas.height = img.height;
+              const offscreenCanvas = document.createElement('canvas');
+              const offscreenCtx = offscreenCanvas.getContext('2d');
+              if (!offscreenCtx) {
+                console.error('Could not get offscreen context');
+                continue;
+              }
 
-            // Draw image to offscreen canvas
-            offscreenCtx.drawImage(img, 0, 0);
+              offscreenCanvas.width = img.width;
+              offscreenCanvas.height = img.height;
 
-            // Calculate dimensions preserving aspect ratio
-            const aspectRatio = img.width / img.height;
-            let drawWidth = position.width;
-            let drawHeight = position.height;
+              if (item.type === 'shoes') {
+                const cropX = img.width * 0.15;
+                const cropWidth = img.width * 0.7;
+                const cropY = img.height * 0.15;
+                const cropHeight = img.height * 0.7;
+                
+                offscreenCtx.drawImage(
+                  img,
+                  cropX, cropY, cropWidth, cropHeight,
+                  0, 0, img.width, img.height
+                );
+              } else {
+                offscreenCtx.drawImage(img, 0, 0, img.width, img.height);
+              }
 
-            if (drawWidth / drawHeight > aspectRatio) {
-              drawWidth = drawHeight * aspectRatio;
+              const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+              const data = imageData.data;
+              
+              if (item.type === 'shoes') {
+                for (let i = 0; i < data.length; i += 4) {
+                  const r = data[i];
+                  const g = data[i + 1];
+                  const b = data[i + 2];
+                  
+                  if (r > 240 && g > 240 && b > 240) {
+                    data[i + 3] = 0;
+                  }
+                  
+                  const avgColor = (r + g + b) / 3;
+                  if (avgColor > 200 && Math.abs(r - g) < 10 && Math.abs(g - b) < 10 && Math.abs(r - b) < 10) {
+                    data[i + 3] = 0;
+                  }
+                }
+              } else {
+                for (let i = 0; i < data.length; i += 4) {
+                  const r = data[i];
+                  const g = data[i + 1];
+                  const b = data[i + 2];
+                  
+                  const avgColor = (r + g + b) / 3;
+                  if (avgColor > 180 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15 && Math.abs(r - b) < 15) {
+                    data[i + 3] = 0;
+                  }
+                }
+              }
+              
+              offscreenCtx.putImageData(imageData, 0, 0);
+
+              const aspectRatio = img.width / img.height;
+              let drawWidth = position.width;
+              let drawHeight = position.height;
+
+              if (drawWidth / drawHeight > aspectRatio) {
+                drawWidth = drawHeight * aspectRatio;
+              } else {
+                drawHeight = drawWidth / aspectRatio;
+              }
+
+              const centerX = position.x + (position.width - drawWidth) / 2;
+              const centerY = position.y + (position.height - drawHeight) / 2;
+
+              ctx.save();
+              ctx.drawImage(
+                offscreenCanvas,
+                centerX,
+                centerY,
+                drawWidth,
+                drawHeight
+              );
+              ctx.restore();
+              
+              console.log('Successfully drew item:', item.type);
             } else {
-              drawHeight = drawWidth / aspectRatio;
+              console.error('No position found for item type:', item.type);
             }
-
-            const centerX = position.x + (position.width - drawWidth) / 2;
-            const centerY = position.y + (position.height - drawHeight) / 2;
-
-            // Enable image smoothing
-            ctx.imageSmoothingEnabled = true;
-
-            // Draw the image
-            ctx.drawImage(
-              offscreenCanvas,
-              centerX,
-              centerY,
-              drawWidth,
-              drawHeight
-            );
+          } catch (imgError) {
+            console.error('Error processing image:', imgError);
           }
         }
       } catch (error) {
@@ -131,7 +198,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       style={{ 
         maxWidth: '100%',
         width: `${width}px`,
-        height: `${height}px`,
+        height: `${height}px`
       }}
     />
   );
