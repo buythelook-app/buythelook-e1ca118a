@@ -69,7 +69,7 @@ export const Navbar = () => {
                   </Badge>
                 )}
               </Link>
-              <div className="flex flex-col items-center">
+              <div className="inline-flex items-center group relative">
                 <DropdownMenu>
                   <DropdownMenuTrigger className="hover:text-netflix-accent">
                     <User className="h-6 w-6 text-white fill-white stroke-[1.5]" />
@@ -80,7 +80,9 @@ export const Navbar = () => {
                   />
                 </DropdownMenu>
                 {firstName && (
-                  <span className="text-xs mt-1 text-white">Hello, {firstName}</span>
+                  <span className="absolute top-full left-1/2 -translate-x-1/2 text-xs pt-1 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                    Hello, {firstName}
+                  </span>
                 )}
               </div>
             </>
