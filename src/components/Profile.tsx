@@ -1,3 +1,4 @@
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,24 +9,73 @@ import { Label } from "@/components/ui/label";
 import { CreditCard, Package, Settings, User, Apple } from "lucide-react";
 import { HomeButton } from "./HomeButton";
 import { CreditCardForm } from "./payments/CreditCardForm";
-import { useState } from "react";
-
-const mockOrders = [
-  { id: 1, date: "2024-01-01", total: 150, status: "Delivered" },
-  { id: 2, date: "2024-02-01", total: 200, status: "Processing" },
-  { id: 3, date: "2024-03-01", total: 175, status: "Shipped" },
-];
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
 
 export const Profile = () => {
   const { toast } = useToast();
   const [showCreditCardForm, setShowCreditCardForm] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [userName, setUserName] = useState<string>("");
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+  });
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const getUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+
+      setUserEmail(user.email || "");
+      setUserName(user.user_metadata.name || user.email?.split('@')[0] || "");
+      
+      // You could fetch additional user profile data from a profiles table here if needed
+    };
+
+    getUserData();
+  }, [navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Profile Updated",
-      description: "Your profile has been successfully updated.",
-    });
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          ...user.user_metadata,
+          ...formData,
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been successfully updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.id]: e.target.value
+    }));
   };
 
   return (
@@ -40,11 +90,11 @@ export const Profile = () => {
               <div className="flex items-center gap-4 mt-4">
                 <Avatar className="h-20 w-20">
                   <AvatarImage src="" />
-                  <AvatarFallback>U</AvatarFallback>
+                  <AvatarFallback>{userName.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h2 className="text-lg font-semibold">hilak2</h2>
-                  <p className="text-sm text-gray-400">hilak@gmail.com</p>
+                  <h2 className="text-lg font-semibold">{userName}</h2>
+                  <p className="text-sm text-gray-400">{userEmail}</p>
                 </div>
               </div>
             </CardHeader>
@@ -57,7 +107,7 @@ export const Profile = () => {
                   </TabsTrigger>
                   <TabsTrigger value="orders" className="data-[state=active]:bg-netflix-accent">
                     <Package className="mr-2 h-4 w-4" />
-                    My Orders ({mockOrders.length})
+                    My Orders
                   </TabsTrigger>
                   <TabsTrigger value="payments" className="data-[state=active]:bg-netflix-accent">
                     <CreditCard className="mr-2 h-4 w-4" />
@@ -76,22 +126,47 @@ export const Profile = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="firstName">First Name</Label>
-                          <Input id="firstName" placeholder="First Name" className="bg-netflix-background" />
+                          <Input 
+                            id="firstName" 
+                            placeholder="First Name" 
+                            className="bg-netflix-background"
+                            value={formData.firstName}
+                            onChange={handleInputChange}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="lastName">Last Name</Label>
-                          <Input id="lastName" placeholder="Last Name" className="bg-netflix-background" />
+                          <Input 
+                            id="lastName" 
+                            placeholder="Last Name" 
+                            className="bg-netflix-background"
+                            value={formData.lastName}
+                            onChange={handleInputChange}
+                          />
                         </div>
                       </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" placeholder="Email" className="bg-netflix-background" />
+                        <Input 
+                          id="email" 
+                          type="email" 
+                          value={userEmail}
+                          readOnly
+                          className="bg-netflix-background opacity-50"
+                        />
                       </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="phone">Phone Number</Label>
-                        <Input id="phone" type="tel" placeholder="Phone Number" className="bg-netflix-background" />
+                        <Input 
+                          id="phone" 
+                          type="tel" 
+                          placeholder="Phone Number" 
+                          className="bg-netflix-background"
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                        />
                       </div>
 
                       <Button type="submit" className="w-full bg-netflix-accent hover:bg-netflix-accent/90">
