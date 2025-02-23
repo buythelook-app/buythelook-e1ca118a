@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { Calendar, Bell, MapPin, ShoppingBag, Book, UserCog, Sparkles, Info, ScrollText, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 interface UserDropdownMenuProps {
@@ -20,8 +20,23 @@ interface UserDropdownMenuProps {
 export const UserDropdownMenu = ({ onAddressClick, handleCalendarSync }: UserDropdownMenuProps) => {
   const [isCalendarEnabled, setIsCalendarEnabled] = useState(false);
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | undefined>('');
+  const [userName, setUserName] = useState<string | undefined>('');
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const getUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserEmail(user.email);
+        // Use email username as display name if no metadata is set
+        setUserName(user.user_metadata.username || user.email?.split('@')[0] || 'User');
+      }
+    };
+
+    getUserData();
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -82,8 +97,8 @@ export const UserDropdownMenu = ({ onAddressClick, handleCalendarSync }: UserDro
           </AvatarFallback>
         </Avatar>
         <div className="flex flex-col">
-          <span className="font-medium text-netflix-text">hilak2</span>
-          <span className="text-sm text-gray-400">hilak@gmail.com</span>
+          <span className="font-medium text-netflix-text">{userName}</span>
+          <span className="text-sm text-gray-400">{userEmail}</span>
         </div>
       </div>
       
