@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+
+import { Link, useNavigate } from "react-router-dom";
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -6,9 +7,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
-import { Calendar, Bell, MapPin, ShoppingBag, Book, UserCog, Sparkles, Info, ScrollText } from "lucide-react";
+import { Calendar, Bell, MapPin, ShoppingBag, Book, UserCog, Sparkles, Info, ScrollText, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 interface UserDropdownMenuProps {
   onAddressClick: () => void;
@@ -19,6 +21,32 @@ export const UserDropdownMenu = ({ onAddressClick, handleCalendarSync }: UserDro
   const [isCalendarEnabled, setIsCalendarEnabled] = useState(false);
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        toast({
+          title: "Error signing out",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({
+        title: "Signed out successfully",
+        description: "Come back soon!",
+      });
+      navigate("/auth");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleCalendarToggle = async (checked: boolean) => {
     setIsCalendarEnabled(checked);
@@ -125,6 +153,16 @@ export const UserDropdownMenu = ({ onAddressClick, handleCalendarSync }: UserDro
             <ScrollText className="h-4 w-4" />
             <span>Our Rules</span>
           </Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator className="bg-gray-700" />
+
+        <DropdownMenuItem 
+          onClick={handleSignOut}
+          className="flex items-center gap-2 text-red-500 hover:text-red-400"
+        >
+          <LogOut className="h-4 w-4" />
+          <span>Sign Out</span>
         </DropdownMenuItem>
       </div>
     </DropdownMenuContent>
