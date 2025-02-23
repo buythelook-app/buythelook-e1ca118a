@@ -1,4 +1,3 @@
-
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { create } from 'zustand';
@@ -57,7 +56,7 @@ export const useCartStore = create<CartStore>()(
           return;
         }
 
-        const cartItems = data.map(item => ({
+        const cartItems = (data as CartItemData[]).map(item => ({
           id: item.items.id,
           image: item.items.image || '',
           title: item.items.name || '',

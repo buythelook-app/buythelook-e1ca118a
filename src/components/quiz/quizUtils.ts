@@ -5,6 +5,28 @@ import { colorPalettes } from './constants/colorPalettes';
 import { styleRecommendations } from './constants/styleRecommendations';
 import { supabase } from '@/lib/supabase';
 
+export const loadQuizData = (): QuizFormData => {
+  const savedData = localStorage.getItem('style-quiz-data');
+  if (savedData) {
+    return JSON.parse(savedData);
+  }
+  return {
+    gender: "",
+    height: "",
+    weight: "",
+    waist: "",
+    chest: "",
+    bodyShape: "",
+    photo: null,
+    colorPreferences: [],
+    stylePreferences: [],
+  };
+};
+
+export const saveQuizData = (data: QuizFormData): void => {
+  localStorage.setItem('style-quiz-data', JSON.stringify(data));
+};
+
 export const validateQuizStep = (step: number, formData: QuizFormData): boolean => {
   console.log("Validating step", step, "with data:", formData);
   switch (step) {
@@ -50,7 +72,7 @@ export const analyzeStyleWithAI = async (formData: QuizFormData): Promise<StyleA
         waist: formData.waist,
         chest: formData.chest,
         body_shape: formData.bodyShape,
-        photo_url: null, // We'll need to implement photo upload to storage
+        photo_url: null,
         color_preferences: formData.colorPreferences,
         style_preferences: formData.stylePreferences,
         updated_at: new Date().toISOString()
@@ -58,7 +80,6 @@ export const analyzeStyleWithAI = async (formData: QuizFormData): Promise<StyleA
 
     if (upsertError) throw upsertError;
 
-    // Continue with the existing AI analysis
     const measurements = {
       height: parseFloat(formData.height) || 0,
       weight: parseFloat(formData.weight) || 0,

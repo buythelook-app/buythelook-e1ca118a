@@ -19,6 +19,16 @@ interface FavoritesStore {
   loadFavorites: () => Promise<void>;
 }
 
+interface ItemData {
+  items: {
+    id: string;
+    image: string | null;
+    name: string | null;
+    price: string | null;
+    type: string | null;
+  }
+}
+
 export const useFavoritesStore = create<FavoritesStore>()(
   persist(
     (set, get) => ({
@@ -37,7 +47,7 @@ export const useFavoritesStore = create<FavoritesStore>()(
           return;
         }
 
-        const favorites = data.map(fav => ({
+        const favorites = (data as ItemData[]).map(fav => ({
           id: fav.items.id,
           image: fav.items.image || '',
           title: fav.items.name || '',
