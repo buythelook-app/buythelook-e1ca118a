@@ -13,6 +13,12 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 
+// Mock data for orders - you might want to replace this with real data from your backend
+const mockOrders = [
+  { id: '1', date: '2024-03-15', total: 299.99, status: 'Delivered' },
+  { id: '2', date: '2024-03-10', total: 149.99, status: 'Processing' },
+];
+
 export const Profile = () => {
   const { toast } = useToast();
   const [showCreditCardForm, setShowCreditCardForm] = useState(false);
