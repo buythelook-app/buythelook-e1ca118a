@@ -114,7 +114,8 @@ export default function Index() {
           image: outfit.top.image,
           type: 'top' as const,
         });
-        totalPrice += parseFloat(outfit.top.price || '0');
+        const topPrice = outfit.top.price?.replace(/[^0-9.]/g, '') || '0';
+        totalPrice += parseFloat(topPrice);
       }
 
       if (outfit.bottom) {
@@ -123,7 +124,8 @@ export default function Index() {
           image: outfit.bottom.image,
           type: 'bottom' as const,
         });
-        totalPrice += parseFloat(outfit.bottom.price || '0');
+        const bottomPrice = outfit.bottom.price?.replace(/[^0-9.]/g, '') || '0';
+        totalPrice += parseFloat(bottomPrice);
       }
 
       if (outfit.shoes) {
@@ -132,15 +134,17 @@ export default function Index() {
           image: outfit.shoes.image,
           type: 'shoes' as const,
         });
-        totalPrice += parseFloat(outfit.shoes.price || '0');
+        const shoesPrice = outfit.shoes.price?.replace(/[^0-9.]/g, '') || '0';
+        totalPrice += parseFloat(shoesPrice);
       }
 
       if (lookItems.length === 3) {
+        console.log('Total price calculated:', totalPrice);
         return {
           id: `look-${index + 1}`,
           title: `${occasion} Look`,
           items: lookItems,
-          price: `$${totalPrice.toFixed(2)}`,
+          price: totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : '$0.00',
           category: userStyle?.analysis?.styleProfile || "Casual",
           occasion
         };
