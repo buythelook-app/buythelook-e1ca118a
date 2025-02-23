@@ -26,7 +26,7 @@ interface ItemData {
     name: string | null;
     price: string | null;
     type: string | null;
-  }
+  };
 }
 
 export const useFavoritesStore = create<FavoritesStore>()(
@@ -47,7 +47,7 @@ export const useFavoritesStore = create<FavoritesStore>()(
           return;
         }
 
-        const favorites = (data as ItemData[]).map(fav => ({
+        const favorites = (data as unknown as ItemData[]).map(fav => ({
           id: fav.items.id,
           image: fav.items.image || '',
           title: fav.items.name || '',

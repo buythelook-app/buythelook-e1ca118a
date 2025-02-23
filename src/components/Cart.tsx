@@ -1,3 +1,4 @@
+
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { create } from 'zustand';
@@ -22,6 +23,16 @@ interface Look {
   title: string;
   items: CartItem[];
   totalPrice: string;
+}
+
+interface CartItemData {
+  items: {
+    id: string;
+    image: string | null;
+    name: string | null;
+    price: string | null;
+    type: string | null;
+  };
 }
 
 interface CartStore {
@@ -56,7 +67,7 @@ export const useCartStore = create<CartStore>()(
           return;
         }
 
-        const cartItems = (data as CartItemData[]).map(item => ({
+        const cartItems = (data as unknown as CartItemData[]).map(item => ({
           id: item.items.id,
           image: item.items.image || '',
           title: item.items.name || '',
