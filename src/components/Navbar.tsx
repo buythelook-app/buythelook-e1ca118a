@@ -1,17 +1,19 @@
-import { Sparkles, Heart, ShoppingCart } from "lucide-react";
+
+import { Sparkles, Heart, ShoppingCart, UserCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ShippingAddress } from "./ShippingAddress";
 import { UserDropdownMenu } from "./navbar/UserDropdownMenu";
 import { useCalendarSync } from "./navbar/CalendarSync";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useCartStore } from "./Cart";
 import { Badge } from "./ui/badge";
+import { supabase } from "@/lib/supabase";
 
 export const Navbar = () => {
   const isAuthenticated = true;
@@ -19,12 +21,24 @@ export const Navbar = () => {
   const { handleCalendarSync } = useCalendarSync();
   const { favorites } = useFavoritesStore();
   const { items, looks } = useCartStore();
+  const [firstName, setFirstName] = useState<string>("");
 
   const totalLooks = favorites.length;
   const displayCount = totalLooks > 9 ? '9+' : totalLooks.toString();
 
   const totalCartItems = items.length + looks.length;
   const cartDisplayCount = totalCartItems > 9 ? '9+' : totalCartItems.toString();
+
+  useEffect(() => {
+    const getUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setFirstName(user.user_metadata.firstName || user.email?.split('@')[0] || "");
+      }
+    };
+
+    getUserData();
+  }, []);
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
@@ -55,20 +69,25 @@ export const Navbar = () => {
                   </Badge>
                 )}
               </Link>
-              <DropdownMenu>
-                <DropdownMenuTrigger className="hover:text-netflix-accent">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="" />
-                    <AvatarFallback>
-                      <Sparkles className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                </DropdownMenuTrigger>
-                <UserDropdownMenu 
-                  onAddressClick={() => setShowShippingAddress(true)}
-                  handleCalendarSync={handleCalendarSync}
-                />
-              </DropdownMenu>
+              <div className="flex flex-col items-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="hover:text-netflix-accent">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src="" />
+                      <AvatarFallback>
+                        <UserCircle2 className="h-6 w-6 text-white fill-white" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </DropdownMenuTrigger>
+                  <UserDropdownMenu 
+                    onAddressClick={() => setShowShippingAddress(true)}
+                    handleCalendarSync={handleCalendarSync}
+                  />
+                </DropdownMenu>
+                {firstName && (
+                  <span className="text-xs mt-1 text-white">Hello, {firstName}</span>
+                )}
+              </div>
             </>
           ) : (
             <Link to="/auth" className="hover:text-netflix-accent">
