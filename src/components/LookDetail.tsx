@@ -8,6 +8,7 @@ import { LookItemsList } from "./look/LookItemsList";
 import { StyleRulers } from "./look/StyleRulers";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { LookCanvas } from "./LookCanvas";
 
 export const LookDetail = () => {
   const navigate = useNavigate();
@@ -58,11 +59,21 @@ export const LookDetail = () => {
         <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-[#1E1E1E] p-8 rounded-xl shadow-xl">
-              <LookHeader 
-                title={look.title}
-                description={look.description}
-                image={look.items[0]?.image}
-              />
+              <div className="flex flex-col gap-4">
+                <h2 className="text-2xl font-semibold">{look.title}</h2>
+                <p className="text-gray-400">{look.description}</p>
+                <div className="relative aspect-[3/4] w-full bg-white rounded-lg overflow-hidden">
+                  <LookCanvas 
+                    items={look.items.map((item: any) => ({
+                      id: item.id,
+                      image: item.image,
+                      type: item.type
+                    }))}
+                    width={600}
+                    height={800}
+                  />
+                </div>
+              </div>
               
               <div className="mt-4 md:mt-6">
                 <LookActions
