@@ -4,12 +4,16 @@ import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
 import { useCartStore } from "../Cart";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 interface Item {
   id: string;
   title: string;
   price: string;
   image: string;
+  description?: string;
+  type?: string;
+  sizes?: string[];
 }
 
 interface Look {
@@ -25,7 +29,10 @@ interface LookItemsListProps {
 
 export const LookItemsList = ({ look }: LookItemsListProps) => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
   const { addLook, addItems } = useCartStore();
+
+  const defaultSizes = ["XS", "S", "M", "L", "XL"];
 
   const handleItemSelect = (itemId: string) => {
     setSelectedItems(prev => {
@@ -37,9 +44,23 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
     });
   };
 
+  const handleSizeSelect = (itemId: string, size: string) => {
+    setSelectedSizes(prev => ({
+      ...prev,
+      [itemId]: size
+    }));
+  };
+
   const handleAddToCart = () => {
     if (selectedItems.length === 0) {
       toast.error("Please select at least one item");
+      return;
+    }
+
+    // Check if sizes are selected for all selected items
+    const missingSizes = selectedItems.filter(itemId => !selectedSizes[itemId]);
+    if (missingSizes.length > 0) {
+      toast.error("Please select sizes for all items");
       return;
     }
 
@@ -49,18 +70,28 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
         id: item.id,
         title: item.title,
         price: item.price,
-        image: item.image
+        image: item.image,
+        size: selectedSizes[item.id]
       }));
     
     addItems(selectedItemsData);
     toast.success('Selected items added to cart');
     setSelectedItems([]);
+    setSelectedSizes({});
   };
 
   const handleAddCompleteLook = () => {
+    // First set default sizes for all items if not already selected
+    const allSizes = look.items.reduce((acc, item) => ({
+      ...acc,
+      [item.id]: selectedSizes[item.id] || "M"
+    }), {});
+    setSelectedSizes(allSizes);
+
     const lookItems = look.items.map(item => ({
       ...item,
-      lookId: look.id
+      lookId: look.id,
+      size: allSizes[item.id]
     }));
     
     addLook({
@@ -72,6 +103,7 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
     
     toast.success('Complete look added to cart');
     setSelectedItems([]);
+    setSelectedSizes({});
   };
 
   return (
@@ -96,30 +128,56 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         {look.items.map((item) => (
           <div 
             key={item.id}
-            className="flex items-center gap-4 p-4 rounded-lg group relative hover:bg-netflix-card/80 transition-colors border border-gray-700"
+            className="flex flex-col md:flex-row items-start gap-4 p-6 rounded-lg group relative hover:bg-netflix-card/80 transition-colors border border-gray-700"
           >
-            <Checkbox
-              id={`item-${item.id}`}
-              checked={selectedItems.includes(item.id)}
-              onCheckedChange={() => handleItemSelect(item.id)}
-            />
-            <img 
-              src={item.image} 
-              alt={item.title}
-              className="w-24 h-24 object-contain rounded-md bg-white"
-            />
-            <div className="flex-1">
-              <label 
-                htmlFor={`item-${item.id}`}
-                className="font-medium cursor-pointer block"
-              >
-                {item.title}
-              </label>
-              <p className="text-netflix-accent text-sm">{item.price}</p>
+            <div className="flex items-center gap-4">
+              <Checkbox
+                id={`item-${item.id}`}
+                checked={selectedItems.includes(item.id)}
+                onCheckedChange={() => handleItemSelect(item.id)}
+              />
+              <img 
+                src={item.image} 
+                alt={item.title}
+                className="w-32 h-32 object-contain rounded-md bg-white"
+              />
+            </div>
+            <div className="flex-1 space-y-2">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                <label 
+                  htmlFor={`item-${item.id}`}
+                  className="text-lg font-medium cursor-pointer block"
+                >
+                  {item.title}
+                </label>
+                <p className="text-netflix-accent text-lg font-semibold">{item.price}</p>
+              </div>
+              <p className="text-gray-400 text-sm">{item.description || `${item.type || 'Item'} for your collection`}</p>
+              <div className="flex items-center gap-4 mt-3">
+                <span className="text-sm text-gray-400">Size:</span>
+                <Select
+                  value={selectedSizes[item.id] || ""}
+                  onValueChange={(value) => handleSizeSelect(item.id, value)}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Select size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(item.sizes || defaultSizes).map((size) => (
+                      <SelectItem key={size} value={size}>
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {item.type && (
+                <p className="text-sm text-gray-400 mt-2">Type: {item.type}</p>
+              )}
             </div>
           </div>
         ))}
