@@ -4,26 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Bot, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export const SignInForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isAIAssisted, setIsAIAssisted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (isAIAssisted) {
-      toast({
-        title: "AI Authentication",
-        description: "Enhanced security check in progress...",
-      });
-    }
-    
+    setIsSubmitting(true);
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -31,20 +24,27 @@ export const SignInForm = () => {
       });
 
       if (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
+        if (error.message.includes('Email not confirmed')) {
+          toast({
+            title: "Email not verified",
+            description: "Please check your email and click the confirmation link before logging in.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
         return;
       }
 
       toast({
-        title: "Success",
-        description: "Signed in successfully",
+        title: "Welcome back!",
+        description: "Successfully logged in.",
       });
       
-      // Navigate directly to home after successful sign in
       navigate("/home");
     } catch (error) {
       toast({
@@ -52,6 +52,8 @@ export const SignInForm = () => {
         description: "An unexpected error occurred",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -83,16 +85,11 @@ export const SignInForm = () => {
           />
         </div>
         <Button 
-          type="button"
-          variant="outline"
-          className="w-full flex items-center justify-center gap-2"
-          onClick={() => setIsAIAssisted(!isAIAssisted)}
+          type="submit" 
+          className="w-full bg-netflix-accent hover:bg-netflix-accent/90"
+          disabled={isSubmitting}
         >
-          {isAIAssisted ? <Bot className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-          {isAIAssisted ? "AI Security Enabled" : "Enable AI Security"}
-        </Button>
-        <Button type="submit" className="w-full bg-netflix-accent hover:bg-netflix-accent/90">
-          Sign In
+          {isSubmitting ? "Signing in..." : "Sign In"}
         </Button>
       </form>
     </div>
