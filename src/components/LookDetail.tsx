@@ -6,85 +6,34 @@ import { LookHeader } from "./look/LookHeader";
 import { LookActions } from "./look/LookActions";
 import { LookItemsList } from "./look/LookItemsList";
 import { StyleRulers } from "./look/StyleRulers";
-import { useState } from "react";
-
-const featuredLooks = [
-  { 
-    id: "look-1", 
-    title: "Summer Casual", 
-    description: "Perfect for a day at the beach or a casual summer outing.",
-    image: "https://images.unsplash.com/photo-1445205170230-053b83016050",
-    price: "$199.99",
-    category: "Casual",
-    items: [
-      {
-        id: "item-1",
-        title: "Summer Casual Item",
-        price: "$199.99",
-        image: "https://images.unsplash.com/photo-1445205170230-053b83016050"
-      }
-    ]
-  },
-  { 
-    id: "look-2", 
-    title: "Business Professional", 
-    description: "Perfect for important business meetings and formal occasions.",
-    image: "https://images.unsplash.com/photo-1487222477894-8943e31ef7b2",
-    price: "$249.99",
-    category: "Formal",
-    items: [
-      {
-        id: "item-2",
-        title: "Business Professional Item",
-        price: "$249.99",
-        image: "https://images.unsplash.com/photo-1487222477894-8943e31ef7b2"
-      }
-    ]
-  },
-  { 
-    id: "look-3", 
-    title: "Evening Elegance", 
-    description: "Sophisticated and stylish for evening events.",
-    image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d",
-    price: "$299.99",
-    category: "Business",
-    items: [
-      {
-        id: "item-3",
-        title: "Evening Elegance Item",
-        price: "$299.99",
-        image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d"
-      }
-    ]
-  },
-  { 
-    id: "look-4", 
-    title: "Weekend Comfort", 
-    description: "Casual and comfortable for weekend activities.",
-    image: "https://images.unsplash.com/photo-1485968579580-b6d095142e6e",
-    price: "$179.99",
-    category: "Casual",
-    items: [
-      {
-        id: "item-4",
-        title: "Weekend Comfort Item",
-        price: "$179.99",
-        image: "https://images.unsplash.com/photo-1485968579580-b6d095142e6e"
-      }
-    ]
-  }
-];
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 export const LookDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [look, setLook] = useState<any>(null);
   const [elegance, setElegance] = useState(75);
   const [colorIntensity, setColorIntensity] = useState(60);
 
-  const look = featuredLooks.find(look => look.id === id);
+  useEffect(() => {
+    if (id) {
+      const storedLook = localStorage.getItem(`look-${id}`);
+      if (storedLook) {
+        setLook(JSON.parse(storedLook));
+      } else {
+        toast.error("Look not found");
+        navigate('/home');
+      }
+    }
+  }, [id, navigate]);
 
   if (!look) {
-    return <div>Look not found</div>;
+    return (
+      <div className="min-h-screen bg-netflix-background flex items-center justify-center">
+        <div className="animate-pulse">Loading look details...</div>
+      </div>
+    );
   }
 
   const handleEleganceChange = (value: number[]) => {
@@ -111,13 +60,13 @@ export const LookDetail = () => {
             <LookHeader 
               title={look.title}
               description={look.description}
-              image={look.image}
+              image={look.items[0]?.image}
             />
             
             <div className="mt-4 md:mt-6">
               <LookActions
                 id={look.id}
-                image={look.image}
+                image={look.items[0]?.image}
                 title={look.title}
                 price={look.price}
                 category={look.category}

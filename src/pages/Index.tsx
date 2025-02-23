@@ -227,7 +227,13 @@ export default function Index() {
                   <div className="flex justify-between items-center">
                     <p className="text-netflix-accent font-semibold">{look.price}</p>
                     <button
-                      onClick={() => navigate(`/look/${look.id}`)}
+                      onClick={() => {
+                        localStorage.setItem(`look-${look.id}`, JSON.stringify({
+                          ...look,
+                          description: `A curated ${look.occasion.toLowerCase()} look that matches your style preferences.`
+                        }));
+                        navigate(`/look/${look.id}`);
+                      }}
                       className="bg-netflix-accent text-white px-4 py-2 rounded-lg hover:bg-netflix-accent/90 transition-colors text-sm"
                     >
                       View Details
