@@ -43,9 +43,14 @@ export const Navbar = () => {
   return (
     <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
       <div className="container mx-auto flex items-center justify-between">
-        <Link to="/" className="text-2xl font-display text-netflix-accent">
-          Buy the Look
-        </Link>
+        <div className="flex flex-col items-start">
+          <Link to="/" className="text-2xl font-display text-netflix-accent">
+            Buy the Look
+          </Link>
+          {firstName && (
+            <span className="text-xs text-white mt-1">Hello, {firstName}</span>
+          )}
+        </div>
         <div className="flex items-center space-x-8">
           {isAuthenticated ? (
             <>
@@ -79,11 +84,6 @@ export const Navbar = () => {
                     handleCalendarSync={handleCalendarSync}
                   />
                 </DropdownMenu>
-                {firstName && (
-                  <span className="absolute top-full left-1/2 -translate-x-1/2 text-xs pt-1 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                    Hello, {firstName}
-                  </span>
-                )}
               </div>
             </>
           ) : (
