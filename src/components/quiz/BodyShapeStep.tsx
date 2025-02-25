@@ -5,8 +5,7 @@ import {
   Circle, 
   Triangle, 
   Square,
-  Diamond,
-  Pear
+  Diamond
 } from "lucide-react";
 
 interface BodyShapeStepProps {
@@ -16,7 +15,7 @@ interface BodyShapeStepProps {
 
 const bodyShapeIcons = {
   hourglass: Diamond,
-  pear: Pear,
+  pear: Circle,  // Using Circle with different styling
   rectangle: Square,
   triangle: Triangle,
   oval: Circle,
@@ -37,7 +36,13 @@ export const BodyShapeStep = ({ value, onChange }: BodyShapeStepProps) => {
             return (
               <div key={shape} className="flex items-center space-x-3">
                 <RadioGroupItem value={shape} id={shape} />
-                <Icon className="w-5 h-5 text-primary" />
+                <Icon 
+                  className={`w-5 h-5 ${
+                    shape === 'pear' 
+                      ? 'text-primary transform scale-y-125' 
+                      : 'text-primary'
+                  }`}
+                />
                 <Label htmlFor={shape} className="capitalize">{shape}</Label>
               </div>
             );
