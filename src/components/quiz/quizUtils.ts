@@ -58,28 +58,34 @@ export const validateQuizStep = (step: number, formData: QuizFormData): boolean 
 
 export const analyzeStyleWithAI = async (formData: QuizFormData): Promise<StyleAnalysis> => {
   try {
+    // Try to get authenticated user
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
 
-    // Save quiz results to Supabase
-    const { error: upsertError } = await supabase
-      .from('style_quiz_results')
-      .upsert({
-        user_id: user.id,
-        gender: formData.gender,
-        height: formData.height,
-        weight: formData.weight,
-        waist: formData.waist,
-        chest: formData.chest,
-        body_shape: formData.bodyShape,
-        photo_url: null,
-        color_preferences: formData.colorPreferences,
-        style_preferences: formData.stylePreferences,
-        updated_at: new Date().toISOString()
-      });
+    // If user is authenticated, save to Supabase
+    if (user) {
+      const { error: upsertError } = await supabase
+        .from('style_quiz_results')
+        .upsert({
+          user_id: user.id,
+          gender: formData.gender,
+          height: formData.height,
+          weight: formData.weight,
+          waist: formData.waist,
+          chest: formData.chest,
+          body_shape: formData.bodyShape,
+          photo_url: null,
+          color_preferences: formData.colorPreferences,
+          style_preferences: formData.stylePreferences,
+          updated_at: new Date().toISOString()
+        });
 
-    if (upsertError) throw upsertError;
+      if (upsertError) {
+        console.error('Error saving to Supabase:', upsertError);
+        // Continue with local analysis even if Supabase save fails
+      }
+    }
 
+    // Proceed with style analysis regardless of authentication status
     const measurements = {
       height: parseFloat(formData.height) || 0,
       weight: parseFloat(formData.weight) || 0,
@@ -121,7 +127,7 @@ export const loadStoredQuizData = async (): Promise<QuizFormData | null> => {
       .from('style_quiz_results')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (error || !data) return null;
 
@@ -141,3 +147,4 @@ export const loadStoredQuizData = async (): Promise<QuizFormData | null> => {
     return null;
   }
 };
+
