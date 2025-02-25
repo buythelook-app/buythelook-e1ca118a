@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { useQuizContext } from "./QuizContext";
 
@@ -13,9 +14,22 @@ interface StyleComparisonStepProps {
   onSelect: (style: string) => void;
 }
 
+const STYLE_IMAGES = {
+  Classy: "/lovable-uploads/028933c6-ec95-471c-804c-0aa31a0e1f15.png",
+  Modern: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png", // keeping existing default image
+  Casual: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
+  Romantic: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
+  Minimalist: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
+  Bohemian: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png"
+};
+
 export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleComparisonStepProps) => {
   const { formData } = useQuizContext();
   
+  const getStyleImage = (styleName: string) => {
+    return STYLE_IMAGES[styleName] || style1.image;
+  };
+
   const isSelected = (styleName: string) => {
     return formData.stylePreferences[0] === styleName;
   };
@@ -36,7 +50,7 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
             onClick={() => onSelect(style1.name)}
           >
             <img 
-              src={style1.image}
+              src={getStyleImage(style1.name)}
               alt={style1.name} 
               className={`w-full h-full object-cover rounded-lg transition-transform ${
                 isSelected(style1.name) ? 'scale-[1.02]' : 'group-hover:scale-105'
@@ -60,7 +74,7 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
             onClick={() => onSelect(style2.name)}
           >
             <img 
-              src={style2.image}
+              src={getStyleImage(style2.name)}
               alt={style2.name} 
               className={`w-full h-full object-cover rounded-lg transition-transform ${
                 isSelected(style2.name) ? 'scale-[1.02]' : 'group-hover:scale-105'
