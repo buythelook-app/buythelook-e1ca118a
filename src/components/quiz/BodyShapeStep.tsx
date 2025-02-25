@@ -6,7 +6,7 @@ import {
   Triangle, 
   Square,
   Diamond,
-  Drop
+  Pear
 } from "lucide-react";
 
 interface BodyShapeStepProps {
@@ -16,7 +16,7 @@ interface BodyShapeStepProps {
 
 const bodyShapeIcons = {
   hourglass: Diamond,
-  pear: Drop,
+  pear: Pear,
   rectangle: Square,
   triangle: Triangle,
   oval: Circle,
