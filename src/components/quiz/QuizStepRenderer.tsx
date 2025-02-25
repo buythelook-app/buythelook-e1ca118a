@@ -8,7 +8,7 @@ import { StyleComparisonStep } from "./StyleComparisonStep";
 
 const allStyles = [
   { name: "Modern", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
-  { name: "Classy", image: "/lovable-uploads/6b74141f-5751-428f-b484-52cae35335ff.png" },
+  { name: "Classy", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
   { name: "Boo Hoo", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
   { name: "Nordic", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
   { name: "Sporty", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },

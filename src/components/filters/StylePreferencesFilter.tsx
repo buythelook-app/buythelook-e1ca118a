@@ -1,12 +1,11 @@
-
 import { Button } from "../ui/button";
 import { DropdownMenuLabel } from "../ui/dropdown-menu";
 import { Style } from "./StyleFilterButton";
 
 const STYLES = [
-  { id: "classic", name: "Classic", image: "/lovable-uploads/6b74141f-5751-428f-b484-52cae35335ff.png" },
+  { id: "classic", name: "Classic", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
   { id: "sportive", name: "Sportive", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
-  { id: "elegant", name: "Elegant", image: "/lovable-uploads/fa928c90-e737-4c07-a7f1-0a2139c220b6.png" },
+  { id: "elegant", name: "Elegant", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
   { id: "minimalist", name: "Minimalist", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
   { id: "romantic", name: "Romantic", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
   { id: "boohoo", name: "Boohoo", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
