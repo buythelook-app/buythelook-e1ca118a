@@ -1,3 +1,4 @@
+
 import { HeroSection } from "@/components/HeroSection";
 import { LookSection } from "@/components/LookSection";
 import { Navbar } from "@/components/Navbar";
@@ -8,7 +9,7 @@ import { useState, useEffect } from "react";
 import type { Mood } from "@/components/filters/MoodFilter";
 import { MoodFilter } from "@/components/filters/MoodFilter";
 import { useToast } from "@/hooks/use-toast";
-import { fetchDashboardItems } from "@/services/lookService";
+import { fetchFirstOutfitSuggestion } from "@/services/lookService";
 import { useQuery } from "@tanstack/react-query";
 import { Shuffle } from "lucide-react";
 
@@ -39,21 +40,19 @@ export default function Index() {
     }
   }, []);
 
-  const { data: suggestedItems, isLoading } = useQuery({
+  const { data: suggestedItems, isLoading, refetch } = useQuery({
     queryKey: ['dashboardItems', selectedMood],
-    queryFn: async () => {
-      const items = await fetchDashboardItems();
-      if (items.length === 0) {
-        toast({
-          title: "No items found",
-          description: "We couldn't find any items matching your style. Please try adjusting your preferences.",
-        });
-      }
-      return items;
-    },
+    queryFn: fetchFirstOutfitSuggestion,
     enabled: !!userStyle,
     staleTime: 0,
   });
+
+  // Refetch when mood changes
+  useEffect(() => {
+    if (selectedMood) {
+      refetch();
+    }
+  }, [selectedMood, refetch]);
 
   const groupItemsByOutfit = (items: any[] = []) => {
     if (!items || items.length === 0) return [];
@@ -64,30 +63,29 @@ export default function Index() {
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     
     for (const occasion of occasions) {
-      const top = items.find(item => 
-        item.type.toLowerCase() === 'top' && 
-        !usedIds.has(item.id)
-      );
-      
-      const bottom = items.find(item => 
-        item.type.toLowerCase() === 'bottom' && 
-        !usedIds.has(item.id)
-      );
-      
-      const shoes = items.find(item => 
-        item.type.toLowerCase() === 'shoes' && 
-        !usedIds.has(item.id)
-      );
+      const outfit = {
+        top: items.find(item => 
+          item.type.toLowerCase() === 'top' && 
+          !usedIds.has(item.id)
+        ),
+        bottom: items.find(item => 
+          item.type.toLowerCase() === 'bottom' && 
+          !usedIds.has(item.id)
+        ),
+        shoes: items.find(item => 
+          item.type.toLowerCase() === 'shoes' && 
+          !usedIds.has(item.id)
+        )
+      };
 
-      if (top && bottom && shoes) {
-        uniqueOutfits.push({ top, bottom, shoes });
-        usedIds.add(top.id);
-        usedIds.add(bottom.id);
-        usedIds.add(shoes.id);
+      if (outfit.top && outfit.bottom && outfit.shoes) {
+        uniqueOutfits.push(outfit);
+        usedIds.add(outfit.top.id);
+        usedIds.add(outfit.bottom.id);
+        usedIds.add(outfit.shoes.id);
       }
     }
 
-    console.log('Created unique outfits:', uniqueOutfits.length);
     return uniqueOutfits;
   };
 
@@ -97,12 +95,10 @@ export default function Index() {
       return [];
     }
 
-    console.log('Generating looks with items:', suggestedItems);
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     const outfits = groupItemsByOutfit(suggestedItems);
     
-    return occasions.map((occasion, index) => {
-      const outfit = outfits[index];
+    return outfits.map((outfit, index) => {
       if (!outfit) return null;
 
       const lookItems = [];
@@ -138,18 +134,14 @@ export default function Index() {
         totalPrice += parseFloat(shoesPrice);
       }
 
-      if (lookItems.length === 3) {
-        console.log('Total price calculated:', totalPrice);
-        return {
-          id: `look-${index + 1}`,
-          title: `${occasion} Look`,
-          items: lookItems,
-          price: totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : '$0.00',
-          category: userStyle?.analysis?.styleProfile || "Casual",
-          occasion
-        };
-      }
-      return null;
+      return {
+        id: `look-${index + 1}`,
+        title: `${occasions[index]} Look`,
+        items: lookItems,
+        price: totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : '$0.00',
+        category: userStyle?.analysis?.styleProfile || "Casual",
+        occasion: occasions[index]
+      };
     }).filter(Boolean) as Look[];
   };
 
@@ -163,6 +155,7 @@ export default function Index() {
       ...prev,
       [occasion]: (prev[occasion] || 0) + 1
     }));
+    refetch();
   };
 
   if (!userStyle) {
@@ -248,3 +241,4 @@ export default function Index() {
     </div>
   );
 }
+
