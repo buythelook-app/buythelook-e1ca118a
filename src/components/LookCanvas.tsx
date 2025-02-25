@@ -48,16 +48,13 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       return orderA - orderB;
     });
 
-    console.log('Items before sorting:', items);
-    console.log('Sorted items for rendering:', sortedItems);
-
-    // Define positions with clear spacing - adjusted shoe size
+    // Define positions with enhanced shoe positioning and cropping
     const defaultPositions = {
       outerwear: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
       top: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
       bottom: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
       dress: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.9 },
-      shoes: { x: width * 0.15, y: height * 0.5, width: width * 0.7, height: height * 0.3 }, // Reduced height
+      shoes: { x: width * 0.2, y: height * 0.6, width: width * 0.6, height: height * 0.3 }, // Adjusted position and size for shoes
       accessory: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
       sunglasses: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
       cart: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 }
@@ -92,52 +89,52 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
             const position = item.position || defaultPositions[item.type];
             if (position) {
-              console.log('Drawing item with position:', position);
-
               const offscreenCanvas = document.createElement('canvas');
               const offscreenCtx = offscreenCanvas.getContext('2d');
-              if (!offscreenCtx) {
-                console.error('Could not get offscreen context');
-                continue;
-              }
+              if (!offscreenCtx) continue;
 
               offscreenCanvas.width = img.width;
               offscreenCanvas.height = img.height;
 
+              // Special handling for shoes - more aggressive cropping and background removal
               if (item.type === 'shoes') {
-                const cropX = img.width * 0.15;
-                const cropWidth = img.width * 0.7;
-                const cropY = img.height * 0.15;
-                const cropHeight = img.height * 0.7;
+                // Crop more aggressively for shoes to focus on the item
+                const cropX = img.width * 0.2;
+                const cropWidth = img.width * 0.6;
+                const cropY = img.height * 0.2;
+                const cropHeight = img.height * 0.6;
                 
                 offscreenCtx.drawImage(
                   img,
                   cropX, cropY, cropWidth, cropHeight,
                   0, 0, img.width, img.height
                 );
-              } else {
-                offscreenCtx.drawImage(img, 0, 0, img.width, img.height);
-              }
 
-              const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-              const data = imageData.data;
-              
-              if (item.type === 'shoes') {
+                // Enhanced background removal for shoes
+                const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                const data = imageData.data;
+
                 for (let i = 0; i < data.length; i += 4) {
                   const r = data[i];
                   const g = data[i + 1];
                   const b = data[i + 2];
                   
-                  if (r > 240 && g > 240 && b > 240) {
-                    data[i + 3] = 0;
-                  }
+                  // More aggressive background removal for shoes
+                  const brightness = (r + g + b) / 3;
+                  const whiteness = Math.abs(r - g) + Math.abs(g - b) + Math.abs(r - b);
                   
-                  const avgColor = (r + g + b) / 3;
-                  if (avgColor > 200 && Math.abs(r - g) < 10 && Math.abs(g - b) < 10 && Math.abs(r - b) < 10) {
-                    data[i + 3] = 0;
+                  if (brightness > 240 || (brightness > 200 && whiteness < 15)) {
+                    data[i + 3] = 0; // Make pixel transparent
                   }
                 }
+
+                offscreenCtx.putImageData(imageData, 0, 0);
               } else {
+                // Normal handling for other items
+                offscreenCtx.drawImage(img, 0, 0);
+                const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                const data = imageData.data;
+                
                 for (let i = 0; i < data.length; i += 4) {
                   const r = data[i];
                   const g = data[i + 1];
@@ -148,9 +145,9 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                     data[i + 3] = 0;
                   }
                 }
+                
+                offscreenCtx.putImageData(imageData, 0, 0);
               }
-              
-              offscreenCtx.putImageData(imageData, 0, 0);
 
               const aspectRatio = img.width / img.height;
               let drawWidth = position.width;
@@ -174,10 +171,6 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                 drawHeight
               );
               ctx.restore();
-              
-              console.log('Successfully drew item:', item.type);
-            } else {
-              console.error('No position found for item type:', item.type);
             }
           } catch (imgError) {
             console.error('Error processing image:', imgError);
