@@ -1,24 +1,18 @@
 
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { 
-  Circle, 
-  Triangle, 
-  Square,
-  Diamond
-} from "lucide-react";
 
 interface BodyShapeStepProps {
   value: string;
   onChange: (value: string) => void;
 }
 
-const bodyShapeIcons = {
-  hourglass: Diamond,
-  pear: Circle,  // Using Circle with different styling
-  rectangle: Square,
-  triangle: Triangle,
-  oval: Circle,
+const bodyShapeEmojis = {
+  hourglass: "⌛",
+  pear: "🍐",
+  rectangle: "▯",
+  triangle: "▲",
+  oval: "⭕",
 };
 
 export const BodyShapeStep = ({ value, onChange }: BodyShapeStepProps) => {
@@ -32,17 +26,11 @@ export const BodyShapeStep = ({ value, onChange }: BodyShapeStepProps) => {
           className="flex flex-col space-y-4 w-full"
         >
           {["hourglass", "pear", "rectangle", "triangle", "oval"].map((shape) => {
-            const Icon = bodyShapeIcons[shape];
+            const emoji = bodyShapeEmojis[shape];
             return (
               <div key={shape} className="flex items-center space-x-3">
                 <RadioGroupItem value={shape} id={shape} />
-                <Icon 
-                  className={`w-5 h-5 ${
-                    shape === 'pear' 
-                      ? 'text-primary transform scale-y-125' 
-                      : 'text-primary'
-                  }`}
-                />
+                <span className="text-xl">{emoji}</span>
                 <Label htmlFor={shape} className="capitalize">{shape}</Label>
               </div>
             );
