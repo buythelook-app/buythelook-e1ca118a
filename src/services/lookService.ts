@@ -26,8 +26,15 @@ const mapStyle = (style: string): "classic" | "romantic" | "minimalist" | "casua
     casual: "casual",
     bohemian: "boohoo",
     athletic: "sporty",
-    Elegance: "classic"
+    Elegance: "classic",
+    Classy: "classic",  // Added mapping for Classy style
+    Modern: "minimalist", // Added mapping for Modern style
+    "Boo Hoo": "boohoo", // Added mapping for Boo Hoo style
+    Nordic: "minimalist", // Added mapping for Nordic style
+    Sporty: "sporty"     // Added mapping for Sporty style
   };
+  
+  console.log("Mapping style:", style, "to:", styleMap[style] || "casual");
   return styleMap[style] || "casual";
 };
 
