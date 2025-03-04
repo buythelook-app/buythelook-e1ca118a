@@ -72,7 +72,7 @@ const QuizSummary = () => {
 };
 
 const QuizContent = () => {
-  const { step, handleNext, handleBack, handleSubmit } = useQuizContext();
+  const { step, handleNext, handleBack, handleSubmit, handleSaveForLater } = useQuizContext();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -96,6 +96,7 @@ const QuizContent = () => {
         onNext={handleNext}
         onBack={handleBack}
         onComplete={handleSubmit}
+        onSaveForLater={handleSaveForLater}
       />
     </>
   );

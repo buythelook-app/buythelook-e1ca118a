@@ -18,4 +18,5 @@ export interface QuizContextType {
   handleNext: () => void;
   handleBack: () => void;
   handleSubmit: () => void;
+  handleSaveForLater: () => void;
 }

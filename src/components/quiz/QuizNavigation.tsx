@@ -1,6 +1,8 @@
-import React from "react";
+
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { Clock } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface QuizNavigationProps {
   currentStep: number;
@@ -8,6 +10,7 @@ interface QuizNavigationProps {
   onNext: () => void;
   onBack: () => void;
   onComplete: () => void;
+  onSaveForLater?: () => void;
 }
 
 export const QuizNavigation = ({
@@ -16,37 +19,51 @@ export const QuizNavigation = ({
   onNext,
   onBack,
   onComplete,
+  onSaveForLater,
 }: QuizNavigationProps) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleSaveForLater = () => {
+    if (onSaveForLater) {
+      onSaveForLater();
+    } else {
+      // Default implementation if not provided
+      toast({
+        title: "Progress saved",
+        description: "Your quiz progress has been saved. You can continue later.",
+      });
+      navigate('/home');
+    }
+  };
+
   return (
     <div className="flex justify-between mt-8">
-      {currentStep > 1 && (
-        <Button
-          onClick={onBack}
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft size={16} />
-          Back
+      <Button
+        variant="outline"
+        onClick={onBack}
+        disabled={currentStep === 1}
+        className="w-28"
+      >
+        Back
+      </Button>
+      <Button
+        variant="secondary"
+        onClick={handleSaveForLater}
+        className="w-40 ml-2 mr-2"
+      >
+        <Clock className="mr-2 h-4 w-4" />
+        Continue Later
+      </Button>
+      {currentStep < totalSteps ? (
+        <Button className="bg-netflix-accent w-28" onClick={onNext}>
+          Next
+        </Button>
+      ) : (
+        <Button className="bg-netflix-accent w-28" onClick={onComplete}>
+          Complete
         </Button>
       )}
-      <div className="ml-auto">
-        {currentStep < totalSteps ? (
-          <Button
-            onClick={onNext}
-            className="bg-netflix-accent hover:bg-netflix-accent/90 flex items-center gap-2"
-          >
-            Next
-            <ArrowRight size={16} />
-          </Button>
-        ) : (
-          <Button
-            onClick={onComplete}
-            className="bg-netflix-accent hover:bg-netflix-accent/90"
-          >
-            Complete Quiz
-          </Button>
-        )}
-      </div>
     </div>
   );
 };

@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -58,6 +59,18 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
     setStep((prev) => prev - 1);
   };
 
+  const handleSaveForLater = () => {
+    // Save current progress explicitly
+    saveQuizData(formData);
+    
+    toast({
+      title: "Progress saved",
+      description: "Your quiz progress has been saved. You can continue later.",
+    });
+    
+    navigate('/home');
+  };
+
   const handleSubmit = async () => {
     if (!validateQuizStep(step, formData)) {
       toast({
@@ -102,6 +115,7 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
         handleNext,
         handleBack,
         handleSubmit,
+        handleSaveForLater,
       }}
     >
       {children}
