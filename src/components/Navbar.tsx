@@ -49,9 +49,9 @@ export const Navbar = () => {
   console.log("Current firstName:", firstName); // Debug log
 
   return (
-    <nav className="fixed top-0 w-full z-10 bg-gradient-to-b from-black/50 to-transparent px-4 py-3 pointer-events-none">
+    <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
       <div className="container mx-auto flex items-center justify-between">
-        <div className="flex flex-col items-start pointer-events-auto">
+        <div className="flex flex-col items-start">
           <Link to="/" className="text-2xl font-display text-netflix-accent">
             Buy the Look
           </Link>
@@ -59,7 +59,7 @@ export const Navbar = () => {
             <span className="text-xs text-white mt-1">Hello, {firstName}</span>
           )}
         </div>
-        <div className="flex items-center space-x-8 pointer-events-auto">
+        <div className="flex items-center space-x-8">
           {isAuthenticated ? (
             <>
               <Link to="/cart" className="hover:text-netflix-accent relative">
