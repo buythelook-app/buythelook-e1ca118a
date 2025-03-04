@@ -48,6 +48,17 @@ export const Entrance = () => {
 
   return (
     <div className="min-h-screen bg-netflix-background text-netflix-text flex flex-col">
+      <div className="absolute top-4 right-4 z-10">
+        <Button 
+          variant="outline"
+          className="border-purple-500 text-purple-500 hover:bg-purple-500/10 font-bold"
+          onClick={handleSaveForLater}
+        >
+          <Clock className="mr-2 h-4 w-4" />
+          Continue Later
+        </Button>
+      </div>
+      
       <HeroSection />
       
       <motion.div 
