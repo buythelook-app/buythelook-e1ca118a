@@ -48,14 +48,13 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       return orderA - orderB;
     });
 
-    // Define positions with adjusted shoe positioning (higher, right after pants)
+    // Define positions with enhanced shoe positioning and cropping
     const defaultPositions = {
       outerwear: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
       top: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
       bottom: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
       dress: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.9 },
-      // Adjusted position for shoes - moved higher up, right after pants
-      shoes: { x: width * 0.2, y: height * 0.45, width: width * 0.6, height: height * 0.3 },
+      shoes: { x: width * 0.2, y: height * 0.6, width: width * 0.6, height: height * 0.3 }, // Adjusted position and size for shoes
       accessory: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
       sunglasses: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
       cart: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 }

@@ -48,9 +48,9 @@ export const QuizNavigation = ({
         Back
       </Button>
       <Button
-        variant="default"
+        variant="secondary"
         onClick={handleSaveForLater}
-        className="w-40 ml-2 mr-2 bg-netflix-accent"
+        className="w-40 ml-2 mr-2"
       >
         <Clock className="mr-2 h-4 w-4" />
         Continue Later

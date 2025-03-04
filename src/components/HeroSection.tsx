@@ -3,12 +3,9 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Clock } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 
 export const HeroSection = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -32,33 +29,8 @@ export const HeroSection = () => {
     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
   };
 
-  const handleSaveForLater = () => {
-    // Get existing quiz data or create a placeholder
-    const savedData = localStorage.getItem('quizData');
-    if (!savedData) {
-      localStorage.setItem('quizData', JSON.stringify({
-        gender: "",
-        height: "",
-        weight: "",
-        waist: "",
-        chest: "",
-        bodyShape: "",
-        photo: null,
-        colorPreferences: [],
-        stylePreferences: [],
-      }));
-    }
-    
-    toast({
-      title: "Quiz scheduled for later",
-      description: "You can take the quiz at your convenience later.",
-    });
-    
-    navigate('/home');
-  };
-
   return (
-    <div className="relative h-[80vh] w-full overflow-hidden mt-16">
+    <div className="relative h-[80vh] w-full overflow-hidden">
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1445205170230-053b83016050')] bg-cover bg-center">
         <div className="absolute inset-0 bg-gradient-to-t from-netflix-background via-netflix-background/70 to-transparent" />
         
@@ -122,7 +94,7 @@ export const HeroSection = () => {
             Let our AI stylist create the perfect outfit for you.
           </motion.p>
           
-          <motion.div variants={childVariants} className="flex flex-wrap gap-4">
+          <motion.div variants={childVariants}>
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -135,25 +107,9 @@ export const HeroSection = () => {
                 Take Style Quiz
               </Button>
             </motion.div>
-            
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Button 
-                variant="outline"
-                size="lg"
-                onClick={handleSaveForLater}
-                className="border-purple-500 text-purple-500 hover:bg-purple-500/10"
-              >
-                <Clock className="mr-2 h-4 w-4" />
-                Complete Your Answers
-              </Button>
-            </motion.div>
           </motion.div>
         </div>
       </motion.div>
     </div>
   );
 };
-
