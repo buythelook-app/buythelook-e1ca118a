@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useQuizContext } from "./QuizContext";
 
@@ -16,11 +15,11 @@ interface StyleComparisonStepProps {
 
 const STYLE_IMAGES = {
   Classy: "/lovable-uploads/028933c6-ec95-471c-804c-0aa31a0e1f15.png",
-  Modern: "/lovable-uploads/c7a32d15-ffe2-4f07-ae82-a943d5128293.png", // Updated to use the new Modern style image
+  Modern: "/lovable-uploads/c7a32d15-ffe2-4f07-ae82-a943d5128293.png",
   Casual: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
   Romantic: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
   Minimalist: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
-  Bohemian: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png"
+  "Boo Hoo": "/lovable-uploads/386cf438-be54-406f-9dbb-6495a8f8bde9.png"
 };
 
 export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleComparisonStepProps) => {

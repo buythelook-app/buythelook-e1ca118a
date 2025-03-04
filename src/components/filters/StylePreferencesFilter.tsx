@@ -9,7 +9,7 @@ const STYLES = [
   { id: "elegant", name: "Elegant", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
   { id: "minimalist", name: "Minimalist", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
   { id: "romantic", name: "Romantic", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
-  { id: "boohoo", name: "Boohoo", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
+  { id: "boohoo", name: "Boohoo", image: "/lovable-uploads/386cf438-be54-406f-9dbb-6495a8f8bde9.png" },
 ];
 
 interface StylePreferencesFilterProps {
