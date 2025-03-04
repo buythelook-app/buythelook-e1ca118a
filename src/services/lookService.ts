@@ -107,9 +107,33 @@ const extractImageUrl = (product: any): string => {
   }
 };
 
+// Helper function to check if an item is underwear
+const isUnderwear = (item: any): boolean => {
+  if (!item) return false;
+  
+  const underwearTerms = ['underwear', 'lingerie', 'bra', 'panties', 'briefs', 'boxer', 'thong', 'g-string'];
+  
+  // Check item name and description for underwear terms
+  const itemName = (item.product_name || '').toLowerCase();
+  const itemDesc = (item.description || '').toLowerCase();
+  const itemType = (item.type || '').toLowerCase();
+  
+  return underwearTerms.some(term => 
+    itemName.includes(term) || 
+    itemDesc.includes(term) || 
+    itemType.includes(term)
+  );
+};
+
 // Helper function to convert API item to DashboardItem
 const convertToDashboardItem = (item: any, type: string): DashboardItem | null => {
   if (!item) return null;
+  
+  // Skip underwear items
+  if (isUnderwear(item)) {
+    console.log('Filtering out underwear item:', item.product_name);
+    return null;
+  }
   
   const imageUrl = extractImageUrl(item);
   if (!imageUrl) return null;

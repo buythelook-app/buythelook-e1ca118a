@@ -90,6 +90,15 @@ export const LookSuggestions = () => {
     
     console.log('Mapping type:', type, 'Normalized to:', lowerType);
 
+    // Filter out underwear items
+    const underwearTerms = ['underwear', 'lingerie', 'bra', 'panties', 'briefs', 'boxer', 'thong'];
+    for (const term of underwearTerms) {
+      if (lowerType.includes(term)) {
+        console.log(`Detected underwear term: ${term} in type: ${lowerType}, skipping`);
+        return 'top'; // Default to top for UI purposes
+      }
+    }
+
     const bottomKeywords = ['pants', 'skirt', 'shorts', 'jeans', 'trousers', 'bottom'];
     for (const keyword of bottomKeywords) {
       if (lowerType.includes(keyword)) {
