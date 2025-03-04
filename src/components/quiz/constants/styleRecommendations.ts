@@ -1,3 +1,4 @@
+
 import { StyleRecommendations } from '../types/styleTypes';
 
 export const styleRecommendations: Record<string, StyleRecommendations> = {
@@ -10,12 +11,12 @@ export const styleRecommendations: Record<string, StyleRecommendations> = {
     outerwear: { type: "Blazer", color: "navy", style: "fitted" }
   },
   Modern: {
-    top: { type: "T-shirt", color: "black", style: "fitted" },
-    bottom: { type: "Jeans", color: "dark blue", style: "slim" },
-    shoes: { type: "Sneakers", color: "white", style: "minimalist" },
+    top: { type: "Tee", color: "white", style: "minimalist" },
+    bottom: { type: "Trousers", color: "light gray", style: "relaxed" },
+    shoes: { type: "Ankle Boots", color: "black", style: "sleek" },
     accessory: { type: "Watch", color: "silver", style: "digital" },
     sunglasses: { type: "Wayfarer", color: "black", style: "modern" },
-    outerwear: { type: "Bomber Jacket", color: "black", style: "sleek" }
+    outerwear: { type: "Blazer", color: "black", style: "oversized" }
   },
   Classy: {
     top: { type: "Silk Blouse", color: "cream", style: "luxurious" },
