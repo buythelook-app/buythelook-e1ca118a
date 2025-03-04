@@ -179,17 +179,12 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-netflix-background">
       <Navbar />
-      
-      <div className="container mx-auto px-4 py-4 mt-16">
-        <div className="mb-4">
+      <HeroSection />
+      <main className="container mx-auto px-4 py-8">
+        <div className="mb-8">
           <MoodFilter selectedMood={selectedMood} onMoodSelect={handleMoodSelect} />
         </div>
         <FilterOptions />
-      </div>
-      
-      <HeroSection />
-      
-      <main className="container mx-auto px-4 py-8">
         <section className="py-16">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-display font-semibold mb-8 relative">
