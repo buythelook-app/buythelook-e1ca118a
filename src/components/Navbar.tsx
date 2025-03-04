@@ -49,7 +49,7 @@ export const Navbar = () => {
   console.log("Current firstName:", firstName); // Debug log
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3 pointer-events-none">
+    <nav className="fixed top-0 w-full z-10 bg-gradient-to-b from-black/50 to-transparent px-4 py-3 pointer-events-none">
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex flex-col items-start pointer-events-auto">
           <Link to="/" className="text-2xl font-display text-netflix-accent">

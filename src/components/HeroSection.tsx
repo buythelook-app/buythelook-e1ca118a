@@ -6,8 +6,8 @@ export const HeroSection = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="relative h-[80vh] w-full mt-16 overflow-hidden">
-      <div className="absolute inset-0 w-full bg-[url('https://images.unsplash.com/photo-1445205170230-053b83016050')] bg-cover bg-center bg-no-repeat">
+    <div className="relative h-[80vh] w-full mt-16">
+      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1445205170230-053b83016050')] bg-cover bg-center">
         <div className="absolute inset-0 bg-gradient-to-t from-netflix-background via-netflix-background/70 to-transparent" />
       </div>
       <div className="relative h-full flex items-center">
