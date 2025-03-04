@@ -54,8 +54,8 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       top: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
       bottom: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
       dress: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.9 },
-      // Adjusted position and size for shoes - made smaller and positioned at the right height
-      shoes: { x: width * 0.25, y: height * 0.45, width: width * 0.5, height: height * 0.25 },
+      // Adjusted position for shoes - moved higher up, right after pants
+      shoes: { x: width * 0.2, y: height * 0.45, width: width * 0.6, height: height * 0.3 },
       accessory: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
       sunglasses: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
       cart: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 }
