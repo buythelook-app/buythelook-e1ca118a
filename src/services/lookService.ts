@@ -185,8 +185,8 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
   }
 };
 
-// Function to get all outfit suggestions for the home page
-export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
+// Function to get all outfit suggestions for different occasions
+export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardItem[]}> => {
   try {
     const quizData = localStorage.getItem('styleAnalysis');
     const currentMood = localStorage.getItem('current-mood');
@@ -201,32 +201,38 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
     const mood = validateMood(currentMood);
 
     // Make multiple API calls to generate different outfits
+    const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     const outfitPromises = [];
-    // Generate 4 different outfits
-    for (let i = 0; i < 4; i++) {
+    
+    // Generate separate outfit for each occasion
+    for (let i = 0; i < occasions.length; i++) {
       outfitPromises.push(generateOutfit(bodyShape, style, mood));
     }
     
     const responses = await Promise.all(outfitPromises);
-    const items: DashboardItem[] = [];
+    const occasionOutfits: {[key: string]: DashboardItem[]} = {};
 
-    // Process all outfit suggestions from all responses
-    responses.forEach(response => {
-      if (Array.isArray(response.data)) {
-        response.data.forEach(outfit => {
-          const top = convertToDashboardItem(outfit.top, 'top');
-          const bottom = convertToDashboardItem(outfit.bottom, 'bottom');
-          const shoes = convertToDashboardItem(outfit.shoes, 'shoes');
+    // Process outfits and group by occasion
+    responses.forEach((response, index) => {
+      const occasion = occasions[index];
+      occasionOutfits[occasion] = [];
+      
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        // Just use the first outfit for each occasion
+        const outfit = response.data[0];
+        
+        const top = convertToDashboardItem(outfit.top, 'top');
+        const bottom = convertToDashboardItem(outfit.bottom, 'bottom');
+        const shoes = convertToDashboardItem(outfit.shoes, 'shoes');
 
-          if (top) items.push(top);
-          if (bottom) items.push(bottom);
-          if (shoes) items.push(shoes);
-        });
+        if (top) occasionOutfits[occasion].push(top);
+        if (bottom) occasionOutfits[occasion].push(bottom);
+        if (shoes) occasionOutfits[occasion].push(shoes);
       }
     });
 
-    console.log('All outfit items:', items);
-    return items;
+    console.log('All outfit items by occasion:', occasionOutfits);
+    return occasionOutfits;
   } catch (error) {
     console.error('Error in fetchDashboardItems:', error);
     throw error;

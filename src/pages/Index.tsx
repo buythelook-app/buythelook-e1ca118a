@@ -1,6 +1,5 @@
 
 import { HeroSection } from "@/components/HeroSection";
-import { LookSection } from "@/components/LookSection";
 import { Navbar } from "@/components/Navbar";
 import { FilterOptions } from "@/components/filters/FilterOptions";
 import { LookCanvas } from "@/components/LookCanvas";
@@ -32,6 +31,7 @@ export default function Index() {
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [userStyle, setUserStyle] = useState<any>(null);
   const [combinations, setCombinations] = useState<{ [key: string]: number }>({});
+  const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
 
   useEffect(() => {
     const styleAnalysis = localStorage.getItem('styleAnalysis');
@@ -40,9 +40,8 @@ export default function Index() {
     }
   }, []);
 
-  // Changed to use fetchDashboardItems instead of fetchFirstOutfitSuggestion
-  // This will get all outfit suggestions instead of just the first one
-  const { data: suggestedItems, isLoading, refetch } = useQuery({
+  // Updated to use fetchDashboardItems with occasion categorization
+  const { data: occasionOutfits, isLoading, refetch } = useQuery({
     queryKey: ['dashboardItems', selectedMood],
     queryFn: fetchDashboardItems,
     enabled: !!userStyle,
@@ -52,112 +51,36 @@ export default function Index() {
   // Refetch when mood changes
   useEffect(() => {
     if (selectedMood) {
+      localStorage.setItem('current-mood', selectedMood);
       refetch();
     }
   }, [selectedMood, refetch]);
 
-  const groupItemsByOutfit = (items: any[] = []) => {
-    if (!items || items.length === 0) return [];
+  // Create a look from items for a specific occasion
+  const createLookFromItems = (items: any[] = [], occasion: string, index: number): Look | null => {
+    if (!items || items.length === 0) return null;
     
-    // Log the items to see what we're working with
-    console.log("Items to group into outfits:", items);
+    const lookItems = items.map(item => ({
+      id: item.id,
+      image: item.image,
+      type: item.type.toLowerCase() as 'top' | 'bottom' | 'shoes'
+    }));
     
-    const outfits = [];
-    const usedIds = new Set();
-    const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
+    // Calculate total price
+    let totalPrice = 0;
+    items.forEach(item => {
+      const itemPrice = item.price?.replace(/[^0-9.]/g, '') || '0';
+      totalPrice += parseFloat(itemPrice);
+    });
     
-    // Create outfits based on type combinations
-    let outfitIndex = 0;
-    
-    // Try to create as many complete outfits as possible
-    while (outfitIndex < occasions.length) {
-      const outfit = {
-        top: items.find(item => 
-          item.type.toLowerCase() === 'top' && 
-          !usedIds.has(item.id)
-        ),
-        bottom: items.find(item => 
-          item.type.toLowerCase() === 'bottom' && 
-          !usedIds.has(item.id)
-        ),
-        shoes: items.find(item => 
-          item.type.toLowerCase() === 'shoes' && 
-          !usedIds.has(item.id)
-        )
-      };
-      
-      // Only add complete outfits (top, bottom, shoes)
-      // If we don't have both top and shoes, skip this outfit
-      if (outfit.top && outfit.shoes) {
-        outfits.push(outfit);
-        usedIds.add(outfit.top.id);
-        if (outfit.bottom) usedIds.add(outfit.bottom.id);
-        usedIds.add(outfit.shoes.id);
-        outfitIndex++;
-      } else {
-        // If we can't create any more complete outfits, break the loop
-        break;
-      }
-    }
-    
-    console.log("Generated outfits:", outfits);
-    return outfits;
-  };
-
-  const generateFeaturedLooks = (): Look[] => {
-    if (!userStyle || !suggestedItems || suggestedItems.length === 0) {
-      console.log('No items available for looks');
-      return [];
-    }
-
-    const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
-    const outfits = groupItemsByOutfit(suggestedItems);
-    
-    return outfits.map((outfit, index) => {
-      if (!outfit) return null;
-
-      const lookItems = [];
-      let totalPrice = 0;
-
-      if (outfit.top) {
-        lookItems.push({
-          id: outfit.top.id,
-          image: outfit.top.image,
-          type: 'top' as const,
-        });
-        const topPrice = outfit.top.price?.replace(/[^0-9.]/g, '') || '0';
-        totalPrice += parseFloat(topPrice);
-      }
-
-      if (outfit.bottom) {
-        lookItems.push({
-          id: outfit.bottom.id,
-          image: outfit.bottom.image,
-          type: 'bottom' as const,
-        });
-        const bottomPrice = outfit.bottom.price?.replace(/[^0-9.]/g, '') || '0';
-        totalPrice += parseFloat(bottomPrice);
-      }
-
-      if (outfit.shoes) {
-        lookItems.push({
-          id: outfit.shoes.id,
-          image: outfit.shoes.image,
-          type: 'shoes' as const,
-        });
-        const shoesPrice = outfit.shoes.price?.replace(/[^0-9.]/g, '') || '0';
-        totalPrice += parseFloat(shoesPrice);
-      }
-
-      return {
-        id: `look-${index + 1}`,
-        title: `${occasions[index % occasions.length]} Look`,
-        items: lookItems,
-        price: totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : '$0.00',
-        category: userStyle?.analysis?.styleProfile || "Casual",
-        occasion: occasions[index % occasions.length]
-      };
-    }).filter(Boolean) as Look[];
+    return {
+      id: `look-${occasion}-${index}`,
+      title: `${occasion} Look`,
+      items: lookItems,
+      price: totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : '$0.00',
+      category: userStyle?.analysis?.styleProfile || "Casual",
+      occasion: occasion
+    };
   };
 
   const handleMoodSelect = (mood: Mood) => {
@@ -208,47 +131,57 @@ export default function Index() {
               Personalized Looks
               <span className="absolute -bottom-2 left-0 w-24 h-1 bg-netflix-accent rounded-full"></span>
             </h2>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {isLoading ? (
                 <div className="col-span-2 text-center py-12">
                   <div className="animate-pulse">Loading your personalized looks...</div>
                 </div>
-              ) : generateFeaturedLooks().map((look) => (
-                <div 
-                  key={look.id}
-                  className="bg-netflix-card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow"
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-xl font-semibold">{look.title}</h3>
-                    <span className="text-sm text-netflix-accent">{look.occasion}</span>
-                  </div>
-                  <div className="mb-4 bg-white rounded-lg overflow-hidden relative group">
-                    <LookCanvas items={look.items} width={300} height={480} />
-                    <button
-                      onClick={() => handleShuffleLook(look.occasion)}
-                      className="absolute bottom-4 right-4 bg-netflix-accent text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Try different combination"
+              ) : (
+                occasions.map((occasion, index) => {
+                  const items = occasionOutfits?.[occasion] || [];
+                  const look = createLookFromItems(items, occasion, index);
+                  
+                  if (!look) return null;
+                  
+                  return (
+                    <div 
+                      key={look.id}
+                      className="bg-netflix-card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow"
                     >
-                      <Shuffle className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <p className="text-netflix-accent font-semibold">{look.price}</p>
-                    <button
-                      onClick={() => {
-                        localStorage.setItem(`look-${look.id}`, JSON.stringify({
-                          ...look,
-                          description: `A curated ${look.occasion.toLowerCase()} look that matches your style preferences.`
-                        }));
-                        navigate(`/look/${look.id}`);
-                      }}
-                      className="bg-netflix-accent text-white px-4 py-2 rounded-lg hover:bg-netflix-accent/90 transition-colors text-sm"
-                    >
-                      View Details
-                    </button>
-                  </div>
-                </div>
-              ))}
+                      <div className="flex justify-between items-start mb-4">
+                        <h3 className="text-xl font-semibold">{look.title}</h3>
+                        <span className="text-sm text-netflix-accent">{look.occasion}</span>
+                      </div>
+                      <div className="mb-4 bg-white rounded-lg overflow-hidden relative group">
+                        <LookCanvas items={look.items} width={300} height={480} />
+                        <button
+                          onClick={() => handleShuffleLook(look.occasion)}
+                          className="absolute bottom-4 right-4 bg-netflix-accent text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Try different combination"
+                        >
+                          <Shuffle className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <p className="text-netflix-accent font-semibold">{look.price}</p>
+                        <button
+                          onClick={() => {
+                            localStorage.setItem(`look-${look.id}`, JSON.stringify({
+                              ...look,
+                              description: `A curated ${look.occasion.toLowerCase()} look that matches your style preferences.`
+                            }));
+                            navigate(`/look/${look.id}`);
+                          }}
+                          className="bg-netflix-accent text-white px-4 py-2 rounded-lg hover:bg-netflix-accent/90 transition-colors text-sm"
+                        >
+                          View Details
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </section>
@@ -256,4 +189,3 @@ export default function Index() {
     </div>
   );
 }
-
