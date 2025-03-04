@@ -1,4 +1,3 @@
-
 import { HeroSection } from "@/components/HeroSection";
 import { LookSection } from "@/components/LookSection";
 import { Navbar } from "@/components/Navbar";
@@ -47,7 +46,6 @@ export default function Index() {
     staleTime: 0,
   });
 
-  // Refetch when mood changes
   useEffect(() => {
     if (selectedMood) {
       refetch();
@@ -162,7 +160,7 @@ export default function Index() {
     return (
       <div className="min-h-screen bg-netflix-background">
         <Navbar />
-        <div className="container mx-auto px-4 py-16 text-center">
+        <div className="container mx-auto px-4 py-16 mt-16 text-center">
           <h2 className="text-2xl font-bold mb-4">Complete Your Style Quiz</h2>
           <p className="text-gray-600 mb-8">
             Take our style quiz to get personalized look suggestions that match your style.
@@ -241,4 +239,3 @@ export default function Index() {
     </div>
   );
 }
-
