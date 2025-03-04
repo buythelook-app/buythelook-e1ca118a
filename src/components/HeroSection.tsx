@@ -122,7 +122,7 @@ export const HeroSection = () => {
             Let our AI stylist create the perfect outfit for you.
           </motion.p>
           
-          <motion.div variants={childVariants} className="flex gap-4">
+          <motion.div variants={childVariants} className="flex flex-wrap gap-4">
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -156,3 +156,4 @@ export const HeroSection = () => {
     </div>
   );
 };
+
