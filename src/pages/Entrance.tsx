@@ -55,7 +55,7 @@ export const Entrance = () => {
           onClick={handleSaveForLater}
         >
           <Clock className="mr-2 h-4 w-4" />
-          Continue Later
+          Complete Your Answers
         </Button>
       </div>
       
@@ -103,7 +103,7 @@ export const Entrance = () => {
             onClick={handleSaveForLater}
           >
             <Clock className="mr-2 h-4 w-4" />
-            Continue Later
+            Complete Your Answers
           </Button>
         </motion.div>
       </motion.div>

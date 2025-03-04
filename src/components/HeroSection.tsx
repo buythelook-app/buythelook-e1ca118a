@@ -147,7 +147,7 @@ export const HeroSection = () => {
                 className="border-purple-500 text-purple-500 hover:bg-purple-500/10"
               >
                 <Clock className="mr-2 h-4 w-4" />
-                Continue Later
+                Complete Your Answers
               </Button>
             </motion.div>
           </motion.div>
