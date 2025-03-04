@@ -1,4 +1,3 @@
-
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 
 const API_URL = 'https://mwsblnposuyhrgzrtoyo.supabase.co/functions/v1/generate-outfit';
@@ -27,11 +26,11 @@ const mapStyle = (style: string): "classic" | "romantic" | "minimalist" | "casua
     bohemian: "boohoo",
     athletic: "sporty",
     Elegance: "classic",
-    Classy: "classic",  // Added mapping for Classy style
-    Modern: "minimalist", // Added mapping for Modern style
-    "Boo Hoo": "boohoo", // Added mapping for Boo Hoo style
-    Nordic: "minimalist", // Added mapping for Nordic style
-    Sporty: "sporty"     // Added mapping for Sporty style
+    Classy: "classic",
+    Modern: "minimalist",
+    "Boo Hoo": "boohoo",
+    Nordic: "minimalist",
+    Sporty: "sporty"
   };
   
   console.log("Mapping style:", style, "to:", styleMap[style] || "casual");
@@ -201,21 +200,30 @@ export const fetchDashboardItems = async (): Promise<DashboardItem[]> => {
     const style = mapStyle(styleAnalysis.analysis.styleProfile || 'classic');
     const mood = validateMood(currentMood);
 
-    const response = await generateOutfit(bodyShape, style, mood);
+    // Make multiple API calls to generate different outfits
+    const outfitPromises = [];
+    // Generate 4 different outfits
+    for (let i = 0; i < 4; i++) {
+      outfitPromises.push(generateOutfit(bodyShape, style, mood));
+    }
+    
+    const responses = await Promise.all(outfitPromises);
     const items: DashboardItem[] = [];
 
-    // Process all outfit suggestions
-    if (Array.isArray(response.data)) {
-      response.data.forEach(outfit => {
-        const top = convertToDashboardItem(outfit.top, 'top');
-        const bottom = convertToDashboardItem(outfit.bottom, 'bottom');
-        const shoes = convertToDashboardItem(outfit.shoes, 'shoes');
+    // Process all outfit suggestions from all responses
+    responses.forEach(response => {
+      if (Array.isArray(response.data)) {
+        response.data.forEach(outfit => {
+          const top = convertToDashboardItem(outfit.top, 'top');
+          const bottom = convertToDashboardItem(outfit.bottom, 'bottom');
+          const shoes = convertToDashboardItem(outfit.shoes, 'shoes');
 
-        if (top) items.push(top);
-        if (bottom) items.push(bottom);
-        if (shoes) items.push(shoes);
-      });
-    }
+          if (top) items.push(top);
+          if (bottom) items.push(bottom);
+          if (shoes) items.push(shoes);
+        });
+      }
+    });
 
     console.log('All outfit items:', items);
     return items;

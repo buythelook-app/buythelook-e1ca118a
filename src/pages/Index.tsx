@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import type { Mood } from "@/components/filters/MoodFilter";
 import { MoodFilter } from "@/components/filters/MoodFilter";
 import { useToast } from "@/hooks/use-toast";
-import { fetchFirstOutfitSuggestion } from "@/services/lookService";
+import { fetchDashboardItems } from "@/services/lookService";
 import { useQuery } from "@tanstack/react-query";
 import { Shuffle } from "lucide-react";
 
@@ -40,9 +40,11 @@ export default function Index() {
     }
   }, []);
 
+  // Changed to use fetchDashboardItems instead of fetchFirstOutfitSuggestion
+  // This will get all outfit suggestions instead of just the first one
   const { data: suggestedItems, isLoading, refetch } = useQuery({
     queryKey: ['dashboardItems', selectedMood],
-    queryFn: fetchFirstOutfitSuggestion,
+    queryFn: fetchDashboardItems,
     enabled: !!userStyle,
     staleTime: 0,
   });
@@ -57,12 +59,18 @@ export default function Index() {
   const groupItemsByOutfit = (items: any[] = []) => {
     if (!items || items.length === 0) return [];
     
-    const uniqueOutfits = [];
+    // Log the items to see what we're working with
+    console.log("Items to group into outfits:", items);
+    
+    const outfits = [];
     const usedIds = new Set();
-
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     
-    for (const occasion of occasions) {
+    // Create outfits based on type combinations
+    let outfitIndex = 0;
+    
+    // Try to create as many complete outfits as possible
+    while (outfitIndex < occasions.length) {
       const outfit = {
         top: items.find(item => 
           item.type.toLowerCase() === 'top' && 
@@ -77,16 +85,23 @@ export default function Index() {
           !usedIds.has(item.id)
         )
       };
-
-      if (outfit.top && outfit.bottom && outfit.shoes) {
-        uniqueOutfits.push(outfit);
+      
+      // Only add complete outfits (top, bottom, shoes)
+      // If we don't have both top and shoes, skip this outfit
+      if (outfit.top && outfit.shoes) {
+        outfits.push(outfit);
         usedIds.add(outfit.top.id);
-        usedIds.add(outfit.bottom.id);
+        if (outfit.bottom) usedIds.add(outfit.bottom.id);
         usedIds.add(outfit.shoes.id);
+        outfitIndex++;
+      } else {
+        // If we can't create any more complete outfits, break the loop
+        break;
       }
     }
-
-    return uniqueOutfits;
+    
+    console.log("Generated outfits:", outfits);
+    return outfits;
   };
 
   const generateFeaturedLooks = (): Look[] => {
@@ -136,11 +151,11 @@ export default function Index() {
 
       return {
         id: `look-${index + 1}`,
-        title: `${occasions[index]} Look`,
+        title: `${occasions[index % occasions.length]} Look`,
         items: lookItems,
         price: totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : '$0.00',
         category: userStyle?.analysis?.styleProfile || "Casual",
-        occasion: occasions[index]
+        occasion: occasions[index % occasions.length]
       };
     }).filter(Boolean) as Look[];
   };
