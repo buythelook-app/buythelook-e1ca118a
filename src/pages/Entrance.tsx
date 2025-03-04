@@ -96,15 +96,6 @@ export const Entrance = () => {
           >
             Try the Quiz
           </Button>
-          
-          <Button 
-            variant="outline"
-            className="flex-1 border-purple-500 text-purple-500 hover:bg-purple-500/10 py-6 font-bold"
-            onClick={handleSaveForLater}
-          >
-            <Clock className="mr-2 h-4 w-4" />
-            Complete Your Answers
-          </Button>
         </motion.div>
       </motion.div>
     </div>
