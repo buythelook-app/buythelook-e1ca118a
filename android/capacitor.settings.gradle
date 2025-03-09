@@ -1,0 +1,4 @@
+
+// This file is auto-generated.
+// It contains project related settings for capacitor plugins.
+include 'capacitor-cordova-android-plugins'
