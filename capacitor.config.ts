@@ -1,4 +1,3 @@
-
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
@@ -14,7 +13,7 @@ const config: CapacitorConfig = {
       keystorePath: undefined,
       keystoreAlias: undefined,
       keystorePassword: undefined,
-      keystoreAliasPassword: undefined,
+      keystoreAliasPassword: undefined
     }
   }
 };

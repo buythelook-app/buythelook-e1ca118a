@@ -1,17 +1,27 @@
-
 ext {
     minSdkVersion = 22
-    compileSdkVersion = 33
-    targetSdkVersion = 33
+    compileSdkVersion = 34
+    targetSdkVersion = 34
+    buildToolsVersion = "34.0.0"
+    
+    // Androidx Core
     androidxActivityVersion = '1.7.0'
     androidxAppCompatVersion = '1.6.1'
     androidxCoordinatorLayoutVersion = '1.2.0'
     androidxCoreVersion = '1.10.0'
     androidxFragmentVersion = '1.5.6'
+    androidxWebkitVersion = '1.8.0'
     coreSplashScreenVersion = '1.0.0'
-    androidxWebkitVersion = '1.6.1'
-    junitVersion = '4.13.2'
+    
+    // Testing
     androidxJunitVersion = '1.1.5'
     androidxEspressoCoreVersion = '3.5.1'
+    junitVersion = '4.13.2'
+    
+    // Kotlin
+    kotlinVersion = '1.8.22'
+    
+    // Capacitor
+    capacitorAndroidVersion = '5.5.0'
     cordovaAndroidVersion = '10.1.1'
 }
