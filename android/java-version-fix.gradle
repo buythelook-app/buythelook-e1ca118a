@@ -1,5 +1,5 @@
-// This file fixes Java version issues in the Capacitor plugins
-allprojects {
+// This script ensures all projects use Java 17
+subprojects {
     afterEvaluate { project ->
         if (project.hasProperty('android')) {
             android {
@@ -7,6 +7,21 @@ allprojects {
                     sourceCompatibility JavaVersion.VERSION_17
                     targetCompatibility JavaVersion.VERSION_17
                 }
+            }
+        }
+        
+        // For Java libraries
+        if (project.hasProperty('compileJava')) {
+            compileJava {
+                sourceCompatibility = JavaVersion.VERSION_17
+                targetCompatibility = JavaVersion.VERSION_17
+            }
+        }
+        
+        // For Kotlin
+        if (project.hasProperty('kotlin')) {
+            kotlin {
+                jvmToolchain(17)
             }
         }
     }

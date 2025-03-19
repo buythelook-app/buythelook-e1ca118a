@@ -11,6 +11,9 @@ buildscript {
     }
 }
 
+apply from: "variables.gradle"
+apply from: "java-version-fix.gradle"
+
 allprojects {
     repositories {
         google()
@@ -18,9 +21,6 @@ allprojects {
         maven { url 'https://jitpack.io' }
     }
 }
-
-apply from: "variables.gradle"
-apply from: "java-version-fix.gradle"
 
 task clean(type: Delete) {
     delete rootProject.buildDir
