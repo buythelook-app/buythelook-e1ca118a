@@ -10,6 +10,11 @@ const config: CapacitorConfig = {
   //   url: 'https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com?forceHideBadge=true',
   //   cleartext: true
   // },
+  plugins: {
+    CapacitorCookies: {
+      enabled: true
+    }
+  },
   android: {
     buildOptions: {
       keystorePath: undefined,

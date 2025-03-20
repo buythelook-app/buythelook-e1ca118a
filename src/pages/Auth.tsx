@@ -13,13 +13,35 @@ export const Auth = () => {
   const [isSignIn, setIsSignIn] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Check if user is already authenticated
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/home');
+      setIsLoading(true);
+      try {
+        // Check for authentication in URL (OAuth redirects)
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data.session) {
+          toast({
+            title: "Success",
+            description: "You have been signed in successfully.",
+          });
+          navigate('/home');
+        }
+      } catch (error: any) {
+        toast({
+          title: "Error",
+          description: error.message || "Authentication error",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -27,7 +49,11 @@ export const Auth = () => {
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
+      if (event === 'SIGNED_IN' && session) {
+        toast({
+          title: "Success",
+          description: "You have been signed in successfully.",
+        });
         navigate('/home');
       }
     });
@@ -35,7 +61,18 @@ export const Auth = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, toast]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 flex items-center justify-center p-4">
+        <div className="flex flex-col items-center">
+          <div className="h-12 w-12 rounded-full border-4 border-purple-500 border-t-transparent animate-spin"></div>
+          <p className="mt-4 text-white">Authenticating...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 flex items-center justify-center p-4 overflow-hidden">
