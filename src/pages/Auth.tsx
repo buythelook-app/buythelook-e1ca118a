@@ -5,13 +5,14 @@ import { SocialSignIn } from "@/components/auth/SocialSignIn";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 
 export const Auth = () => {
   const [isSignIn, setIsSignIn] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -48,20 +49,34 @@ export const Auth = () => {
     
     // Check URL parameters for hash fragment from OAuth providers
     const checkHashParams = async () => {
-      // If URL contains a hash fragment, it might be a redirect from OAuth provider
+      console.log("Checking for hash params. Location:", location);
+      console.log("Hash:", window.location.hash);
+      console.log("Search:", window.location.search);
+      
+      // If URL contains a hash fragment or search params, it might be a redirect from OAuth provider
       if (window.location.hash || window.location.search) {
         console.log("Hash or search params detected:", window.location.hash || window.location.search);
         setIsLoading(true);
+        
         try {
           // Exchange the OAuth token for a session
           const { data, error } = await supabase.auth.getSession();
+          console.log("Session after hash check:", data);
+          
           if (error) throw error;
           
           if (data.session) {
             console.log("OAuth authentication successful:", data.session);
+            const authEvent = new URLSearchParams(window.location.search).get('event');
+            let message = "You have been signed in successfully.";
+            
+            if (authEvent === 'signup') {
+              message = "Your account has been created and you are now signed in.";
+            }
+            
             toast({
               title: "Success",
-              description: "You have been signed in with Google successfully.",
+              description: message,
             });
             navigate('/home');
           } else {
@@ -100,7 +115,7 @@ export const Auth = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, toast]);
+  }, [navigate, toast, location]);
 
   if (isLoading) {
     return (

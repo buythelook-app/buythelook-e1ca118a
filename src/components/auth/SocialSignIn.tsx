@@ -19,22 +19,19 @@ export const SocialSignIn = () => {
     try {
       setIsLoading(prev => ({ ...prev, google: true }));
       
-      // Get the current URL for constructing the redirect URL
-      // Using the project preview URL for consistency
+      // Fixed redirect URL - make sure this exact URL is in your Google Cloud Console
       const previewUrl = "https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com";
-      const redirectTo = `${previewUrl}/auth`;
       
-      console.log("Initiating Google sign-in with redirect to:", redirectTo);
+      console.log("Starting Google sign-in process");
       
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectTo,
+          redirectTo: `${previewUrl}/auth`,
           queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-          skipBrowserRedirect: false // Ensure browser is redirected
+            prompt: 'select_account', // Forces Google to show the account selection screen
+            access_type: 'offline'
+          }
         }
       });
 
@@ -43,7 +40,7 @@ export const SocialSignIn = () => {
         throw error;
       }
       
-      console.log("Google sign-in initiated successfully");
+      console.log("Google sign-in initiated successfully, redirect data:", data);
       // OAuth flow will handle the redirect automatically
     } catch (error: any) {
       console.error("Google sign-in failed:", error);
@@ -52,7 +49,11 @@ export const SocialSignIn = () => {
         description: error.message || "Failed to sign in with Google",
         variant: "destructive",
       });
-      setIsLoading(prev => ({ ...prev, google: false }));
+    } finally {
+      // Reset loading state if we're still on this page
+      setTimeout(() => {
+        setIsLoading(prev => ({ ...prev, google: false }));
+      }, 1000);
     }
   };
 
