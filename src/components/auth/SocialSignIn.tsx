@@ -30,14 +30,15 @@ export const SocialSignIn = () => {
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
-          }
+          },
+          skipBrowserRedirect: false // Ensure browser is redirected
         }
       });
 
       if (error) throw error;
       
-      // Don't need to navigate here as the OAuth flow will redirect automatically
-      // and the onAuthStateChange event in Auth.tsx will handle the post-login navigation
+      // Oauth flow will handle the redirect automatically
+      // No need to navigate here
     } catch (error: any) {
       toast({
         title: "Error",

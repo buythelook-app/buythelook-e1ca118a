@@ -20,7 +20,6 @@ export const Auth = () => {
     const checkAuth = async () => {
       setIsLoading(true);
       try {
-        // Check for authentication in URL (OAuth redirects)
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -28,6 +27,7 @@ export const Auth = () => {
         }
         
         if (data.session) {
+          console.log("User already authenticated:", data.session);
           toast({
             title: "Success",
             description: "You have been signed in successfully.",
@@ -35,6 +35,7 @@ export const Auth = () => {
           navigate('/home');
         }
       } catch (error: any) {
+        console.error("Authentication error:", error);
         toast({
           title: "Error",
           description: error.message || "Authentication error",
@@ -48,7 +49,8 @@ export const Auth = () => {
     // Check URL parameters for hash fragment from OAuth providers
     const checkHashParams = async () => {
       // If URL contains a hash fragment, it might be a redirect from OAuth provider
-      if (window.location.hash) {
+      if (window.location.hash || window.location.search) {
+        console.log("Hash or search params detected:", window.location.hash || window.location.search);
         setIsLoading(true);
         try {
           // Exchange the OAuth token for a session
@@ -56,11 +58,14 @@ export const Auth = () => {
           if (error) throw error;
           
           if (data.session) {
+            console.log("OAuth authentication successful:", data.session);
             toast({
               title: "Success",
               description: "You have been signed in with Google successfully.",
             });
             navigate('/home');
+          } else {
+            console.log("No session found after OAuth redirect");
           }
         } catch (error: any) {
           console.error("OAuth error:", error);
@@ -72,6 +77,8 @@ export const Auth = () => {
         } finally {
           setIsLoading(false);
         }
+      } else {
+        setIsLoading(false);
       }
     };
     
@@ -80,7 +87,7 @@ export const Auth = () => {
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed:", event);
+      console.log("Auth state changed:", event, session);
       if (event === 'SIGNED_IN' && session) {
         toast({
           title: "Success",
