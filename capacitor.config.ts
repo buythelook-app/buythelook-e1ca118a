@@ -23,7 +23,7 @@ const config: CapacitorConfig = {
       keystoreAliasPassword: undefined
     }
   },
-  // Add URL scheme configuration for deep linking with Supabase auth
+  // Simplified configuration for deep linking
   server: {
     androidScheme: "https",
     hostname: "buythelook"

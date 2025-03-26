@@ -22,7 +22,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep linking for auth redirects -->
+            <!-- Simplified deep linking for auth redirects -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -30,7 +30,7 @@
                 <data android:scheme="buythelook" android:host="auth" />
             </intent-filter>
 
-            <!-- Add intent filter for https URLs -->
+            <!-- Add intent filter for https URLs with cleartext -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />

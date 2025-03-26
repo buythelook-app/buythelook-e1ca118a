@@ -26,6 +26,7 @@ export const SocialSignIn = () => {
     try {
       setIsLoading(prev => ({ ...prev, google: true }));
       
+      // Simplify the redirect URL
       const redirectUrl = isMobile 
         ? "buythelook://auth" // Use custom scheme for mobile apps
         : `${window.location.origin}/auth`; // For web
@@ -36,9 +37,9 @@ export const SocialSignIn = () => {
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
+          // Simplified query params, removing unnecessary options
           queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
+            prompt: 'select_account',
           }
         }
       });
@@ -66,6 +67,7 @@ export const SocialSignIn = () => {
         variant: "destructive",
       });
     } finally {
+      // Add a delay before resetting loading state
       setTimeout(() => {
         setIsLoading(prev => ({ ...prev, google: false }));
       }, 1000);
