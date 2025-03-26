@@ -24,45 +24,24 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
-  const handleEventSelect = async (event: EventType) => {
+  const handleEventSelect = (event: EventType) => {
     setSelectedEvent(event);
     
-    const recommendedStyles = event ? EVENT_TO_STYLES[event] : [];
-    
-    try {
-      const response = await fetch('https://preview--ai-bundle-construct-20.lovable.app/api/style-recommendations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          event,
-          recommendedStyles,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to get style recommendations');
-      }
-
-      const data = await response.json();
+    if (event) {
+      const recommendedStyles = EVENT_TO_STYLES[event];
       
       toast({
         title: "Event Style Selected",
         description: `Recommended styles for ${event}: ${recommendedStyles.join(', ')}`,
       });
-
+      
+      // Store recommended styles in localStorage for other components to use
+      localStorage.setItem('event-recommended-styles', JSON.stringify(recommendedStyles));
+      
       // Only close if date is already selected
       if (date) {
         setIsOpen(false);
       }
-    } catch (error) {
-      console.error('Error getting style recommendations:', error);
-      toast({
-        title: "Error",
-        description: "Failed to get style recommendations. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
