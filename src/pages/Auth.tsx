@@ -1,4 +1,3 @@
-
 import { SignInForm } from "@/components/auth/SignInForm";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import { SocialSignIn } from "@/components/auth/SocialSignIn";
@@ -18,64 +17,96 @@ export const Auth = () => {
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // Check if user is already authenticated
-    const checkAuth = async () => {
+    const checkSession = async () => {
       setIsLoading(true);
       try {
+        console.log("Checking current session");
         const { data, error } = await supabase.auth.getSession();
         
-        if (error) {
-          throw error;
-        }
+        if (error) throw error;
         
         if (data.session) {
-          console.log("User already authenticated:", data.session);
+          console.log("Active session found:", data.session);
           toast({
             title: "Success",
-            description: "You have been signed in successfully.",
+            description: "You are signed in.",
           });
           navigate('/home');
+          return;
         }
+        
+        console.log("No active session found");
       } catch (error: any) {
-        console.error("Authentication error:", error);
-        toast({
-          title: "Error",
-          description: error.message || "Authentication error",
-          variant: "destructive",
-        });
+        console.error("Session check error:", error);
       } finally {
         setIsLoading(false);
       }
     };
     
-    // Check for deep link handling on mobile
-    const checkDeepLink = async () => {
+    const processOAuthRedirect = async () => {
+      // We're in a potential OAuth redirect callback
+      try {
+        setIsLoading(true);
+        console.log("Processing potential OAuth redirect");
+        
+        // Exchange the OAuth token for a session (this works for browser redirects)
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
+        
+        if (data.session) {
+          console.log("OAuth authentication successful:", data.session);
+          toast({
+            title: "Success",
+            description: "You have been signed in successfully.",
+          });
+          navigate('/home');
+          return true;
+        }
+      } catch (error: any) {
+        console.error("OAuth redirect processing error:", error);
+        toast({
+          title: "Error",
+          description: error.message || "Authentication failed",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+      
+      return false;
+    };
+    
+    const handleDeepLink = async () => {
       if (Capacitor.isNativePlatform()) {
-        // On mobile devices, check URL parameters from deep links
+        console.log("Checking for deep link params");
+        // On mobile devices, handle auth from deep link
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('access_token') || urlParams.has('refresh_token')) {
+        
+        if (urlParams.has('access_token') || urlParams.has('refresh_token') || window.location.hash) {
           console.log("Deep link detected with auth tokens");
-          // Process the tokens through Supabase's Auth API
+          setIsLoading(true);
+          
           try {
-            setIsLoading(true);
-            // Let Supabase handle the token exchange
+            // Let Supabase handle the token
             const { data, error } = await supabase.auth.getSession();
             
             if (error) throw error;
             
             if (data.session) {
-              console.log("Successfully authenticated via deep link");
+              console.log("Deep link auth successful");
               toast({
                 title: "Success",
-                description: "You have been signed in successfully.",
+                description: "Authentication successful.",
               });
               navigate('/home');
+              return true;
             }
           } catch (error: any) {
             console.error("Deep link auth error:", error);
             toast({
               title: "Error",
-              description: error.message || "Authentication error",
+              description: error.message || "Authentication failed",
               variant: "destructive",
             });
           } finally {
@@ -83,65 +114,33 @@ export const Auth = () => {
           }
         }
       }
+      
+      return false;
     };
     
-    // Check URL parameters for hash fragment from OAuth providers
-    const checkHashParams = async () => {
-      console.log("Checking for hash params. Location:", location);
-      console.log("Hash:", window.location.hash);
-      console.log("Search:", window.location.search);
+    // Check for auth in this order to handle all cases
+    const init = async () => {
+      const hasHash = window.location.hash || window.location.search.includes('type=');
       
-      // If URL contains a hash fragment or search params, it might be a redirect from OAuth provider
-      if (window.location.hash || window.location.search) {
-        console.log("Hash or search params detected:", window.location.hash || window.location.search);
-        setIsLoading(true);
+      if (hasHash) {
+        // If we have hash or OAuth params, prioritize processing them
+        console.log("Hash or OAuth params detected, processing redirect");
+        const processed = await processOAuthRedirect();
+        if (processed) return;
         
-        try {
-          // Exchange the OAuth token for a session
-          const { data, error } = await supabase.auth.getSession();
-          console.log("Session after hash check:", data);
-          
-          if (error) throw error;
-          
-          if (data.session) {
-            console.log("OAuth authentication successful:", data.session);
-            const authEvent = new URLSearchParams(window.location.search).get('event');
-            let message = "You have been signed in successfully.";
-            
-            if (authEvent === 'signup') {
-              message = "Your account has been created and you are now signed in.";
-            }
-            
-            toast({
-              title: "Success",
-              description: message,
-            });
-            navigate('/home');
-          } else {
-            console.log("No session found after OAuth redirect");
-          }
-        } catch (error: any) {
-          console.error("OAuth error:", error);
-          toast({
-            title: "Error",
-            description: error.message || "Failed to complete authentication",
-            variant: "destructive",
-          });
-        } finally {
-          setIsLoading(false);
-        }
+        await handleDeepLink();
       } else {
-        setIsLoading(false);
+        // Otherwise just check for an existing session
+        await checkSession();
       }
     };
     
-    checkAuth();
-    checkHashParams();
-    checkDeepLink(); // Add deep link handling for mobile
-
-    // Listen for auth state changes
+    init();
+    
+    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event, session);
+      
       if (event === 'SIGNED_IN' && session) {
         toast({
           title: "Success",
@@ -154,7 +153,7 @@ export const Auth = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, toast, location]);
+  }, [navigate, toast]);
 
   if (isLoading) {
     return (

@@ -26,18 +26,20 @@ export const SocialSignIn = () => {
     try {
       setIsLoading(prev => ({ ...prev, google: true }));
       
-      const previewUrl = "https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com";
       const redirectUrl = isMobile 
-        ? `${window.location.origin}/auth` // For native mobile apps
-        : `${previewUrl}/auth`; // For web preview
+        ? "buythelook://auth" // Use custom scheme for mobile apps
+        : `${window.location.origin}/auth`; // For web
       
-      console.log(`Starting Google sign-in with redirect URL: ${redirectUrl}, isMobile: ${isMobile}`);
+      console.log(`Starting Google sign-in with redirect URL: ${redirectUrl}`);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          skipBrowserRedirect: isMobile, // Prevents auto-redirect on mobile
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       });
 
@@ -46,14 +48,14 @@ export const SocialSignIn = () => {
         throw error;
       }
       
-      console.log("Google sign-in initiated successfully, redirect URL:", data?.url);
+      console.log("Google sign-in initiated, redirect URL:", data?.url);
       
-      // On mobile devices, we need to handle the redirect manually
+      // For mobile apps, we need to handle the redirect manually
       if (isMobile && data?.url) {
-        // Let the parent component know we're in the authentication process
+        // This will be handled by the deep linking setup
         toast({
           title: "Authentication",
-          description: "Completing sign-in process...",
+          description: "Redirecting to Google sign-in...",
         });
       }
     } catch (error: any) {
