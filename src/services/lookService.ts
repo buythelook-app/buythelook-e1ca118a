@@ -40,15 +40,11 @@ const mapStyle = (style: string): "classic" | "romantic" | "minimalist" | "casua
 
 // Get styles based on event type
 const getEventStyles = (): string => {
-  // Get selected event from localStorage
   const selectedEvent = localStorage.getItem('selected-event') as EventType | null;
   
   if (selectedEvent && selectedEvent in EVENT_TO_STYLES) {
-    // Get recommended styles for the selected event
     const eventStyles = EVENT_TO_STYLES[selectedEvent as Exclude<EventType, null>];
     console.log("Using event styles:", eventStyles);
-    
-    // Return the first style as the primary style or default to "classic"
     return eventStyles[0] || "classic";
   }
   
@@ -71,8 +67,20 @@ const validateMood = (mood: string | null): string => {
   return mood.toLowerCase();
 };
 
+// Implement request caching for API calls
+const requestCache = new Map();
+
 const generateOutfit = async (bodyStructure: string, style: string, mood: string) => {
   try {
+    // Create a cache key based on the request parameters
+    const cacheKey = `${bodyStructure}:${style}:${mood}`;
+    
+    // Check if we have a cached response
+    if (requestCache.has(cacheKey)) {
+      console.log('Using cached outfit data for:', cacheKey);
+      return requestCache.get(cacheKey);
+    }
+    
     const requestBody = {
       bodyStructure,
       style,
@@ -80,6 +88,9 @@ const generateOutfit = async (bodyStructure: string, style: string, mood: string
     };
     
     console.log('Generating outfit with params:', requestBody);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
     
     const response = await fetch(API_URL, {
       method: 'POST',
@@ -90,9 +101,12 @@ const generateOutfit = async (bodyStructure: string, style: string, mood: string
         'Accept': 'application/json'
       },
       body: JSON.stringify(requestBody),
+      signal: controller.signal,
       mode: 'cors',
       credentials: 'omit'
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -102,6 +116,15 @@ const generateOutfit = async (bodyStructure: string, style: string, mood: string
 
     const data = await response.json();
     console.log('API response:', data);
+    
+    // Cache the successful response
+    requestCache.set(cacheKey, data);
+    
+    // Clear old cache entries if cache gets too large
+    if (requestCache.size > 20) {
+      const oldestKey = requestCache.keys().next().value;
+      requestCache.delete(oldestKey);
+    }
     
     return data;
   } catch (error) {
@@ -206,7 +229,7 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
   }
 };
 
-// Function to get all outfit suggestions for different occasions with varied styles
+// Implement parallel request for outfit suggestions
 export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardItem[]}> => {
   try {
     const quizData = localStorage.getItem('styleAnalysis');
