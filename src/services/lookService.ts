@@ -1,4 +1,6 @@
+
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
+import { EventType, EVENT_TO_STYLES } from "@/components/filters/eventTypes";
 
 const API_URL = 'https://mwsblnposuyhrgzrtoyo.supabase.co/functions/v1/generate-outfit';
 const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13c2JsbnBvc3V5aHJnenJ0b3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4OTUyOTYsImV4cCI6MjA1MzQ3MTI5Nn0.gyU3tLyZ_1yY82BKkii8EyeaGzFn9muZR6G6ELJocQk';
@@ -35,6 +37,24 @@ const mapStyle = (style: string): "classic" | "romantic" | "minimalist" | "casua
   
   console.log("Mapping style:", style, "to:", styleMap[style] || "casual");
   return styleMap[style] || "casual";
+};
+
+// Get styles based on event type
+const getEventStyles = (): string => {
+  // Get selected event from localStorage
+  const selectedEvent = localStorage.getItem('selected-event') as EventType | null;
+  
+  if (selectedEvent && selectedEvent in EVENT_TO_STYLES) {
+    // Get recommended styles for the selected event
+    const eventStyles = EVENT_TO_STYLES[selectedEvent as Exclude<EventType, null>];
+    console.log("Using event styles:", eventStyles);
+    
+    // Return the first style as the primary style or default to "classic"
+    return eventStyles[0] || "classic";
+  }
+  
+  console.log("No event selected or invalid event, using default style");
+  return "classic";
 };
 
 // Helper function to validate mood
@@ -159,7 +179,9 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     }
 
     const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
-    const style = mapStyle(styleAnalysis.analysis.styleProfile || 'classic');
+    // Get style from event (if available) or from quiz data
+    const eventStyle = getEventStyles();
+    const style = mapStyle(eventStyle || styleAnalysis.analysis.styleProfile || 'classic');
     const mood = validateMood(currentMood);
 
     const response = await generateOutfit(bodyShape, style, mood);
@@ -197,7 +219,9 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
     }
 
     const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
-    const style = mapStyle(styleAnalysis.analysis.styleProfile || 'classic');
+    // Get style from event (if available) or from quiz data
+    const eventStyle = getEventStyles();
+    const style = mapStyle(eventStyle || styleAnalysis.analysis.styleProfile || 'classic');
     const mood = validateMood(currentMood);
 
     // Make multiple API calls to generate different outfits

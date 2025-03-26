@@ -29,6 +29,9 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
   // Add an effect to handle navigation when both date and event are selected
   useEffect(() => {
     if (selectedEvent && date) {
+      // Store the selected event in localStorage for the lookService to use
+      localStorage.setItem('selected-event', selectedEvent);
+      
       // Close dialog and navigate to suggestions
       setIsOpen(false);
       setTimeout(() => navigate('/suggestions'), 300);
@@ -113,4 +116,3 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
     </Dialog>
   );
 };
-
