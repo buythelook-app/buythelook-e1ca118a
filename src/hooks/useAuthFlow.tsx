@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { Capacitor } from "@capacitor/core";
+import { App } from "@capacitor/app";
 
 export const useAuthFlow = () => {
   const navigate = useNavigate();
@@ -14,6 +15,44 @@ export const useAuthFlow = () => {
   useEffect(() => {
     console.log("Auth flow init started");
     let isMounted = true;
+    
+    // Set up deep link handler for native platforms
+    if (Capacitor.isNativePlatform()) {
+      App.addListener('appUrlOpen', async (data) => {
+        console.log('Deep link received in useAuthFlow:', data.url);
+        
+        if (data.url.includes('auth') && isMounted) {
+          setIsLoading(true);
+          
+          try {
+            // After deep link is received, verify session
+            const { data: sessionData, error } = await supabase.auth.getSession();
+            
+            if (error) throw error;
+            
+            if (sessionData.session) {
+              console.log("Session found after deep link:", sessionData.session.user?.id);
+              toast({
+                title: "Success",
+                description: "You have been signed in successfully.",
+              });
+              navigate('/home');
+            } else {
+              console.log("No session after deep link");
+              setIsLoading(false);
+            }
+          } catch (error: any) {
+            console.error("Deep link auth error:", error);
+            toast({
+              title: "Error",
+              description: error.message || "Authentication failed",
+              variant: "destructive",
+            });
+            setIsLoading(false);
+          }
+        }
+      });
+    }
 
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -22,11 +61,14 @@ export const useAuthFlow = () => {
       if (!isMounted) return;
       
       if (event === 'SIGNED_IN' && session) {
+        console.log("User signed in successfully:", session.user?.id);
         toast({
           title: "Success",
           description: "You have been signed in successfully.",
         });
         navigate('/home');
+      } else if (event === 'SIGNED_OUT') {
+        console.log("User signed out");
       }
     });
     
@@ -63,26 +105,28 @@ export const useAuthFlow = () => {
       const isMobileNative = Capacitor.isNativePlatform();
       console.log("Platform check:", isMobileNative ? "mobile native" : "browser");
       
-      // Check if we have auth params in the URL (hash or query)
+      // Check if we have auth params in URL
       const hasAuthParams = window.location.hash || 
                            window.location.search.includes('code=') || 
                            window.location.search.includes('token=') ||
-                           window.location.search.includes('type=');
+                           window.location.search.includes('type=') ||
+                           window.location.search.includes('access_token=');
       
       if (hasAuthParams) {
-        console.log("Auth params detected in URL");
+        console.log("Auth params detected in URL:", window.location.href);
         if (!isMounted) return false;
         
         setIsLoading(true);
         
         try {
-          console.log("Processing OAuth redirect/deeplink");
+          console.log("Processing OAuth redirect");
+          // Try to exchange the auth code for a session
           const { data, error } = await supabase.auth.getSession();
           
           if (error) throw error;
           
           if (data.session) {
-            console.log("Authentication successful from redirect/deeplink");
+            console.log("Authentication successful from redirect, user:", data.session.user?.id);
             toast({
               title: "Success",
               description: "Authentication successful.",
@@ -91,9 +135,9 @@ export const useAuthFlow = () => {
             return true;
           }
           
-          console.log("No session after processing redirect/deeplink");
+          console.log("No session after processing redirect");
         } catch (error: any) {
-          console.error("Auth redirect/deeplink processing error:", error);
+          console.error("Auth redirect processing error:", error);
           toast({
             title: "Error",
             description: error.message || "Authentication failed",
@@ -122,6 +166,11 @@ export const useAuthFlow = () => {
     return () => {
       isMounted = false;
       subscription.unsubscribe();
+      
+      // Clean up app listener if on native platform
+      if (Capacitor.isNativePlatform()) {
+        App.removeAllListeners();
+      }
     };
   }, [navigate, toast]);
 

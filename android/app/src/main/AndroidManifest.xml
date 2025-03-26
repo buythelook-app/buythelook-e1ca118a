@@ -22,7 +22,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Simplified deep linking for auth redirects -->
+            <!-- Custom scheme for auth redirects -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -30,12 +30,20 @@
                 <data android:scheme="buythelook" android:host="auth" />
             </intent-filter>
 
-            <!-- Add intent filter for https URLs with cleartext -->
+            <!-- HTTPS scheme for Supabase OAuth -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="aqkeprwxxsryropnhfvm.supabase.co" />
+            </intent-filter>
+
+            <!-- Additional intent filter for Google sign-in specific redirects -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="accounts.google.com" />
             </intent-filter>
 
         </activity>

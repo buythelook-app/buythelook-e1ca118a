@@ -3,13 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Bot } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
+import { App } from "@capacitor/app";
 
 export const SocialSignIn = () => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState<{[key: string]: boolean}>({
     google: false,
     apple: false,
@@ -20,13 +19,20 @@ export const SocialSignIn = () => {
   useEffect(() => {
     // Check if running on a native mobile platform
     setIsMobile(Capacitor.isNativePlatform());
+    
+    // Set up deep link listener for mobile platforms
+    if (Capacitor.isNativePlatform()) {
+      App.addListener('appUrlOpen', (data) => {
+        console.log('Deep link received in SocialSignIn:', data.url);
+      });
+    }
   }, []);
 
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(prev => ({ ...prev, google: true }));
       
-      // Simplify the redirect URL
+      // Simplify the redirect URL even further
       const redirectUrl = isMobile 
         ? "buythelook://auth" // Use custom scheme for mobile apps
         : `${window.location.origin}/auth`; // For web
@@ -37,8 +43,9 @@ export const SocialSignIn = () => {
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          // Simplified query params, removing unnecessary options
+          // Minimal query params to avoid URL issues
           queryParams: {
+            access_type: 'offline',
             prompt: 'select_account',
           }
         }
@@ -53,11 +60,14 @@ export const SocialSignIn = () => {
       
       // For mobile apps, we need to handle the redirect manually
       if (isMobile && data?.url) {
-        // This will be handled by the deep linking setup
+        console.log("Opening external URL on mobile:", data.url);
         toast({
-          title: "Authentication",
-          description: "Redirecting to Google sign-in...",
+          title: "Redirecting",
+          description: "Opening Google sign-in...",
         });
+        
+        // Let the URL load in external browser
+        window.open(data.url, '_blank');
       }
     } catch (error: any) {
       console.error("Google sign-in failed:", error);
