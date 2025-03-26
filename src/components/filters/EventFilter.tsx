@@ -68,15 +68,15 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
           {selectedEvent ? `${selectedEvent} - ${date?.toLocaleDateString() || 'Select Date'}` : 'Select Event'}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-sm p-3">
+      <DialogContent className="max-w-md p-4">
         <DialogHeader className="pb-1">
           <DialogTitle className="text-base">Select Event & Date</DialogTitle>
         </DialogHeader>
         
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <p className="text-xs font-medium text-muted-foreground mb-1">Event Type</p>
-            <div className="grid grid-cols-2 gap-1">
+            <div className="grid grid-cols-2 gap-2">
               {(Object.keys(EVENT_TO_STYLES) as Array<Exclude<EventType, null>>).map((event) => (
                 <EventButton
                   key={event}
@@ -90,7 +90,7 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
             <Button
               variant="outline"
               onClick={onSyncCalendar}
-              className="w-full text-xs flex items-center justify-center gap-1 h-7 mt-1"
+              className="w-full text-xs flex items-center justify-center gap-1 h-8 mt-2"
             >
               <span>📅</span> Sync
             </Button>
@@ -102,7 +102,7 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
               mode="single"
               selected={date}
               onSelect={handleDateSelect}
-              className="border rounded-md scale-90 origin-top-left -ml-1 -mt-1"
+              className="border rounded-md"
               showOutsideDays={false}
               disabled={(date) => date < new Date()}
             />
