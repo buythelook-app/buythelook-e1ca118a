@@ -1,0 +1,8 @@
+# This file should not be checked into version control
+# Update these paths to match your system configuration
+
+# Path to the Android SDK
+sdk.dir=C:\\Users\\funes\\AppData\\Local\\Android\\Sdk
+
+# Path to Java 17 JDK
+org.gradle.java.home=C:\\Program Files\\Java\\jdk-17
