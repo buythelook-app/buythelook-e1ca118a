@@ -23,6 +23,8 @@ export const SocialSignIn = () => {
       const origin = window.location.origin;
       const redirectTo = `${origin}/auth`;
       
+      console.log("Initiating Google sign-in with redirect to:", redirectTo);
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -35,11 +37,15 @@ export const SocialSignIn = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Google sign-in error:", error);
+        throw error;
+      }
       
-      // Oauth flow will handle the redirect automatically
-      // No need to navigate here
+      console.log("Google sign-in initiated successfully");
+      // OAuth flow will handle the redirect automatically
     } catch (error: any) {
+      console.error("Google sign-in failed:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to sign in with Google",
