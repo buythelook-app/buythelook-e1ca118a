@@ -20,8 +20,9 @@ export const SocialSignIn = () => {
       setIsLoading(prev => ({ ...prev, google: true }));
       
       // Get the current URL for constructing the redirect URL
-      const origin = window.location.origin;
-      const redirectTo = `${origin}/auth`;
+      // Using the project preview URL for consistency
+      const previewUrl = "https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com";
+      const redirectTo = `${previewUrl}/auth`;
       
       console.log("Initiating Google sign-in with redirect to:", redirectTo);
       
