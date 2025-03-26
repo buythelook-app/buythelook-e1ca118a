@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "../ui/use-toast";
 import { EventButton } from "./EventButton";
 import { EventType, EVENT_TO_STYLES } from "./eventTypes";
+import { useNavigate } from "react-router-dom";
 
 interface EventFilterProps {
   date: Date | undefined;
@@ -23,6 +24,7 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
   const [selectedEvent, setSelectedEvent] = useState<EventType>(null);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleEventSelect = (event: EventType) => {
     setSelectedEvent(event);
@@ -38,9 +40,10 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
       // Store recommended styles in localStorage for other components to use
       localStorage.setItem('event-recommended-styles', JSON.stringify(recommendedStyles));
       
-      // Close dialog if date is already selected
+      // Close dialog if date is already selected and navigate to suggestions
       if (date) {
         setIsOpen(false);
+        setTimeout(() => navigate('/suggestions'), 300);
       }
     }
   };
@@ -53,9 +56,10 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
         description: `Selected date: ${newDate.toLocaleDateString()}`,
       });
       
-      // Close dialog if event is already selected
+      // Close dialog if event is already selected and navigate to suggestions
       if (selectedEvent) {
         setIsOpen(false);
+        setTimeout(() => navigate('/suggestions'), 300);
       }
     }
   };
