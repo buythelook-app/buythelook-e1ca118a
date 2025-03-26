@@ -1,4 +1,3 @@
-
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 import { EventType, EVENT_TO_STYLES } from "@/components/filters/eventTypes";
 
@@ -207,7 +206,7 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
   }
 };
 
-// Function to get all outfit suggestions for different occasions
+// Function to get all outfit suggestions for different occasions with varied styles
 export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardItem[]}> => {
   try {
     const quizData = localStorage.getItem('styleAnalysis');
@@ -219,18 +218,39 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
     }
 
     const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
-    // Get style from event (if available) or from quiz data
+    
+    // Get base style from event (if available) or from quiz data
     const eventStyle = getEventStyles();
-    const style = mapStyle(eventStyle || styleAnalysis.analysis.styleProfile || 'classic');
+    const baseStyle = eventStyle || styleAnalysis.analysis.styleProfile || 'classic';
+    
+    // Get mood
     const mood = validateMood(currentMood);
 
-    // Make multiple API calls to generate different outfits
+    // Define style variations for different occasions
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
+    const occasionStyles = {
+      'Work': ['classic', 'minimalist'],
+      'Casual': ['casual', 'sporty', 'boohoo'],
+      'Evening': ['romantic', 'classic'],
+      'Weekend': ['boohoo', 'sporty', 'casual']
+    };
+    
     const outfitPromises = [];
     
-    // Generate separate outfit for each occasion
+    // Generate separate outfit for each occasion with varied styles
     for (let i = 0; i < occasions.length; i++) {
-      outfitPromises.push(generateOutfit(bodyShape, style, mood));
+      const occasion = occasions[i];
+      
+      // Get style options for this occasion or fall back to base style
+      const styleOptions = occasionStyles[occasion as keyof typeof occasionStyles] || [baseStyle];
+      
+      // Select a style from the options (rotating through them to ensure variety)
+      const styleIndex = Math.floor(Math.random() * styleOptions.length);
+      const selectedStyle = mapStyle(styleOptions[styleIndex]);
+      
+      console.log(`Generating outfit for ${occasion} with style: ${selectedStyle}`);
+      
+      outfitPromises.push(generateOutfit(bodyShape, selectedStyle, mood));
     }
     
     const responses = await Promise.all(outfitPromises);
