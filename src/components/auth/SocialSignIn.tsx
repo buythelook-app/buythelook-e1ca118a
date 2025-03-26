@@ -1,9 +1,11 @@
+
 import { Button } from "@/components/ui/button";
 import { Bot } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
 
 export const SocialSignIn = () => {
   const { toast } = useToast();
@@ -13,19 +15,29 @@ export const SocialSignIn = () => {
     apple: false,
     ai: false
   });
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Check if running on a native mobile platform
+    setIsMobile(Capacitor.isNativePlatform());
+  }, []);
 
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(prev => ({ ...prev, google: true }));
       
       const previewUrl = "https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com";
+      const redirectUrl = isMobile 
+        ? `${window.location.origin}/auth` // For native mobile apps
+        : `${previewUrl}/auth`; // For web preview
       
-      console.log("Starting Google sign-in process with plain redirect URL");
+      console.log(`Starting Google sign-in with redirect URL: ${redirectUrl}, isMobile: ${isMobile}`);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${previewUrl}/auth`
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: isMobile, // Prevents auto-redirect on mobile
         }
       });
 
@@ -35,6 +47,15 @@ export const SocialSignIn = () => {
       }
       
       console.log("Google sign-in initiated successfully, redirect URL:", data?.url);
+      
+      // On mobile devices, we need to handle the redirect manually
+      if (isMobile && data?.url) {
+        // Let the parent component know we're in the authentication process
+        toast({
+          title: "Authentication",
+          description: "Completing sign-in process...",
+        });
+      }
     } catch (error: any) {
       console.error("Google sign-in failed:", error);
       toast({

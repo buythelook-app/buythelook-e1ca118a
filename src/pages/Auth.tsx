@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import { Capacitor } from "@capacitor/core";
 
 export const Auth = () => {
   const [isSignIn, setIsSignIn] = useState(true);
@@ -15,7 +16,7 @@ export const Auth = () => {
   const location = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-
+  
   useEffect(() => {
     // Check if user is already authenticated
     const checkAuth = async () => {
@@ -44,6 +45,43 @@ export const Auth = () => {
         });
       } finally {
         setIsLoading(false);
+      }
+    };
+    
+    // Check for deep link handling on mobile
+    const checkDeepLink = async () => {
+      if (Capacitor.isNativePlatform()) {
+        // On mobile devices, check URL parameters from deep links
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('access_token') || urlParams.has('refresh_token')) {
+          console.log("Deep link detected with auth tokens");
+          // Process the tokens through Supabase's Auth API
+          try {
+            setIsLoading(true);
+            // Let Supabase handle the token exchange
+            const { data, error } = await supabase.auth.getSession();
+            
+            if (error) throw error;
+            
+            if (data.session) {
+              console.log("Successfully authenticated via deep link");
+              toast({
+                title: "Success",
+                description: "You have been signed in successfully.",
+              });
+              navigate('/home');
+            }
+          } catch (error: any) {
+            console.error("Deep link auth error:", error);
+            toast({
+              title: "Error",
+              description: error.message || "Authentication error",
+              variant: "destructive",
+            });
+          } finally {
+            setIsLoading(false);
+          }
+        }
       }
     };
     
@@ -99,6 +137,7 @@ export const Auth = () => {
     
     checkAuth();
     checkHashParams();
+    checkDeepLink(); // Add deep link handling for mobile
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
