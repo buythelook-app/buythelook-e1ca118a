@@ -189,6 +189,12 @@ const convertToDashboardItem = (item: any, type: string): DashboardItem | null =
   };
 };
 
+// Track used items across all occasions to prevent duplicates
+const getItemIdentifier = (item: any): string => {
+  // Create a unique identifier for each product based on product_id or image URL
+  return item.product_id?.toString() || item.image?.toString() || Math.random().toString();
+};
+
 // Function to get only the first outfit suggestion
 export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => {
   try {
@@ -278,25 +284,116 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
     
     const responses = await Promise.all(outfitPromises);
     const occasionOutfits: {[key: string]: DashboardItem[]} = {};
+    const usedItemIds = new Set<string>(); // Track used items across all occasions
 
     // Process outfits and group by occasion
-    responses.forEach((response, index) => {
+    for (let index = 0; index < responses.length; index++) {
+      const response = responses[index];
       const occasion = occasions[index];
       occasionOutfits[occasion] = [];
       
       if (Array.isArray(response.data) && response.data.length > 0) {
-        // Just use the first outfit for each occasion
-        const outfit = response.data[0];
+        // Try all outfit options for each occasion
+        let outfitFound = false;
         
-        const top = convertToDashboardItem(outfit.top, 'top');
-        const bottom = convertToDashboardItem(outfit.bottom, 'bottom');
-        const shoes = convertToDashboardItem(outfit.shoes, 'shoes');
-
-        if (top) occasionOutfits[occasion].push(top);
-        if (bottom) occasionOutfits[occasion].push(bottom);
-        if (shoes) occasionOutfits[occasion].push(shoes);
+        for (const outfit of response.data) {
+          // Check each item in the outfit for duplicates
+          const outfitItems: DashboardItem[] = [];
+          const outfitItemIds: string[] = [];
+          
+          // Process top
+          if (outfit.top) {
+            const topId = getItemIdentifier(outfit.top);
+            if (!usedItemIds.has(topId)) {
+              const topItem = convertToDashboardItem(outfit.top, 'top');
+              if (topItem) {
+                outfitItems.push(topItem);
+                outfitItemIds.push(topId);
+              }
+            }
+          }
+          
+          // Process bottom
+          if (outfit.bottom) {
+            const bottomId = getItemIdentifier(outfit.bottom);
+            if (!usedItemIds.has(bottomId)) {
+              const bottomItem = convertToDashboardItem(outfit.bottom, 'bottom');
+              if (bottomItem) {
+                outfitItems.push(bottomItem);
+                outfitItemIds.push(bottomId);
+              }
+            }
+          }
+          
+          // Process shoes
+          if (outfit.shoes) {
+            const shoesId = getItemIdentifier(outfit.shoes);
+            if (!usedItemIds.has(shoesId)) {
+              const shoesItem = convertToDashboardItem(outfit.shoes, 'shoes');
+              if (shoesItem) {
+                outfitItems.push(shoesItem);
+                outfitItemIds.push(shoesId);
+              }
+            }
+          }
+          
+          // If we found at least 2 items that aren't duplicates, use this outfit
+          if (outfitItems.length >= 2) {
+            occasionOutfits[occasion] = outfitItems;
+            // Mark these items as used
+            outfitItemIds.forEach(id => usedItemIds.add(id));
+            outfitFound = true;
+            break;
+          }
+        }
+        
+        // If no outfit was found with unique items, create a partial outfit with whatever unique items we can find
+        if (!outfitFound && response.data[0]) {
+          const outfit = response.data[0];
+          const partialOutfit: DashboardItem[] = [];
+          
+          // Try to add top
+          if (outfit.top) {
+            const topId = getItemIdentifier(outfit.top);
+            if (!usedItemIds.has(topId)) {
+              const topItem = convertToDashboardItem(outfit.top, 'top');
+              if (topItem) {
+                partialOutfit.push(topItem);
+                usedItemIds.add(topId);
+              }
+            }
+          }
+          
+          // Try to add bottom
+          if (outfit.bottom) {
+            const bottomId = getItemIdentifier(outfit.bottom);
+            if (!usedItemIds.has(bottomId)) {
+              const bottomItem = convertToDashboardItem(outfit.bottom, 'bottom');
+              if (bottomItem) {
+                partialOutfit.push(bottomItem);
+                usedItemIds.add(bottomId);
+              }
+            }
+          }
+          
+          // Try to add shoes
+          if (outfit.shoes) {
+            const shoesId = getItemIdentifier(outfit.shoes);
+            if (!usedItemIds.has(shoesId)) {
+              const shoesItem = convertToDashboardItem(outfit.shoes, 'shoes');
+              if (shoesItem) {
+                partialOutfit.push(shoesItem);
+                usedItemIds.add(shoesId);
+              }
+            }
+          }
+          
+          if (partialOutfit.length > 0) {
+            occasionOutfits[occasion] = partialOutfit;
+          }
+        }
       }
-    });
+    }
 
     console.log('All outfit items by occasion:', occasionOutfits);
     return occasionOutfits;
