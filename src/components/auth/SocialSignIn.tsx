@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Bot } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -19,19 +18,14 @@ export const SocialSignIn = () => {
     try {
       setIsLoading(prev => ({ ...prev, google: true }));
       
-      // Fixed redirect URL - make sure this exact URL is in your Google Cloud Console
       const previewUrl = "https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com";
       
-      console.log("Starting Google sign-in process");
+      console.log("Starting Google sign-in process with plain redirect URL");
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${previewUrl}/auth`,
-          queryParams: {
-            prompt: 'select_account', // Forces Google to show the account selection screen
-            access_type: 'offline'
-          }
+          redirectTo: `${previewUrl}/auth`
         }
       });
 
@@ -40,8 +34,7 @@ export const SocialSignIn = () => {
         throw error;
       }
       
-      console.log("Google sign-in initiated successfully, redirect data:", data);
-      // OAuth flow will handle the redirect automatically
+      console.log("Google sign-in initiated successfully, redirect URL:", data?.url);
     } catch (error: any) {
       console.error("Google sign-in failed:", error);
       toast({
@@ -50,7 +43,6 @@ export const SocialSignIn = () => {
         variant: "destructive",
       });
     } finally {
-      // Reset loading state if we're still on this page
       setTimeout(() => {
         setIsLoading(prev => ({ ...prev, google: false }));
       }, 1000);
