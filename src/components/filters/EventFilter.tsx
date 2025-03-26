@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "../ui/use-toast";
 import { EventButton } from "./EventButton";
 import { EventType, EVENT_TO_STYLES } from "./eventTypes";
@@ -38,7 +38,7 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
       // Store recommended styles in localStorage for other components to use
       localStorage.setItem('event-recommended-styles', JSON.stringify(recommendedStyles));
       
-      // Only close if date is already selected
+      // Close dialog if date is already selected
       if (date) {
         setIsOpen(false);
       }
@@ -53,7 +53,7 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
         description: `Selected date: ${newDate.toLocaleDateString()}`,
       });
       
-      // Only close if event is already selected
+      // Close dialog if event is already selected
       if (selectedEvent) {
         setIsOpen(false);
       }
@@ -68,7 +68,7 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
           {selectedEvent ? `${selectedEvent} - ${date?.toLocaleDateString() || 'Select Date'}` : 'Select Event'}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md p-4">
+      <DialogContent className="max-w-lg p-4">
         <DialogHeader className="pb-1">
           <DialogTitle className="text-base">Select Event & Date</DialogTitle>
         </DialogHeader>
