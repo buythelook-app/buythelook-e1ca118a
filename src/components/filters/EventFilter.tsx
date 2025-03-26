@@ -68,36 +68,45 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
           {selectedEvent ? `${selectedEvent} - ${date?.toLocaleDateString() || 'Select Date'}` : 'Select Event'}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Do you have an upcoming event?</DialogTitle>
+      <DialogContent className="max-w-md p-4">
+        <DialogHeader className="pb-2">
+          <DialogTitle>Select Event & Date</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 p-4">
-          <div className="grid grid-cols-2 gap-4">
-            {(Object.keys(EVENT_TO_STYLES) as Array<Exclude<EventType, null>>).map((event) => (
-              <EventButton
-                key={event}
-                event={event}
-                selectedEvent={selectedEvent}
-                onSelect={handleEventSelect}
-              />
-            ))}
+        
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Event Type</p>
+            <div className="grid grid-cols-2 gap-2">
+              {(Object.keys(EVENT_TO_STYLES) as Array<Exclude<EventType, null>>).map((event) => (
+                <EventButton
+                  key={event}
+                  event={event}
+                  selectedEvent={selectedEvent}
+                  onSelect={handleEventSelect}
+                />
+              ))}
+            </div>
+            
+            <Button
+              variant="outline"
+              onClick={onSyncCalendar}
+              className="w-full text-xs flex items-center justify-center gap-1 h-8 mt-1"
+            >
+              <span>📅</span> Sync Calendar
+            </Button>
           </div>
           
-          <Button
-            variant="outline"
-            onClick={onSyncCalendar}
-            className="w-full flex items-center justify-center gap-2"
-          >
-            <span>📅</span> Sync with My Calendar
-          </Button>
-
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={handleDateSelect}
-            className="rounded-md border"
-          />
+          <div>
+            <p className="text-xs font-medium text-muted-foreground mb-1">Select Date</p>
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={handleDateSelect}
+              className="rounded-md border p-2"
+              showOutsideDays={false}
+              disabled={(date) => date < new Date()}
+            />
+          </div>
         </div>
       </DialogContent>
     </Dialog>
