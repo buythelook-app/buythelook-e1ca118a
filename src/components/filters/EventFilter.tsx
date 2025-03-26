@@ -26,6 +26,15 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Add an effect to handle navigation when both date and event are selected
+  useEffect(() => {
+    if (selectedEvent && date) {
+      // Close dialog and navigate to suggestions
+      setIsOpen(false);
+      setTimeout(() => navigate('/suggestions'), 300);
+    }
+  }, [selectedEvent, date, navigate]);
+
   const handleEventSelect = (event: EventType) => {
     setSelectedEvent(event);
     
@@ -39,12 +48,6 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
       
       // Store recommended styles in localStorage for other components to use
       localStorage.setItem('event-recommended-styles', JSON.stringify(recommendedStyles));
-      
-      // Close dialog if date is already selected and navigate to suggestions
-      if (date) {
-        setIsOpen(false);
-        setTimeout(() => navigate('/suggestions'), 300);
-      }
     }
   };
 
@@ -55,12 +58,6 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
         title: "Date Selected",
         description: `Selected date: ${newDate.toLocaleDateString()}`,
       });
-      
-      // Close dialog if event is already selected and navigate to suggestions
-      if (selectedEvent) {
-        setIsOpen(false);
-        setTimeout(() => navigate('/suggestions'), 300);
-      }
     }
   };
 
@@ -116,3 +113,4 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
     </Dialog>
   );
 };
+
