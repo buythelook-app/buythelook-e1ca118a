@@ -1,3 +1,4 @@
+
 import { useQuizContext } from "./QuizContext";
 import { GenderStep } from "./GenderStep";
 import { MeasurementsStep } from "./MeasurementsStep";
@@ -7,13 +8,18 @@ import { ColorPreferencesStep } from "./ColorPreferencesStep";
 import { StyleComparisonStep } from "./StyleComparisonStep";
 
 const allStyles = [
-  { name: "Modern", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
-  { name: "Classy", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
-  { name: "Boo Hoo", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
-  { name: "Nordic", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
+  { name: "Modern", image: "/lovable-uploads/c7a32d15-ffe2-4f07-ae82-a943d5128293.png" },
+  { name: "Classy", image: "/lovable-uploads/028933c6-ec95-471c-804c-0aa31a0e1f15.png" },
+  { name: "Boo Hoo", image: "/lovable-uploads/386cf438-be54-406f-9dbb-6495a8f8bde9.png" },
+  { name: "Nordic", image: "/lovable-uploads/a1785297-040b-496d-a2fa-af4ecb55207a.png" },
   { name: "Sporty", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
-  { name: "Elegance", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" }
+  { name: "Elegance", image: "/lovable-uploads/028933c6-ec95-471c-804c-0aa31a0e1f15.png" },
+  { name: "Minimalist", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
+  { name: "Romantic", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" }
 ];
+
+// Default fallback style
+const defaultStyle = { name: "Classic", image: "/lovable-uploads/028933c6-ec95-471c-804c-0aa31a0e1f15.png" };
 
 export const QuizStepRenderer = () => {
   const { step, formData, setFormData } = useQuizContext();
@@ -25,11 +31,19 @@ export const QuizStepRenderer = () => {
     }));
   };
 
+  const findStyleByName = (name: string) => {
+    return allStyles.find(style => style.name === name) || defaultStyle;
+  };
+
   const getStyleComparison = (step: number) => {
     const currentPreference = formData.stylePreferences[0];
     const stepIndex = step - 8; // Adjust for the first 7 steps
     
+    // If user has already selected a style preference
     if (currentPreference) {
+      // Find the style object for the current preference
+      const currentStyle = findStyleByName(currentPreference);
+      
       // Get remaining styles that haven't been compared yet
       const remainingStyles = allStyles.filter(style => 
         style.name !== currentPreference && 
@@ -39,23 +53,23 @@ export const QuizStepRenderer = () => {
       // If we still have styles to compare
       if (remainingStyles.length > 0) {
         return {
-          style1: allStyles.find(s => s.name === currentPreference)!,
-          style2: remainingStyles[stepIndex % remainingStyles.length]
+          style1: currentStyle,
+          style2: remainingStyles[stepIndex % remainingStyles.length] || defaultStyle
         };
       }
       
       // If we've compared all styles, show the final preference against a random different style
       const otherStyles = allStyles.filter(s => s.name !== currentPreference);
       return {
-        style1: allStyles.find(s => s.name === currentPreference)!,
-        style2: otherStyles[Math.floor(Math.random() * otherStyles.length)]
+        style1: currentStyle,
+        style2: otherStyles[Math.floor(Math.random() * otherStyles.length)] || defaultStyle
       };
     }
     
     // For first comparison, show first two styles
     return {
-      style1: allStyles[0],
-      style2: allStyles[1]
+      style1: allStyles[0] || defaultStyle,
+      style2: allStyles[1] || defaultStyle
     };
   };
 

@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { useQuizContext } from "./QuizContext";
 
@@ -20,14 +21,16 @@ const STYLE_IMAGES = {
   Romantic: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
   Minimalist: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
   "Boo Hoo": "/lovable-uploads/386cf438-be54-406f-9dbb-6495a8f8bde9.png",
-  Nordic: "/lovable-uploads/a1785297-040b-496d-a2fa-af4ecb55207a.png"
+  Nordic: "/lovable-uploads/a1785297-040b-496d-a2fa-af4ecb55207a.png",
+  Sporty: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
+  Elegance: "/lovable-uploads/028933c6-ec95-471c-804c-0aa31a0e1f15.png"
 };
 
 export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleComparisonStepProps) => {
   const { formData } = useQuizContext();
   
   const getStyleImage = (styleName: string) => {
-    return STYLE_IMAGES[styleName] || style1.image;
+    return STYLE_IMAGES[styleName as keyof typeof STYLE_IMAGES] || "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png";
   };
 
   const isSelected = (styleName: string) => {
