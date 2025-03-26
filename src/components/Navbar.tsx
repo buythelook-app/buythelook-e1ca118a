@@ -22,6 +22,7 @@ export const Navbar = () => {
   const { favorites } = useFavoritesStore();
   const { items, looks } = useCartStore();
   const [firstName, setFirstName] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
 
   const totalLooks = favorites.length;
   const displayCount = totalLooks > 9 ? '9+' : totalLooks.toString();
@@ -34,9 +35,19 @@ export const Navbar = () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const name = user.user_metadata?.firstName || user.email?.split('@')[0] || "";
-          console.log("Setting firstName to:", name); // Debug log
+          // Get first name from metadata, email, or Google profile
+          const name = user.user_metadata?.firstName || 
+                      user.user_metadata?.name || 
+                      user.email?.split('@')[0] || 
+                      "";
+          console.log("Setting firstName to:", name);
           setFirstName(name);
+          
+          // Get avatar from metadata or Google profile
+          const avatar = user.user_metadata?.avatar_url || 
+                        user.user_metadata?.picture || 
+                        "";
+          setAvatarUrl(avatar);
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -46,7 +57,7 @@ export const Navbar = () => {
     getUserData();
   }, []);
 
-  console.log("Current firstName:", firstName); // Debug log
+  console.log("Current firstName:", firstName);
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
@@ -85,7 +96,14 @@ export const Navbar = () => {
               <div className="inline-flex items-center group relative">
                 <DropdownMenu>
                   <DropdownMenuTrigger className="hover:text-netflix-accent">
-                    <User className="h-6 w-6 text-white fill-white stroke-[1.5]" />
+                    {avatarUrl ? (
+                      <Avatar className="h-8 w-8 border border-gray-400">
+                        <AvatarImage src={avatarUrl} alt={firstName} />
+                        <AvatarFallback>{firstName.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <User className="h-6 w-6 text-white fill-white stroke-[1.5]" />
+                    )}
                   </DropdownMenuTrigger>
                   <UserDropdownMenu 
                     onAddressClick={() => setShowShippingAddress(true)}
