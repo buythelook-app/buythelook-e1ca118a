@@ -12,10 +12,10 @@ export const EventButton = ({ event, selectedEvent, onSelect }: EventButtonProps
   return (
     <Button 
       variant={selectedEvent === event ? "default" : "outline"} 
-      className="p-2 h-auto flex flex-col items-center"
+      className="p-1 h-auto flex flex-col items-center"
       onClick={() => onSelect(event)}
     >
-      <span className="text-lg mb-1">{EVENT_ICONS[event]}</span>
+      <span className="text-base mb-0.5">{EVENT_ICONS[event]}</span>
       <span className="text-xs">{event}</span>
     </Button>
   );

@@ -68,12 +68,12 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
           {selectedEvent ? `${selectedEvent} - ${date?.toLocaleDateString() || 'Select Date'}` : 'Select Event'}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg p-4">
+      <DialogContent className="max-w-[650px] p-4">
         <DialogHeader className="pb-1">
           <DialogTitle className="text-base">Select Event & Date</DialogTitle>
         </DialogHeader>
         
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           <div>
             <p className="text-xs font-medium text-muted-foreground mb-1">Event Type</p>
             <div className="grid grid-cols-2 gap-2">
@@ -102,7 +102,7 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
               mode="single"
               selected={date}
               onSelect={handleDateSelect}
-              className="border rounded-md"
+              className="border rounded-md scale-95 origin-top-left"
               showOutsideDays={false}
               disabled={(date) => date < new Date()}
             />
