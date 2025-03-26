@@ -18,10 +18,15 @@ export const SocialSignIn = () => {
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(prev => ({ ...prev, google: true }));
+      
+      // Get the current URL for constructing the redirect URL
+      const origin = window.location.origin;
+      const redirectTo = `${origin}/auth`;
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth`,
+          redirectTo: redirectTo,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -30,13 +35,15 @@ export const SocialSignIn = () => {
       });
 
       if (error) throw error;
+      
+      // Don't need to navigate here as the OAuth flow will redirect automatically
+      // and the onAuthStateChange event in Auth.tsx will handle the post-login navigation
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message || "Failed to sign in with Google",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(prev => ({ ...prev, google: false }));
     }
   };

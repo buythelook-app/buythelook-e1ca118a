@@ -45,10 +45,42 @@ export const Auth = () => {
       }
     };
     
+    // Check URL parameters for hash fragment from OAuth providers
+    const checkHashParams = async () => {
+      // If URL contains a hash fragment, it might be a redirect from OAuth provider
+      if (window.location.hash) {
+        setIsLoading(true);
+        try {
+          // Exchange the OAuth token for a session
+          const { data, error } = await supabase.auth.getSession();
+          if (error) throw error;
+          
+          if (data.session) {
+            toast({
+              title: "Success",
+              description: "You have been signed in with Google successfully.",
+            });
+            navigate('/home');
+          }
+        } catch (error: any) {
+          console.error("OAuth error:", error);
+          toast({
+            title: "Error",
+            description: error.message || "Failed to complete authentication",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    
     checkAuth();
+    checkHashParams();
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event);
       if (event === 'SIGNED_IN' && session) {
         toast({
           title: "Success",
