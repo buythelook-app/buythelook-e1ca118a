@@ -68,15 +68,15 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
           {selectedEvent ? `${selectedEvent} - ${date?.toLocaleDateString() || 'Select Date'}` : 'Select Event'}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md p-4">
-        <DialogHeader className="pb-2">
-          <DialogTitle>Select Event & Date</DialogTitle>
+      <DialogContent className="max-w-sm p-3">
+        <DialogHeader className="pb-1">
+          <DialogTitle className="text-base">Select Event & Date</DialogTitle>
         </DialogHeader>
         
         <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Event Type</p>
-            <div className="grid grid-cols-2 gap-2">
+          <div>
+            <p className="text-xs font-medium text-muted-foreground mb-1">Event Type</p>
+            <div className="grid grid-cols-2 gap-1">
               {(Object.keys(EVENT_TO_STYLES) as Array<Exclude<EventType, null>>).map((event) => (
                 <EventButton
                   key={event}
@@ -90,9 +90,9 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
             <Button
               variant="outline"
               onClick={onSyncCalendar}
-              className="w-full text-xs flex items-center justify-center gap-1 h-8 mt-1"
+              className="w-full text-xs flex items-center justify-center gap-1 h-7 mt-1"
             >
-              <span>📅</span> Sync Calendar
+              <span>📅</span> Sync
             </Button>
           </div>
           
@@ -102,7 +102,7 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
               mode="single"
               selected={date}
               onSelect={handleDateSelect}
-              className="rounded-md border p-2"
+              className="border rounded-md scale-90 origin-top-left -ml-1 -mt-1"
               showOutsideDays={false}
               disabled={(date) => date < new Date()}
             />

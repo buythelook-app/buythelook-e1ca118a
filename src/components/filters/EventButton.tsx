@@ -1,3 +1,4 @@
+
 import { Button } from "../ui/button";
 import { EventType, EVENT_ICONS } from "./eventTypes";
 
@@ -11,11 +12,11 @@ export const EventButton = ({ event, selectedEvent, onSelect }: EventButtonProps
   return (
     <Button 
       variant={selectedEvent === event ? "default" : "outline"} 
-      className="p-4"
+      className="p-1 h-auto flex flex-col items-center"
       onClick={() => onSelect(event)}
     >
-      <span className="text-3xl mb-2 block">{EVENT_ICONS[event]}</span>
-      <span className="text-sm">{event}</span>
+      <span className="text-xl mb-1">{EVENT_ICONS[event]}</span>
+      <span className="text-xs">{event}</span>
     </Button>
   );
 };
