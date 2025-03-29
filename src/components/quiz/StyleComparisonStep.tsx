@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useQuizContext } from "./QuizContext";
+import { useEffect } from "react";
 
 interface StyleComparisonStepProps {
   style1: {
@@ -27,7 +28,7 @@ const STYLE_IMAGES = {
 };
 
 export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleComparisonStepProps) => {
-  const { formData } = useQuizContext();
+  const { formData, handleNext } = useQuizContext();
   
   const getStyleImage = (styleName: string) => {
     return STYLE_IMAGES[styleName as keyof typeof STYLE_IMAGES] || "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png";
@@ -35,6 +36,14 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
 
   const isSelected = (styleName: string) => {
     return formData.stylePreferences[0] === styleName;
+  };
+
+  const handleStyleSelect = (styleName: string) => {
+    onSelect(styleName);
+    // Automatically proceed to next step after a short delay
+    setTimeout(() => {
+      handleNext();
+    }, 500);
   };
 
   return (
@@ -50,7 +59,7 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
             className={`relative cursor-pointer group flex-1 ${
               isSelected(style1.name) ? 'ring-4 ring-netflix-accent' : ''
             }`}
-            onClick={() => onSelect(style1.name)}
+            onClick={() => handleStyleSelect(style1.name)}
           >
             <img 
               src={getStyleImage(style1.name)}
@@ -74,7 +83,7 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
             className={`relative cursor-pointer group flex-1 ${
               isSelected(style2.name) ? 'ring-4 ring-netflix-accent' : ''
             }`}
-            onClick={() => onSelect(style2.name)}
+            onClick={() => handleStyleSelect(style2.name)}
           >
             <img 
               src={getStyleImage(style2.name)}
