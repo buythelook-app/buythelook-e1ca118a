@@ -109,3 +109,9 @@
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out forwards;
 }
+
+/* Enhanced remark box */
+.remark-box {
+  @apply p-3 rounded-md border border-emerald-700 bg-emerald-50 text-emerald-800 shadow-sm;
+}
+

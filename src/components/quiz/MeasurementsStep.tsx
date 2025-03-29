@@ -1,9 +1,9 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { InfoCircle } from "lucide-react";
 
 interface MeasurementsStepProps {
   height: string;
@@ -108,6 +108,19 @@ export const MeasurementsStep = ({
     }
   };
 
+  const RemarkMessage = ({ show }: { show: boolean }) => {
+    if (!show) return null;
+    
+    return (
+      <div className="mt-2 remark-box animate-fadeIn flex items-start gap-2">
+        <InfoCircle className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+        <div className="text-sm">
+          <span className="font-medium">Don't worry!</span> It will help us find the perfect size for you.
+        </div>
+      </div>
+    );
+  };
+
   if (step === 2) {
     return (
       <div className="flex-1 flex flex-col">
@@ -161,11 +174,7 @@ export const MeasurementsStep = ({
             >
               {skipHeight ? "Add my height" : "Prefer not to answer"}
             </Button>
-            {showHeightRemark && (
-              <div className="mt-2 text-sm text-emerald-600 animate-fadeIn">
-                Don't worry! It will help us find the perfect size for you.
-              </div>
-            )}
+            <RemarkMessage show={showHeightRemark} />
           </div>
         </div>
       </div>
@@ -193,11 +202,7 @@ export const MeasurementsStep = ({
           >
             {weight === "prefer_not_to_answer" ? "Add my weight" : "Prefer not to answer"}
           </Button>
-          {showWeightRemark && (
-            <div className="mt-2 text-sm text-emerald-600 animate-fadeIn">
-              Don't worry! It will help us find the perfect size for you.
-            </div>
-          )}
+          <RemarkMessage show={showWeightRemark} />
         </div>
       </div>
     );
@@ -225,11 +230,7 @@ export const MeasurementsStep = ({
           >
             {waist === "prefer_not_to_answer" ? "Add my waist measurement" : "Prefer not to answer"}
           </Button>
-          {showWaistRemark && (
-            <div className="mt-2 text-sm text-emerald-600 animate-fadeIn">
-              Don't worry! It will help us find the perfect size for you.
-            </div>
-          )}
+          <RemarkMessage show={showWaistRemark} />
         </div>
         <div>
           <Label htmlFor="chest">Chest (cm)</Label>
@@ -249,11 +250,7 @@ export const MeasurementsStep = ({
           >
             {chest === "prefer_not_to_answer" ? "Add my chest measurement" : "Prefer not to answer"}
           </Button>
-          {showChestRemark && (
-            <div className="mt-2 text-sm text-emerald-600 animate-fadeIn">
-              Don't worry! It will help us find the perfect size for you.
-            </div>
-          )}
+          <RemarkMessage show={showChestRemark} />
         </div>
       </div>
     </div>
