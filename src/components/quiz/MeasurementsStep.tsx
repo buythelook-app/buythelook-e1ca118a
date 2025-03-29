@@ -32,6 +32,10 @@ export const MeasurementsStep = ({
   const [feet, setFeet] = useState<string>("");
   const [inches, setInches] = useState<string>("");
   const [skipHeight, setSkipHeight] = useState<boolean>(height === "prefer_not_to_answer");
+  const [showHeightRemark, setShowHeightRemark] = useState<boolean>(false);
+  const [showWeightRemark, setShowWeightRemark] = useState<boolean>(false);
+  const [showWaistRemark, setShowWaistRemark] = useState<boolean>(false);
+  const [showChestRemark, setShowChestRemark] = useState<boolean>(false);
   
   // Convert cm to feet/inches when component mounts or height changes
   useEffect(() => {
@@ -65,6 +69,8 @@ export const MeasurementsStep = ({
     setSkipHeight(!skipHeight);
     if (!skipHeight) {
       onHeightChange("prefer_not_to_answer");
+      setShowHeightRemark(true);
+      setTimeout(() => setShowHeightRemark(false), 5000);
     } else {
       // If unskipping, reset to previous values or default
       if (feet && inches) {
@@ -72,6 +78,33 @@ export const MeasurementsStep = ({
       } else {
         onHeightChange("");
       }
+    }
+  };
+
+  const handleSkipWeight = () => {
+    const newValue = weight === "prefer_not_to_answer" ? "" : "prefer_not_to_answer";
+    onWeightChange(newValue);
+    if (newValue === "prefer_not_to_answer") {
+      setShowWeightRemark(true);
+      setTimeout(() => setShowWeightRemark(false), 5000);
+    }
+  };
+
+  const handleSkipWaist = () => {
+    const newValue = waist === "prefer_not_to_answer" ? "" : "prefer_not_to_answer";
+    onWaistChange(newValue);
+    if (newValue === "prefer_not_to_answer") {
+      setShowWaistRemark(true);
+      setTimeout(() => setShowWaistRemark(false), 5000);
+    }
+  };
+
+  const handleSkipChest = () => {
+    const newValue = chest === "prefer_not_to_answer" ? "" : "prefer_not_to_answer";
+    onChestChange(newValue);
+    if (newValue === "prefer_not_to_answer") {
+      setShowChestRemark(true);
+      setTimeout(() => setShowChestRemark(false), 5000);
     }
   };
 
@@ -128,6 +161,11 @@ export const MeasurementsStep = ({
             >
               {skipHeight ? "Add my height" : "Prefer not to answer"}
             </Button>
+            {showHeightRemark && (
+              <div className="mt-2 text-sm text-emerald-600 animate-fadeIn">
+                Don't worry! It will help us find the perfect size for you.
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -150,11 +188,16 @@ export const MeasurementsStep = ({
           <Button 
             type="button" 
             variant="outline" 
-            onClick={() => onWeightChange(weight === "prefer_not_to_answer" ? "" : "prefer_not_to_answer")}
+            onClick={handleSkipWeight}
             className="mt-2"
           >
             {weight === "prefer_not_to_answer" ? "Add my weight" : "Prefer not to answer"}
           </Button>
+          {showWeightRemark && (
+            <div className="mt-2 text-sm text-emerald-600 animate-fadeIn">
+              Don't worry! It will help us find the perfect size for you.
+            </div>
+          )}
         </div>
       </div>
     );
@@ -177,11 +220,16 @@ export const MeasurementsStep = ({
           <Button 
             type="button" 
             variant="outline" 
-            onClick={() => onWaistChange(waist === "prefer_not_to_answer" ? "" : "prefer_not_to_answer")}
+            onClick={handleSkipWaist}
             className="mt-2 w-full"
           >
             {waist === "prefer_not_to_answer" ? "Add my waist measurement" : "Prefer not to answer"}
           </Button>
+          {showWaistRemark && (
+            <div className="mt-2 text-sm text-emerald-600 animate-fadeIn">
+              Don't worry! It will help us find the perfect size for you.
+            </div>
+          )}
         </div>
         <div>
           <Label htmlFor="chest">Chest (cm)</Label>
@@ -196,11 +244,16 @@ export const MeasurementsStep = ({
           <Button 
             type="button" 
             variant="outline" 
-            onClick={() => onChestChange(chest === "prefer_not_to_answer" ? "" : "prefer_not_to_answer")}
+            onClick={handleSkipChest}
             className="mt-2 w-full"
           >
             {chest === "prefer_not_to_answer" ? "Add my chest measurement" : "Prefer not to answer"}
           </Button>
+          {showChestRemark && (
+            <div className="mt-2 text-sm text-emerald-600 animate-fadeIn">
+              Don't worry! It will help us find the perfect size for you.
+            </div>
+          )}
         </div>
       </div>
     </div>
