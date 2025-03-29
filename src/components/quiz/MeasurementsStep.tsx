@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 interface MeasurementsStepProps {
   height: string;
@@ -30,16 +31,20 @@ export const MeasurementsStep = ({
   // For feet and inches input
   const [feet, setFeet] = useState<string>("");
   const [inches, setInches] = useState<string>("");
-
+  const [skipHeight, setSkipHeight] = useState<boolean>(height === "prefer_not_to_answer");
+  
   // Convert cm to feet/inches when component mounts or height changes
   useEffect(() => {
-    if (height) {
+    if (height && height !== "prefer_not_to_answer") {
       const totalInches = Math.round(parseInt(height) / 2.54);
       const ft = Math.floor(totalInches / 12);
       const inch = totalInches % 12;
       
       setFeet(ft.toString());
       setInches(inch.toString());
+      setSkipHeight(false);
+    } else if (height === "prefer_not_to_answer") {
+      setSkipHeight(true);
     }
   }, [height]);
 
@@ -56,43 +61,73 @@ export const MeasurementsStep = ({
     onHeightChange(cm);
   };
 
+  const handleSkipHeight = () => {
+    setSkipHeight(!skipHeight);
+    if (!skipHeight) {
+      onHeightChange("prefer_not_to_answer");
+    } else {
+      // If unskipping, reset to previous values or default
+      if (feet && inches) {
+        handleHeightChange(feet, inches);
+      } else {
+        onHeightChange("");
+      }
+    }
+  };
+
   if (step === 2) {
     return (
       <div className="flex-1 flex flex-col">
         <h2 className="text-2xl font-display font-semibold mb-6">What's your height?</h2>
         <div className="flex-1">
           <div className="flex flex-col gap-4">
-            <div className="flex gap-2 items-end">
-              <div className="flex-1">
-                <Label htmlFor="feet">Feet</Label>
-                <Input
-                  id="feet"
-                  type="number"
-                  placeholder="Feet"
-                  value={feet}
-                  onChange={(e) => handleHeightChange(e.target.value, inches)}
-                  className="w-full"
-                  min="0"
-                  max="8"
-                />
+            {!skipHeight ? (
+              <>
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <Label htmlFor="feet">Feet</Label>
+                    <Input
+                      id="feet"
+                      type="number"
+                      placeholder="Feet"
+                      value={feet}
+                      onChange={(e) => handleHeightChange(e.target.value, inches)}
+                      className="w-full"
+                      min="0"
+                      max="8"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Label htmlFor="inches">Inches</Label>
+                    <Input
+                      id="inches"
+                      type="number"
+                      placeholder="Inches"
+                      value={inches}
+                      onChange={(e) => handleHeightChange(feet, e.target.value)}
+                      className="w-full"
+                      min="0"
+                      max="11"
+                    />
+                  </div>
+                </div>
+                <div className="text-sm text-gray-500">
+                  Your height: {feet || 0}' {inches || 0}" ({height || 0} cm)
+                </div>
+              </>
+            ) : (
+              <div className="text-sm text-gray-500">
+                You've chosen not to provide your height
               </div>
-              <div className="flex-1">
-                <Label htmlFor="inches">Inches</Label>
-                <Input
-                  id="inches"
-                  type="number"
-                  placeholder="Inches"
-                  value={inches}
-                  onChange={(e) => handleHeightChange(feet, e.target.value)}
-                  className="w-full"
-                  min="0"
-                  max="11"
-                />
-              </div>
-            </div>
-            <div className="text-sm text-gray-500">
-              Your height: {feet || 0}' {inches || 0}" ({height || 0} cm)
-            </div>
+            )}
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handleSkipHeight}
+              className="mt-2"
+            >
+              {skipHeight ? "Add my height" : "Prefer not to answer"}
+            </Button>
           </div>
         </div>
       </div>
@@ -103,16 +138,23 @@ export const MeasurementsStep = ({
     return (
       <div className="flex-1 flex flex-col">
         <h2 className="text-2xl font-display font-semibold mb-6">What's your weight?</h2>
-        <div className="flex-1 flex items-center">
-          <div className="w-full">
-            <Input
-              type="number"
-              placeholder="Weight in kg"
-              value={weight}
-              onChange={(e) => onWeightChange(e.target.value)}
-              className="w-full"
-            />
-          </div>
+        <div className="flex-1 flex flex-col gap-4">
+          <Input
+            type="number"
+            placeholder="Weight in kg"
+            value={weight === "prefer_not_to_answer" ? "" : weight}
+            onChange={(e) => onWeightChange(e.target.value)}
+            className="w-full"
+            disabled={weight === "prefer_not_to_answer"}
+          />
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => onWeightChange(weight === "prefer_not_to_answer" ? "" : "prefer_not_to_answer")}
+            className="mt-2"
+          >
+            {weight === "prefer_not_to_answer" ? "Add my weight" : "Prefer not to answer"}
+          </Button>
         </div>
       </div>
     );
@@ -121,28 +163,44 @@ export const MeasurementsStep = ({
   return (
     <div className="flex-1 flex flex-col">
       <h2 className="text-2xl font-display font-semibold mb-6">Your measurements</h2>
-      <div className="flex-1 flex items-center">
-        <div className="space-y-4 w-full">
-          <div>
-            <Label htmlFor="waist">Waist (cm)</Label>
-            <Input
-              id="waist"
-              type="number"
-              value={waist}
-              onChange={(e) => onWaistChange(e.target.value)}
-              className="w-full mt-1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="chest">Chest (cm)</Label>
-            <Input
-              id="chest"
-              type="number"
-              value={chest}
-              onChange={(e) => onChestChange(e.target.value)}
-              className="w-full mt-1"
-            />
-          </div>
+      <div className="flex-1 flex flex-col gap-4">
+        <div>
+          <Label htmlFor="waist">Waist (cm)</Label>
+          <Input
+            id="waist"
+            type="number"
+            value={waist === "prefer_not_to_answer" ? "" : waist}
+            onChange={(e) => onWaistChange(e.target.value)}
+            className="w-full mt-1"
+            disabled={waist === "prefer_not_to_answer"}
+          />
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => onWaistChange(waist === "prefer_not_to_answer" ? "" : "prefer_not_to_answer")}
+            className="mt-2 w-full"
+          >
+            {waist === "prefer_not_to_answer" ? "Add my waist measurement" : "Prefer not to answer"}
+          </Button>
+        </div>
+        <div>
+          <Label htmlFor="chest">Chest (cm)</Label>
+          <Input
+            id="chest"
+            type="number"
+            value={chest === "prefer_not_to_answer" ? "" : chest}
+            onChange={(e) => onChestChange(e.target.value)}
+            className="w-full mt-1"
+            disabled={chest === "prefer_not_to_answer"}
+          />
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => onChestChange(chest === "prefer_not_to_answer" ? "" : "prefer_not_to_answer")}
+            className="mt-2 w-full"
+          >
+            {chest === "prefer_not_to_answer" ? "Add my chest measurement" : "Prefer not to answer"}
+          </Button>
         </div>
       </div>
     </div>
