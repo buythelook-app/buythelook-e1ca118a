@@ -1,9 +1,8 @@
-
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { InfoCircle } from "lucide-react";
+import { Info } from "lucide-react";
 
 interface MeasurementsStepProps {
   height: string;
@@ -113,7 +112,7 @@ export const MeasurementsStep = ({
     
     return (
       <div className="mt-2 remark-box animate-fadeIn flex items-start gap-2">
-        <InfoCircle className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+        <Info className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
         <div className="text-sm">
           <span className="font-medium">Don't worry!</span> It will help us find the perfect size for you.
         </div>
