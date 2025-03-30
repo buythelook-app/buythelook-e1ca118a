@@ -20,7 +20,9 @@ export const MINIMALIST_CRITERIA: MinimalistCriteria = {
     'chevron', 'argyle', 'zig-zag', 'ikat', 'ornate', 'baroque', 'metallics',
     'tropical', 'hawaiian', 'cartoon', 'tie-dye', 'camo', 'camouflage', 'leopard',
     'zebra', 'snakeskin', 'crocodile', 'glittery', 'sparkling', 'rhinestone',
-    'appliqué', 'beaded', 'ruffled', 'fringe', 'tassels'
+    'appliqué', 'beaded', 'ruffled', 'fringe', 'tassels', 'square', 'squares',
+    'grid', 'checked', 'gingham', 'herringbone', 'houndstooth', 'tartan',
+    'geometric', 'patterned', 'textured'
   ],
   acceptableTopTypes: [
     't-shirt', 'tee', 'shirt', 'blouse', 'sweater', 'pullover', 'tunic',

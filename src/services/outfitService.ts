@@ -42,9 +42,9 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
 
     console.log("Using user's preferred style from quiz:", preferredStyle);
 
-    // Increase to 8 parallel requests for better chance of finding good items
+    // Increase to 12 parallel requests for better chance of finding good solid color items
     const promises = [];
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 12; i++) {
       promises.push(generateOutfit(bodyShape, style, mood));
     }
     
@@ -70,11 +70,22 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     
     // Special handling for Minimalist style preference with relaxed fallback
     if (preferredStyle === 'Minimalist') {
-      console.log("Applying minimalist filtering with improved fallback options");
+      console.log("Applying minimalist filtering with improved pattern checks");
       
-      // First try with strict filtering
+      // Filter out items with "square" or "pattern" in the name or description
       const filteredTops = allTops
-        .filter(top => isMinimalistTop(top))
+        .filter(top => {
+          const name = (top.product_name || top.name || "").toLowerCase();
+          const description = (top.description || "").toLowerCase();
+          
+          // Log specific details about why items are rejected
+          if (name.includes("square") || description.includes("square")) {
+            console.log(`Rejected top with squares: ${name}`);
+            return false;
+          }
+          
+          return isMinimalistTop(top);
+        })
         .sort((a, b) => scoreItem(b, 'top') - scoreItem(a, 'top'));
       
       const filteredBottoms = allBottoms

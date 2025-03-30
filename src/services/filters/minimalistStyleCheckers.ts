@@ -1,3 +1,4 @@
+
 /**
  * Checkers for minimalist style criteria
  */
@@ -33,11 +34,14 @@ export const isMinimalistTop = (item: any): boolean => {
     name.includes(material) || description.includes(material)
   );
   
-  // Check for non-minimalist indicators
+  // Check for non-minimalist indicators - ENHANCED to catch more patterns
   const nonMinimalistPatterns = [
     "floral", "graphic", "print", "pattern", "logo", "embellish", 
     "sequin", "rhinestone", "bead", "embroidery", "distress", 
-    "ripped", "ruffle", "frill", "puff", "animal print"
+    "ripped", "ruffle", "frill", "puff", "animal print", 
+    "square", "squares", "plaid", "check", "checked", "gingham",
+    "stripe", "striped", "polka", "dots", "dotted", "grid", 
+    "geometric", "herringbone", "houndstooth", "tartan"
   ];
   
   const hasNonMinimalistPattern = nonMinimalistPatterns.some(pattern => 
@@ -89,11 +93,13 @@ export const isMinimalistBottom = (item: any): boolean => {
     name.includes(material) || description.includes(material)
   );
   
-  // Check for non-minimalist indicators
+  // Check for non-minimalist indicators - ENHANCED to catch more patterns
   const nonMinimalistPatterns = [
     "floral", "graphic", "print", "pattern", "embellish", "sequin", 
     "rhinestone", "bead", "embroidery", "distress", "ripped", 
-    "ruffle", "frill", "animal print"
+    "ruffle", "frill", "animal print", "square", "squares", "plaid", 
+    "check", "checked", "gingham", "stripe", "striped", "polka", 
+    "dots", "dotted", "grid", "geometric", "herringbone", "houndstooth", "tartan"
   ];
   
   const hasNonMinimalistPattern = nonMinimalistPatterns.some(pattern => 
@@ -145,10 +151,12 @@ export const isMinimalistShoe = (item: any): boolean => {
     name.includes(material) || description.includes(material)
   );
   
-  // Check for non-minimalist indicators
+  // Check for non-minimalist indicators - ENHANCED to catch more patterns
   const nonMinimalistFeatures = [
     "platform", "embellish", "glitter", "rhinestone", "sequin", 
-    "print", "pattern", "graphic", "logo", "animal print"
+    "print", "pattern", "graphic", "logo", "animal print", "square", 
+    "squares", "plaid", "check", "checked", "gingham", "stripe", 
+    "striped", "polka", "dots", "dotted", "grid", "geometric"
   ];
   
   const hasNonMinimalistFeature = nonMinimalistFeatures.some(feature => 
