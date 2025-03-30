@@ -5,7 +5,7 @@ import { Style } from "./StyleFilterButton";
 
 const STYLES = [
   { id: "classic", name: "Classic", image: "/lovable-uploads/028933c6-ec95-471c-804c-0aa31a0e1f15.png" },
-  { id: "sportive", name: "Sportive", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
+  { id: "sportive", name: "Sportive", image: "/lovable-uploads/b2b5da4b-c967-4791-8832-747541e275be.png" },
   { id: "elegant", name: "Elegant", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
   { id: "minimalist", name: "Minimalist", image: "/lovable-uploads/553ba2e6-53fd-46dd-82eb-64121072a826.png" },
   { id: "romantic", name: "Romantic", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },

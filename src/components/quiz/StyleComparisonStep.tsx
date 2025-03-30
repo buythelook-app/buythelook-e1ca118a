@@ -23,7 +23,7 @@ const STYLE_IMAGES = {
   Minimalist: "/lovable-uploads/553ba2e6-53fd-46dd-82eb-64121072a826.png",
   "Boo Hoo": "/lovable-uploads/386cf438-be54-406f-9dbb-6495a8f8bde9.png",
   Nordic: "/lovable-uploads/a1785297-040b-496d-a2fa-af4ecb55207a.png",
-  Sporty: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png",
+  Sporty: "/lovable-uploads/b2b5da4b-c967-4791-8832-747541e275be.png",
   Elegance: "/lovable-uploads/028933c6-ec95-471c-804c-0aa31a0e1f15.png"
 };
 

@@ -12,7 +12,7 @@ const allStyles = [
   { name: "Classy", image: "/lovable-uploads/028933c6-ec95-471c-804c-0aa31a0e1f15.png" },
   { name: "Boo Hoo", image: "/lovable-uploads/386cf438-be54-406f-9dbb-6495a8f8bde9.png" },
   { name: "Nordic", image: "/lovable-uploads/a1785297-040b-496d-a2fa-af4ecb55207a.png" },
-  { name: "Sporty", image: "/lovable-uploads/68407ade-0be5-4bc3-ab8a-300ad5130380.png" },
+  { name: "Sporty", image: "/lovable-uploads/b2b5da4b-c967-4791-8832-747541e275be.png" },
   { name: "Elegance", image: "/lovable-uploads/028933c6-ec95-471c-804c-0aa31a0e1f15.png" },
   { name: "Minimalist", image: "/lovable-uploads/553ba2e6-53fd-46dd-82eb-64121072a826.png" },
   { name: "Romantic", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" }
