@@ -26,11 +26,16 @@ export interface Look {
   items: OutfitItem[];
 }
 
-// Added for better minimalist filtering
+// Enhanced minimalist filtering criteria with more specific color options
 export interface MinimalistCriteria {
   naturalColors: string[];
   nonMinimalistPatterns: string[];
   acceptableTopTypes: string[];
   acceptableBottomTypes: string[];
   acceptableShoeTypes: string[];
+  preferredColors: {
+    top: string[];
+    bottom: string[];
+    shoes: string[];
+  };
 }

@@ -1,3 +1,4 @@
+
 import { Button } from "../ui/button";
 import { DropdownMenuLabel } from "../ui/dropdown-menu";
 import { Color } from "./StyleFilterButton";
@@ -21,6 +22,7 @@ export const ColorFilter = ({ selectedColor, setSelectedColor }: ColorFilterProp
               variant={selectedColor === color ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedColor(color as Color)}
+              className={color === "natural" ? "border-2 border-netflix-accent" : ""}
             >
               {color}
             </Button>
