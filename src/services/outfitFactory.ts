@@ -39,13 +39,21 @@ export const hasPatternInName = (item: any): boolean => {
 export const convertToDashboardItem = (item: any, type: string, userStyle: string = ''): DashboardItem | null => {
   if (!item) return null;
   
+  // Filter out underwear items
   if (isUnderwear(item)) {
     console.log('Filtering out underwear item:', item.product_name);
     return null;
   }
   
-  // For minimalist style, reject any items with pattern terms in name or description
-  if (userStyle === 'Minimalist') {
+  // Handle different style preferences with appropriate filtering
+  const normalizedStyle = userStyle.toLowerCase().trim();
+  
+  // Special filtering for minimalist style
+  if (normalizedStyle.includes('minimalist') || 
+      normalizedStyle.includes('minimal') || 
+      normalizedStyle.includes('nordic') || 
+      normalizedStyle.includes('modern')) {
+    
     if (hasPatternInName(item)) {
       const name = item.product_name || '';
       console.log(`Rejected ${type} item for having pattern in name: ${name}`);

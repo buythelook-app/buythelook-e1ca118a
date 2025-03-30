@@ -18,27 +18,36 @@ export const mapBodyShape = (shape: string): "X" | "V" | "H" | "O" | "A" => {
 };
 
 export const mapStyle = (style: string): "classic" | "romantic" | "minimalist" | "casual" | "boohoo" | "sporty" => {
+  // Normalize style name to lowercase for case-insensitive matching
+  const normalizedStyle = style.toLowerCase().trim();
+  
   const styleMap: { [key: string]: "classic" | "romantic" | "minimalist" | "casual" | "boohoo" | "sporty" } = {
-    elegant: "classic",
-    romantic: "romantic",
-    minimal: "minimalist",
-    minimalist: "minimalist",
-    Minimalist: "minimalist",
-    casual: "casual",
-    bohemian: "boohoo",
-    boohoo: "boohoo",
-    athletic: "sporty",
-    sportive: "sporty",
-    Classy: "classic",
-    Classic: "classic",
-    Modern: "minimalist",
-    "Boo Hoo": "boohoo",
-    Nordic: "minimalist",
-    Sporty: "sporty"
+    // Original mappings
+    "elegant": "classic",
+    "romantic": "romantic",
+    "minimal": "minimalist",
+    "minimalist": "minimalist",
+    "casual": "casual",
+    "bohemian": "boohoo",
+    "boohoo": "boohoo",
+    "athletic": "sporty",
+    "sportive": "sporty",
+    
+    // Add lowercase variants for case insensitivity
+    "classic": "classic",
+    "classy": "classic",
+    "modern": "minimalist",
+    "boo hoo": "boohoo",
+    "nordic": "minimalist",
+    "sporty": "sporty"
   };
   
-  console.log("Mapping style:", style, "to:", styleMap[style] || "casual");
-  return styleMap[style] || "casual";
+  // Try to find a match in the map
+  const mappedStyle = styleMap[normalizedStyle];
+  
+  console.log("Mapping style:", style, "normalized to:", normalizedStyle, "mapped to:", mappedStyle || "casual (default)");
+  
+  return mappedStyle || "casual"; // Default to casual if no match
 };
 
 export const getEventStyles = (): string => {

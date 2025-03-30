@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +47,7 @@ export const LookSuggestions = () => {
   const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
 
   useEffect(() => {
+    // Load user style preference from localStorage
     const styleData = localStorage.getItem('styleAnalysis');
     if (styleData) {
       try {
@@ -54,9 +56,21 @@ export const LookSuggestions = () => {
         setUserStylePreference(styleProfile);
         console.log("Loaded user style preference:", styleProfile);
         
-        if (styleProfile === 'Minimalist') {
+        // Adjust elegance and color intensity based on style
+        if (styleProfile?.toLowerCase().includes('minimalist') || 
+            styleProfile?.toLowerCase().includes('minimal') || 
+            styleProfile?.toLowerCase().includes('nordic') || 
+            styleProfile?.toLowerCase().includes('modern')) {
           setElegance(85);
           setColorIntensity(30);
+        } else if (styleProfile?.toLowerCase().includes('boohoo') || 
+                  styleProfile?.toLowerCase().includes('bohemian')) {
+          setElegance(60);
+          setColorIntensity(80);
+        } else if (styleProfile?.toLowerCase().includes('classic') || 
+                  styleProfile?.toLowerCase().includes('elegant')) {
+          setElegance(90);
+          setColorIntensity(50);
         }
       } catch (error) {
         console.error("Error parsing style data:", error);
@@ -67,7 +81,7 @@ export const LookSuggestions = () => {
   const { data: dashboardItems, isLoading, error, refetch } = useQuery({
     queryKey: ['firstOutfitSuggestion'],
     queryFn: fetchFirstOutfitSuggestion,
-    retry: 2,
+    retry: 3, // Increased retries for more resilience
     staleTime: 0,
     refetchOnWindowFocus: false,
     enabled: hasQuizData,
