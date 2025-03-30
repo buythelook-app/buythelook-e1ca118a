@@ -23,4 +23,9 @@ interface Window {
     getLaunchUrl: () => Promise<{ url: string }>;
     getState: () => Promise<{ isActive: boolean }>;
   };
+  Browser?: {
+    open: (options: { url: string }) => Promise<void>;
+    close: () => Promise<void>;
+    addListener: (eventName: string, listener: any) => { remove: () => void };
+  };
 }

@@ -22,12 +22,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Custom scheme for auth redirects -->
-            <intent-filter>
+            <!-- Main deep link intent filter -->
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="buythelook" android:host="auth" />
+                
+                <!-- App-specific scheme (buythelook://) -->
+                <data android:scheme="buythelook" />
             </intent-filter>
 
             <!-- HTTPS scheme for Supabase OAuth -->

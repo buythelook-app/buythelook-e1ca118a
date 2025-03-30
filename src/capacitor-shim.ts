@@ -57,6 +57,36 @@ const AppImpl = {
   },
 };
 
+// Browser implementation for in-app browser experience
+const BrowserImpl = {
+  open: (options: { url: string }) => {
+    console.log('[Browser Shim] open called with URL:', options.url);
+    
+    // In web environment, just open in a new tab
+    if (!CapacitorImpl.isNativePlatform()) {
+      window.open(options.url, '_blank');
+    } else {
+      // For native platforms, we'd use the actual plugin
+      // This is just a fallback that opens in the system browser
+      window.open(options.url, '_blank');
+    }
+    
+    return Promise.resolve();
+  },
+  close: () => {
+    console.log('[Browser Shim] close called');
+    return Promise.resolve();
+  },
+  addListener: (eventName: string, listenerFunc: any) => {
+    console.log(`[Browser Shim] addListener for '${eventName}' called`);
+    return {
+      remove: () => {
+        console.log(`[Browser Shim] removeListener for '${eventName}' called`);
+      }
+    };
+  }
+};
+
 // Initialize the global objects
 export function initCapacitorGlobals() {
   console.log('Initializing Capacitor globals...');
@@ -65,6 +95,7 @@ export function initCapacitorGlobals() {
   window.Capacitor = window.Capacitor || CapacitorImpl;
   window.SplashScreen = window.SplashScreen || SplashScreenImpl;
   window.App = window.App || AppImpl;
+  window.Browser = window.Browser || BrowserImpl;
   
   console.log('Capacitor globals initialized');
   console.log('  - isNativePlatform:', window.Capacitor.isNativePlatform());

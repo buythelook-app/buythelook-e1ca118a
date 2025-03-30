@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +20,9 @@ import { StyleGuide } from "@/components/StyleGuide";
 import { AboutApp } from "@/components/AboutApp";
 import { OurRules } from "@/components/OurRules";
 import { MyList } from "@/components/MyList";
+import { useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import './capacitor-shim';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,6 +35,61 @@ const queryClient = new QueryClient({
 
 function App() {
   console.log("App component rendering");
+
+  // Add global listener for deep links - this ensures we catch auth redirects
+  useEffect(() => {
+    console.log("Setting up global deep link listener");
+    
+    const setupAppUrlListener = async () => {
+      try {
+        if (window.Capacitor?.isNativePlatform?.()) {
+          console.log("Platform is native, setting up app URL listener");
+          
+          if (window.App?.addListener) {
+            window.App.addListener('appUrlOpen', async ({ url }) => {
+              console.log('App opened with URL:', url);
+              
+              if (url.includes('auth') || url.includes('callback')) {
+                console.log('Auth callback URL detected, checking session');
+                
+                try {
+                  // This will handle the token in the URL automatically
+                  const { data, error } = await supabase.auth.getSession();
+                  
+                  if (error) {
+                    console.error('Session retrieval error:', error);
+                  } else if (data.session) {
+                    console.log('Session established after redirect:', data.session.user?.id);
+                    // No redirection here, let the useAuthFlow handle it
+                  } else {
+                    console.log('No session found after URL open');
+                  }
+                } catch (err) {
+                  console.error('Error handling auth callback:', err);
+                }
+              }
+            });
+            
+            console.log("App URL listener setup complete");
+          } else {
+            console.warn("window.App.addListener not available");
+          }
+        } else {
+          console.log("Not running on native platform, skipping app URL listener");
+        }
+      } catch (error) {
+        console.error("Error setting up app URL listener:", error);
+      }
+    };
+    
+    setupAppUrlListener();
+    
+    return () => {
+      // Cleanup - not removing the listener as Capacitor doesn't support that well
+      console.log("App component unmounting");
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
