@@ -22,13 +22,13 @@ const config: CapacitorConfig = {
       spinnerColor: "#999999"
     },
     App: {
-      webviewNavigationEventHandling: "injected"
+      webviewNavigationEventHandling: "forwarded", // Changed from "injected" to "forwarded"
     },
     CapacitorCookies: {
       enabled: true
     },
     Browser: {
-      presentationStyle: 'popover'
+      presentationStyle: 'fullscreen' // Changed from 'popover' to 'fullscreen'
     }
   },
   android: {

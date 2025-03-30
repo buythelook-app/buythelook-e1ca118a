@@ -21,11 +21,12 @@ export const SocialSignIn = () => {
       
       console.log("Starting Google sign-in with redirect to:", redirectUrl);
       
-      // Use minimal configuration - just the essentials
+      // Use browser option to force full page navigation instead of iframe
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: false, // Ensure browser handles the redirect
         }
       });
       
@@ -34,10 +35,8 @@ export const SocialSignIn = () => {
         throw error;
       }
       
-      if (data?.url) {
-        console.log("Redirecting to OAuth URL:", data.url);
-        window.location.href = data.url;
-      }
+      // The browser will be redirected automatically by Supabase
+      console.log("Auth flow initiated successfully");
       
     } catch (error: any) {
       console.error("Google sign-in error:", error);
@@ -47,7 +46,6 @@ export const SocialSignIn = () => {
         description: error.message || "Failed to sign in with Google",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(prev => ({ ...prev, google: false }));
     }
   };

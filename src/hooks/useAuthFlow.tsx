@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -13,62 +12,14 @@ export const useAuthFlow = () => {
   useEffect(() => {
     console.log("Auth flow init started");
     let isMounted = true;
-    let appUrlListener: { remove: () => void } | null = null;
     
-    // Set up deep link handler for native platforms
-    if (window.Capacitor?.isNativePlatform?.()) {
-      console.log("Setting up deep link handler on native platform");
-      
-      // Only set up listener if App is available
-      if (window.App?.addListener) {
-        appUrlListener = window.App.addListener('appUrlOpen', async (data: { url: string }) => {
-          console.log('Deep link received in useAuthFlow:', data.url);
-          
-          if ((data.url.includes('auth') || data.url.includes('callback')) && isMounted) {
-            setIsLoading(true);
-            
-            try {
-              // Process the URL to handle the authentication
-              if (data.url.includes('google') || data.url.includes('token=') || data.url.includes('code=')) {
-                console.log('OAuth callback detected, handling authentication');
-                
-                // Allow a brief moment for the OAuth process to complete
-                setTimeout(async () => {
-                  // Verify session after receiving the callback
-                  const { data: sessionData, error } = await supabase.auth.getSession();
-                  
-                  if (error) throw error;
-                  
-                  if (sessionData.session) {
-                    console.log("Session found after deep link:", sessionData.session.user?.id);
-                    toast({
-                      title: "Success",
-                      description: "You have been signed in successfully.",
-                    });
-                    navigate('/home');
-                  } else {
-                    console.log("No session after deep link");
-                    setIsLoading(false);
-                  }
-                }, 500);
-              }
-            } catch (error: any) {
-              console.error("Deep link auth error:", error);
-              toast({
-                title: "Error",
-                description: error.message || "Authentication failed",
-                variant: "destructive",
-              });
-              setIsLoading(false);
-            }
-          }
-        });
-      } else {
-        console.warn("window.App.addListener not available");
-      }
+    // Set up global deep link listener
+    console.log("Setting up global deep link listener");
+    if (!window.Capacitor?.isNativePlatform?.()) {
+      console.log("Not running on native platform, skipping app URL listener");
     }
 
-    // Enhanced auth state change listener - simplified
+    // Enhanced auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event, session ? "session exists" : "no session");
       
@@ -98,8 +49,8 @@ export const useAuthFlow = () => {
           console.log("Auth parameters detected in URL");
           setIsLoading(true);
           
-          // Small delay to allow auth state to settle
-          setTimeout(async () => {
+          try {
+            // Let Supabase process the URL parameters
             const { data, error } = await supabase.auth.getSession();
             
             if (error) throw error;
@@ -110,9 +61,22 @@ export const useAuthFlow = () => {
               return;
             }
             
-            console.log("No session after processing URL parameters");
+            console.log("No session after processing URL parameters, waiting for auth state change");
+            // Keep loading while we wait for the auth state change event
+            setTimeout(() => {
+              if (isMounted) {
+                setIsLoading(false);
+              }
+            }, 2000);
+          } catch (error) {
+            console.error("Error processing auth params:", error);
             setIsLoading(false);
-          }, 500);
+            toast({
+              title: "Authentication Error",
+              description: error.message || "Failed to process authentication",
+              variant: "destructive",
+            });
+          }
           
           return;
         }
@@ -131,9 +95,14 @@ export const useAuthFlow = () => {
         
         console.log("No active session found");
         setIsLoading(false);
-      } catch (error: any) {
+      } catch (error) {
         console.error("Auth check error:", error);
         setIsLoading(false);
+        toast({
+          title: "Error",
+          description: "Failed to check authentication status",
+          variant: "destructive",
+        });
       }
     };
     
@@ -143,10 +112,6 @@ export const useAuthFlow = () => {
     return () => {
       isMounted = false;
       subscription.unsubscribe();
-      
-      if (appUrlListener) {
-        appUrlListener.remove();
-      }
     };
   }, [navigate, toast]);
 
