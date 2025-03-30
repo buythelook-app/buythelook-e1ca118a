@@ -1,4 +1,3 @@
-
 import { Button } from "../ui/button";
 import { DropdownMenuLabel } from "../ui/dropdown-menu";
 import { Style } from "./StyleFilterButton";
@@ -84,6 +83,14 @@ export const StylePreferencesFilter = ({ selectedStyle, setSelectedStyle }: Styl
           "Look for clean lines and avoid embellishments"
         ];
         localStorage.setItem('style-recommendations', JSON.stringify(recommendations));
+        
+        // Save the color palette for minimalist style
+        const colorPalette = {
+          top: "Black",
+          bottom: "Brown",
+          shoes: "Black"
+        };
+        localStorage.setItem('outfit-colors', JSON.stringify(colorPalette));
       } catch (error) {
         console.error("Error storing minimalist essentials:", error);
       }

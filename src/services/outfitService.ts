@@ -5,7 +5,7 @@
 import { DashboardItem } from "@/types/lookTypes";
 import { generateOutfit } from "./api/outfitApi";
 import { mapBodyShape, mapStyle, getEventStyles } from "./mappers/styleMappers";
-import { convertToDashboardItem, getItemIdentifier } from "./outfitFactory";
+import { convertToDashboardItem, getItemIdentifier, hasSolidColorIndicator } from "./outfitFactory";
 import { isMinimalistTop, isMinimalistBottom, isMinimalistShoe } from "./filters/minimalistStyleCheckers";
 import { scoreItem } from "./filters/styleFilters";
 
@@ -41,9 +41,9 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
 
     console.log("Using user's preferred style from quiz:", preferredStyle);
 
-    // Increase to 18 parallel requests for better chance of finding truly solid color items
+    // Increase to 24 parallel requests for better chance of finding truly solid color items
     const promises = [];
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < 24; i++) {
       promises.push(generateOutfit(bodyShape, style, mood));
     }
     
@@ -71,29 +71,53 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     if (preferredStyle === 'Minimalist') {
       console.log("Applying strict minimalist filtering based on user examples");
       
+      // Load recently shown items to avoid repeating
+      const recentTopIds: string[] = (() => {
+        try {
+          const saved = localStorage.getItem('recent-minimalist-tops');
+          return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+          console.error("Error parsing recent tops:", e);
+          return [];
+        }
+      })();
+      
       // Filter out items with any pattern or non-solid color indicators
       const filteredTops = allTops
         .filter(top => {
           const name = (top.product_name || top.name || "").toLowerCase();
           const description = (top.description || "").toLowerCase();
+          const topId = getItemIdentifier(top);
           
-          // Check for specific pattern terms
-          if (name.includes("square") || description.includes("square") ||
-              name.includes("pattern") || description.includes("pattern") ||
-              name.includes("gingham") || description.includes("gingham") ||
-              name.includes("plaid") || description.includes("plaid") ||
-              name.includes("check") || description.includes("check") ||
-              name.includes("textured") || description.includes("textured") ||
-              name.includes("print") || description.includes("print")) {
+          // Skip recently shown items
+          if (recentTopIds.includes(topId)) {
+            console.log(`Skipping recently shown top: ${name}`);
+            return false;
+          }
+          
+          // Explicitly filter out gingham/checked/textured items
+          if (name.includes("gingham") || 
+              name.includes("check") || 
+              name.includes("plaid") || 
+              name.includes("texture") || 
+              name.includes("print")) {
             console.log(`Explicitly rejected patterned top: ${name}`);
             return false;
           }
           
-          // Prioritize solid color indicators
-          if ((name.includes("solid") || description.includes("solid") ||
-               name.includes("plain") || description.includes("plain")) &&
-              isMinimalistTop(top)) {
-            console.log(`Prioritized solid color top: ${name}`);
+          // Pattern indication in description
+          if (description.includes("pattern") || 
+              description.includes("gingham") || 
+              description.includes("check") || 
+              description.includes("texture") || 
+              description.includes("print")) {
+            console.log(`Rejected top with pattern in description: ${name}`);
+            return false;
+          }
+          
+          // Prefer tops that mention "solid" or "plain" in name/description
+          if (hasSolidColorIndicator(top) && isMinimalistTop(top)) {
+            console.log(`Found ideal solid color top: ${name}`);
             return true;
           }
           
@@ -101,22 +125,16 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
         })
         .sort((a, b) => {
           // Prioritize items with "solid" or "plain" in their name/description
-          const aName = (a.product_name || a.name || "").toLowerCase();
-          const aDesc = (a.description || "").toLowerCase();
-          const bName = (b.product_name || b.name || "").toLowerCase();
-          const bDesc = (b.description || "").toLowerCase();
+          const aSolid = hasSolidColorIndicator(a);
+          const bSolid = hasSolidColorIndicator(b);
           
-          const aHasSolid = aName.includes("solid") || aDesc.includes("solid") || 
-                            aName.includes("plain") || aDesc.includes("plain");
-          const bHasSolid = bName.includes("solid") || bDesc.includes("solid") ||
-                            bName.includes("plain") || bDesc.includes("plain");
-          
-          if (aHasSolid && !bHasSolid) return -1;
-          if (!aHasSolid && bHasSolid) return 1;
+          if (aSolid && !bSolid) return -1;
+          if (!aSolid && bSolid) return 1;
           
           return scoreItem(b, 'top') - scoreItem(a, 'top');
         });
       
+      // Filter bottoms with similar logic
       const filteredBottoms = allBottoms
         .filter(bottom => {
           const name = (bottom.product_name || bottom.name || "").toLowerCase();
@@ -154,6 +172,7 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
           return scoreItem(b, 'bottom') - scoreItem(a, 'bottom');
         });
       
+      // Filter shoes with similar logic  
       const filteredShoes = allShoes
         .filter(shoes => {
           const name = (shoes.product_name || shoes.name || "").toLowerCase();
@@ -173,49 +192,26 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
       console.log(`After filtering: ${filteredTops.length} tops, ${filteredBottoms.length} bottoms, and ${filteredShoes.length} shoes match minimalist criteria`);
       
       const items: DashboardItem[] = [];
-      const usedItemIds = new Set<string>();
       
-      // Add items if they pass strict criteria
-      // Try to avoid adding the same item repeatedly by keeping track of what we've seen
+      // Find a top that hasn't been shown recently
       if (filteredTops.length > 0) {
-        // Select a different top each time to avoid repeating
-        let foundNewTop = false;
+        // Get a new top that wasn't recently shown
+        const selectedTop = filteredTops[0];
+        const topId = getItemIdentifier(selectedTop);
         
-        for (const top of filteredTops) {
-          const topId = getItemIdentifier(top);
-          
-          // Check if we've already seen this item recently
-          const recentTops = localStorage.getItem('recent-minimalist-tops');
-          const recentTopIds = recentTops ? JSON.parse(recentTops) : [];
-          
-          if (!recentTopIds.includes(topId)) {
-            const topItem = convertToDashboardItem(top, 'top', preferredStyle);
-            if (topItem) {
-              items.push(topItem);
-              usedItemIds.add(topId);
-              
-              // Store this top ID as recently used
-              recentTopIds.push(topId);
-              if (recentTopIds.length > 5) recentTopIds.shift(); // Keep last 5
-              localStorage.setItem('recent-minimalist-tops', JSON.stringify(recentTopIds));
-              
-              console.log("Selected minimalist top:", topItem.name);
-              foundNewTop = true;
-              break;
-            }
-          }
-        }
+        // Add to recently shown tops
+        recentTopIds.push(topId);
+        if (recentTopIds.length > 10) recentTopIds.shift(); // Keep last 10
+        localStorage.setItem('recent-minimalist-tops', JSON.stringify(recentTopIds));
         
-        // If we couldn't find a new top, just use the best one
-        if (!foundNewTop && filteredTops.length > 0) {
-          const topItem = convertToDashboardItem(filteredTops[0], 'top', preferredStyle);
-          if (topItem) {
-            items.push(topItem);
-            console.log("Selected minimalist top (fallback):", topItem.name);
-          }
+        const topItem = convertToDashboardItem(selectedTop, 'top', preferredStyle);
+        if (topItem) {
+          items.push(topItem);
+          console.log("Selected minimalist top:", topItem.name);
         }
       }
       
+      // Add bottom and shoes
       if (filteredBottoms.length > 0) {
         const bottomItem = convertToDashboardItem(filteredBottoms[0], 'bottom', preferredStyle);
         if (bottomItem) {
@@ -232,7 +228,7 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
         }
       }
       
-      // Improved fallback mechanism - use the most neutral items from all available
+      // Improved fallback mechanism if we're missing items
       if (items.length < 3) {
         // Sort all items by score to get the most minimalist-like ones
         const sortedTops = allTops.sort((a, b) => scoreItem(b, 'top') - scoreItem(a, 'top'));
@@ -270,7 +266,6 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
       console.log('Final minimalist outfit items:', items);
       return items;
     } else {
-      // For non-minimalist styles, just use the first items found
       console.log("Using regular filtering for non-minimalist style");
       
       const items: DashboardItem[] = [];

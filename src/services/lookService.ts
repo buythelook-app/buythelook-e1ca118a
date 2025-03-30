@@ -6,9 +6,11 @@
 import { fetchFirstOutfitSuggestion } from './outfitService';
 import { fetchDashboardItems } from './dashboardService';
 import { mapDashboardItemToOutfitItem } from './mappers/styleMappers';
+import { hasSolidColorIndicator } from './outfitFactory';
 
 export {
   fetchFirstOutfitSuggestion,
   fetchDashboardItems,
-  mapDashboardItemToOutfitItem
+  mapDashboardItemToOutfitItem,
+  hasSolidColorIndicator
 };
