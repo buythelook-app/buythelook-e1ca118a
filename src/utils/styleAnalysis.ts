@@ -1,4 +1,3 @@
-
 import { QuizFormData } from "@/components/quiz/types";
 
 interface StyleAnalysis {
@@ -6,6 +5,7 @@ interface StyleAnalysis {
     styleProfile: string;
     bodyShape: string;
     preferences: string[];
+    colorPreference?: string;
   };
 }
 
@@ -20,11 +20,30 @@ export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
     styleProfile = "Minimalist";
   }
   
+  // Determine color preference based on style and user color choices
+  let colorPreference = "neutral";
+  
+  // If the user has selected Minimalist style, prioritize neutral colors
+  if (styleProfile === "Minimalist") {
+    colorPreference = "neutral";
+  } 
+  // Otherwise use their color preferences if available
+  else if (quizData.colorPreferences && quizData.colorPreferences.length > 0) {
+    if (quizData.colorPreferences.includes("neutral")) {
+      colorPreference = "neutral";
+    } else if (quizData.colorPreferences.includes("warm")) {
+      colorPreference = "warm";
+    } else if (quizData.colorPreferences.includes("cool")) {
+      colorPreference = "cool";
+    }
+  }
+  
   return {
     analysis: {
       styleProfile: styleProfile,
       bodyShape: quizData.bodyShape || "hourglass",
-      preferences: quizData.stylePreferences || []
+      preferences: quizData.stylePreferences || [],
+      colorPreference: colorPreference
     }
   };
 };

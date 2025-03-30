@@ -1,4 +1,3 @@
-
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 import { EventType, EVENT_TO_STYLES } from "@/components/filters/eventTypes";
 
@@ -77,10 +76,8 @@ const requestCache = new Map();
 
 const generateOutfit = async (bodyStructure: string, style: string, mood: string) => {
   try {
-    // Create a cache key based on the request parameters
     const cacheKey = `${bodyStructure}:${style}:${mood}`;
     
-    // Check if we have a cached response
     if (requestCache.has(cacheKey)) {
       console.log('Using cached outfit data for:', cacheKey);
       return requestCache.get(cacheKey);
@@ -95,7 +92,7 @@ const generateOutfit = async (bodyStructure: string, style: string, mood: string
     console.log('Generating outfit with params:', requestBody);
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     
     const response = await fetch(API_URL, {
       method: 'POST',
@@ -122,10 +119,8 @@ const generateOutfit = async (bodyStructure: string, style: string, mood: string
     const data = await response.json();
     console.log('API response:', data);
     
-    // Cache the successful response
     requestCache.set(cacheKey, data);
     
-    // Clear old cache entries if cache gets too large
     if (requestCache.size > 20) {
       const oldestKey = requestCache.keys().next().value;
       requestCache.delete(oldestKey);
@@ -159,7 +154,6 @@ const isUnderwear = (item: any): boolean => {
   
   const underwearTerms = ['underwear', 'lingerie', 'bra', 'panties', 'briefs', 'boxer', 'thong', 'g-string'];
   
-  // Check item name and description for underwear terms
   const itemName = (item.product_name || '').toLowerCase();
   const itemDesc = (item.description || '').toLowerCase();
   const itemType = (item.type || '').toLowerCase();
@@ -171,54 +165,72 @@ const isUnderwear = (item: any): boolean => {
   );
 };
 
+// Enhanced check for natural colors in item descriptions
+const hasNaturalColor = (item: any): boolean => {
+  if (!item) return false;
+  
+  const naturalColors = [
+    'beige', 'cream', 'ivory', 'off-white', 'white', 'ecru', 'oatmeal', 
+    'tan', 'khaki', 'sand', 'stone', 'taupe', 'camel', 'nude', 
+    'gray', 'grey', 'light grey', 'dark grey', 'charcoal',
+    'black', 'navy', 'brown', 'olive', 'sage'
+  ];
+  
+  const itemName = (item.product_name || '').toLowerCase();
+  const itemDesc = (item.description || '').toLowerCase();
+  
+  return naturalColors.some(color => 
+    itemName.includes(color) || 
+    itemDesc.includes(color)
+  );
+}
+
 // Helper function to check if an item matches minimalist style
 const isMinimalistStyleItem = (item: any): boolean => {
   if (!item) return false;
   
-  // Check item name and description for minimalist terms
   const itemName = (item.product_name || '').toLowerCase();
   const itemDesc = (item.description || '').toLowerCase();
   const itemType = (item.type || '').toLowerCase();
   
-  // Colors that match minimalist aesthetic
-  const minimalistColors = ['white', 'black', 'gray', 'beige', 'cream', 'navy', 'brown', 'tan', 'neutral'];
-  const hasMinimalistColor = minimalistColors.some(color => 
-    itemName.includes(color) || 
-    itemDesc.includes(color)
-  );
+  const hasNatural = hasNaturalColor(item);
   
-  // Patterns that don't match minimalist aesthetic
   const nonMinimalistPatterns = ['floral', 'stripe', 'print', 'pattern', 'graphic', 'logo', 'sequin', 'embellish', 'embroidery'];
   const hasNonMinimalistPattern = nonMinimalistPatterns.some(pattern => 
     itemName.includes(pattern) || 
     itemDesc.includes(pattern)
   );
   
-  // Terms that match minimalist aesthetic
   const minimalistTerms = ['simple', 'clean', 'minimal', 'basic', 'timeless', 'essential', 'classic', 'sleek', 'streamlined'];
   const hasMinimalistTerm = minimalistTerms.some(term => 
     itemName.includes(term) || 
     itemDesc.includes(term)
   );
   
-  // If the style preference is explicitly minimalist, prioritize items that match
-  return (hasMinimalistColor || hasMinimalistTerm) && !hasNonMinimalistPattern;
+  return (hasNatural || hasMinimalistTerm) && !hasNonMinimalistPattern;
 };
 
 // Helper function to convert API item to DashboardItem
 const convertToDashboardItem = (item: any, type: string, userStyle: string = ''): DashboardItem | null => {
   if (!item) return null;
   
-  // Skip underwear items
   if (isUnderwear(item)) {
     console.log('Filtering out underwear item:', item.product_name);
     return null;
   }
   
-  // For minimalist style, apply additional filtering
-  if (userStyle === 'Minimalist' && !isMinimalistStyleItem(item)) {
-    console.log('Item does not match minimalist style criteria:', item.product_name);
-    // Don't immediately reject, but we'll prioritize minimalist items
+  if (userStyle === 'Minimalist') {
+    if (type === 'top' && !hasNaturalColor(item)) {
+      console.log('Item does not have natural colors for minimalist style:', item.product_name);
+      return null;
+    }
+    
+    if (!isMinimalistStyleItem(item)) {
+      console.log('Item does not match minimalist style criteria:', item.product_name);
+      if (Math.random() > 0.3) {
+        return null;
+      }
+    }
   }
   
   const imageUrl = extractImageUrl(item);
@@ -236,8 +248,9 @@ const convertToDashboardItem = (item: any, type: string, userStyle: string = '')
 
 // Track used items across all occasions to prevent duplicates
 const getItemIdentifier = (item: any): string => {
-  // Create a unique identifier for each product based on product_id or image URL
-  return item.product_id?.toString() || item.image?.toString() || Math.random().toString();
+  if (item.product_id?.toString()) return item.product_id.toString();
+  if (item.image?.toString()) return item.image.toString();
+  return Math.random().toString();
 };
 
 // Function to get only the first outfit suggestion
@@ -252,9 +265,7 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     }
 
     const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
-    // Get style from event (if available) or from quiz data
     const eventStyle = getEventStyles();
-    // Prioritize the user's chosen style from the quiz
     const preferredStyle = styleAnalysis.analysis.styleProfile || 'classic';
     const style = mapStyle(eventStyle || preferredStyle);
     const mood = validateMood(currentMood);
@@ -264,20 +275,15 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     const response = await generateOutfit(bodyShape, style, mood);
     const items: DashboardItem[] = [];
 
-    // Only process the first outfit suggestion
     if (Array.isArray(response.data) && response.data.length > 0) {
-      // Try to find the best matching outfit for user's style
       let bestMatch = response.data[0];
       
-      // If user prefers minimalist style, prioritize outfits with minimalist items
       if (preferredStyle === 'Minimalist') {
         for (const outfit of response.data) {
           const topIsMinimalist = outfit.top ? isMinimalistStyleItem(outfit.top) : false;
           const bottomIsMinimalist = outfit.bottom ? isMinimalistStyleItem(outfit.bottom) : false;
           const shoesIsMinimalist = outfit.shoes ? isMinimalistStyleItem(outfit.shoes) : false;
           
-          // If more items match minimalist style, use this outfit
-          // Fix: Convert boolean results to numbers before adding
           const currentMatchCount = (topIsMinimalist ? 1 : 0) + (bottomIsMinimalist ? 1 : 0) + (shoesIsMinimalist ? 1 : 0);
           const bestMatchCount = 
             (bestMatch.top ? (isMinimalistStyleItem(bestMatch.top) ? 1 : 0) : 0) + 
@@ -320,18 +326,14 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
 
     const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
     
-    // Get user's preferred style from the quiz
     const userPreferredStyle = styleAnalysis.analysis.styleProfile || 'classic';
     console.log("User's quiz preference:", userPreferredStyle);
     
-    // Get base style from event (if available) or from quiz data
     const eventStyle = getEventStyles();
     const baseStyle = mapStyle(userPreferredStyle);
     
-    // Get mood
     const mood = validateMood(currentMood);
 
-    // Define style variations for different occasions
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     const occasionStyles = {
       'Work': [baseStyle, 'classic', 'minimalist'],
@@ -344,17 +346,13 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
     
     const outfitPromises = [];
     
-    // Generate separate outfit for each occasion with varied styles
     for (let i = 0; i < occasions.length; i++) {
       const occasion = occasions[i];
       
-      // Get style options for this occasion, always prioritizing the user's preferred style
       const styleOptions = [baseStyle, ...(occasionStyles[occasion as keyof typeof occasionStyles] || [])];
       
-      // Ensure user's style preference is first in the list
       const uniqueStyles = Array.from(new Set(styleOptions));
       
-      // Select a style (prioritize user's preference if it fits the occasion)
       const selectedStyle = uniqueStyles[0];
       
       console.log(`Generating outfit for ${occasion} with style: ${selectedStyle}`);
@@ -364,24 +362,20 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
     
     const responses = await Promise.all(outfitPromises);
     const occasionOutfits: {[key: string]: DashboardItem[]} = {};
-    const usedItemIds = new Set<string>(); // Track used items across all occasions
+    const usedItemIds = new Set<string>();
 
-    // Process outfits and group by occasion
     for (let index = 0; index < responses.length; index++) {
       const response = responses[index];
       const occasion = occasions[index];
       occasionOutfits[occasion] = [];
       
       if (Array.isArray(response.data) && response.data.length > 0) {
-        // Try all outfit options for each occasion
         let outfitFound = false;
         
         for (const outfit of response.data) {
-          // Check each item in the outfit for duplicates
           const outfitItems: DashboardItem[] = [];
           const outfitItemIds: string[] = [];
           
-          // Process top
           if (outfit.top) {
             const topId = getItemIdentifier(outfit.top);
             if (!usedItemIds.has(topId)) {
@@ -393,7 +387,6 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
             }
           }
           
-          // Process bottom
           if (outfit.bottom) {
             const bottomId = getItemIdentifier(outfit.bottom);
             if (!usedItemIds.has(bottomId)) {
@@ -405,7 +398,6 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
             }
           }
           
-          // Process shoes
           if (outfit.shoes) {
             const shoesId = getItemIdentifier(outfit.shoes);
             if (!usedItemIds.has(shoesId)) {
@@ -417,22 +409,18 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
             }
           }
           
-          // If we found at least 2 items that aren't duplicates, use this outfit
           if (outfitItems.length >= 2) {
             occasionOutfits[occasion] = outfitItems;
-            // Mark these items as used
             outfitItemIds.forEach(id => usedItemIds.add(id));
             outfitFound = true;
             break;
           }
         }
         
-        // If no outfit was found with unique items, create a partial outfit with whatever unique items we can find
         if (!outfitFound && response.data[0]) {
           const outfit = response.data[0];
           const partialOutfit: DashboardItem[] = [];
           
-          // Try to add top
           if (outfit.top) {
             const topId = getItemIdentifier(outfit.top);
             if (!usedItemIds.has(topId)) {
@@ -444,7 +432,6 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
             }
           }
           
-          // Try to add bottom
           if (outfit.bottom) {
             const bottomId = getItemIdentifier(outfit.bottom);
             if (!usedItemIds.has(bottomId)) {
@@ -456,7 +443,6 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
             }
           }
           
-          // Try to add shoes
           if (outfit.shoes) {
             const shoesId = getItemIdentifier(outfit.shoes);
             if (!usedItemIds.has(shoesId)) {

@@ -43,11 +43,11 @@ export const styleRecommendations: Record<string, StyleRecommendations> = {
     outerwear: { type: "Wool Coat", color: "camel", style: "oversized" }
   },
   Minimalist: {
-    top: { type: "T-shirt", color: "white", style: "clean" },
-    bottom: { type: "Straight Trousers", color: "black", style: "simple" },
-    shoes: { type: "Loafers", color: "black", style: "minimal" },
-    accessory: { type: "Simple Necklace", color: "silver", style: "delicate" },
-    sunglasses: { type: "Rectangular", color: "black", style: "frameless" },
-    outerwear: { type: "Unstructured Coat", color: "gray", style: "clean-lined" }
+    top: { type: "T-shirt", color: "beige", style: "clean" },
+    bottom: { type: "Straight Trousers", color: "taupe", style: "simple" },
+    shoes: { type: "Loafers", color: "tan", style: "minimal" },
+    accessory: { type: "Simple Necklace", color: "gold", style: "delicate" },
+    sunglasses: { type: "Rectangular", color: "tortoise", style: "frameless" },
+    outerwear: { type: "Unstructured Coat", color: "oatmeal", style: "clean-lined" }
   }
 };
