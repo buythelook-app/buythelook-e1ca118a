@@ -46,7 +46,6 @@ export const LookSuggestions = () => {
   const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
 
   useEffect(() => {
-    // Load user's style preference from quiz results
     const styleData = localStorage.getItem('styleAnalysis');
     if (styleData) {
       try {
@@ -55,10 +54,9 @@ export const LookSuggestions = () => {
         setUserStylePreference(styleProfile);
         console.log("Loaded user style preference:", styleProfile);
         
-        // If style is minimalist, set appropriate elegance and color intensity defaults
         if (styleProfile === 'Minimalist') {
-          setElegance(85); // Higher elegance for minimalist style
-          setColorIntensity(30); // Lower color intensity for minimalist style
+          setElegance(85);
+          setColorIntensity(30);
         }
       } catch (error) {
         console.error("Error parsing style data:", error);
@@ -111,12 +109,11 @@ export const LookSuggestions = () => {
     
     console.log('Mapping type:', type, 'Normalized to:', lowerType);
 
-    // Filter out underwear items
     const underwearTerms = ['underwear', 'lingerie', 'bra', 'panties', 'briefs', 'boxer', 'thong'];
     for (const term of underwearTerms) {
       if (lowerType.includes(term)) {
         console.log(`Detected underwear term: ${term} in type: ${lowerType}, skipping`);
-        return 'top'; // Default to top for UI purposes
+        return 'top';
       }
     }
 
@@ -282,7 +279,6 @@ export const LookSuggestions = () => {
         {userStylePreference && (
           <p className="text-lg text-netflix-accent mb-6">
             Based on your {userStylePreference} style preference
-            {userStylePreference === 'Minimalist' && " - clean lines, neutral colors, timeless pieces"}
           </p>
         )}
         
