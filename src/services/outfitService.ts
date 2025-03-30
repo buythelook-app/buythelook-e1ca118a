@@ -10,6 +10,34 @@ import { convertToDashboardItem, getItemIdentifier } from "./outfitFactory";
 import { isMinimalistTop, isMinimalistBottom, isMinimalistShoe } from "./filters/minimalistStyleCheckers";
 import { scoreItem } from "./filters/styleFilters";
 
+// Fallback items for when API doesn't return anything useful
+const FALLBACK_ITEMS = {
+  top: {
+    id: "fallback-top-1",
+    name: "Classic White Shirt",
+    description: "A timeless white shirt that pairs with everything",
+    image: "https://i.imgur.com/1j9ZXed.png",
+    price: "$39.99",
+    type: "top"
+  },
+  bottom: {
+    id: "fallback-bottom-1",
+    name: "Black Slim Pants",
+    description: "Essential black pants for any style",
+    image: "https://i.imgur.com/RWCV0G0.png",
+    price: "$49.99",
+    type: "bottom"
+  },
+  shoes: {
+    id: "fallback-shoes-1",
+    name: "Classic Loafers",
+    description: "Versatile loafers to complete your look",
+    image: "https://i.imgur.com/PzAHrXN.png",
+    price: "$79.99",
+    type: "shoes"
+  }
+};
+
 const validateMood = (mood: string | null): string => {
   const validMoods = [
     "mystery", "quiet", "elegant", "energized", 
@@ -24,36 +52,9 @@ const validateMood = (mood: string | null): string => {
   return mood.toLowerCase();
 };
 
-// Fallback items for when API doesn't return anything useful
-const FALLBACK_ITEMS = [
-  {
-    id: "fallback-top-1",
-    name: "Classic White Shirt",
-    description: "A timeless white shirt that pairs with everything",
-    image: "https://i.imgur.com/1j9ZXed.png",
-    price: "$39.99",
-    type: "top"
-  },
-  {
-    id: "fallback-bottom-1",
-    name: "Black Slim Pants",
-    description: "Essential black pants for any style",
-    image: "https://i.imgur.com/RWCV0G0.png",
-    price: "$49.99",
-    type: "bottom"
-  },
-  {
-    id: "fallback-shoes-1",
-    name: "Classic Loafers",
-    description: "Versatile loafers to complete your look",
-    image: "https://i.imgur.com/PzAHrXN.png",
-    price: "$79.99",
-    type: "shoes"
-  }
-];
-
 export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => {
   try {
+    console.log("Starting to fetch outfit suggestions");
     const quizData = localStorage.getItem('styleAnalysis');
     const currentMood = localStorage.getItem('current-mood');
     console.log("Quiz data from localStorage:", quizData);
@@ -62,7 +63,7 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     
     if (!styleAnalysis?.analysis) {
       console.error('Missing style analysis data');
-      return FALLBACK_ITEMS;
+      return [FALLBACK_ITEMS.top, FALLBACK_ITEMS.bottom, FALLBACK_ITEMS.shoes];
     }
 
     // Extract and log user preferences for debugging
@@ -78,15 +79,15 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     const mood = validateMood(currentMood);
     console.log("Using mood:", mood);
 
-    // Make fewer API requests for better performance
-    const requests = 5; // Reduced from 12 for faster loading
+    // Make API requests for outfit suggestions
+    const requests = 8; // Increased for better chances of complete outfits
     const promises = [];
     
     for (let i = 0; i < requests; i++) {
       promises.push(generateOutfit(bodyShape, style, mood));
     }
     
-    // Handle API responses with better error handling
+    // Handle API responses
     const responses = await Promise.allSettled(promises);
     const successfulResponses = responses.filter(r => r.status === 'fulfilled');
     console.log(`Received ${responses.length} API responses`);
@@ -97,10 +98,8 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     const allBottoms: any[] = [];
     const allShoes: any[] = [];
     
-    let successCount = 0;
     responses.forEach(result => {
       if (result.status === 'fulfilled' && result.value && Array.isArray(result.value.data)) {
-        successCount++;
         result.value.data.forEach((outfit: any) => {
           if (outfit.top) allTops.push(outfit.top);
           if (outfit.bottom) allBottoms.push(outfit.bottom);
@@ -113,102 +112,94 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     
     // Create the final outfit items array
     const items: DashboardItem[] = [];
-    const usedItemIds = new Set<string>();
     
-    // Check if preferredStyle is minimalist
-    const isMinimalistStyle = style.toLowerCase().includes('minimalist');
+    // Check if we have items for all types
+    const hasAllTypes = allTops.length > 0 && allBottoms.length > 0 && allShoes.length > 0;
     
-    if (isMinimalistStyle && allTops.length > 0 && allBottoms.length > 0 && allShoes.length > 0) {
-      console.log("Applying strict minimalist filtering");
+    if (hasAllTypes) {
+      console.log("We have items for all types, creating outfit");
       
-      // Filter for minimalist style items
-      const filteredTops = allTops
-        .filter(top => isMinimalistTop(top))
-        .sort((a, b) => scoreItem(b, 'top') - scoreItem(a, 'top'));
+      // Sort items by score
+      allTops.sort((a, b) => scoreItem(b, 'top') - scoreItem(a, 'top'));
+      allBottoms.sort((a, b) => scoreItem(b, 'bottom') - scoreItem(a, 'bottom'));
+      allShoes.sort((a, b) => scoreItem(b, 'shoes') - scoreItem(a, 'shoes'));
       
-      const filteredBottoms = allBottoms
-        .filter(bottom => isMinimalistBottom(bottom))
-        .sort((a, b) => scoreItem(b, 'bottom') - scoreItem(a, 'bottom'));
-      
-      const filteredShoes = allShoes
-        .filter(shoes => isMinimalistShoe(shoes))
-        .sort((a, b) => scoreItem(b, 'shoes') - scoreItem(a, 'shoes'));
-      
-      // Add filtered items to outfit
-      if (filteredTops.length > 0) {
-        const topItem = convertToDashboardItem(filteredTops[0], 'top', preferredStyle);
-        if (topItem) items.push(topItem);
-      } else if (allTops.length > 0) {
-        // Fallback to any top if no minimalist top found
-        const topItem = convertToDashboardItem(allTops[0], 'top', preferredStyle);
-        if (topItem) items.push(topItem);
+      // Add top item
+      const topItem = convertToDashboardItem(allTops[0], 'top', preferredStyle);
+      if (topItem) {
+        items.push(topItem);
+      } else {
+        items.push(FALLBACK_ITEMS.top);
       }
       
-      if (filteredBottoms.length > 0) {
-        const bottomItem = convertToDashboardItem(filteredBottoms[0], 'bottom', preferredStyle);
-        if (bottomItem) items.push(bottomItem);
-      } else if (allBottoms.length > 0) {
-        // Fallback to any bottom if no minimalist bottom found
-        const bottomItem = convertToDashboardItem(allBottoms[0], 'bottom', preferredStyle);
-        if (bottomItem) items.push(bottomItem);
+      // Add bottom item
+      const bottomItem = convertToDashboardItem(allBottoms[0], 'bottom', preferredStyle);
+      if (bottomItem) {
+        items.push(bottomItem);
+      } else {
+        items.push(FALLBACK_ITEMS.bottom);
       }
       
-      if (filteredShoes.length > 0) {
-        const shoesItem = convertToDashboardItem(filteredShoes[0], 'shoes', preferredStyle);
-        if (shoesItem) items.push(shoesItem);
-      } else if (allShoes.length > 0) {
-        // Fallback to any shoes if no minimalist shoes found
-        const shoesItem = convertToDashboardItem(allShoes[0], 'shoes', preferredStyle);
-        if (shoesItem) items.push(shoesItem);
+      // Add shoes item
+      const shoesItem = convertToDashboardItem(allShoes[0], 'shoes', preferredStyle);
+      if (shoesItem) {
+        items.push(shoesItem);
+      } else {
+        items.push(FALLBACK_ITEMS.shoes);
       }
     } else {
-      // For other styles, apply less strict filtering
-      console.log(`Using regular filtering for style: ${style}`);
+      // We're missing some item types, use fallbacks as needed
+      console.log("Missing some item types, using fallbacks as needed");
       
       if (allTops.length > 0) {
-        // Sort by quality score for the specific style
-        allTops.sort((a, b) => scoreItem(b, 'top') - scoreItem(a, 'top'));
         const topItem = convertToDashboardItem(allTops[0], 'top', preferredStyle);
-        if (topItem) items.push(topItem);
+        if (topItem) {
+          items.push(topItem);
+        } else {
+          items.push(FALLBACK_ITEMS.top);
+        }
+      } else {
+        items.push(FALLBACK_ITEMS.top);
       }
       
       if (allBottoms.length > 0) {
-        allBottoms.sort((a, b) => scoreItem(b, 'bottom') - scoreItem(a, 'bottom'));
         const bottomItem = convertToDashboardItem(allBottoms[0], 'bottom', preferredStyle);
-        if (bottomItem) items.push(bottomItem);
+        if (bottomItem) {
+          items.push(bottomItem);
+        } else {
+          items.push(FALLBACK_ITEMS.bottom);
+        }
+      } else {
+        items.push(FALLBACK_ITEMS.bottom);
       }
       
       if (allShoes.length > 0) {
-        allShoes.sort((a, b) => scoreItem(b, 'shoes') - scoreItem(a, 'shoes'));
         const shoesItem = convertToDashboardItem(allShoes[0], 'shoes', preferredStyle);
-        if (shoesItem) items.push(shoesItem);
+        if (shoesItem) {
+          items.push(shoesItem);
+        } else {
+          items.push(FALLBACK_ITEMS.shoes);
+        }
+      } else {
+        items.push(FALLBACK_ITEMS.shoes);
       }
     }
     
-    // Final fallback - if we couldn't find any items from the API, use our hardcoded fallbacks
-    if (items.length === 0) {
-      console.log("Using hardcoded fallback items due to empty API results");
-      return FALLBACK_ITEMS;
-    }
+    console.log("Final outfit:", items);
     
-    // If we're missing any essential piece, add it from fallback
-    if (!items.some(item => item.type === 'top')) {
-      items.push(FALLBACK_ITEMS[0]);
-    }
+    // Double-check to make sure we have all three item types
+    const finalHasTop = items.some(item => item.type === 'top');
+    const finalHasBottom = items.some(item => item.type === 'bottom');
+    const finalHasShoes = items.some(item => item.type === 'shoes');
     
-    if (!items.some(item => item.type === 'bottom')) {
-      items.push(FALLBACK_ITEMS[1]);
-    }
+    if (!finalHasTop) items.push(FALLBACK_ITEMS.top);
+    if (!finalHasBottom) items.push(FALLBACK_ITEMS.bottom);
+    if (!finalHasShoes) items.push(FALLBACK_ITEMS.shoes);
     
-    if (!items.some(item => item.type === 'shoes')) {
-      items.push(FALLBACK_ITEMS[2]);
-    }
-    
-    console.log(`Final outfit has ${items.length} items:`, items.map(i => i.type));
     return items;
   } catch (error) {
     console.error('Error in fetchFirstOutfitSuggestion:', error);
     // Return fallback items if anything goes wrong
-    return FALLBACK_ITEMS;
+    return [FALLBACK_ITEMS.top, FALLBACK_ITEMS.bottom, FALLBACK_ITEMS.shoes];
   }
 };
