@@ -42,9 +42,9 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
 
     console.log("Using user's preferred style from quiz:", preferredStyle);
 
-    // Reduce to 5 parallel requests to avoid timeouts
+    // Increase to 8 parallel requests for better chance of finding good items
     const promises = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 8; i++) {
       promises.push(generateOutfit(bodyShape, style, mood));
     }
     
@@ -68,10 +68,11 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     
     console.log(`Found ${allTops.length} tops, ${allBottoms.length} bottoms, and ${allShoes.length} shoes to filter`);
     
-    // Apply strict minimalist filtering for Minimalist style preference
+    // Special handling for Minimalist style preference with relaxed fallback
     if (preferredStyle === 'Minimalist') {
-      console.log("Applying strict minimalist filtering");
+      console.log("Applying minimalist filtering with improved fallback options");
       
+      // First try with strict filtering
       const filteredTops = allTops
         .filter(top => isMinimalistTop(top))
         .sort((a, b) => scoreItem(b, 'top') - scoreItem(a, 'top'));
@@ -86,53 +87,69 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
       
       console.log(`After filtering: ${filteredTops.length} tops, ${filteredBottoms.length} bottoms, and ${filteredShoes.length} shoes match minimalist criteria`);
       
-      const topItem = filteredTops.length > 0 ? convertToDashboardItem(filteredTops[0], 'top', preferredStyle) : null;
-      const bottomItem = filteredBottoms.length > 0 ? convertToDashboardItem(filteredBottoms[0], 'bottom', preferredStyle) : null;
-      const shoesItem = filteredShoes.length > 0 ? convertToDashboardItem(filteredShoes[0], 'shoes', preferredStyle) : null;
-      
       const items: DashboardItem[] = [];
       
-      if (topItem) {
-        items.push(topItem);
-        console.log("Selected minimalist top:", topItem.name);
-      }
-      
-      if (bottomItem) {
-        items.push(bottomItem);
-        console.log("Selected minimalist bottom:", bottomItem.name);
-      }
-      
-      if (shoesItem) {
-        items.push(shoesItem);
-        console.log("Selected minimalist shoes:", shoesItem.name);
-      }
-      
-      // Fallback to less strict criteria if not enough items found
-      if (items.length < 2 && allTops.length > 0 && !topItem) {
-        const fallbackTop = convertToDashboardItem(allTops[0], 'top');
-        if (fallbackTop) {
-          items.push(fallbackTop);
-          console.log("Added fallback top (not strictly minimalist):", fallbackTop.name);
+      // Add items if they pass strict criteria
+      if (filteredTops.length > 0) {
+        const topItem = convertToDashboardItem(filteredTops[0], 'top', preferredStyle);
+        if (topItem) {
+          items.push(topItem);
+          console.log("Selected minimalist top:", topItem.name);
         }
       }
       
-      if (items.length < 2 && allBottoms.length > 0 && !bottomItem) {
-        const fallbackBottom = convertToDashboardItem(allBottoms[0], 'bottom');
-        if (fallbackBottom) {
-          items.push(fallbackBottom);
-          console.log("Added fallback bottom (not strictly minimalist):", fallbackBottom.name);
+      if (filteredBottoms.length > 0) {
+        const bottomItem = convertToDashboardItem(filteredBottoms[0], 'bottom', preferredStyle);
+        if (bottomItem) {
+          items.push(bottomItem);
+          console.log("Selected minimalist bottom:", bottomItem.name);
         }
       }
       
-      if (items.length < 3 && allShoes.length > 0 && !shoesItem) {
-        const fallbackShoes = convertToDashboardItem(allShoes[0], 'shoes');
-        if (fallbackShoes) {
-          items.push(fallbackShoes);
-          console.log("Added fallback shoes (not strictly minimalist):", fallbackShoes.name);
+      if (filteredShoes.length > 0) {
+        const shoesItem = convertToDashboardItem(filteredShoes[0], 'shoes', preferredStyle);
+        if (shoesItem) {
+          items.push(shoesItem);
+          console.log("Selected minimalist shoes:", shoesItem.name);
         }
       }
       
-      console.log('Final outfit items:', items);
+      // Improved fallback mechanism - use the most neutral items from all available
+      if (items.length < 3) {
+        // Sort all items by score to get the most minimalist-like ones
+        const sortedTops = allTops.sort((a, b) => scoreItem(b, 'top') - scoreItem(a, 'top'));
+        const sortedBottoms = allBottoms.sort((a, b) => scoreItem(b, 'bottom') - scoreItem(a, 'bottom'));
+        const sortedShoes = allShoes.sort((a, b) => scoreItem(b, 'shoes') - scoreItem(a, 'shoes'));
+        
+        // Add top if needed
+        if (!items.some(item => item.type === 'top') && sortedTops.length > 0) {
+          const fallbackTop = convertToDashboardItem(sortedTops[0], 'top', preferredStyle);
+          if (fallbackTop) {
+            items.push(fallbackTop);
+            console.log("Added fallback top:", fallbackTop.name);
+          }
+        }
+        
+        // Add bottom if needed
+        if (!items.some(item => item.type === 'bottom') && sortedBottoms.length > 0) {
+          const fallbackBottom = convertToDashboardItem(sortedBottoms[0], 'bottom', preferredStyle);
+          if (fallbackBottom) {
+            items.push(fallbackBottom);
+            console.log("Added fallback bottom:", fallbackBottom.name);
+          }
+        }
+        
+        // Add shoes if needed
+        if (!items.some(item => item.type === 'shoes') && sortedShoes.length > 0) {
+          const fallbackShoes = convertToDashboardItem(sortedShoes[0], 'shoes', preferredStyle);
+          if (fallbackShoes) {
+            items.push(fallbackShoes);
+            console.log("Added fallback shoes:", fallbackShoes.name);
+          }
+        }
+      }
+      
+      console.log('Final minimalist outfit items:', items);
       return items;
     } else {
       // For non-minimalist styles, just use the first items found

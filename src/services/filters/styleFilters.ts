@@ -1,144 +1,171 @@
 
 /**
- * Functions for filtering and scoring style items
+ * Filter functions for outfit style rules
  */
-
-import { MINIMALIST_CRITERIA } from "./minimalistFilters";
-
-interface ExtractedText {
-  name: string;
-  description: string;
-  color: string;
-  type: string;
-  materials: string[];
-}
-
-export const extractText = (item: any): ExtractedText => {
-  if (!item) return { name: '', description: '', color: '', type: '', materials: [] };
-  
-  const name = (item.product_name || '').toLowerCase();
-  const description = (item.description || '').toLowerCase();
-  const color = (item.color || '').toLowerCase();
-  const type = (item.type || item.category || '').toLowerCase();
-  
-  // Extract materials mentioned in the item
-  const materialMatches = MINIMALIST_CRITERIA.preferredMaterials.filter(material => 
-    description.includes(material) || name.includes(material)
-  );
-  
-  return {
-    name,
-    description,
-    color,
-    type,
-    materials: materialMatches
-  };
-};
-
-export const hasNonMinimalistPattern = (item: any): boolean => {
-  if (!item) return false;
-  
-  const text = extractText(item);
-  
-  return MINIMALIST_CRITERIA.nonMinimalistPatterns.some(pattern => 
-    text.name.includes(pattern) || 
-    text.description.includes(pattern)
-  );
-};
 
 export const isUnderwear = (item: any): boolean => {
   if (!item) return false;
   
-  const text = extractText(item);
-  const underwearTerms = ['underwear', 'lingerie', 'bra', 'panties', 'briefs', 'boxer', 'thong', 'bikini', 'swimsuit'];
+  const name = (item.product_name || item.name || "").toLowerCase();
+  const description = (item.description || "").toLowerCase();
   
-  return underwearTerms.some(term => 
-    text.name.includes(term) || 
-    text.description.includes(term) ||
-    text.type.includes(term)
-  );
+  const underwearTerms = [
+    "underwear", "bra", "panty", "panties", "boxer", "brief", 
+    "thong", "lingerie", "swimwear", "swimsuit", "bikini", "trunk"
+  ];
+  
+  return underwearTerms.some(term => name.includes(term) || description.includes(term));
 };
 
-export const scoreItem = (item: any, type: 'top' | 'bottom' | 'shoes' | 'accessories'): number => {
+export const scoreItem = (item: any, type: string): number => {
   if (!item) return 0;
   
-  let score = 0;
-  const text = extractText(item);
+  const name = (item.product_name || item.name || "").toLowerCase();
+  const description = (item.description || "").toLowerCase();
   
-  // Score for natural colors
-  if (MINIMALIST_CRITERIA.naturalColors.some(color => 
-    text.name.includes(color) || 
-    text.description.includes(color) ||
-    text.color.includes(color))) {
-    score += 15;
-  }
+  let score = 50; // Base score
   
-  // Score for preferred colors based on item type
-  if (type in MINIMALIST_CRITERIA.preferredColors) {
-    const preferredColors = MINIMALIST_CRITERIA.preferredColors[type as keyof typeof MINIMALIST_CRITERIA.preferredColors];
-    if (preferredColors.some(color => 
-      text.name.includes(color) || 
-      text.description.includes(color) ||
-      text.color.includes(color))) {
-      score += 25;
-    }
-  }
-  
-  // Penalty for non-minimalist patterns
-  if (hasNonMinimalistPattern(item)) {
-    score -= 50;
-  }
-  
-  // Bonus for preferred materials
-  text.materials.forEach(() => {
-    score += 10;
-  });
-  
-  // Penalty for avoidance terms
-  MINIMALIST_CRITERIA.avoidanceTerms.forEach(term => {
-    if (text.name.includes(term) || text.description.includes(term)) {
-      score -= 15;
+  // Neutral colors increase score
+  const neutralColors = ["black", "white", "gray", "beige", "cream", "ivory", "navy", "taupe", "tan", "khaki", "camel", "brown"];
+  neutralColors.forEach(color => {
+    if (name.includes(color) || description.includes(color)) {
+      score += 10;
     }
   });
   
-  // Bonus for preferred silhouettes
-  if (type === 'top' && MINIMALIST_CRITERIA.silhouettes.top.some(silhouette => 
-    text.description.includes(silhouette) || text.name.includes(silhouette))) {
-    score += 15;
-  } else if (type === 'bottom' && MINIMALIST_CRITERIA.silhouettes.bottom.some(silhouette => 
-    text.description.includes(silhouette) || text.name.includes(silhouette))) {
-    score += 15;
-  }
+  // Quality materials increase score
+  const qualityMaterials = ["cotton", "linen", "silk", "wool", "cashmere", "leather"];
+  qualityMaterials.forEach(material => {
+    if (name.includes(material) || description.includes(material)) {
+      score += 8;
+    }
+  });
   
-  // Bonus for explicit minimalist mentions
-  if (text.name.includes('minimalist') || text.description.includes('minimalist') ||
-      text.name.includes('minimal') || text.description.includes('minimal')) {
-    score += 25;
+  // Minimalist terms increase score
+  const minimalistTerms = ["minimal", "simple", "classic", "basic", "clean", "essential"];
+  minimalistTerms.forEach(term => {
+    if (name.includes(term) || description.includes(term)) {
+      score += 15;
+    }
+  });
+  
+  // Non-minimalist features decrease score
+  const nonMinimalistFeatures = [
+    "floral", "graphic", "print", "pattern", "logo", "embellish", 
+    "sequin", "rhinestone", "bead", "embroidery", "distress", 
+    "ripped", "ruffle", "frill"
+  ];
+  
+  nonMinimalistFeatures.forEach(feature => {
+    if (name.includes(feature) || description.includes(feature)) {
+      score -= 20;
+    }
+  });
+  
+  // Specific item type bonuses
+  if (type === 'top') {
+    const topStyles = ["button-down", "turtleneck", "crew neck", "v-neck"];
+    topStyles.forEach(style => {
+      if (name.includes(style) || description.includes(style)) {
+        score += 10;
+      }
+    });
+  } else if (type === 'bottom') {
+    const bottomStyles = ["tailored", "straight leg", "wide leg", "pencil"];
+    bottomStyles.forEach(style => {
+      if (name.includes(style) || description.includes(style)) {
+        score += 10;
+      }
+    });
+  } else if (type === 'shoes') {
+    const shoeStyles = ["loafer", "ballet flat", "pump", "chelsea boot", "oxford"];
+    shoeStyles.forEach(style => {
+      if (name.includes(style) || description.includes(style)) {
+        score += 10;
+      }
+    });
   }
   
   return score;
 };
 
-export const hasMinimalistColor = (item: any, preferredColors?: string[]): boolean => {
+export const isMinimalistStyleItem = (item: any, type: string): boolean => {
+  if (type === 'top') {
+    return isMinimalistTop(item);
+  } else if (type === 'bottom') {
+    return isMinimalistBottom(item);
+  } else if (type === 'shoes') {
+    return isMinimalistShoe(item);
+  }
+  return false;
+};
+
+const isMinimalistTop = (item: any): boolean => {
   if (!item) return false;
   
-  const text = extractText(item);
+  const name = (item.product_name || item.name || "").toLowerCase();
+  const description = (item.description || "").toLowerCase();
   
-  // Check against preferred colors if provided
-  if (preferredColors && preferredColors.length > 0) {
-    if (preferredColors.some(color => 
-      text.name.includes(color) || 
-      text.description.includes(color) ||
-      text.color.includes(color))) {
-      console.log(`Found preferred color in item: ${text.name}`);
+  // Check for inherently minimalist items
+  const minimalistItems = [
+    "white button", "oxford shirt", "cotton shirt", "basic tee", 
+    "plain t-shirt", "turtleneck", "crew neck", "v-neck", 
+    "cashmere", "silk blouse", "linen shirt"
+  ];
+  
+  for (const itemType of minimalistItems) {
+    if (name.includes(itemType) || description.includes(itemType)) {
       return true;
     }
   }
   
-  // Check against natural colors
-  return MINIMALIST_CRITERIA.naturalColors.some(color => 
-    text.name.includes(color) || 
-    text.description.includes(color) ||
-    text.color.includes(color)
-  );
+  // Calculate score and use threshold
+  const score = scoreItem(item, 'top');
+  return score >= 60; // Higher threshold for confidence
+};
+
+const isMinimalistBottom = (item: any): boolean => {
+  if (!item) return false;
+  
+  const name = (item.product_name || item.name || "").toLowerCase();
+  const description = (item.description || "").toLowerCase();
+  
+  // Check for inherently minimalist items
+  const minimalistItems = [
+    "tailored", "straight leg", "wide leg", "pencil skirt", 
+    "midi skirt", "chino", "cotton pants", "linen trousers"
+  ];
+  
+  for (const itemType of minimalistItems) {
+    if (name.includes(itemType) || description.includes(itemType)) {
+      return true;
+    }
+  }
+  
+  // Calculate score and use threshold
+  const score = scoreItem(item, 'bottom');
+  return score >= 55; // Slightly lower threshold
+};
+
+const isMinimalistShoe = (item: any): boolean => {
+  if (!item) return false;
+  
+  const name = (item.product_name || item.name || "").toLowerCase();
+  const description = (item.description || "").toLowerCase();
+  
+  // Check for inherently minimalist items
+  const minimalistItems = [
+    "loafer", "ballet flat", "oxford", "chelsea boot", "derby", 
+    "leather boot", "minimal sneaker", "simple pump", "mule"
+  ];
+  
+  for (const itemType of minimalistItems) {
+    if (name.includes(itemType) || description.includes(itemType)) {
+      return true;
+    }
+  }
+  
+  // Calculate score and use threshold
+  const score = scoreItem(item, 'shoes');
+  return score >= 50; // Lower threshold for shoes
 };
