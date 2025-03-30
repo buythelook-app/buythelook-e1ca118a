@@ -43,11 +43,18 @@ export const styleRecommendations: Record<string, StyleRecommendations> = {
     outerwear: { type: "Wool Coat", color: "camel", style: "oversized" }
   },
   Minimalist: {
-    top: { type: "T-shirt", color: "beige", style: "clean" },
-    bottom: { type: "Straight Trousers", color: "taupe", style: "simple" },
-    shoes: { type: "Loafers", color: "tan", style: "minimal" },
+    top: { type: "Button-down Shirt", color: "white", style: "clean" },
+    bottom: { type: "Tailored Trousers", color: "black", style: "straight-leg" },
+    shoes: { type: "Leather Loafers", color: "black", style: "minimal" },
     accessory: { type: "Simple Necklace", color: "gold", style: "delicate" },
-    sunglasses: { type: "Rectangular", color: "tortoise", style: "frameless" },
-    outerwear: { type: "Unstructured Coat", color: "oatmeal", style: "clean-lined" }
+    sunglasses: { type: "Rectangular", color: "black", style: "frameless" },
+    outerwear: { type: "Structured Blazer", color: "black", style: "clean-lined" },
+    essentials: [
+      { category: "tops", items: ["White button-down", "Black crew neck tee", "Gray v-neck tee", "Beige turtleneck", "Black lightweight sweater"] },
+      { category: "bottoms", items: ["Black tailored trousers", "Dark blue straight-leg jeans", "Navy wide-leg pants", "Black pencil skirt"] },
+      { category: "dresses", items: ["Black slip dress", "Beige shirt dress", "Black wrap dress"] },
+      { category: "outerwear", items: ["Black structured blazer", "Beige trench coat", "Navy wool coat", "Black leather jacket"] },
+      { category: "shoes", items: ["Black leather loafers", "White leather sneakers", "Black Chelsea boots", "Nude pointed-toe pumps", "Black strappy sandals"] }
+    ]
   }
 };

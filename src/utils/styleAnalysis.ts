@@ -12,7 +12,7 @@ interface StyleAnalysis {
 
 export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
   console.log("Analyzing style with AI", quizData);
-  // Simple analysis based on quiz data
+  
   // Map the style preferences from the quiz
   let styleProfile = quizData.stylePreferences?.[0] || "Classic";
   
@@ -25,7 +25,7 @@ export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
   // Determine color preference based on style and user color choices
   let colorPreference = "neutral";
   
-  // If the user has selected Minimalist style, prioritize neutral colors
+  // If the user has selected Minimalist style, prioritize neutral colors and store minimalist recommendations
   if (styleProfile === "Minimalist") {
     colorPreference = "neutral";
     
@@ -34,8 +34,8 @@ export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
       const recommendations = [
         "Focus on quality over quantity with timeless pieces",
         "Opt for clean lines and simple silhouettes",
-        "Stick to a neutral color palette with occasional subtle accent colors",
-        "Choose natural fabrics like cotton, linen, and wool",
+        "Stick to a neutral color palette (black, white, gray, beige, navy, taupe)",
+        "Choose natural fabrics like cotton, linen, wool, and silk",
         "Look for functional details and avoid excessive embellishments"
       ];
       
@@ -50,7 +50,38 @@ export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
       };
       
       localStorage.setItem('outfit-colors', JSON.stringify(outfitColors));
-      console.log("Stored style recommendations and color palette");
+      
+      // Store minimalist essentials
+      const minimalistEssentials = {
+        tops: [
+          "White button-down shirt",
+          "Basic crewneck t-shirts (black, white, gray)",
+          "Lightweight knit sweaters",
+          "Turtlenecks or mock neck tops",
+          "Structured minimal blouses"
+        ],
+        bottoms: [
+          "Tailored trousers (black, beige, gray)",
+          "Straight-leg or wide-leg pants",
+          "Classic jeans without embellishments",
+          "Simple midi or pencil skirts"
+        ],
+        outerwear: [
+          "Structured blazer (black, navy, beige)",
+          "Wool coat or trench coat",
+          "Minimalist leather jacket"
+        ],
+        shoes: [
+          "Leather loafers (black, brown)",
+          "Ballet flats in neutral tones",
+          "Chelsea boots in black or taupe",
+          "White leather sneakers",
+          "Simple pointed-toe pumps"
+        ]
+      };
+      
+      localStorage.setItem('minimalist-essentials', JSON.stringify(minimalistEssentials));
+      console.log("Stored minimalist style data");
     } catch (error) {
       console.error("Error storing data in localStorage:", error);
     }
@@ -64,11 +95,6 @@ export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
     } else if (quizData.colorPreferences.includes("cool")) {
       colorPreference = "cool";
     }
-  }
-  
-  // Make minimalist more consistent in naming for API
-  if (styleProfile === "Minimalist") {
-    console.log("Setting user style profile to Minimalist");
   }
   
   const result = {
