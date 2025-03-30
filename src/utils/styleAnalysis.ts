@@ -11,6 +11,7 @@ interface StyleAnalysis {
 }
 
 export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
+  console.log("Analyzing style with AI", quizData);
   // Simple analysis based on quiz data
   // Map the style preferences from the quiz
   let styleProfile = quizData.stylePreferences?.[0] || "Classic";
@@ -28,26 +29,31 @@ export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
   if (styleProfile === "Minimalist") {
     colorPreference = "neutral";
     
-    // Store minimalist style recommendations
-    const recommendations = [
-      "Focus on quality over quantity with timeless pieces",
-      "Opt for clean lines and simple silhouettes",
-      "Stick to a neutral color palette with occasional subtle accent colors",
-      "Choose natural fabrics like cotton, linen, and wool",
-      "Look for functional details and avoid excessive embellishments"
-    ];
-    
-    localStorage.setItem('style-recommendations', JSON.stringify(recommendations));
-    
-    // Store a minimalist color palette
-    const outfitColors = {
-      top: "#FFFFFF",
-      bottom: "#333333",
-      shoes: "#000000",
-      accessories: "#CCCCCC"
-    };
-    
-    localStorage.setItem('outfit-colors', JSON.stringify(outfitColors));
+    try {
+      // Store minimalist style recommendations
+      const recommendations = [
+        "Focus on quality over quantity with timeless pieces",
+        "Opt for clean lines and simple silhouettes",
+        "Stick to a neutral color palette with occasional subtle accent colors",
+        "Choose natural fabrics like cotton, linen, and wool",
+        "Look for functional details and avoid excessive embellishments"
+      ];
+      
+      localStorage.setItem('style-recommendations', JSON.stringify(recommendations));
+      
+      // Store a minimalist color palette
+      const outfitColors = {
+        top: "#FFFFFF",
+        bottom: "#333333",
+        shoes: "#000000",
+        accessories: "#CCCCCC"
+      };
+      
+      localStorage.setItem('outfit-colors', JSON.stringify(outfitColors));
+      console.log("Stored style recommendations and color palette");
+    } catch (error) {
+      console.error("Error storing data in localStorage:", error);
+    }
   } 
   // Otherwise use their color preferences if available
   else if (quizData.colorPreferences && quizData.colorPreferences.length > 0) {
@@ -65,7 +71,7 @@ export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
     console.log("Setting user style profile to Minimalist");
   }
   
-  return {
+  const result = {
     analysis: {
       styleProfile: styleProfile,
       bodyShape: quizData.bodyShape || "hourglass",
@@ -73,4 +79,7 @@ export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
       colorPreference: colorPreference
     }
   };
+  
+  console.log("Style analysis result:", result);
+  return result;
 };
