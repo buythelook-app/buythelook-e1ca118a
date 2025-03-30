@@ -1,3 +1,4 @@
+
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 import { EventType, EVENT_TO_STYLES } from "@/components/filters/eventTypes";
 
@@ -183,7 +184,45 @@ const hasNaturalColor = (item: any): boolean => {
     itemName.includes(color) || 
     itemDesc.includes(color)
   );
-}
+};
+
+// Helper function to check if shoes match minimalist style
+const isMinimalistShoe = (item: any): boolean => {
+  if (!item) return false;
+  
+  const itemName = (item.product_name || '').toLowerCase();
+  const itemDesc = (item.description || '').toLowerCase();
+  
+  // Shoe types that typically align with minimalist aesthetic
+  const minimalistShoeTypes = [
+    'loafer', 'oxford', 'flat', 'mule', 'slide', 'slip-on', 
+    'minimal', 'simple', 'clean', 'basic', 'leather'
+  ];
+  
+  // Shoe types that don't align with minimalist aesthetic
+  const nonMinimalistShoeTypes = [
+    'platform', 'chunky', 'glitter', 'sequin', 'embellish', 
+    'studs', 'spike', 'neon', 'bright', 'graphic', 'print', 
+    'pattern', 'floral', 'multi-color', 'multicolor'
+  ];
+  
+  // Check if the shoe has natural colors
+  const hasNatural = hasNaturalColor(item);
+  
+  // Check if the shoe type matches minimalist styles
+  const hasMinimalistType = minimalistShoeTypes.some(type => 
+    itemName.includes(type) || 
+    itemDesc.includes(type)
+  );
+  
+  // Check if the shoe has non-minimalist features
+  const hasNonMinimalistFeature = nonMinimalistShoeTypes.some(type => 
+    itemName.includes(type) || 
+    itemDesc.includes(type)
+  );
+  
+  return (hasNatural || hasMinimalistType) && !hasNonMinimalistFeature;
+};
 
 // Helper function to check if an item matches minimalist style
 const isMinimalistStyleItem = (item: any): boolean => {
@@ -220,8 +259,14 @@ const convertToDashboardItem = (item: any, type: string, userStyle: string = '')
   }
   
   if (userStyle === 'Minimalist') {
+    // Special handling for minimalist style filtering
     if (type === 'top' && !hasNaturalColor(item)) {
       console.log('Item does not have natural colors for minimalist style:', item.product_name);
+      return null;
+    }
+    
+    if (type === 'shoes' && !isMinimalistShoe(item)) {
+      console.log('Shoes do not match minimalist style criteria:', item.product_name);
       return null;
     }
     
@@ -279,21 +324,28 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
       let bestMatch = response.data[0];
       
       if (preferredStyle === 'Minimalist') {
+        // Find the best minimalist outfit from options
+        let bestMatchScore = 0;
+        
         for (const outfit of response.data) {
-          const topIsMinimalist = outfit.top ? isMinimalistStyleItem(outfit.top) : false;
-          const bottomIsMinimalist = outfit.bottom ? isMinimalistStyleItem(outfit.bottom) : false;
-          const shoesIsMinimalist = outfit.shoes ? isMinimalistStyleItem(outfit.shoes) : false;
+          let currentScore = 0;
           
-          const currentMatchCount = (topIsMinimalist ? 1 : 0) + (bottomIsMinimalist ? 1 : 0) + (shoesIsMinimalist ? 1 : 0);
-          const bestMatchCount = 
-            (bestMatch.top ? (isMinimalistStyleItem(bestMatch.top) ? 1 : 0) : 0) + 
-            (bestMatch.bottom ? (isMinimalistStyleItem(bestMatch.bottom) ? 1 : 0) : 0) + 
-            (bestMatch.shoes ? (isMinimalistStyleItem(bestMatch.shoes) ? 1 : 0) : 0);
+          if (outfit.top && hasNaturalColor(outfit.top)) currentScore += 2;
+          if (outfit.top && isMinimalistStyleItem(outfit.top)) currentScore += 1;
           
-          if (currentMatchCount > bestMatchCount) {
+          if (outfit.bottom && hasNaturalColor(outfit.bottom)) currentScore += 2;
+          if (outfit.bottom && isMinimalistStyleItem(outfit.bottom)) currentScore += 1;
+          
+          if (outfit.shoes && hasNaturalColor(outfit.shoes)) currentScore += 2;
+          if (outfit.shoes && isMinimalistShoe(outfit.shoes)) currentScore += 2;
+          
+          if (currentScore > bestMatchScore) {
+            bestMatchScore = currentScore;
             bestMatch = outfit;
           }
         }
+        
+        console.log(`Selected best minimalist outfit with score: ${bestMatchScore}`);
       }
       
       const top = convertToDashboardItem(bestMatch.top, 'top', preferredStyle);
