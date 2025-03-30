@@ -3,7 +3,16 @@ import { Button } from "../ui/button";
 import { DropdownMenuLabel } from "../ui/dropdown-menu";
 import { Color } from "./StyleFilterButton";
 
-const COLORS = ["All", "warm & cold", "natural", "monochrome", "highlight", "earth tones"] as const;
+// Added more minimalist-focused colors
+const COLORS = [
+  "All", 
+  "warm & cold", 
+  "natural", 
+  "monochrome", 
+  "highlight", 
+  "earth tones", 
+  "neutrals"
+] as const;
 
 interface ColorFilterProps {
   selectedColor: Color;
@@ -22,7 +31,11 @@ export const ColorFilter = ({ selectedColor, setSelectedColor }: ColorFilterProp
               variant={selectedColor === color ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedColor(color as Color)}
-              className={color === "natural" || color === "earth tones" ? "border-2 border-netflix-accent" : ""}
+              className={
+                (color === "natural" || color === "earth tones" || color === "neutrals" || color === "monochrome") 
+                ? "border-2 border-netflix-accent" 
+                : ""
+              }
             >
               {color}
             </Button>

@@ -1,3 +1,4 @@
+
 import { QuizFormData } from "@/components/quiz/types";
 
 interface StyleAnalysis {
@@ -15,7 +16,7 @@ export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
   let styleProfile = quizData.stylePreferences?.[0] || "Classic";
   
   // Transform user's style choices to match our style naming conventions
-  if (styleProfile === "Minimalist" || styleProfile === "Modern") {
+  if (styleProfile === "Minimalist" || styleProfile === "Modern" || styleProfile === "Nordic" || styleProfile === "Minimal") {
     // Consolidate the minimalist and modern styles as they're similar
     styleProfile = "Minimalist";
   }
@@ -26,6 +27,27 @@ export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
   // If the user has selected Minimalist style, prioritize neutral colors
   if (styleProfile === "Minimalist") {
     colorPreference = "neutral";
+    
+    // Store minimalist style recommendations
+    const recommendations = [
+      "Focus on quality over quantity with timeless pieces",
+      "Opt for clean lines and simple silhouettes",
+      "Stick to a neutral color palette with occasional subtle accent colors",
+      "Choose natural fabrics like cotton, linen, and wool",
+      "Look for functional details and avoid excessive embellishments"
+    ];
+    
+    localStorage.setItem('style-recommendations', JSON.stringify(recommendations));
+    
+    // Store a minimalist color palette
+    const outfitColors = {
+      top: "#FFFFFF",
+      bottom: "#333333",
+      shoes: "#000000",
+      accessories: "#CCCCCC"
+    };
+    
+    localStorage.setItem('outfit-colors', JSON.stringify(outfitColors));
   } 
   // Otherwise use their color preferences if available
   else if (quizData.colorPreferences && quizData.colorPreferences.length > 0) {
@@ -36,6 +58,11 @@ export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
     } else if (quizData.colorPreferences.includes("cool")) {
       colorPreference = "cool";
     }
+  }
+  
+  // Make minimalist more consistent in naming for API
+  if (styleProfile === "Minimalist") {
+    console.log("Setting user style profile to Minimalist");
   }
   
   return {

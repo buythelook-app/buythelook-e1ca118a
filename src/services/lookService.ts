@@ -1,3 +1,4 @@
+
 import { DashboardItem, OutfitItem, MinimalistCriteria } from "@/types/lookTypes";
 import { EventType, EVENT_TO_STYLES } from "@/components/filters/eventTypes";
 
@@ -194,42 +195,51 @@ const generateOutfit = async (bodyStructure: string, style: string, mood: string
     
     console.log('Generating outfit with params:', requestBody);
     
+    // Increase timeout to 30 seconds to allow for slower responses
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': API_KEY,
-        'Authorization': `Bearer ${API_KEY}`,
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(requestBody),
-      signal: controller.signal,
-      mode: 'cors',
-      credentials: 'omit'
-    });
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': API_KEY,
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+        mode: 'cors',
+        credentials: 'omit'
+      });
 
-    clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API Error Response:', errorText);
-      throw new Error(`API request failed: ${response.status} - ${errorText}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`API request failed: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('API response:', data);
+      
+      requestCache.set(cacheKey, data);
+      
+      if (requestCache.size > 20) {
+        const oldestKey = requestCache.keys().next().value;
+        requestCache.delete(oldestKey);
+      }
+      
+      return data;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        console.error('Request timed out after 30 seconds');
+      }
+      throw error;
     }
-
-    const data = await response.json();
-    console.log('API response:', data);
-    
-    requestCache.set(cacheKey, data);
-    
-    if (requestCache.size > 20) {
-      const oldestKey = requestCache.keys().next().value;
-      requestCache.delete(oldestKey);
-    }
-    
-    return data;
   } catch (error) {
     console.error('Error in generateOutfit:', error);
     throw error;
@@ -244,6 +254,7 @@ const extractText = (item: any): { name: string; description: string; color: str
   const color = (item.color || '').toLowerCase();
   const type = (item.type || item.category || '').toLowerCase();
   
+  // Extract materials mentioned in the item
   const materialMatches = MINIMALIST_CRITERIA.preferredMaterials.filter(material => 
     description.includes(material) || name.includes(material)
   );
@@ -287,6 +298,7 @@ const scoreItem = (item: any, type: 'top' | 'bottom' | 'shoes' | 'accessories'):
   let score = 0;
   const text = extractText(item);
   
+  // Score for natural colors
   if (MINIMALIST_CRITERIA.naturalColors.some(color => 
     text.name.includes(color) || 
     text.description.includes(color) ||
@@ -294,6 +306,7 @@ const scoreItem = (item: any, type: 'top' | 'bottom' | 'shoes' | 'accessories'):
     score += 15;
   }
   
+  // Score for preferred colors based on item type
   if (type in MINIMALIST_CRITERIA.preferredColors) {
     const preferredColors = MINIMALIST_CRITERIA.preferredColors[type as keyof typeof MINIMALIST_CRITERIA.preferredColors];
     if (preferredColors.some(color => 
@@ -304,20 +317,24 @@ const scoreItem = (item: any, type: 'top' | 'bottom' | 'shoes' | 'accessories'):
     }
   }
   
+  // Penalty for non-minimalist patterns
   if (hasNonMinimalistPattern(item)) {
     score -= 50;
   }
   
+  // Bonus for preferred materials
   text.materials.forEach(() => {
     score += 10;
   });
   
+  // Penalty for avoidance terms
   MINIMALIST_CRITERIA.avoidanceTerms.forEach(term => {
     if (text.name.includes(term) || text.description.includes(term)) {
       score -= 15;
     }
   });
   
+  // Bonus for preferred silhouettes
   if (type === 'top' && MINIMALIST_CRITERIA.silhouettes.top.some(silhouette => 
     text.description.includes(silhouette) || text.name.includes(silhouette))) {
     score += 15;
@@ -326,6 +343,7 @@ const scoreItem = (item: any, type: 'top' | 'bottom' | 'shoes' | 'accessories'):
     score += 15;
   }
   
+  // Bonus for explicit minimalist mentions
   if (text.name.includes('minimalist') || text.description.includes('minimalist') ||
       text.name.includes('minimal') || text.description.includes('minimal')) {
     score += 25;
@@ -339,6 +357,7 @@ const hasMinimalistColor = (item: any, preferredColors?: string[]): boolean => {
   
   const text = extractText(item);
   
+  // Check against preferred colors if provided
   if (preferredColors && preferredColors.length > 0) {
     if (preferredColors.some(color => 
       text.name.includes(color) || 
@@ -349,6 +368,7 @@ const hasMinimalistColor = (item: any, preferredColors?: string[]): boolean => {
     }
   }
   
+  // Check against natural colors
   return MINIMALIST_CRITERIA.naturalColors.some(color => 
     text.name.includes(color) || 
     text.description.includes(color) ||
@@ -361,15 +381,18 @@ const isMinimalistTop = (item: any): boolean => {
   
   const text = extractText(item);
   
+  // Check for non-minimalist patterns
   if (hasNonMinimalistPattern(item)) {
     console.log(`Top rejected (pattern/embellishment): ${text.name}`);
     return false;
   }
   
+  // Check for priority colors
   const hasPriorityColor = hasMinimalistColor(item, MINIMALIST_CRITERIA.preferredColors.top);
   if (hasPriorityColor) {
     console.log(`Top has priority color: ${text.name}`);
   } else {
+    // Check for natural colors
     const hasNeutralColor = hasMinimalistColor(item);
     if (!hasNeutralColor) {
       console.log(`Top rejected (non-neutral color): ${text.name}`);
@@ -377,12 +400,14 @@ const isMinimalistTop = (item: any): boolean => {
     }
   }
   
+  // Check for avoidance terms
   if (MINIMALIST_CRITERIA.avoidanceTerms.some(term => 
     text.name.includes(term) || text.description.includes(term))) {
     console.log(`Top rejected (non-minimalist term): ${text.name}`);
     return false;
   }
   
+  // Check for acceptable top types
   const isAcceptableType = MINIMALIST_CRITERIA.acceptableTopTypes.some(type => 
     text.name.includes(type) || 
     text.description.includes(type) ||
@@ -394,6 +419,7 @@ const isMinimalistTop = (item: any): boolean => {
     return true;
   }
   
+  // Conditionally accept based on color
   if (hasPriorityColor && !hasNonMinimalistPattern(item)) {
     console.log(`Top conditionally accepted (natural color, no pattern): ${text.name}`);
     return true;
@@ -408,15 +434,18 @@ const isMinimalistBottom = (item: any): boolean => {
   
   const text = extractText(item);
   
+  // Check for non-minimalist patterns
   if (hasNonMinimalistPattern(item)) {
     console.log(`Bottom rejected (pattern/embellishment): ${text.name}`);
     return false;
   }
   
+  // Check for priority colors
   const hasPriorityColor = hasMinimalistColor(item, MINIMALIST_CRITERIA.preferredColors.bottom);
   if (hasPriorityColor) {
     console.log(`Bottom has priority color: ${text.name}`);
   } else {
+    // Check for natural colors
     const hasNeutralColor = hasMinimalistColor(item);
     if (!hasNeutralColor) {
       console.log(`Bottom rejected (non-neutral color): ${text.name}`);
@@ -424,12 +453,14 @@ const isMinimalistBottom = (item: any): boolean => {
     }
   }
   
+  // Check for avoidance terms
   if (MINIMALIST_CRITERIA.avoidanceTerms.some(term => 
     text.name.includes(term) || text.description.includes(term))) {
     console.log(`Bottom rejected (non-minimalist term): ${text.name}`);
     return false;
   }
   
+  // Check for acceptable bottom types
   const isAcceptableType = MINIMALIST_CRITERIA.acceptableBottomTypes.some(type => 
     text.name.includes(type) || 
     text.description.includes(type) ||
@@ -441,6 +472,7 @@ const isMinimalistBottom = (item: any): boolean => {
     return true;
   }
   
+  // Conditionally accept based on color
   if (hasPriorityColor && !hasNonMinimalistPattern(item)) {
     console.log(`Bottom conditionally accepted (natural color, no pattern): ${text.name}`);
     return true;
@@ -464,6 +496,7 @@ const isMinimalistShoe = (item: any): boolean => {
     'statement', 'flamboyant', 'gaudy', 'extravagant'
   ];
   
+  // Check for non-minimalist features
   const hasNonMinimalistFeature = nonMinimalistShoeTerms.some(term => 
     text.name.includes(term) || 
     text.description.includes(term)
@@ -474,10 +507,12 @@ const isMinimalistShoe = (item: any): boolean => {
     return false;
   }
   
+  // Check for priority colors
   const hasPriorityColor = hasMinimalistColor(item, MINIMALIST_CRITERIA.preferredColors.shoes);
   if (hasPriorityColor) {
     console.log(`Shoes have priority color: ${text.name}`);
   } else {
+    // Check for natural colors
     const hasNeutralColor = hasMinimalistColor(item);
     if (!hasNeutralColor) {
       console.log(`Shoes rejected (non-neutral color): ${text.name}`);
@@ -485,6 +520,7 @@ const isMinimalistShoe = (item: any): boolean => {
     }
   }
   
+  // Check for acceptable shoe types
   const isAcceptableType = MINIMALIST_CRITERIA.acceptableShoeTypes.some(type => 
     text.name.includes(type) || 
     text.description.includes(type)
@@ -495,6 +531,7 @@ const isMinimalistShoe = (item: any): boolean => {
     return true;
   }
   
+  // Conditionally accept based on color
   if (hasPriorityColor && !hasNonMinimalistPattern(item)) {
     console.log(`Shoes conditionally accepted (natural color, no pattern): ${text.name}`);
     return true;
@@ -586,20 +623,23 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
 
     console.log("Using user's preferred style from quiz:", preferredStyle);
 
+    // Reduce to 5 parallel requests to avoid timeouts
     const promises = [];
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 5; i++) {
       promises.push(generateOutfit(bodyShape, style, mood));
     }
     
-    const responses = await Promise.all(promises);
+    // Handle possible API timeouts
+    const responses = await Promise.allSettled(promises);
     
     const allTops: any[] = [];
     const allBottoms: any[] = [];
     const allShoes: any[] = [];
     
-    responses.forEach(response => {
-      if (Array.isArray(response.data)) {
-        response.data.forEach(outfit => {
+    // Process successful responses
+    responses.forEach(result => {
+      if (result.status === 'fulfilled' && result.value && Array.isArray(result.value.data)) {
+        result.value.data.forEach((outfit: any) => {
           if (outfit.top) allTops.push(outfit.top);
           if (outfit.bottom) allBottoms.push(outfit.bottom);
           if (outfit.shoes) allShoes.push(outfit.shoes);
@@ -609,68 +649,95 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     
     console.log(`Found ${allTops.length} tops, ${allBottoms.length} bottoms, and ${allShoes.length} shoes to filter`);
     
-    const filteredTops = allTops
-      .filter(top => isMinimalistTop(top))
-      .sort((a, b) => scoreItem(b, 'top') - scoreItem(a, 'top'));
-    
-    const filteredBottoms = allBottoms
-      .filter(bottom => isMinimalistBottom(bottom))
-      .sort((a, b) => scoreItem(b, 'bottom') - scoreItem(a, 'bottom'));
-    
-    const filteredShoes = allShoes
-      .filter(shoes => isMinimalistShoe(shoes))
-      .sort((a, b) => scoreItem(b, 'shoes') - scoreItem(a, 'shoes'));
-    
-    console.log(`After filtering: ${filteredTops.length} tops, ${filteredBottoms.length} bottoms, and ${filteredShoes.length} shoes match minimalist criteria`);
-    
-    const topItem = filteredTops.length > 0 ? convertToDashboardItem(filteredTops[0], 'top', preferredStyle) : null;
-    const bottomItem = filteredBottoms.length > 0 ? convertToDashboardItem(filteredBottoms[0], 'bottom', preferredStyle) : null;
-    const shoesItem = filteredShoes.length > 0 ? convertToDashboardItem(filteredShoes[0], 'shoes', preferredStyle) : null;
-    
-    const items: DashboardItem[] = [];
-    
-    if (topItem) {
-      items.push(topItem);
-      console.log("Selected minimalist top:", topItem.name);
-    }
-    
-    if (bottomItem) {
-      items.push(bottomItem);
-      console.log("Selected minimalist bottom:", bottomItem.name);
-    }
-    
-    if (shoesItem) {
-      items.push(shoesItem);
-      console.log("Selected minimalist shoes:", shoesItem.name);
-    }
-    
-    if (items.length < 2 && allTops.length > 0 && !topItem) {
-      const fallbackTop = convertToDashboardItem(allTops[0], 'top');
-      if (fallbackTop) {
-        items.push(fallbackTop);
-        console.log("Added fallback top (not strictly minimalist):", fallbackTop.name);
+    // Apply strict minimalist filtering for Minimalist style preference
+    if (preferredStyle === 'Minimalist') {
+      console.log("Applying strict minimalist filtering");
+      
+      const filteredTops = allTops
+        .filter(top => isMinimalistTop(top))
+        .sort((a, b) => scoreItem(b, 'top') - scoreItem(a, 'top'));
+      
+      const filteredBottoms = allBottoms
+        .filter(bottom => isMinimalistBottom(bottom))
+        .sort((a, b) => scoreItem(b, 'bottom') - scoreItem(a, 'bottom'));
+      
+      const filteredShoes = allShoes
+        .filter(shoes => isMinimalistShoe(shoes))
+        .sort((a, b) => scoreItem(b, 'shoes') - scoreItem(a, 'shoes'));
+      
+      console.log(`After filtering: ${filteredTops.length} tops, ${filteredBottoms.length} bottoms, and ${filteredShoes.length} shoes match minimalist criteria`);
+      
+      const topItem = filteredTops.length > 0 ? convertToDashboardItem(filteredTops[0], 'top', preferredStyle) : null;
+      const bottomItem = filteredBottoms.length > 0 ? convertToDashboardItem(filteredBottoms[0], 'bottom', preferredStyle) : null;
+      const shoesItem = filteredShoes.length > 0 ? convertToDashboardItem(filteredShoes[0], 'shoes', preferredStyle) : null;
+      
+      const items: DashboardItem[] = [];
+      
+      if (topItem) {
+        items.push(topItem);
+        console.log("Selected minimalist top:", topItem.name);
       }
-    }
-    
-    if (items.length < 2 && allBottoms.length > 0 && !bottomItem) {
-      const fallbackBottom = convertToDashboardItem(allBottoms[0], 'bottom');
-      if (fallbackBottom) {
-        items.push(fallbackBottom);
-        console.log("Added fallback bottom (not strictly minimalist):", fallbackBottom.name);
+      
+      if (bottomItem) {
+        items.push(bottomItem);
+        console.log("Selected minimalist bottom:", bottomItem.name);
       }
-    }
-    
-    if (items.length < 3 && allShoes.length > 0 && !shoesItem) {
-      const fallbackShoes = convertToDashboardItem(allShoes[0], 'shoes');
-      if (fallbackShoes) {
-        items.push(fallbackShoes);
-        console.log("Added fallback shoes (not strictly minimalist):", fallbackShoes.name);
+      
+      if (shoesItem) {
+        items.push(shoesItem);
+        console.log("Selected minimalist shoes:", shoesItem.name);
       }
+      
+      // Fallback to less strict criteria if not enough items found
+      if (items.length < 2 && allTops.length > 0 && !topItem) {
+        const fallbackTop = convertToDashboardItem(allTops[0], 'top');
+        if (fallbackTop) {
+          items.push(fallbackTop);
+          console.log("Added fallback top (not strictly minimalist):", fallbackTop.name);
+        }
+      }
+      
+      if (items.length < 2 && allBottoms.length > 0 && !bottomItem) {
+        const fallbackBottom = convertToDashboardItem(allBottoms[0], 'bottom');
+        if (fallbackBottom) {
+          items.push(fallbackBottom);
+          console.log("Added fallback bottom (not strictly minimalist):", fallbackBottom.name);
+        }
+      }
+      
+      if (items.length < 3 && allShoes.length > 0 && !shoesItem) {
+        const fallbackShoes = convertToDashboardItem(allShoes[0], 'shoes');
+        if (fallbackShoes) {
+          items.push(fallbackShoes);
+          console.log("Added fallback shoes (not strictly minimalist):", fallbackShoes.name);
+        }
+      }
+      
+      console.log('Final outfit items:', items);
+      return items;
+    } else {
+      // For non-minimalist styles, just use the first items found
+      console.log("Using regular filtering for non-minimalist style");
+      
+      const items: DashboardItem[] = [];
+      
+      if (allTops.length > 0) {
+        const topItem = convertToDashboardItem(allTops[0], 'top');
+        if (topItem) items.push(topItem);
+      }
+      
+      if (allBottoms.length > 0) {
+        const bottomItem = convertToDashboardItem(allBottoms[0], 'bottom');
+        if (bottomItem) items.push(bottomItem);
+      }
+      
+      if (allShoes.length > 0) {
+        const shoesItem = convertToDashboardItem(allShoes[0], 'shoes');
+        if (shoesItem) items.push(shoesItem);
+      }
+      
+      return items;
     }
-    
-    console.log('Final outfit items:', items);
-    
-    return items;
   } catch (error) {
     console.error('Error in fetchFirstOutfitSuggestion:', error);
     throw error;
