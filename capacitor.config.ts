@@ -1,3 +1,4 @@
+
 import { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
@@ -25,6 +26,9 @@ const config: CapacitorConfig = {
     },
     CapacitorCookies: {
       enabled: true
+    },
+    Browser: {
+      presentationStyle: 'popover'
     }
   },
   android: {

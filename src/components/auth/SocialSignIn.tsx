@@ -1,10 +1,10 @@
+
 import { Button } from "@/components/ui/button";
 import { Bot } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-// Most reliable approach: No shims, no complex handlers, just direct browser redirection
 export const SocialSignIn = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<{[key: string]: boolean}>({
@@ -12,37 +12,62 @@ export const SocialSignIn = () => {
     apple: false,
     ai: false
   });
+  
+  // Store the redirect URL after component mount
+  const [redirectUrl, setRedirectUrl] = useState("");
+  
+  useEffect(() => {
+    // Get the base URL for the current environment - using document.location is more reliable
+    const baseUrl = window.location.origin;
+    const redirectPath = "/auth"; // Path to redirect to after auth
+    setRedirectUrl(baseUrl + redirectPath);
+    
+    console.log("Base URL for auth redirect set to:", baseUrl + redirectPath);
+  }, []);
 
-  // DIRECT APPROACH: Minimal code to ensure it works
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(prev => ({ ...prev, google: true }));
       
-      // Get the base URL for the current environment
-      const baseUrl = window.location.origin;
-      console.log("Base URL detected:", baseUrl);
+      if (!redirectUrl) {
+        console.error("Redirect URL not set");
+        throw new Error("Could not determine app URL for authentication");
+      }
       
       toast({
         title: "Google Sign In",
         description: "Connecting to Google...",
       });
       
+      const isNative = window.Capacitor?.isNativePlatform?.() || false;
+      console.log(`Running on ${isNative ? 'native' : 'web'} platform`);
+      
       // Create the OAuth request with Supabase
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: baseUrl + '/auth',
+          redirectTo: redirectUrl,
+          // Important: This allows the app to handle the redirect
+          skipBrowserRedirect: isNative,
         }
       });
       
-      // Directly handle the URL - most reliable approach
       if (error) throw error;
       
-      // Log the URL we'll redirect to
-      console.log("OAuth URL:", data?.url);
+      if (!data?.url) {
+        throw new Error("No authentication URL returned from Supabase");
+      }
       
-      if (data?.url) {
-        // Redirect directly - proven approach
+      console.log("OAuth URL:", data.url);
+      
+      // Handle differently based on platform
+      if (isNative && window.Browser?.open) {
+        // Use Capacitor Browser plugin on native platforms
+        console.log("Opening OAuth URL with Capacitor Browser");
+        await window.Browser.open({ url: data.url });
+      } else {
+        // Fall back to direct navigation on web
+        console.log("Redirecting using window.location");
         window.location.href = data.url;
       }
     } catch (error: any) {

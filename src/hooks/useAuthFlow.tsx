@@ -20,28 +20,36 @@ export const useAuthFlow = () => {
       
       // Only set up listener if App is available
       if (window.App?.addListener) {
-        appUrlListener = window.App.addListener('appUrlOpen', async (data) => {
+        appUrlListener = window.App.addListener('appUrlOpen', async (data: { url: string }) => {
           console.log('Deep link received in useAuthFlow:', data.url);
           
-          if (data.url.includes('auth') && isMounted) {
+          if ((data.url.includes('auth') || data.url.includes('callback')) && isMounted) {
             setIsLoading(true);
             
             try {
-              // After deep link is received, verify session
-              const { data: sessionData, error } = await supabase.auth.getSession();
-              
-              if (error) throw error;
-              
-              if (sessionData.session) {
-                console.log("Session found after deep link:", sessionData.session.user?.id);
-                toast({
-                  title: "Success",
-                  description: "You have been signed in successfully.",
-                });
-                navigate('/home');
-              } else {
-                console.log("No session after deep link");
-                setIsLoading(false);
+              // Process the URL to handle the authentication
+              if (data.url.includes('google') || data.url.includes('token=') || data.url.includes('code=')) {
+                console.log('OAuth callback detected, handling authentication');
+                
+                // Allow a brief moment for the OAuth process to complete
+                setTimeout(async () => {
+                  // Verify session after receiving the callback
+                  const { data: sessionData, error } = await supabase.auth.getSession();
+                  
+                  if (error) throw error;
+                  
+                  if (sessionData.session) {
+                    console.log("Session found after deep link:", sessionData.session.user?.id);
+                    toast({
+                      title: "Success",
+                      description: "You have been signed in successfully.",
+                    });
+                    navigate('/home');
+                  } else {
+                    console.log("No session after deep link");
+                    setIsLoading(false);
+                  }
+                }, 500);
               }
             } catch (error: any) {
               console.error("Deep link auth error:", error);
@@ -173,10 +181,7 @@ export const useAuthFlow = () => {
       subscription.unsubscribe();
       
       // Clean up app listener if on native platform
-      if (window.Capacitor?.isNativePlatform?.() && window.App?.removeAllListeners) {
-        window.App.removeAllListeners();
-      } else if (appUrlListener) {
-        // If we have a listener reference, remove it directly
+      if (window.Capacitor?.isNativePlatform?.() && appUrlListener) {
         appUrlListener.remove();
       }
     };
