@@ -39,11 +39,31 @@ export const hasPatternInName = (item: any): boolean => {
 export const hasSolidColorIndicator = (item: any): boolean => {
   if (!item) return false;
   
-  const solidTerms = ['solid', 'plain', 'basic', 'simple', 'minimal', 'clean', 'monochrome'];
+  // Enhanced list of terms that indicate solid colors
+  const solidTerms = [
+    'solid', 'plain', 'basic', 'simple', 'minimal', 'clean', 'monochrome',
+    'single color', 'one color', 'solid color', 'block color', 'undecorated',
+    'uniform', 'solid-colored', 'minimalist'
+  ];
+  
+  // Color names often indicate solid colors
+  const colorNames = [
+    'white', 'black', 'blue', 'red', 'green', 'yellow', 'purple', 
+    'orange', 'pink', 'brown', 'gray', 'grey', 'beige', 'cream', 
+    'ivory', 'navy', 'olive', 'tan'
+  ];
+  
   const name = (item.product_name || item.name || '').toLowerCase();
   const description = (item.description || '').toLowerCase();
   
-  return solidTerms.some(term => name.includes(term) || description.includes(term));
+  // Check if name contains solid terms
+  const hasSolidTerm = solidTerms.some(term => name.includes(term) || description.includes(term));
+  
+  // Check if name has a color but no pattern terms
+  const hasColorName = colorNames.some(color => (name.includes(color) || description.includes(color)));
+  const hasNoPatternTerm = !hasPatternInName(item);
+  
+  return hasSolidTerm || (hasColorName && hasNoPatternTerm);
 };
 
 export const convertToDashboardItem = (item: any, type: string, userStyle: string = ''): DashboardItem | null => {

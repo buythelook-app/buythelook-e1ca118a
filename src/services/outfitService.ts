@@ -1,3 +1,4 @@
+
 /**
  * Service for fetching and generating outfit suggestions
  */
@@ -5,7 +6,7 @@
 import { DashboardItem } from "@/types/lookTypes";
 import { generateOutfit } from "./api/outfitApi";
 import { mapBodyShape, mapStyle, getEventStyles } from "./mappers/styleMappers";
-import { convertToDashboardItem, getItemIdentifier, hasSolidColorIndicator } from "./outfitFactory";
+import { convertToDashboardItem, getItemIdentifier, hasSolidColorIndicator, hasPatternInName } from "./outfitFactory";
 import { isMinimalistTop, isMinimalistBottom, isMinimalistShoe } from "./filters/minimalistStyleCheckers";
 import { scoreItem } from "./filters/styleFilters";
 
@@ -21,6 +22,31 @@ const validateMood = (mood: string | null): string => {
     return "energized";
   }
   return mood.toLowerCase();
+};
+
+// Fallback items in case API returns nothing
+const fallbackItems = {
+  top: {
+    product_id: "fallback-top-1",
+    product_name: "Minimalist Cotton T-Shirt",
+    description: "A simple, versatile white cotton t-shirt with a clean silhouette",
+    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    price: "29.99"
+  },
+  bottom: {
+    product_id: "fallback-bottom-1",
+    product_name: "Solid Relaxed Trousers",
+    description: "Clean-lined neutral trousers with a relaxed fit",
+    image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    price: "49.99"
+  },
+  shoes: {
+    product_id: "fallback-shoes-1",
+    product_name: "Minimal Leather Sneakers",
+    description: "Simple white leather sneakers with clean lines",
+    image: "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    price: "89.99"
+  }
 };
 
 export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => {
@@ -41,9 +67,9 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
 
     console.log("Using user's preferred style from quiz:", preferredStyle);
 
-    // Increase to 24 parallel requests for better chance of finding truly solid color items
+    // Increase to only 12 parallel requests to avoid too many timeouts
     const promises = [];
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 12; i++) {
       promises.push(generateOutfit(bodyShape, style, mood));
     }
     
@@ -66,6 +92,26 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     });
     
     console.log(`Found ${allTops.length} tops, ${allBottoms.length} bottoms, and ${allShoes.length} shoes to filter`);
+    
+    // If we have no items at all from the API, use fallback items
+    if (allTops.length === 0 && allBottoms.length === 0 && allShoes.length === 0) {
+      console.log("No items returned from API, using fallback items");
+      const items: DashboardItem[] = [];
+      
+      // Add fallback top
+      const topItem = convertToDashboardItem(fallbackItems.top, 'top', preferredStyle);
+      if (topItem) items.push(topItem);
+      
+      // Add fallback bottom
+      const bottomItem = convertToDashboardItem(fallbackItems.bottom, 'bottom', preferredStyle);
+      if (bottomItem) items.push(bottomItem);
+      
+      // Add fallback shoes
+      const shoesItem = convertToDashboardItem(fallbackItems.shoes, 'shoes', preferredStyle);
+      if (shoesItem) items.push(shoesItem);
+      
+      return items;
+    }
     
     // Special handling for Minimalist style preference with improved filtering
     if (preferredStyle === 'Minimalist') {
@@ -96,22 +142,8 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
           }
           
           // Explicitly filter out gingham/checked/textured items
-          if (name.includes("gingham") || 
-              name.includes("check") || 
-              name.includes("plaid") || 
-              name.includes("texture") || 
-              name.includes("print")) {
+          if (hasPatternInName(top)) {
             console.log(`Explicitly rejected patterned top: ${name}`);
-            return false;
-          }
-          
-          // Pattern indication in description
-          if (description.includes("pattern") || 
-              description.includes("gingham") || 
-              description.includes("check") || 
-              description.includes("texture") || 
-              description.includes("print")) {
-            console.log(`Rejected top with pattern in description: ${name}`);
             return false;
           }
           
@@ -140,14 +172,8 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
           const name = (bottom.product_name || bottom.name || "").toLowerCase();
           const description = (bottom.description || "").toLowerCase();
           
-          // Check for specific pattern terms
-          if (name.includes("square") || description.includes("square") ||
-              name.includes("pattern") || description.includes("pattern") ||
-              name.includes("gingham") || description.includes("gingham") ||
-              name.includes("plaid") || description.includes("plaid") ||
-              name.includes("check") || description.includes("check") ||
-              name.includes("textured") || description.includes("textured") ||
-              name.includes("print") || description.includes("print")) {
+          // Check for pattern terms
+          if (hasPatternInName(bottom)) {
             console.log(`Explicitly rejected patterned bottom: ${name}`);
             return false;
           }
@@ -156,18 +182,11 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
         })
         .sort((a, b) => {
           // Prioritize items with "solid" or "plain" in their name/description
-          const aName = (a.product_name || a.name || "").toLowerCase();
-          const aDesc = (a.description || "").toLowerCase();
-          const bName = (b.product_name || b.name || "").toLowerCase();
-          const bDesc = (b.description || "").toLowerCase();
+          const aSolid = hasSolidColorIndicator(a);
+          const bSolid = hasSolidColorIndicator(b);
           
-          const aHasSolid = aName.includes("solid") || aDesc.includes("solid") || 
-                            aName.includes("plain") || aDesc.includes("plain");
-          const bHasSolid = bName.includes("solid") || bDesc.includes("solid") ||
-                            bName.includes("plain") || bDesc.includes("plain");
-          
-          if (aHasSolid && !bHasSolid) return -1;
-          if (!aHasSolid && bHasSolid) return 1;
+          if (aSolid && !bSolid) return -1;
+          if (!aSolid && bSolid) return 1;
           
           return scoreItem(b, 'bottom') - scoreItem(a, 'bottom');
         });
@@ -178,22 +197,30 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
           const name = (shoes.product_name || shoes.name || "").toLowerCase();
           const description = (shoes.description || "").toLowerCase();
           
-          // Check for specific pattern terms
-          if (name.includes("pattern") || description.includes("pattern") ||
-              name.includes("print") || description.includes("print")) {
+          // Check for pattern terms
+          if (hasPatternInName(shoes)) {
             console.log(`Explicitly rejected patterned shoes: ${name}`);
             return false;
           }
           
           return isMinimalistShoe(shoes);
         })
-        .sort((a, b) => scoreItem(b, 'shoes') - scoreItem(a, 'shoes'));
+        .sort((a, b) => {
+          // Prioritize items with "solid" in their name/description
+          const aSolid = hasSolidColorIndicator(a);
+          const bSolid = hasSolidColorIndicator(b);
+          
+          if (aSolid && !bSolid) return -1;
+          if (!aSolid && bSolid) return 1;
+          
+          return scoreItem(b, 'shoes') - scoreItem(a, 'shoes');
+        });
       
       console.log(`After filtering: ${filteredTops.length} tops, ${filteredBottoms.length} bottoms, and ${filteredShoes.length} shoes match minimalist criteria`);
       
       const items: DashboardItem[] = [];
       
-      // Find a top that hasn't been shown recently
+      // Add tops
       if (filteredTops.length > 0) {
         // Get a new top that wasn't recently shown
         const selectedTop = filteredTops[0];
@@ -209,57 +236,65 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
           items.push(topItem);
           console.log("Selected minimalist top:", topItem.name);
         }
+      } else if (allTops.length > 0) {
+        // Fallback to any top if no minimalist tops
+        const topItem = convertToDashboardItem(allTops[0], 'top', preferredStyle);
+        if (topItem) {
+          items.push(topItem);
+          console.log("Selected fallback top:", topItem.name);
+        }
+      } else {
+        // Use hardcoded fallback
+        const topItem = convertToDashboardItem(fallbackItems.top, 'top', preferredStyle);
+        if (topItem) {
+          items.push(topItem);
+          console.log("Selected hardcoded fallback top");
+        }
       }
       
-      // Add bottom and shoes
+      // Add bottom
       if (filteredBottoms.length > 0) {
         const bottomItem = convertToDashboardItem(filteredBottoms[0], 'bottom', preferredStyle);
         if (bottomItem) {
           items.push(bottomItem);
           console.log("Selected minimalist bottom:", bottomItem.name);
         }
+      } else if (allBottoms.length > 0) {
+        // Fallback to any bottom
+        const bottomItem = convertToDashboardItem(allBottoms[0], 'bottom', preferredStyle);
+        if (bottomItem) {
+          items.push(bottomItem);
+          console.log("Selected fallback bottom:", bottomItem.name);
+        }
+      } else {
+        // Use hardcoded fallback
+        const bottomItem = convertToDashboardItem(fallbackItems.bottom, 'bottom', preferredStyle);
+        if (bottomItem) {
+          items.push(bottomItem);
+          console.log("Selected hardcoded fallback bottom");
+        }
       }
       
+      // Add shoes
       if (filteredShoes.length > 0) {
         const shoesItem = convertToDashboardItem(filteredShoes[0], 'shoes', preferredStyle);
         if (shoesItem) {
           items.push(shoesItem);
           console.log("Selected minimalist shoes:", shoesItem.name);
         }
-      }
-      
-      // Improved fallback mechanism if we're missing items
-      if (items.length < 3) {
-        // Sort all items by score to get the most minimalist-like ones
-        const sortedTops = allTops.sort((a, b) => scoreItem(b, 'top') - scoreItem(a, 'top'));
-        const sortedBottoms = allBottoms.sort((a, b) => scoreItem(b, 'bottom') - scoreItem(a, 'bottom'));
-        const sortedShoes = allShoes.sort((a, b) => scoreItem(b, 'shoes') - scoreItem(a, 'shoes'));
-        
-        // Add top if needed
-        if (!items.some(item => item.type === 'top') && sortedTops.length > 0) {
-          const fallbackTop = convertToDashboardItem(sortedTops[0], 'top', preferredStyle);
-          if (fallbackTop) {
-            items.push(fallbackTop);
-            console.log("Added fallback top:", fallbackTop.name);
-          }
+      } else if (allShoes.length > 0) {
+        // Fallback to any shoes
+        const shoesItem = convertToDashboardItem(allShoes[0], 'shoes', preferredStyle);
+        if (shoesItem) {
+          items.push(shoesItem);
+          console.log("Selected fallback shoes:", shoesItem.name);
         }
-        
-        // Add bottom if needed
-        if (!items.some(item => item.type === 'bottom') && sortedBottoms.length > 0) {
-          const fallbackBottom = convertToDashboardItem(sortedBottoms[0], 'bottom', preferredStyle);
-          if (fallbackBottom) {
-            items.push(fallbackBottom);
-            console.log("Added fallback bottom:", fallbackBottom.name);
-          }
-        }
-        
-        // Add shoes if needed
-        if (!items.some(item => item.type === 'shoes') && sortedShoes.length > 0) {
-          const fallbackShoes = convertToDashboardItem(sortedShoes[0], 'shoes', preferredStyle);
-          if (fallbackShoes) {
-            items.push(fallbackShoes);
-            console.log("Added fallback shoes:", fallbackShoes.name);
-          }
+      } else {
+        // Use hardcoded fallback
+        const shoesItem = convertToDashboardItem(fallbackItems.shoes, 'shoes', preferredStyle);
+        if (shoesItem) {
+          items.push(shoesItem);
+          console.log("Selected hardcoded fallback shoes");
         }
       }
       
@@ -273,15 +308,24 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
       if (allTops.length > 0) {
         const topItem = convertToDashboardItem(allTops[0], 'top');
         if (topItem) items.push(topItem);
+      } else {
+        const topItem = convertToDashboardItem(fallbackItems.top, 'top');
+        if (topItem) items.push(topItem);
       }
       
       if (allBottoms.length > 0) {
         const bottomItem = convertToDashboardItem(allBottoms[0], 'bottom');
         if (bottomItem) items.push(bottomItem);
+      } else {
+        const bottomItem = convertToDashboardItem(fallbackItems.bottom, 'bottom');
+        if (bottomItem) items.push(bottomItem);
       }
       
       if (allShoes.length > 0) {
         const shoesItem = convertToDashboardItem(allShoes[0], 'shoes');
+        if (shoesItem) items.push(shoesItem);
+      } else {
+        const shoesItem = convertToDashboardItem(fallbackItems.shoes, 'shoes');
         if (shoesItem) items.push(shoesItem);
       }
       
@@ -289,6 +333,19 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     }
   } catch (error) {
     console.error('Error in fetchFirstOutfitSuggestion:', error);
-    throw error;
+    
+    // Provide fallback outfit in case of errors
+    const items: DashboardItem[] = [];
+    
+    const topItem = convertToDashboardItem(fallbackItems.top, 'top');
+    if (topItem) items.push(topItem);
+    
+    const bottomItem = convertToDashboardItem(fallbackItems.bottom, 'bottom');
+    if (bottomItem) items.push(bottomItem);
+    
+    const shoesItem = convertToDashboardItem(fallbackItems.shoes, 'shoes');
+    if (shoesItem) items.push(shoesItem);
+    
+    return items;
   }
 };
