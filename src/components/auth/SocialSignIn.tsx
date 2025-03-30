@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Bot } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -39,51 +38,29 @@ export const SocialSignIn = () => {
         description: "Connecting to Google...",
       });
       
-      const isNative = window.Capacitor?.isNativePlatform?.() || false;
-      console.log(`Running on ${isNative ? 'native' : 'web'} platform`);
+      console.log("Starting Google sign-in with redirect URL:", redirectUrl);
       
-      // For web preview - use direct redirect approach
-      if (!isNative) {
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: redirectUrl,
-            skipBrowserRedirect: false, // Important: Let Supabase handle redirect on web
-          }
-        });
-        
-        if (error) throw error;
-        
-        // In web preview, Supabase handles the redirect
-        console.log("Web OAuth flow initiated, Supabase will handle redirect");
-        return;
-      }
-      
-      // For native platforms - use in-app browser
+      // Always use this approach for web
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          skipBrowserRedirect: true, // Important: We'll handle the redirect ourselves
+          skipBrowserRedirect: false, // Let Supabase handle redirect for both web and mobile
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       });
       
-      if (error) throw error;
-      
-      if (!data?.url) {
-        throw new Error("No authentication URL returned from Supabase");
+      if (error) {
+        console.error("Error during OAuth setup:", error);
+        throw error;
       }
       
-      console.log("Native OAuth URL:", data.url);
+      // No need to manually redirect - Supabase will handle it
+      console.log("OAuth flow initiated, waiting for redirect");
       
-      // Use Capacitor Browser plugin on native platforms
-      if (window.Browser?.open) {
-        console.log("Opening OAuth URL with Capacitor Browser");
-        await window.Browser.open({ url: data.url });
-      } else {
-        console.error("Browser plugin not available");
-        throw new Error("Browser plugin not available for authentication");
-      }
     } catch (error: any) {
       console.error("Google sign-in error:", error);
       
