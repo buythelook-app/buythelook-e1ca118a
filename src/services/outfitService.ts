@@ -9,6 +9,7 @@ import { mapBodyShape, mapStyle, getEventStyles } from "./mappers/styleMappers";
 import { convertToDashboardItem, getItemIdentifier } from "./outfitFactory";
 import { isMinimalistTop, isMinimalistBottom, isMinimalistShoe } from "./filters/minimalistStyleCheckers";
 import { scoreItem } from "./filters/styleFilters";
+import { supabase } from "@/lib/supabase";
 
 // Fallback items for when API doesn't return anything useful
 const FALLBACK_ITEMS = {
@@ -52,6 +53,37 @@ const validateMood = (mood: string | null): string => {
   return mood.toLowerCase();
 };
 
+const fetchItemsByType = async (type: string): Promise<DashboardItem[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('items')
+      .select('*')
+      .eq('type', type);
+    
+    if (error) {
+      console.error(`Error fetching ${type} items:`, error);
+      return [];
+    }
+    
+    if (!data || data.length === 0) {
+      console.log(`No ${type} items found in database`);
+      return [];
+    }
+    
+    return data.map(item => ({
+      id: item.id,
+      name: item.name,
+      description: item.description || `Stylish ${type}`,
+      image: item.image || '',
+      price: item.price || '$49.99',
+      type: type
+    }));
+  } catch (e) {
+    console.error(`Error in fetchItemsByType for ${type}:`, e);
+    return [];
+  }
+};
+
 export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => {
   try {
     console.log("Starting to fetch outfit suggestions");
@@ -79,6 +111,29 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     const mood = validateMood(currentMood);
     console.log("Using mood:", mood);
 
+    // First, try to fetch items from Supabase
+    console.log("Attempting to fetch items from Supabase database");
+    const databaseTops = await fetchItemsByType('top');
+    const databaseBottoms = await fetchItemsByType('bottom');
+    const databaseShoes = await fetchItemsByType('shoes');
+    
+    console.log(`Found ${databaseTops.length} tops, ${databaseBottoms.length} bottoms, and ${databaseShoes.length} shoes in database`);
+    
+    // If we have enough items in the database, use them
+    if (databaseTops.length > 0 && databaseBottoms.length > 0 && databaseShoes.length > 0) {
+      console.log("Using items from database for outfit");
+      
+      // Sort database items randomly to get variety
+      const randomTop = databaseTops[Math.floor(Math.random() * databaseTops.length)];
+      const randomBottom = databaseBottoms[Math.floor(Math.random() * databaseBottoms.length)];
+      const randomShoes = databaseShoes[Math.floor(Math.random() * databaseShoes.length)];
+      
+      return [randomTop, randomBottom, randomShoes];
+    }
+    
+    // Fallback to API if database doesn't have enough items
+    console.log("Not enough items in database, falling back to API");
+    
     // Make API requests for outfit suggestions
     const requests = 8; // Increased for better chances of complete outfits
     const promises = [];
@@ -108,7 +163,7 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
       }
     });
     
-    console.log(`Found ${allTops.length} tops, ${allBottoms.length} bottoms, and ${allShoes.length} shoes`);
+    console.log(`Found ${allTops.length} tops, ${allBottoms.length} bottoms, and ${allShoes.length} shoes from API`);
     
     // Create the final outfit items array
     const items: DashboardItem[] = [];
