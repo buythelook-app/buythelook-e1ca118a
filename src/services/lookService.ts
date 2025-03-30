@@ -289,6 +289,47 @@ const isMinimalistTop = (item: any): boolean => {
   return false;
 };
 
+const isMinimalistBottom = (item: any): boolean => {
+  if (!item) return false;
+  
+  const text = extractText(item);
+  
+  if (hasNonMinimalistPattern(item)) {
+    console.log(`Bottom rejected (pattern/embellishment): ${text.name}`);
+    return false;
+  }
+  
+  const hasPriorityColor = hasMinimalistColor(item, MINIMALIST_CRITERIA.preferredColors.bottom);
+  if (hasPriorityColor) {
+    console.log(`Bottom has priority color: ${text.name}`);
+  } else {
+    const hasNeutralColor = hasMinimalistColor(item);
+    if (!hasNeutralColor) {
+      console.log(`Bottom rejected (non-neutral color): ${text.name}`);
+      return false;
+    }
+  }
+  
+  const isAcceptableType = MINIMALIST_CRITERIA.acceptableBottomTypes.some(type => 
+    text.name.includes(type) || 
+    text.description.includes(type) ||
+    text.type.includes(type)
+  );
+  
+  if (isAcceptableType) {
+    console.log(`Bottom accepted (minimalist criteria): ${text.name}`);
+    return true;
+  }
+  
+  if (hasPriorityColor && !hasNonMinimalistPattern(item)) {
+    console.log(`Bottom conditionally accepted (natural color, no pattern): ${text.name}`);
+    return true;
+  }
+  
+  console.log(`Bottom rejected (doesn't match minimalist criteria): ${text.name}`);
+  return false;
+};
+
 const isMinimalistShoe = (item: any): boolean => {
   if (!item) return false;
   
