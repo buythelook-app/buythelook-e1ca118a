@@ -17,7 +17,7 @@ export const SocialSignIn = () => {
   const [redirectUrl, setRedirectUrl] = useState("");
   
   useEffect(() => {
-    // Get the base URL for the current environment - using document.location is more reliable
+    // Get the base URL for the current environment
     const baseUrl = window.location.origin;
     const redirectPath = "/auth"; // Path to redirect to after auth
     setRedirectUrl(baseUrl + redirectPath);
@@ -42,13 +42,29 @@ export const SocialSignIn = () => {
       const isNative = window.Capacitor?.isNativePlatform?.() || false;
       console.log(`Running on ${isNative ? 'native' : 'web'} platform`);
       
-      // Create the OAuth request with Supabase
+      // For web preview - use direct redirect approach
+      if (!isNative) {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectUrl,
+            skipBrowserRedirect: false, // Important: Let Supabase handle redirect on web
+          }
+        });
+        
+        if (error) throw error;
+        
+        // In web preview, Supabase handles the redirect
+        console.log("Web OAuth flow initiated, Supabase will handle redirect");
+        return;
+      }
+      
+      // For native platforms - use in-app browser
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          // Important: This allows the app to handle the redirect
-          skipBrowserRedirect: isNative,
+          skipBrowserRedirect: true, // Important: We'll handle the redirect ourselves
         }
       });
       
@@ -58,17 +74,15 @@ export const SocialSignIn = () => {
         throw new Error("No authentication URL returned from Supabase");
       }
       
-      console.log("OAuth URL:", data.url);
+      console.log("Native OAuth URL:", data.url);
       
-      // Handle differently based on platform
-      if (isNative && window.Browser?.open) {
-        // Use Capacitor Browser plugin on native platforms
+      // Use Capacitor Browser plugin on native platforms
+      if (window.Browser?.open) {
         console.log("Opening OAuth URL with Capacitor Browser");
         await window.Browser.open({ url: data.url });
       } else {
-        // Fall back to direct navigation on web
-        console.log("Redirecting using window.location");
-        window.location.href = data.url;
+        console.error("Browser plugin not available");
+        throw new Error("Browser plugin not available for authentication");
       }
     } catch (error: any) {
       console.error("Google sign-in error:", error);
