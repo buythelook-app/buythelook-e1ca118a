@@ -1,3 +1,4 @@
+
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 import { EventType, EVENT_TO_STYLES } from "@/components/filters/eventTypes";
 
@@ -23,11 +24,14 @@ const mapStyle = (style: string): "classic" | "romantic" | "minimalist" | "casua
     elegant: "classic",
     romantic: "romantic",
     minimal: "minimalist",
+    minimalist: "minimalist",
     casual: "casual",
     bohemian: "boohoo",
+    boohoo: "boohoo",
     athletic: "sporty",
-    Elegance: "classic",
+    sportive: "sporty",
     Classy: "classic",
+    Classic: "classic",
     Modern: "minimalist",
     "Boo Hoo": "boohoo",
     Nordic: "minimalist",
@@ -209,8 +213,12 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
     // Get style from event (if available) or from quiz data
     const eventStyle = getEventStyles();
-    const style = mapStyle(eventStyle || styleAnalysis.analysis.styleProfile || 'classic');
+    // Prioritize the user's chosen style from the quiz
+    const preferredStyle = styleAnalysis.analysis.styleProfile || 'classic';
+    const style = mapStyle(eventStyle || preferredStyle);
     const mood = validateMood(currentMood);
+
+    console.log("Using user's preferred style from quiz:", preferredStyle);
 
     const response = await generateOutfit(bodyShape, style, mood);
     const items: DashboardItem[] = [];
@@ -248,9 +256,13 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
 
     const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
     
+    // Get user's preferred style from the quiz
+    const userPreferredStyle = styleAnalysis.analysis.styleProfile || 'classic';
+    console.log("User's quiz preference:", userPreferredStyle);
+    
     // Get base style from event (if available) or from quiz data
     const eventStyle = getEventStyles();
-    const baseStyle = eventStyle || styleAnalysis.analysis.styleProfile || 'classic';
+    const baseStyle = mapStyle(userPreferredStyle);
     
     // Get mood
     const mood = validateMood(currentMood);
@@ -258,11 +270,13 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
     // Define style variations for different occasions
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     const occasionStyles = {
-      'Work': ['classic', 'minimalist'],
-      'Casual': ['casual', 'sporty', 'boohoo'],
-      'Evening': ['romantic', 'classic'],
-      'Weekend': ['boohoo', 'sporty', 'casual']
+      'Work': [baseStyle, 'classic', 'minimalist'],
+      'Casual': [baseStyle, 'casual', 'sporty'],
+      'Evening': [baseStyle, 'romantic', 'classic'],
+      'Weekend': [baseStyle, 'boohoo', 'casual']
     };
+    
+    console.log("Using base style for outfit generation:", baseStyle);
     
     const outfitPromises = [];
     
@@ -270,12 +284,14 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
     for (let i = 0; i < occasions.length; i++) {
       const occasion = occasions[i];
       
-      // Get style options for this occasion or fall back to base style
-      const styleOptions = occasionStyles[occasion as keyof typeof occasionStyles] || [baseStyle];
+      // Get style options for this occasion, always prioritizing the user's preferred style
+      const styleOptions = [baseStyle, ...(occasionStyles[occasion as keyof typeof occasionStyles] || [])];
       
-      // Select a style from the options (rotating through them to ensure variety)
-      const styleIndex = Math.floor(Math.random() * styleOptions.length);
-      const selectedStyle = mapStyle(styleOptions[styleIndex]);
+      // Ensure user's style preference is first in the list
+      const uniqueStyles = Array.from(new Set(styleOptions));
+      
+      // Select a style (prioritize user's preference if it fits the occasion)
+      const selectedStyle = uniqueStyles[0];
       
       console.log(`Generating outfit for ${occasion} with style: ${selectedStyle}`);
       

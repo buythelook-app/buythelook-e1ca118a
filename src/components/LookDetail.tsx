@@ -16,8 +16,21 @@ export const LookDetail = () => {
   const [look, setLook] = useState<any>(null);
   const [elegance, setElegance] = useState(75);
   const [colorIntensity, setColorIntensity] = useState(60);
+  const [userStyle, setUserStyle] = useState<string | null>(null);
 
   useEffect(() => {
+    // Load the user's style preference
+    const styleData = localStorage.getItem('styleAnalysis');
+    if (styleData) {
+      try {
+        const parsedData = JSON.parse(styleData);
+        const styleProfile = parsedData?.analysis?.styleProfile || null;
+        setUserStyle(styleProfile);
+      } catch (error) {
+        console.error("Error parsing style data:", error);
+      }
+    }
+
     if (id) {
       const storedLook = localStorage.getItem(`look-${id}`);
       if (storedLook) {
@@ -60,7 +73,14 @@ export const LookDetail = () => {
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-[#1E1E1E] p-8 rounded-xl shadow-xl">
               <div className="flex flex-col gap-4">
-                <h2 className="text-2xl font-semibold">{look.title}</h2>
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-semibold">{look.title}</h2>
+                  {userStyle && (
+                    <span className="bg-netflix-accent/20 text-netflix-accent px-3 py-1 rounded-full text-sm">
+                      {userStyle} style
+                    </span>
+                  )}
+                </div>
                 <p className="text-gray-400">{look.description}</p>
                 <div className="relative aspect-[3/4] w-full bg-white rounded-lg overflow-hidden">
                   <LookCanvas 

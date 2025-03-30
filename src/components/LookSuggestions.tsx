@@ -42,8 +42,24 @@ export const LookSuggestions = () => {
   const [isRefetching, setIsRefetching] = useState(false);
   const [elegance, setElegance] = useState(75);
   const [colorIntensity, setColorIntensity] = useState(60);
+  const [userStylePreference, setUserStylePreference] = useState<string | null>(null);
 
   const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
+
+  useEffect(() => {
+    // Load user's style preference from quiz results
+    const styleData = localStorage.getItem('styleAnalysis');
+    if (styleData) {
+      try {
+        const parsedData = JSON.parse(styleData);
+        const styleProfile = parsedData?.analysis?.styleProfile || null;
+        setUserStylePreference(styleProfile);
+        console.log("Loaded user style preference:", styleProfile);
+      } catch (error) {
+        console.error("Error parsing style data:", error);
+      }
+    }
+  }, []);
 
   const { data: dashboardItems, isLoading, error, refetch } = useQuery({
     queryKey: ['firstOutfitSuggestion'],
@@ -257,7 +273,12 @@ export const LookSuggestions = () => {
     <>
       <HomeButton />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <h1 className="text-3xl font-bold mb-8">Your Curated Look</h1>
+        <h1 className="text-3xl font-bold mb-2">Your Curated Look</h1>
+        {userStylePreference && (
+          <p className="text-lg text-netflix-accent mb-6">
+            Based on your {userStylePreference} style preference
+          </p>
+        )}
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
