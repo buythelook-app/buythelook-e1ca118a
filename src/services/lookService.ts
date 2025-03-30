@@ -1,3 +1,4 @@
+
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 import { EventType, EVENT_TO_STYLES } from "@/components/filters/eventTypes";
 
@@ -276,11 +277,12 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
           const shoesIsMinimalist = outfit.shoes ? isMinimalistStyleItem(outfit.shoes) : false;
           
           // If more items match minimalist style, use this outfit
+          // Fix: Convert boolean results to numbers before adding
           const currentMatchCount = (topIsMinimalist ? 1 : 0) + (bottomIsMinimalist ? 1 : 0) + (shoesIsMinimalist ? 1 : 0);
           const bestMatchCount = 
-            (bestMatch.top ? isMinimalistStyleItem(bestMatch.top) : 0) + 
-            (bestMatch.bottom ? isMinimalistStyleItem(bestMatch.bottom) : 0) + 
-            (bestMatch.shoes ? isMinimalistStyleItem(bestMatch.shoes) : 0);
+            (bestMatch.top ? (isMinimalistStyleItem(bestMatch.top) ? 1 : 0) : 0) + 
+            (bestMatch.bottom ? (isMinimalistStyleItem(bestMatch.bottom) ? 1 : 0) : 0) + 
+            (bestMatch.shoes ? (isMinimalistStyleItem(bestMatch.shoes) ? 1 : 0) : 0);
           
           if (currentMatchCount > bestMatchCount) {
             bestMatch = outfit;
