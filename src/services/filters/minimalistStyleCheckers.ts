@@ -1,4 +1,3 @@
-
 /**
  * Checkers for minimalist style criteria
  */
@@ -175,5 +174,17 @@ export const isMinimalistShoe = (item: any): boolean => {
   }
   
   console.log(`Shoes rejected (non-neutral color): ${name}`);
+  return false;
+};
+
+// Add the missing function that routes to the appropriate checker based on item type
+export const isMinimalistStyleItem = (item: any, type: string): boolean => {
+  if (type === 'top') {
+    return isMinimalistTop(item);
+  } else if (type === 'bottom') {
+    return isMinimalistBottom(item);
+  } else if (type === 'shoes') {
+    return isMinimalistShoe(item);
+  }
   return false;
 };

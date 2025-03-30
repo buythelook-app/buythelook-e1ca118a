@@ -1,4 +1,3 @@
-
 /**
  * Filter functions for outfit style rules
  */
@@ -87,17 +86,6 @@ export const scoreItem = (item: any, type: string): number => {
   }
   
   return score;
-};
-
-export const isMinimalistStyleItem = (item: any, type: string): boolean => {
-  if (type === 'top') {
-    return isMinimalistTop(item);
-  } else if (type === 'bottom') {
-    return isMinimalistBottom(item);
-  } else if (type === 'shoes') {
-    return isMinimalistShoe(item);
-  }
-  return false;
 };
 
 const isMinimalistTop = (item: any): boolean => {
