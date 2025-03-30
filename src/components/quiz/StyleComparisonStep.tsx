@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useQuizContext } from "./QuizContext";
 import { useEffect } from "react";
@@ -18,13 +17,12 @@ interface StyleComparisonStepProps {
 const STYLE_IMAGES = {
   Classy: "/lovable-uploads/028933c6-ec95-471c-804c-0aa31a0e1f15.png",
   Modern: "/lovable-uploads/c7a32d15-ffe2-4f07-ae82-a943d5128293.png",
-  Casual: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
+  Casual: "/lovable-uploads/6fe5dff3-dfba-447b-986f-7281b45a0703.png",
   Romantic: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png",
   Minimalist: "/lovable-uploads/553ba2e6-53fd-46dd-82eb-64121072a826.png",
   "Boo Hoo": "/lovable-uploads/386cf438-be54-406f-9dbb-6495a8f8bde9.png",
   Nordic: "/lovable-uploads/a1785297-040b-496d-a2fa-af4ecb55207a.png",
-  Sporty: "/lovable-uploads/b2b5da4b-c967-4791-8832-747541e275be.png",
-  Elegance: "/lovable-uploads/028933c6-ec95-471c-804c-0aa31a0e1f15.png"
+  Sporty: "/lovable-uploads/b2b5da4b-c967-4791-8832-747541e275be.png"
 };
 
 export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleComparisonStepProps) => {
@@ -40,7 +38,6 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
 
   const handleStyleSelect = (styleName: string) => {
     onSelect(styleName);
-    // Automatically proceed to next step after a short delay
     setTimeout(() => {
       handleNext();
     }, 500);

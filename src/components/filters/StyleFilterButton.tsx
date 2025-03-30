@@ -1,3 +1,4 @@
+
 import { Filter } from "lucide-react";
 import { Button } from "../ui/button";
 import {
@@ -26,7 +27,7 @@ interface StyleFilterButtonProps {
 export type Category = "New" | "Casual" | "Work" | "Party" | "All";
 export type Mode = "All" | "Relaxing" | "Party" | "Work" | "Date" | "Travel" | "Shopping" | "Sport" | "Casual";
 export type Color = "All" | "warm & cold" | "natural" | "monochrome" | "highlight";
-export type Style = "classic" | "sportive" | "elegant" | "minimalist" | "romantic" | "boohoo";
+export type Style = "classic" | "sportive" | "elegant" | "minimalist" | "romantic" | "boohoo" | "nordic" | "casual";
 
 export const StyleFilterButton = ({
   selectedCategory,

@@ -11,6 +11,7 @@ const STYLES = [
   { id: "romantic", name: "Romantic", image: "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png" },
   { id: "boohoo", name: "Boohoo", image: "/lovable-uploads/386cf438-be54-406f-9dbb-6495a8f8bde9.png" },
   { id: "nordic", name: "Nordic", image: "/lovable-uploads/a1785297-040b-496d-a2fa-af4ecb55207a.png" },
+  { id: "casual", name: "Casual", image: "/lovable-uploads/6fe5dff3-dfba-447b-986f-7281b45a0703.png" },
 ];
 
 interface StylePreferencesFilterProps {
