@@ -1,4 +1,3 @@
-
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 import { EventType, EVENT_TO_STYLES } from "@/components/filters/eventTypes";
 
@@ -179,10 +178,35 @@ const hasNaturalColor = (item: any): boolean => {
   
   const itemName = (item.product_name || '').toLowerCase();
   const itemDesc = (item.description || '').toLowerCase();
+  const itemColor = (item.colour || '').toLowerCase();
   
   return naturalColors.some(color => 
     itemName.includes(color) || 
-    itemDesc.includes(color)
+    itemDesc.includes(color) ||
+    itemColor.includes(color)
+  ) || isNeutralItem(item);
+};
+
+// Additional check for neutral items without explicit color mentions
+const isNeutralItem = (item: any): boolean => {
+  if (!item) return false;
+  
+  // Check if item has color property with neutral values
+  const neutralColorValues = ['black', 'white', 'gray', 'grey', 'beige', 'navy', 'brown', 'khaki', 'taupe'];
+  const itemColor = (item.colour || '').toLowerCase();
+  
+  if (neutralColorValues.some(color => itemColor === color)) {
+    return true;
+  }
+  
+  // Check for minimalist keywords that suggest neutral tones
+  const neutralKeywords = ['basic', 'classic', 'simple', 'minimalist', 'essential', 'clean'];
+  const itemName = (item.product_name || '').toLowerCase();
+  const itemDesc = (item.description || '').toLowerCase();
+  
+  return neutralKeywords.some(keyword => 
+    itemName.includes(keyword) || 
+    itemDesc.includes(keyword)
   );
 };
 
@@ -230,7 +254,6 @@ const isMinimalistStyleItem = (item: any): boolean => {
   
   const itemName = (item.product_name || '').toLowerCase();
   const itemDesc = (item.description || '').toLowerCase();
-  const itemType = (item.type || '').toLowerCase();
   
   const hasNatural = hasNaturalColor(item);
   
@@ -258,21 +281,20 @@ const convertToDashboardItem = (item: any, type: string, userStyle: string = '')
     return null;
   }
   
+  // Relaxed filtering for minimalist style to ensure we get items
   if (userStyle === 'Minimalist') {
-    // Special handling for minimalist style filtering
-    if (type === 'top' && !hasNaturalColor(item)) {
-      console.log('Item does not have natural colors for minimalist style:', item.product_name);
-      return null;
-    }
-    
+    // For tops and bottoms, we'll be less strict to ensure items are shown
     if (type === 'shoes' && !isMinimalistShoe(item)) {
       console.log('Shoes do not match minimalist style criteria:', item.product_name);
-      return null;
+      if (Math.random() > 0.5) { // Only filter out some non-matching shoes
+        return null;
+      }
     }
     
-    if (!isMinimalistStyleItem(item)) {
+    // Allow more items through for tops and bottoms by reducing random filtering
+    if (!isMinimalistStyleItem(item) && !hasNaturalColor(item)) {
       console.log('Item does not match minimalist style criteria:', item.product_name);
-      if (Math.random() > 0.3) {
+      if (Math.random() > 0.7) { // Increased probability to keep items (70% chance)
         return null;
       }
     }
@@ -331,10 +353,10 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
           let currentScore = 0;
           
           if (outfit.top && hasNaturalColor(outfit.top)) currentScore += 2;
-          if (outfit.top && isMinimalistStyleItem(outfit.top)) currentScore += 1;
+          if (outfit.top) currentScore += 1; // Give points just for having a top
           
           if (outfit.bottom && hasNaturalColor(outfit.bottom)) currentScore += 2;
-          if (outfit.bottom && isMinimalistStyleItem(outfit.bottom)) currentScore += 1;
+          if (outfit.bottom) currentScore += 1; // Give points just for having a bottom
           
           if (outfit.shoes && hasNaturalColor(outfit.shoes)) currentScore += 2;
           if (outfit.shoes && isMinimalistShoe(outfit.shoes)) currentScore += 2;
@@ -348,6 +370,7 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
         console.log(`Selected best minimalist outfit with score: ${bestMatchScore}`);
       }
       
+      // Always try to include all parts of the outfit
       const top = convertToDashboardItem(bestMatch.top, 'top', preferredStyle);
       const bottom = convertToDashboardItem(bestMatch.bottom, 'bottom', preferredStyle);
       const shoes = convertToDashboardItem(bestMatch.shoes, 'shoes', preferredStyle);
@@ -355,6 +378,31 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
       if (top) items.push(top);
       if (bottom) items.push(bottom);
       if (shoes) items.push(shoes);
+      
+      // If we still don't have a top or bottom, try getting them from other outfits
+      if (!top || !bottom) {
+        console.log("Missing top or bottom, trying to find alternatives from other outfits");
+        
+        for (let i = 1; i < Math.min(response.data.length, 5) && (items.length < 3); i++) {
+          const alternateOutfit = response.data[i];
+          
+          if (!top && alternateOutfit.top) {
+            const alternateTop = convertToDashboardItem(alternateOutfit.top, 'top', preferredStyle);
+            if (alternateTop) {
+              items.push(alternateTop);
+              console.log("Added alternative top:", alternateTop.name);
+            }
+          }
+          
+          if (!bottom && alternateOutfit.bottom) {
+            const alternateBottom = convertToDashboardItem(alternateOutfit.bottom, 'bottom', preferredStyle);
+            if (alternateBottom) {
+              items.push(alternateBottom);
+              console.log("Added alternative bottom:", alternateBottom.name);
+            }
+          }
+        }
+      }
     }
 
     console.log('First outfit items:', items);
