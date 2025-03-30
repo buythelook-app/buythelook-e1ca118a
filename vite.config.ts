@@ -1,4 +1,3 @@
-
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -28,5 +27,25 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: 'dist',
+    rollupOptions: {
+      external: [
+        '@capacitor/app',
+        '@capacitor/core',
+        '@capacitor/splash-screen',
+        '@capacitor/status-bar',
+        '@capacitor/haptics',
+        '@capacitor/keyboard',
+        '@capacitor/preferences',
+        '@capacitor/share',
+        '@capacitor/camera',
+        '@capacitor/browser',
+        '@capacitor/network',
+        '@capacitor/push-notifications',
+        '@capacitor/device',
+        '@capacitor/toast',
+        '@capacitor/dialog',
+        '@capacitor/filesystem'
+      ]
+    }
   }
 }));
