@@ -16,30 +16,26 @@ export const SocialSignIn = () => {
     try {
       setIsLoading(prev => ({ ...prev, google: true }));
       
-      toast({
-        title: "Google Sign In",
-        description: "Connecting to Google...",
-      });
+      // Get the current URL for proper redirect
+      const redirectUrl = window.location.origin + '/auth';
       
-      console.log("Starting Google sign-in");
+      console.log("Starting Google sign-in with redirect to:", redirectUrl);
       
-      // Simple approach with minimal configuration
+      // Use minimal configuration - just the essentials
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + '/auth'
+          redirectTo: redirectUrl
         }
       });
       
       if (error) {
-        console.error("OAuth setup error:", error);
+        console.error("Google OAuth error:", error);
         throw error;
       }
       
-      console.log("OAuth redirect URL:", data?.url);
-      
       if (data?.url) {
-        // Directly navigate to the authorization URL
+        console.log("Redirecting to OAuth URL:", data.url);
         window.location.href = data.url;
       }
       

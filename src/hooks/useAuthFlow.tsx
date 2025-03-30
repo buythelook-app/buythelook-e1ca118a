@@ -68,7 +68,7 @@ export const useAuthFlow = () => {
       }
     }
 
-    // Set up auth state change listener
+    // Enhanced auth state change listener - simplified
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event, session ? "session exists" : "no session");
       
@@ -81,108 +81,70 @@ export const useAuthFlow = () => {
           description: "You have been signed in successfully.",
         });
         navigate('/home');
-      } else if (event === 'SIGNED_OUT') {
-        console.log("User signed out");
       }
     });
     
-    const checkSession = async () => {
+    // Check for existing session and auth parameters in URL
+    const checkAuthState = async () => {
       if (!isMounted) return;
       
       try {
-        console.log("Checking current session");
+        // Process URL parameters if present (for browser-based auth redirects)
+        const hasAuthParams = window.location.hash || 
+                            window.location.search.includes('code=') || 
+                            window.location.search.includes('token=');
+        
+        if (hasAuthParams) {
+          console.log("Auth parameters detected in URL");
+          setIsLoading(true);
+          
+          // Small delay to allow auth state to settle
+          setTimeout(async () => {
+            const { data, error } = await supabase.auth.getSession();
+            
+            if (error) throw error;
+            
+            if (data.session) {
+              console.log("Session established after redirect");
+              navigate('/home');
+              return;
+            }
+            
+            console.log("No session after processing URL parameters");
+            setIsLoading(false);
+          }, 500);
+          
+          return;
+        }
+        
+        // Check if user is already logged in
+        console.log("Checking for existing session");
         const { data, error } = await supabase.auth.getSession();
         
         if (error) throw error;
         
         if (data.session) {
-          console.log("Active session found", data.session.user?.id);
-          toast({
-            title: "Success",
-            description: "You are signed in.",
-          });
+          console.log("Active session found, navigating to home");
           navigate('/home');
           return;
         }
         
         console.log("No active session found");
+        setIsLoading(false);
       } catch (error: any) {
-        console.error("Session check error:", error);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        console.error("Auth check error:", error);
+        setIsLoading(false);
       }
     };
     
-    const handleDeepLink = async () => {
-      const isMobileNative = window.Capacitor?.isNativePlatform?.() || false;
-      console.log("Platform check:", isMobileNative ? "mobile native" : "browser");
-      
-      // Check if we have auth params in URL
-      const hasAuthParams = window.location.hash || 
-                           window.location.search.includes('code=') || 
-                           window.location.search.includes('token=') ||
-                           window.location.search.includes('type=') ||
-                           window.location.search.includes('access_token=');
-      
-      if (hasAuthParams) {
-        console.log("Auth params detected in URL:", window.location.href);
-        if (!isMounted) return false;
-        
-        setIsLoading(true);
-        
-        try {
-          console.log("Processing OAuth redirect");
-          // Try to exchange the auth code for a session
-          const { data, error } = await supabase.auth.getSession();
-          
-          if (error) throw error;
-          
-          if (data.session) {
-            console.log("Authentication successful from redirect, user:", data.session.user?.id);
-            toast({
-              title: "Success",
-              description: "Authentication successful.",
-            });
-            navigate('/home');
-            return true;
-          }
-          
-          console.log("No session after processing redirect");
-        } catch (error: any) {
-          console.error("Auth redirect processing error:", error);
-          toast({
-            title: "Error",
-            description: error.message || "Authentication failed",
-            variant: "destructive",
-          });
-        } finally {
-          if (isMounted) {
-            setIsLoading(false);
-          }
-        }
-      }
-      
-      return false;
-    };
-    
-    // Initialize authentication flow
-    const init = async () => {
-      const handled = await handleDeepLink();
-      if (!handled) {
-        await checkSession();
-      }
-    };
-    
-    init();
+    // Run initial auth check
+    checkAuthState();
     
     return () => {
       isMounted = false;
       subscription.unsubscribe();
       
-      // Clean up app listener if on native platform
-      if (window.Capacitor?.isNativePlatform?.() && appUrlListener) {
+      if (appUrlListener) {
         appUrlListener.remove();
       }
     };
