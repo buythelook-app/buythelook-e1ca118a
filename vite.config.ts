@@ -32,6 +32,10 @@ export default defineConfig(({ mode }) => ({
       external: [
         // These are marked as external to prevent them from being bundled
         // They'll be loaded from the native plugins at runtime
+        '@capacitor/app',
+        '@capacitor/core',
+        '@capacitor/ios',
+        '@capacitor/android',
       ]
     }
   }
