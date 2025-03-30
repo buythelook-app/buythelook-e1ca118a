@@ -14,41 +14,42 @@ const STYLES = [
   { id: "boohoo", name: "Boohoo", image: "/lovable-uploads/386cf438-be54-406f-9dbb-6495a8f8bde9.png", description: "Eclectic with a mix of patterns and textures." },
 ];
 
-// Minimalist wardrobe essentials reference
+// Minimalist wardrobe essentials reference - updated with user's images as inspiration
 const MINIMALIST_ESSENTIALS = {
   tops: [
+    "Solid black tank top",
     "White button-down shirt",
-    "Basic crewneck t-shirts",
-    "Lightweight knit sweaters",
-    "Turtlenecks",
-    "Structured minimal blouses"
+    "Basic solid t-shirts",
+    "Sleeveless black tops",
+    "White sleeveless blouse"
   ],
   bottoms: [
-    "Tailored trousers",
-    "Straight-leg pants",
-    "Classic jeans",
-    "Midi or pencil skirts"
+    "Brown wrap skirt",
+    "Black wide-leg pants",
+    "Black tailored trousers",
+    "Solid neutral midi skirts",
+    "High-waisted linen pants"
   ],
   outerwear: [
     "Structured blazer",
-    "Wool coat",
-    "Minimalist leather jacket",
-    "Trench coat"
+    "Minimal black jacket",
+    "Linen overshirt",
+    "Simple cardigan"
   ],
   shoes: [
-    "Leather loafers",
+    "Flat leather sandals",
+    "Simple black slides",
+    "Minimal leather loafers",
     "Ballet flats",
-    "Chelsea boots",
-    "White leather sneakers",
-    "Simple pumps"
+    "Clean leather mules"
   ],
   colors: [
     "Black",
     "White",
-    "Gray",
+    "Brown",
     "Beige",
+    "Camel",
     "Navy",
-    "Taupe",
     "Cream"
   ]
 };
@@ -66,6 +67,23 @@ export const StylePreferencesFilter = ({ selectedStyle, setSelectedStyle }: Styl
     if (style === "minimalist") {
       try {
         localStorage.setItem('minimalist-essentials', JSON.stringify(MINIMALIST_ESSENTIALS));
+        
+        // Also add style examples based on the user's images
+        const styleExamples = [
+          "/lovable-uploads/ceb94149-085a-410c-b9dd-85947849c228.png",
+          "/lovable-uploads/2d38a525-ebca-4ba5-9704-556c80f030c4.png"
+        ];
+        localStorage.setItem('minimalist-examples', JSON.stringify(styleExamples));
+        
+        // Store style recommendations
+        const recommendations = [
+          "Focus on solid colors without patterns",
+          "Choose high-quality pieces with simple silhouettes",
+          "Pair black tops with brown or neutral bottoms",
+          "Use minimal accessories to complete the look",
+          "Look for clean lines and avoid embellishments"
+        ];
+        localStorage.setItem('style-recommendations', JSON.stringify(recommendations));
       } catch (error) {
         console.error("Error storing minimalist essentials:", error);
       }
@@ -93,7 +111,7 @@ export const StylePreferencesFilter = ({ selectedStyle, setSelectedStyle }: Styl
             <div className="text-left">
               <span className="text-sm font-medium block">{style.name}</span>
               {style.id === "minimalist" && selectedStyle === style.id && (
-                <span className="text-xs opacity-80 mt-1 block">Clean lines, quality basics, neutral palette</span>
+                <span className="text-xs opacity-80 mt-1 block">Clean lines, quality basics, solid colors</span>
               )}
             </div>
           </Button>
@@ -105,12 +123,23 @@ export const StylePreferencesFilter = ({ selectedStyle, setSelectedStyle }: Styl
           <p className="text-xs text-netflix-accent mb-2">Minimalist Essentials:</p>
           <div className="text-xs text-gray-300 grid grid-cols-2 gap-x-4 gap-y-1">
             <div>
-              <span className="font-semibold block mb-1">Colors:</span>
-              <span className="opacity-80">Black, White, Gray, Beige, Navy</span>
+              <span className="font-semibold block mb-1">Inspiration:</span>
+              <div className="flex space-x-2 mt-1">
+                <img 
+                  src="/lovable-uploads/ceb94149-085a-410c-b9dd-85947849c228.png" 
+                  alt="Minimalist style inspiration" 
+                  className="w-12 h-12 object-cover rounded"
+                />
+                <img 
+                  src="/lovable-uploads/2d38a525-ebca-4ba5-9704-556c80f030c4.png" 
+                  alt="Minimalist style inspiration" 
+                  className="w-12 h-12 object-cover rounded"
+                />
+              </div>
             </div>
             <div>
               <span className="font-semibold block mb-1">Key Pieces:</span>
-              <span className="opacity-80">White button-down, Tailored trousers, Leather loafers, Structured blazer</span>
+              <span className="opacity-80">Black top & skirt, White top & wide-leg pants, Flat sandals</span>
             </div>
           </div>
         </div>

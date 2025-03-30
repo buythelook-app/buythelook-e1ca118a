@@ -21,6 +21,21 @@ export const extractImageUrl = (product: any): string => {
   }
 };
 
+export const hasPatternInName = (item: any): boolean => {
+  if (!item) return false;
+  
+  const patternTerms = [
+    'square', 'pattern', 'gingham', 'check', 'checked', 'plaid', 
+    'stripe', 'striped', 'dot', 'dots', 'polka', 'floral', 'print',
+    'textured', 'texture', 'grid', 'geometric', 'animal print'
+  ];
+  
+  const name = (item.product_name || item.name || '').toLowerCase();
+  const description = (item.description || '').toLowerCase();
+  
+  return patternTerms.some(term => name.includes(term) || description.includes(term));
+};
+
 export const convertToDashboardItem = (item: any, type: string, userStyle: string = ''): DashboardItem | null => {
   if (!item) return null;
   
@@ -29,10 +44,17 @@ export const convertToDashboardItem = (item: any, type: string, userStyle: strin
     return null;
   }
   
+  // For minimalist style, reject any items with pattern terms in name or description
   if (userStyle === 'Minimalist') {
+    if (hasPatternInName(item)) {
+      const name = item.product_name || '';
+      console.log(`Rejected ${type} item for having pattern in name: ${name}`);
+      return null;
+    }
+    
     if (!isMinimalistStyleItem(item, type)) {
-      const text = { name: item.product_name || '' };
-      console.log(`Rejected ${type} item for minimalist style: ${text.name}`);
+      const name = item.product_name || '';
+      console.log(`Rejected ${type} item for minimalist style: ${name}`);
       return null;
     }
   }

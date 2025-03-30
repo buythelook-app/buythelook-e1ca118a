@@ -3,189 +3,185 @@
  * Checkers for minimalist style criteria
  */
 
-const NEUTRAL_COLORS = ["black", "white", "gray", "beige", "cream", "ivory", "navy", "taupe", "tan", "khaki", "camel", "brown"];
-const MINIMALIST_MATERIALS = ["cotton", "linen", "silk", "wool", "cashmere", "leather"];
+import { MINIMALIST_CRITERIA } from "./minimalistFilters";
 
-// Less restrictive top checks
+// More restrictive top checks with better pattern detection
 export const isMinimalistTop = (item: any): boolean => {
   if (!item) return false;
   
   const name = (item.product_name || item.name || "").toLowerCase();
   const description = (item.description || "").toLowerCase();
+  const text = name + " " + description;
   
-  // Automatically allow certain minimalist items
-  const minimalistKeywords = [
-    "basic", "minimal", "simple", "classic", "plain", "oxford", 
-    "button-down", "turtleneck", "crew neck", "v-neck", "mock neck",
-    "cotton tee", "cashmere", "merino wool", "linen"
-  ];
+  // Check for solid color preference first
+  const hasSolidColorIndicator = text.includes("solid") || text.includes("plain") || 
+    text.includes("basic") || text.includes("simple") || text.includes("monochrome");
   
-  for (const keyword of minimalistKeywords) {
-    if (name.includes(keyword) || description.includes(keyword)) {
-      return true;
-    }
-  }
-  
-  // Check for color neutrality
-  const hasNeutralColor = NEUTRAL_COLORS.some(color => name.includes(color) || description.includes(color));
-  
-  // Check for minimalist materials
-  const hasMinimalistMaterial = MINIMALIST_MATERIALS.some(material => 
-    name.includes(material) || description.includes(material)
-  );
-  
-  // Check for non-minimalist indicators - ENHANCED to catch more patterns
-  const nonMinimalistPatterns = [
-    "floral", "graphic", "print", "pattern", "logo", "embellish", 
-    "sequin", "rhinestone", "bead", "embroidery", "distress", 
-    "ripped", "ruffle", "frill", "puff", "animal print", 
-    "square", "squares", "plaid", "check", "checked", "gingham",
-    "stripe", "striped", "polka", "dots", "dotted", "grid", 
-    "geometric", "herringbone", "houndstooth", "tartan"
-  ];
-  
-  const hasNonMinimalistPattern = nonMinimalistPatterns.some(pattern => 
-    name.includes(pattern) || description.includes(pattern)
-  );
+  // Improved pattern rejection - this is more comprehensive than before
+  const nonMinimalistPatterns = MINIMALIST_CRITERIA.nonMinimalistPatterns;
+  const hasNonMinimalistPattern = nonMinimalistPatterns.some(pattern => text.includes(pattern));
   
   if (hasNonMinimalistPattern) {
-    console.log(`Top rejected (pattern/embellishment): ${name}`);
+    console.log(`Top rejected (pattern/embellishment): "${name}"`);
     return false;
   }
   
-  // Relaxed criteria: neutral color OR minimalist material is enough
-  if (hasNeutralColor || hasMinimalistMaterial) {
-    // Check for preferred colors in this item
-    if (hasNeutralColor) {
-      console.log(`Found preferred color in item: ${name}`);
-    }
+  // Check for specific keywords in the example images
+  const minimalistKeywords = [
+    "basic", "minimal", "simple", "classic", "plain", "solid", "oxford", 
+    "button-down", "turtleneck", "crew neck", "v-neck", "mock neck",
+    "cotton tee", "cashmere", "merino wool", "linen", "silk", "sleeveless",
+    "tank", "camisole", "bodysuit", "tee", "t-shirt", "blouse"
+  ];
+  
+  const hasMinimalistKeyword = minimalistKeywords.some(keyword => text.includes(keyword));
+  
+  // Check for neutral colors - prioritize these
+  const neutralColors = MINIMALIST_CRITERIA.naturalColors;
+  const hasNeutralColor = neutralColors.some(color => text.includes(color));
+  
+  // If it has solid color indicator and no patterns, high preference
+  if (hasSolidColorIndicator && !hasNonMinimalistPattern) {
+    console.log(`Top accepted (solid color indicator): "${name}"`);
     return true;
   }
   
-  console.log(`Top rejected (non-neutral color): ${name}`);
+  // If it has minimalist keyword and neutral color, also high preference
+  if (hasMinimalistKeyword && hasNeutralColor) {
+    console.log(`Top accepted (minimalist style + neutral color): "${name}"`);
+    return true;
+  }
+  
+  // If it has neutral color and no pattern, medium preference
+  if (hasNeutralColor && !hasNonMinimalistPattern) {
+    console.log(`Top accepted (neutral color, no pattern): "${name}"`);
+    return true;
+  }
+  
+  // If it just has minimalist keyword but not necessarily neutral color
+  if (hasMinimalistKeyword && !hasNonMinimalistPattern) {
+    console.log(`Top accepted (minimalist style): "${name}"`);
+    return true;
+  }
+  
+  console.log(`Top rejected (doesn't meet minimalist criteria): "${name}"`);
   return false;
 };
 
-// Less restrictive bottom checks
+// More restrictive bottom checks with better pattern detection
 export const isMinimalistBottom = (item: any): boolean => {
   if (!item) return false;
   
   const name = (item.product_name || item.name || "").toLowerCase();
   const description = (item.description || "").toLowerCase();
+  const text = name + " " + description;
   
-  // Automatically allow certain minimalist styles
+  // Check for specific keywords in the example images
   const minimalistKeywords = [
-    "tailored", "straight leg", "wide leg", "pencil", "classic", 
-    "simple", "midi", "chino", "slim fit", "regular fit", "minimalist"
+    "tailored", "straight leg", "wide leg", "palazzo", "classic", 
+    "simple", "midi", "maxi", "high-waisted", "flared", "wrap skirt",
+    "linen", "cotton", "wool", "silk", "trousers", "pants", "slacks",
+    "skirt", "culottes", "solid", "plain"
   ];
   
-  for (const keyword of minimalistKeywords) {
-    if (name.includes(keyword) || description.includes(keyword)) {
-      return true;
-    }
-  }
+  const hasMinimalistKeyword = minimalistKeywords.some(keyword => text.includes(keyword));
   
-  // Check for color neutrality
-  const hasNeutralColor = NEUTRAL_COLORS.some(color => name.includes(color) || description.includes(color));
-  
-  // Check for minimalist materials
-  const hasMinimalistMaterial = MINIMALIST_MATERIALS.some(material => 
-    name.includes(material) || description.includes(material)
-  );
-  
-  // Check for non-minimalist indicators - ENHANCED to catch more patterns
-  const nonMinimalistPatterns = [
-    "floral", "graphic", "print", "pattern", "embellish", "sequin", 
-    "rhinestone", "bead", "embroidery", "distress", "ripped", 
-    "ruffle", "frill", "animal print", "square", "squares", "plaid", 
-    "check", "checked", "gingham", "stripe", "striped", "polka", 
-    "dots", "dotted", "grid", "geometric", "herringbone", "houndstooth", "tartan"
-  ];
-  
-  const hasNonMinimalistPattern = nonMinimalistPatterns.some(pattern => 
-    name.includes(pattern) || description.includes(pattern)
-  );
+  // Improved pattern rejection
+  const nonMinimalistPatterns = MINIMALIST_CRITERIA.nonMinimalistPatterns;
+  const hasNonMinimalistPattern = nonMinimalistPatterns.some(pattern => text.includes(pattern));
   
   if (hasNonMinimalistPattern) {
-    console.log(`Bottom rejected (pattern/embellishment): ${name}`);
+    console.log(`Bottom rejected (pattern/embellishment): "${name}"`);
     return false;
   }
   
-  // Relaxed criteria: neutral color OR minimalist material is enough
-  if (hasNeutralColor || hasMinimalistMaterial) {
-    // Check for preferred colors in this item
-    if (hasNeutralColor) {
-      console.log(`Found preferred color in item: ${name}`);
-    }
+  // Check for neutral colors
+  const neutralColors = MINIMALIST_CRITERIA.naturalColors;
+  const hasNeutralColor = neutralColors.some(color => text.includes(color));
+  
+  // Like in the images - brown, black, clean looks
+  if (hasMinimalistKeyword && hasNeutralColor) {
+    console.log(`Bottom accepted (minimalist style + neutral color): "${name}"`);
     return true;
   }
   
-  console.log(`Bottom rejected (non-neutral color): ${name}`);
+  if (hasNeutralColor && !hasNonMinimalistPattern) {
+    console.log(`Bottom accepted (neutral color, no pattern): "${name}"`);
+    return true;
+  }
+  
+  if (hasMinimalistKeyword && !hasNonMinimalistPattern) {
+    console.log(`Bottom accepted (minimalist style): "${name}"`);
+    return true;
+  }
+  
+  console.log(`Bottom rejected (doesn't meet minimalist criteria): "${name}"`);
   return false;
 };
 
-// Less restrictive shoe checks
+// More restrictive shoe checks with better pattern detection
 export const isMinimalistShoe = (item: any): boolean => {
   if (!item) return false;
   
   const name = (item.product_name || item.name || "").toLowerCase();
   const description = (item.description || "").toLowerCase();
+  const text = name + " " + description;
   
-  // Automatically allow certain minimalist styles
+  // Like the flat sandals in the images
   const minimalistKeywords = [
-    "loafer", "ballet flat", "pump", "chelsea boot", "oxford", "derby",
-    "minimal", "simple", "classic", "leather", "suede", "plain"
+    "loafer", "ballet flat", "flat", "sandal", "slide", "mule",
+    "minimal", "simple", "classic", "leather", "suede", "plain",
+    "oxford", "chelsea boot", "slip-on", "mary jane", "slingback"
   ];
   
-  for (const keyword of minimalistKeywords) {
-    if (name.includes(keyword) || description.includes(keyword)) {
-      return true;
-    }
-  }
+  const hasMinimalistKeyword = minimalistKeywords.some(keyword => text.includes(keyword));
   
-  // Check for color neutrality
-  const hasNeutralColor = NEUTRAL_COLORS.some(color => name.includes(color) || description.includes(color));
+  // Improved pattern rejection
+  const nonMinimalistPatterns = MINIMALIST_CRITERIA.nonMinimalistPatterns;
+  const hasNonMinimalistPattern = nonMinimalistPatterns.some(pattern => text.includes(pattern));
   
-  // Check for minimalist materials
-  const hasMinimalistMaterial = MINIMALIST_MATERIALS.some(material => 
-    name.includes(material) || description.includes(material)
-  );
-  
-  // Check for non-minimalist indicators - ENHANCED to catch more patterns
-  const nonMinimalistFeatures = [
-    "platform", "embellish", "glitter", "rhinestone", "sequin", 
-    "print", "pattern", "graphic", "logo", "animal print", "square", 
-    "squares", "plaid", "check", "checked", "gingham", "stripe", 
-    "striped", "polka", "dots", "dotted", "grid", "geometric"
-  ];
-  
-  const hasNonMinimalistFeature = nonMinimalistFeatures.some(feature => 
-    name.includes(feature) || description.includes(feature)
-  );
-  
-  if (hasNonMinimalistFeature) {
-    console.log(`Shoes rejected (non-minimalist feature): ${name}`);
+  if (hasNonMinimalistPattern) {
+    console.log(`Shoes rejected (pattern/embellishment): "${name}"`);
     return false;
   }
   
-  // For shoes, we'll be even more relaxed
-  if (hasNeutralColor) {
-    console.log(`Found preferred color in item: ${name}`);
-    console.log(`Shoes have priority color: ${name}`);
-    console.log(`Shoes accepted (minimalist criteria): ${name}`);
+  // Check for specific non-minimalist features
+  const nonMinimalistFeatures = [
+    "platform", "embellish", "glitter", "rhinestone", "sequin", 
+    "print", "pattern", "graphic", "logo", "chunky", "block heel", "stiletto"
+  ];
+  
+  const hasNonMinimalistFeature = nonMinimalistFeatures.some(feature => text.includes(feature));
+  
+  if (hasNonMinimalistFeature) {
+    console.log(`Shoes rejected (non-minimalist feature): "${name}"`);
+    return false;
+  }
+  
+  // Check for neutral colors
+  const neutralColors = MINIMALIST_CRITERIA.naturalColors;
+  const hasNeutralColor = neutralColors.some(color => text.includes(color));
+  
+  if (hasMinimalistKeyword && hasNeutralColor) {
+    console.log(`Shoes accepted (minimalist style + neutral color): "${name}"`);
     return true;
   }
   
-  if (hasMinimalistMaterial) {
-    console.log(`Shoes accepted due to minimalist material: ${name}`);
+  if (hasNeutralColor && !hasNonMinimalistPattern) {
+    console.log(`Shoes accepted (neutral color, no pattern): "${name}"`);
     return true;
   }
   
-  console.log(`Shoes rejected (non-neutral color): ${name}`);
+  if (hasMinimalistKeyword && !hasNonMinimalistPattern) {
+    console.log(`Shoes accepted (minimalist style): "${name}"`);
+    return true;
+  }
+  
+  console.log(`Shoes rejected (doesn't meet minimalist criteria): "${name}"`);
   return false;
 };
 
-// Add the missing function that routes to the appropriate checker based on item type
+// Routing function to direct to the appropriate checker based on item type
 export const isMinimalistStyleItem = (item: any, type: string): boolean => {
   if (type === 'top') {
     return isMinimalistTop(item);
