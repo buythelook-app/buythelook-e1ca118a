@@ -1,3 +1,4 @@
+
 export interface DashboardItem {
   id: string;
   name: string;
@@ -23,4 +24,13 @@ export interface Look {
   style: string;
   totalPrice: string;
   items: OutfitItem[];
+}
+
+// Added for better minimalist filtering
+export interface MinimalistCriteria {
+  naturalColors: string[];
+  nonMinimalistPatterns: string[];
+  acceptableTopTypes: string[];
+  acceptableBottomTypes: string[];
+  acceptableShoeTypes: string[];
 }

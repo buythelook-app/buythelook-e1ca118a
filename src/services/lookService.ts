@@ -1,8 +1,35 @@
-import { DashboardItem, OutfitItem } from "@/types/lookTypes";
+
+import { DashboardItem, OutfitItem, MinimalistCriteria } from "@/types/lookTypes";
 import { EventType, EVENT_TO_STYLES } from "@/components/filters/eventTypes";
 
 const API_URL = 'https://mwsblnposuyhrgzrtoyo.supabase.co/functions/v1/generate-outfit';
 const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13c2JsbnBvc3V5aHJnenJ0b3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4OTUyOTYsImV4cCI6MjA1MzQ3MTI5Nn0.gyU3tLyZ_1yY82BKkii8EyeaGzFn9muZR6G6ELJocQk';
+
+// Define strict minimalist criteria
+const MINIMALIST_CRITERIA: MinimalistCriteria = {
+  naturalColors: [
+    'black', 'white', 'grey', 'gray', 'beige', 'cream', 'ivory', 'tan', 
+    'camel', 'navy', 'olive', 'brown', 'khaki', 'taupe', 'nude', 'charcoal',
+    'stone', 'sand', 'oatmeal', 'neutral'
+  ],
+  nonMinimalistPatterns: [
+    'floral', 'animal', 'graphic', 'print', 'logo', 'pattern', 'plaid', 'check',
+    'stripe', 'polka', 'dot', 'sequin', 'glitter', 'embellish', 'embroidery',
+    'neon', 'vibrant', 'bright', 'multi-color', 'colorful'
+  ],
+  acceptableTopTypes: [
+    't-shirt', 'tee', 'shirt', 'blouse', 'sweater', 'pullover', 'tunic',
+    'turtleneck', 'mock neck', 'tank', 'camisole', 'button-up', 'button-down'
+  ],
+  acceptableBottomTypes: [
+    'pant', 'trouser', 'jean', 'denim', 'chino', 'skirt', 'short',
+    'straight leg', 'wide leg', 'tailored', 'cigarette', 'high waist'
+  ],
+  acceptableShoeTypes: [
+    'loafer', 'oxford', 'flat', 'mule', 'slide', 'ballet', 'pump',
+    'leather', 'minimal', 'simple', 'clean', 'sneaker', 'derby', 'sandal'
+  ]
+};
 
 // Helper function to map body shapes to API expected format
 const mapBodyShape = (shape: string): "X" | "V" | "H" | "O" | "A" => {
@@ -133,22 +160,7 @@ const generateOutfit = async (bodyStructure: string, style: string, mood: string
   }
 };
 
-// Helper function to extract image URL from product
-const extractImageUrl = (product: any): string => {
-  if (!product) return '';
-  
-  try {
-    if (Array.isArray(product.image)) {
-      return product.image[0] || '';
-    }
-    return product.image || '';
-  } catch (error) {
-    console.error('Error extracting image URL:', error);
-    return '';
-  }
-};
-
-// Helper function to check if an item is underwear
+// Completely revised to be much more strict
 const isUnderwear = (item: any): boolean => {
   if (!item) return false;
   
@@ -165,215 +177,204 @@ const isUnderwear = (item: any): boolean => {
   );
 };
 
-// ENHANCED: More strict checking for minimalist colors
+// Better text extraction and analysis
+const extractText = (item: any): { name: string, description: string, type: string, color: string } => {
+  return {
+    name: (item.product_name || '').toLowerCase(),
+    description: (item.description || '').toLowerCase(),
+    type: (item.type || '').toLowerCase(),
+    color: (item.colour || '').toLowerCase()
+  };
+};
+
+// Enhanced minimalist color detection
 const hasMinimalistColor = (item: any): boolean => {
   if (!item) return false;
   
-  const minimalistColors = [
-    'beige', 'cream', 'ivory', 'off-white', 'white', 'ecru', 'oatmeal', 
-    'tan', 'khaki', 'sand', 'stone', 'taupe', 'camel', 'nude', 
-    'gray', 'grey', 'light grey', 'dark grey', 'charcoal',
-    'black', 'navy', 'brown', 'olive', 'sage',
-    // Added more specific minimalist color terms
-    'neutral', 'earth tone', 'soft white', 'natural', 'greige'
-  ];
+  const text = extractText(item);
   
-  const itemName = (item.product_name || '').toLowerCase();
-  const itemDesc = (item.description || '').toLowerCase();
-  const itemColor = (item.colour || '').toLowerCase();
-  
-  return minimalistColors.some(color => 
-    itemName.includes(color) || 
-    itemDesc.includes(color) ||
-    itemColor.includes(color)
-  ) || isNeutralItem(item);
+  // Check for specific mentions of minimalist colors
+  return MINIMALIST_CRITERIA.naturalColors.some(color => 
+    text.name.includes(color) || 
+    text.description.includes(color) ||
+    text.color.includes(color)
+  );
 };
 
-// Additional check for neutral items without explicit color mentions
-const isNeutralItem = (item: any): boolean => {
+// Completely new implementation
+const hasNonMinimalistPattern = (item: any): boolean => {
   if (!item) return false;
   
-  // Check if item has color property with neutral values
-  const neutralColorValues = ['black', 'white', 'gray', 'grey', 'beige', 'navy', 'brown', 'khaki', 'taupe'];
-  const itemColor = (item.colour || '').toLowerCase();
+  const text = extractText(item);
   
-  if (neutralColorValues.some(color => itemColor.includes(color))) {
-    return true;
-  }
-  
-  // Check for minimalist keywords that suggest neutral tones
-  const neutralKeywords = ['basic', 'classic', 'simple', 'minimalist', 'essential', 'clean', 'solid color'];
-  const itemName = (item.product_name || '').toLowerCase();
-  const itemDesc = (item.description || '').toLowerCase();
-  
-  return neutralKeywords.some(keyword => 
-    itemName.includes(keyword) || 
-    itemDesc.includes(keyword)
+  return MINIMALIST_CRITERIA.nonMinimalistPatterns.some(pattern => 
+    text.name.includes(pattern) || 
+    text.description.includes(pattern)
   );
 };
 
-// ENHANCED: Stricter check for minimalist shoes
-const isMinimalistShoe = (item: any): boolean => {
-  if (!item) return false;
-  
-  const itemName = (item.product_name || '').toLowerCase();
-  const itemDesc = (item.description || '').toLowerCase();
-  
-  // Non-minimalist shoe elements
-  const nonMinimalistElements = [
-    'platform', 'chunky', 'heel', 'high heel', 'stiletto', 
-    'glitter', 'sequin', 'embellish', 'rhinestone', 'crystal',
-    'studs', 'spike', 'neon', 'bright', 'graphic', 'print', 
-    'pattern', 'floral', 'multi-color', 'multicolor'
-  ];
-  
-  // Check if the shoe has any non-minimalist elements
-  const hasNonMinimalistFeature = nonMinimalistElements.some(element => 
-    itemName.includes(element) || 
-    itemDesc.includes(element)
-  );
-  
-  if (hasNonMinimalistFeature) {
-    return false;
-  }
-  
-  // Minimalist shoe types
-  const minimalistShoeTypes = [
-    'loafer', 'oxford', 'flat', 'mule', 'slide', 'slip-on', 
-    'minimal', 'simple', 'clean', 'basic', 'leather', 'ballet',
-    'sneaker', 'sandal'
-  ];
-  
-  // Check if the shoe type matches minimalist styles
-  const hasMinimalistType = minimalistShoeTypes.some(type => 
-    itemName.includes(type) || 
-    itemDesc.includes(type)
-  );
-  
-  // Check if the shoe has natural colors
-  const hasNatural = hasMinimalistColor(item);
-  
-  return hasMinimalistType || hasNatural;
-};
-
-// ENHANCED: Stricter check for minimalist tops and bottoms
+// New implementation for minimalist top detection
 const isMinimalistTop = (item: any): boolean => {
   if (!item) return false;
   
-  const itemName = (item.product_name || '').toLowerCase();
-  const itemDesc = (item.description || '').toLowerCase();
+  const text = extractText(item);
   
-  // Non-minimalist top elements
-  const nonMinimalistElements = [
-    'sequin', 'embellish', 'glitter', 'rhinestone', 'ruffle',
-    'fringe', 'tassle', 'neon', 'bright', 'graphic', 'logo',
-    'animal print', 'tropical', 'floral'
-  ];
-  
-  // Check if the top has any non-minimalist elements
-  const hasNonMinimalistFeature = nonMinimalistElements.some(element => 
-    itemName.includes(element) || 
-    itemDesc.includes(element)
-  );
-  
-  if (hasNonMinimalistFeature) {
+  // Automatic rejection for non-minimalist patterns or bright colors
+  if (hasNonMinimalistPattern(item)) {
+    console.log(`Top rejected (pattern/embellishment): ${text.name}`);
     return false;
   }
   
-  // Minimalist top keywords
-  const minimalistTopTypes = [
-    't-shirt', 'tee', 'shirt', 'blouse', 'cardigan', 'sweater', 
-    'pullover', 'tank', 'camisole', 'turtleneck', 'mock neck',
-    'button-up', 'button-down', 'simple', 'basic', 'classic', 'clean'
-  ];
+  // Check if it has a minimalist color
+  const hasNeutralColor = hasMinimalistColor(item);
+  if (!hasNeutralColor) {
+    console.log(`Top rejected (non-neutral color): ${text.name}`);
+    return false;
+  }
   
-  // Check if the top type matches minimalist styles
-  const hasMinimalistType = minimalistTopTypes.some(type => 
-    itemName.includes(type) || 
-    itemDesc.includes(type)
+  // Check if it matches minimalist top types
+  const isAcceptableType = MINIMALIST_CRITERIA.acceptableTopTypes.some(type => 
+    text.name.includes(type) || 
+    text.description.includes(type) ||
+    text.type.includes(type)
   );
   
-  // Check if the top has natural colors
-  const hasNatural = hasMinimalistColor(item);
+  if (isAcceptableType) {
+    console.log(`Top accepted (minimalist criteria): ${text.name}`);
+    return true;
+  }
   
-  return (hasMinimalistType || hasNatural);
+  // For tops that don't explicitly match our types but are neutral colored and don't have patterns
+  if (hasNeutralColor && !hasNonMinimalistPattern(item)) {
+    console.log(`Top conditionally accepted (neutral, no pattern): ${text.name}`);
+    return true;
+  }
+  
+  console.log(`Top rejected (doesn't match minimalist criteria): ${text.name}`);
+  return false;
 };
 
-// Check if bottoms match minimalist style
+// New implementation for minimalist bottom detection
 const isMinimalistBottom = (item: any): boolean => {
   if (!item) return false;
   
-  const itemName = (item.product_name || '').toLowerCase();
-  const itemDesc = (item.description || '').toLowerCase();
+  const text = extractText(item);
   
-  // Non-minimalist bottom elements
-  const nonMinimalistElements = [
-    'sequin', 'embellish', 'glitter', 'rhinestone', 'distressed',
-    'ripped', 'neon', 'bright', 'graphic', 'logo', 'embroidered',
-    'animal print', 'tropical', 'floral'
-  ];
-  
-  // Check if the bottom has any non-minimalist elements
-  const hasNonMinimalistFeature = nonMinimalistElements.some(element => 
-    itemName.includes(element) || 
-    itemDesc.includes(element)
-  );
-  
-  if (hasNonMinimalistFeature) {
+  // Automatic rejection for non-minimalist patterns
+  if (hasNonMinimalistPattern(item)) {
+    console.log(`Bottom rejected (pattern/embellishment): ${text.name}`);
     return false;
   }
   
-  // Minimalist bottom keywords
-  const minimalistBottomTypes = [
-    'pant', 'trouser', 'jean', 'denim', 'skirt', 'short', 
-    'straight leg', 'wide leg', 'culotte', 'palazzo', 'cigarette',
-    'high waist', 'tailored', 'simple', 'basic', 'classic', 'clean'
-  ];
+  // Check if it has a minimalist color
+  const hasNeutralColor = hasMinimalistColor(item);
+  if (!hasNeutralColor) {
+    console.log(`Bottom rejected (non-neutral color): ${text.name}`);
+    return false;
+  }
   
-  // Check if the bottom type matches minimalist styles
-  const hasMinimalistType = minimalistBottomTypes.some(type => 
-    itemName.includes(type) || 
-    itemDesc.includes(type)
+  // Check if it matches minimalist bottom types
+  const isAcceptableType = MINIMALIST_CRITERIA.acceptableBottomTypes.some(type => 
+    text.name.includes(type) || 
+    text.description.includes(type) ||
+    text.type.includes(type)
   );
   
-  // Check if the bottom has natural colors
-  const hasNatural = hasMinimalistColor(item);
+  if (isAcceptableType) {
+    console.log(`Bottom accepted (minimalist criteria): ${text.name}`);
+    return true;
+  }
   
-  return (hasMinimalistType || hasNatural);
+  // For bottoms that don't explicitly match our types but are neutral colored and don't have patterns
+  if (hasNeutralColor && !hasNonMinimalistPattern(item)) {
+    console.log(`Bottom conditionally accepted (neutral, no pattern): ${text.name}`);
+    return true;
+  }
+  
+  console.log(`Bottom rejected (doesn't match minimalist criteria): ${text.name}`);
+  return false;
+};
+
+// New implementation for minimalist shoe detection
+const isMinimalistShoe = (item: any): boolean => {
+  if (!item) return false;
+  
+  const text = extractText(item);
+  
+  // Automatic rejection for specific non-minimalist shoe terms
+  const nonMinimalistShoeTerms = [
+    'platform', 'chunky', 'high heel', 'stiletto', 'wedge', 
+    'glitter', 'sequin', 'rhinestone', 'embellish', 'studded',
+    'metallic', 'neon', 'bright', 'multi-color'
+  ];
+  
+  const hasNonMinimalistFeature = nonMinimalistShoeTerms.some(term => 
+    text.name.includes(term) || 
+    text.description.includes(term)
+  );
+  
+  if (hasNonMinimalistFeature) {
+    console.log(`Shoes rejected (non-minimalist feature): ${text.name}`);
+    return false;
+  }
+  
+  // Check if it has a minimalist color
+  const hasNeutralColor = hasMinimalistColor(item);
+  if (!hasNeutralColor) {
+    console.log(`Shoes rejected (non-neutral color): ${text.name}`);
+    return false;
+  }
+  
+  // Check if it matches minimalist shoe types
+  const isAcceptableType = MINIMALIST_CRITERIA.acceptableShoeTypes.some(type => 
+    text.name.includes(type) || 
+    text.description.includes(type)
+  );
+  
+  if (isAcceptableType) {
+    console.log(`Shoes accepted (minimalist criteria): ${text.name}`);
+    return true;
+  }
+  
+  // Fallback for shoes that don't explicitly match our types but are neutral colored
+  if (hasNeutralColor && !hasNonMinimalistPattern(item)) {
+    console.log(`Shoes conditionally accepted (neutral, no pattern): ${text.name}`);
+    return true;
+  }
+  
+  console.log(`Shoes rejected (doesn't match minimalist criteria): ${text.name}`);
+  return false;
 };
 
 // Helper function to check if an item matches minimalist style
 const isMinimalistStyleItem = (item: any, type: string): boolean => {
   if (!item) return false;
   
-  if (type === 'top') {
-    return isMinimalistTop(item);
-  } else if (type === 'bottom') {
-    return isMinimalistBottom(item);
-  } else if (type === 'shoes') {
-    return isMinimalistShoe(item);
+  switch (type.toLowerCase()) {
+    case 'top':
+      return isMinimalistTop(item);
+    case 'bottom':
+      return isMinimalistBottom(item);
+    case 'shoes':
+      return isMinimalistShoe(item);
+    default:
+      return hasMinimalistColor(item) && !hasNonMinimalistPattern(item);
   }
-  
-  return hasMinimalistColor(item) && !hasPatterns(item);
 };
 
-// Check if an item has patterns or loud designs (non-minimalist)
-const hasPatterns = (item: any): boolean => {
-  if (!item) return false;
+// Helper function to extract image URL from product
+const extractImageUrl = (product: any): string => {
+  if (!product) return '';
   
-  const itemName = (item.product_name || '').toLowerCase();
-  const itemDesc = (item.description || '').toLowerCase();
-  
-  const patternKeywords = [
-    'pattern', 'print', 'floral', 'stripe', 'check', 'plaid', 
-    'graphic', 'logo', 'animal', 'leopard', 'zebra', 'snake', 
-    'camo', 'camouflage', 'multi-color', 'multicolor'
-  ];
-  
-  return patternKeywords.some(pattern => 
-    itemName.includes(pattern) || 
-    itemDesc.includes(pattern)
-  );
+  try {
+    if (Array.isArray(product.image)) {
+      return product.image[0] || '';
+    }
+    return product.image || '';
+  } catch (error) {
+    console.error('Error extracting image URL:', error);
+    return '';
+  }
 };
 
 // Helper function to convert API item to DashboardItem
@@ -385,10 +386,11 @@ const convertToDashboardItem = (item: any, type: string, userStyle: string = '')
     return null;
   }
   
-  // Strict filtering for minimalist style
+  // Apply strict minimalist filtering
   if (userStyle === 'Minimalist') {
     if (!isMinimalistStyleItem(item, type)) {
-      console.log(`${type.toUpperCase()} does not match minimalist style criteria:`, item.product_name);
+      const text = extractText(item);
+      console.log(`Rejected ${type} item for minimalist style: ${text.name}`);
       return null;
     }
   }
@@ -432,99 +434,122 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
 
     console.log("Using user's preferred style from quiz:", preferredStyle);
 
-    // Try multiple API calls to maximize chances of finding good minimalist items
+    // Make more API calls for better selection chances
     const promises = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
       promises.push(generateOutfit(bodyShape, style, mood));
     }
     
     const responses = await Promise.all(promises);
-    const allOutfits = responses.flatMap(response => response.data || []);
     
-    // Collect all available items for mixing and matching
+    // Collect all available items from all responses
     const allTops: any[] = [];
     const allBottoms: any[] = [];
     const allShoes: any[] = [];
     
-    allOutfits.forEach(outfit => {
-      if (outfit.top) allTops.push(outfit.top);
-      if (outfit.bottom) allBottoms.push(outfit.bottom);
-      if (outfit.shoes) allShoes.push(outfit.shoes);
+    responses.forEach(response => {
+      if (Array.isArray(response.data)) {
+        response.data.forEach(outfit => {
+          if (outfit.top) allTops.push(outfit.top);
+          if (outfit.bottom) allBottoms.push(outfit.bottom);
+          if (outfit.shoes) allShoes.push(outfit.shoes);
+        });
+      }
     });
     
-    // Score and sort items by minimalist criteria
+    console.log(`Found ${allTops.length} tops, ${allBottoms.length} bottoms, and ${allShoes.length} shoes to filter`);
+    
+    // Score items based on minimalist criteria
     const scoreItem = (item: any, type: string): number => {
+      if (!item) return -100; // Heavily penalize missing items
+      
       let score = 0;
       
-      // Base score for having the item
-      if (item) score += 1;
+      // Base score
+      score += 1;
       
-      // Score for natural colors
-      if (hasMinimalistColor(item)) score += 3;
-      
-      // Penalize for patterns
-      if (hasPatterns(item)) score -= 3;
-      
-      // Type-specific scoring
-      if (type === 'top' && isMinimalistTop(item)) score += 3;
-      if (type === 'bottom' && isMinimalistBottom(item)) score += 3;
-      if (type === 'shoes' && isMinimalistShoe(item)) score += 3;
+      // For minimalist style, apply our criteria
+      if (preferredStyle === 'Minimalist') {
+        // Check for minimalist colors
+        if (hasMinimalistColor(item)) score += 5;
+        
+        // Penalize for patterns
+        if (hasNonMinimalistPattern(item)) score -= 10;
+        
+        // Type-specific scoring
+        if (type === 'top' && isMinimalistTop(item)) score += 5;
+        if (type === 'bottom' && isMinimalistBottom(item)) score += 5;
+        if (type === 'shoes' && isMinimalistShoe(item)) score += 5;
+      }
       
       return score;
     };
     
-    // Sort items by their minimalist score
-    const sortedTops = allTops.sort((a, b) => scoreItem(b, 'top') - scoreItem(a, 'top'));
-    const sortedBottoms = allBottoms.sort((a, b) => scoreItem(b, 'bottom') - scoreItem(a, 'bottom'));
-    const sortedShoes = allShoes.sort((a, b) => scoreItem(b, 'shoes') - scoreItem(a, 'shoes'));
+    // Filter and sort items by their minimalist score
+    const filteredTops = allTops
+      .filter(top => isMinimalistStyleItem(top, 'top'))
+      .sort((a, b) => scoreItem(b, 'top') - scoreItem(a, 'top'));
+    
+    const filteredBottoms = allBottoms
+      .filter(bottom => isMinimalistStyleItem(bottom, 'bottom'))
+      .sort((a, b) => scoreItem(b, 'bottom') - scoreItem(a, 'bottom'));
+    
+    const filteredShoes = allShoes
+      .filter(shoes => isMinimalistStyleItem(shoes, 'shoes'))
+      .sort((a, b) => scoreItem(b, 'shoes') - scoreItem(a, 'shoes'));
+    
+    console.log(`After filtering: ${filteredTops.length} tops, ${filteredBottoms.length} bottoms, and ${filteredShoes.length} shoes match minimalist criteria`);
     
     // Convert the best items to dashboard items
-    const topItem = convertToDashboardItem(sortedTops[0], 'top', preferredStyle);
-    const bottomItem = convertToDashboardItem(sortedBottoms[0], 'bottom', preferredStyle);
-    const shoesItem = convertToDashboardItem(sortedShoes[0], 'shoes', preferredStyle);
+    const topItem = filteredTops.length > 0 ? convertToDashboardItem(filteredTops[0], 'top', preferredStyle) : null;
+    const bottomItem = filteredBottoms.length > 0 ? convertToDashboardItem(filteredBottoms[0], 'bottom', preferredStyle) : null;
+    const shoesItem = filteredShoes.length > 0 ? convertToDashboardItem(filteredShoes[0], 'shoes', preferredStyle) : null;
     
     const items: DashboardItem[] = [];
     
     // Add items if they passed the minimalist filter
-    if (topItem) items.push(topItem);
-    if (bottomItem) items.push(bottomItem);
-    if (shoesItem) items.push(shoesItem);
+    if (topItem) {
+      items.push(topItem);
+      console.log("Selected minimalist top:", topItem.name);
+    }
     
-    // If we need fallbacks for missing items, try the next best options
-    if (!topItem && sortedTops.length > 1) {
-      for (let i = 1; i < sortedTops.length && !items.some(item => item.type === 'top'); i++) {
-        const fallbackTop = convertToDashboardItem(sortedTops[i], 'top', preferredStyle);
-        if (fallbackTop) {
-          items.push(fallbackTop);
-          console.log("Added fallback top item:", fallbackTop.name);
-          break;
-        }
+    if (bottomItem) {
+      items.push(bottomItem);
+      console.log("Selected minimalist bottom:", bottomItem.name);
+    }
+    
+    if (shoesItem) {
+      items.push(shoesItem);
+      console.log("Selected minimalist shoes:", shoesItem.name);
+    }
+    
+    // If we still don't have enough items, fall back to the original items
+    if (items.length < 2 && allTops.length > 0 && !topItem) {
+      const fallbackTop = convertToDashboardItem(allTops[0], 'top');
+      if (fallbackTop) {
+        items.push(fallbackTop);
+        console.log("Added fallback top (not strictly minimalist):", fallbackTop.name);
       }
     }
     
-    if (!bottomItem && sortedBottoms.length > 1) {
-      for (let i = 1; i < sortedBottoms.length && !items.some(item => item.type === 'bottom'); i++) {
-        const fallbackBottom = convertToDashboardItem(sortedBottoms[i], 'bottom', preferredStyle);
-        if (fallbackBottom) {
-          items.push(fallbackBottom);
-          console.log("Added fallback bottom item:", fallbackBottom.name);
-          break;
-        }
+    if (items.length < 2 && allBottoms.length > 0 && !bottomItem) {
+      const fallbackBottom = convertToDashboardItem(allBottoms[0], 'bottom');
+      if (fallbackBottom) {
+        items.push(fallbackBottom);
+        console.log("Added fallback bottom (not strictly minimalist):", fallbackBottom.name);
       }
     }
     
-    if (!shoesItem && sortedShoes.length > 1) {
-      for (let i = 1; i < sortedShoes.length && !items.some(item => item.type === 'shoes'); i++) {
-        const fallbackShoes = convertToDashboardItem(sortedShoes[i], 'shoes', preferredStyle);
-        if (fallbackShoes) {
-          items.push(fallbackShoes);
-          console.log("Added fallback shoes item:", fallbackShoes.name);
-          break;
-        }
+    if (items.length < 3 && allShoes.length > 0 && !shoesItem) {
+      const fallbackShoes = convertToDashboardItem(allShoes[0], 'shoes');
+      if (fallbackShoes) {
+        items.push(fallbackShoes);
+        console.log("Added fallback shoes (not strictly minimalist):", fallbackShoes.name);
       }
     }
     
-    console.log('First outfit items:', items);
+    console.log('Final outfit items:', items);
+    
     return items;
   } catch (error) {
     console.error('Error in fetchFirstOutfitSuggestion:', error);
