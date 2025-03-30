@@ -1,11 +1,8 @@
-
 import { Button } from "@/components/ui/button";
 import { Bot } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { Capacitor } from "@capacitor/core";
-import { App } from "@capacitor/app";
 
 export const SocialSignIn = () => {
   const { toast } = useToast();
@@ -18,11 +15,12 @@ export const SocialSignIn = () => {
 
   useEffect(() => {
     // Check if running on a native mobile platform
-    setIsMobile(Capacitor.isNativePlatform());
+    const isNative = window.Capacitor?.isNativePlatform?.() || false;
+    setIsMobile(isNative);
     
     // Set up deep link listener for mobile platforms
-    if (Capacitor.isNativePlatform()) {
-      App.addListener('appUrlOpen', (data) => {
+    if (isNative && window.App?.addListener) {
+      window.App.addListener('appUrlOpen', (data) => {
         console.log('Deep link received in SocialSignIn:', data.url);
       });
     }

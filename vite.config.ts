@@ -1,4 +1,3 @@
-
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -31,12 +30,17 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       external: [
         // These are marked as external to prevent them from being bundled
-        // They'll be loaded from the native plugins at runtime
         '@capacitor/app',
         '@capacitor/core',
-        '@capacitor/ios',
-        '@capacitor/android',
-      ]
+        '@capacitor/splash-screen'
+      ],
+      output: {
+        globals: {
+          '@capacitor/app': 'capacitorExports.CapacitorApp',
+          '@capacitor/core': 'capacitorExports.Capacitor',
+          '@capacitor/splash-screen': 'capacitorExports.CapacitorSplashScreen'
+        }
+      }
     }
   }
 }));

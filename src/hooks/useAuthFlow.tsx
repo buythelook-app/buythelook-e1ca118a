@@ -1,10 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { Capacitor } from "@capacitor/core";
-import { App } from "@capacitor/app";
 
 export const useAuthFlow = () => {
   const navigate = useNavigate();
@@ -15,43 +12,51 @@ export const useAuthFlow = () => {
   useEffect(() => {
     console.log("Auth flow init started");
     let isMounted = true;
+    let appUrlListener: { remove: () => void } | null = null;
     
     // Set up deep link handler for native platforms
-    if (Capacitor.isNativePlatform()) {
-      App.addListener('appUrlOpen', async (data) => {
-        console.log('Deep link received in useAuthFlow:', data.url);
-        
-        if (data.url.includes('auth') && isMounted) {
-          setIsLoading(true);
+    if (window.Capacitor?.isNativePlatform?.()) {
+      console.log("Setting up deep link handler on native platform");
+      
+      // Only set up listener if App is available
+      if (window.App?.addListener) {
+        appUrlListener = window.App.addListener('appUrlOpen', async (data) => {
+          console.log('Deep link received in useAuthFlow:', data.url);
           
-          try {
-            // After deep link is received, verify session
-            const { data: sessionData, error } = await supabase.auth.getSession();
+          if (data.url.includes('auth') && isMounted) {
+            setIsLoading(true);
             
-            if (error) throw error;
-            
-            if (sessionData.session) {
-              console.log("Session found after deep link:", sessionData.session.user?.id);
+            try {
+              // After deep link is received, verify session
+              const { data: sessionData, error } = await supabase.auth.getSession();
+              
+              if (error) throw error;
+              
+              if (sessionData.session) {
+                console.log("Session found after deep link:", sessionData.session.user?.id);
+                toast({
+                  title: "Success",
+                  description: "You have been signed in successfully.",
+                });
+                navigate('/home');
+              } else {
+                console.log("No session after deep link");
+                setIsLoading(false);
+              }
+            } catch (error: any) {
+              console.error("Deep link auth error:", error);
               toast({
-                title: "Success",
-                description: "You have been signed in successfully.",
+                title: "Error",
+                description: error.message || "Authentication failed",
+                variant: "destructive",
               });
-              navigate('/home');
-            } else {
-              console.log("No session after deep link");
               setIsLoading(false);
             }
-          } catch (error: any) {
-            console.error("Deep link auth error:", error);
-            toast({
-              title: "Error",
-              description: error.message || "Authentication failed",
-              variant: "destructive",
-            });
-            setIsLoading(false);
           }
-        }
-      });
+        });
+      } else {
+        console.warn("window.App.addListener not available");
+      }
     }
 
     // Set up auth state change listener
@@ -102,7 +107,7 @@ export const useAuthFlow = () => {
     };
     
     const handleDeepLink = async () => {
-      const isMobileNative = Capacitor.isNativePlatform();
+      const isMobileNative = window.Capacitor?.isNativePlatform?.() || false;
       console.log("Platform check:", isMobileNative ? "mobile native" : "browser");
       
       // Check if we have auth params in URL
@@ -168,8 +173,11 @@ export const useAuthFlow = () => {
       subscription.unsubscribe();
       
       // Clean up app listener if on native platform
-      if (Capacitor.isNativePlatform()) {
-        App.removeAllListeners();
+      if (window.Capacitor?.isNativePlatform?.() && window.App?.removeAllListeners) {
+        window.App.removeAllListeners();
+      } else if (appUrlListener) {
+        // If we have a listener reference, remove it directly
+        appUrlListener.remove();
       }
     };
   }, [navigate, toast]);

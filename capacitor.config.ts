@@ -1,4 +1,3 @@
-
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
@@ -8,6 +7,9 @@ const config: CapacitorConfig = {
   plugins: {
     CapacitorCookies: {
       enabled: true
+    },
+    SplashScreen: {
+      launchShowDuration: 3000
     }
   },
   android: {
@@ -18,12 +20,12 @@ const config: CapacitorConfig = {
       keystoreAliasPassword: undefined
     }
   },
-  // Fixed configuration for deep linking and native performance
   server: {
     androidScheme: "https",
-    hostname: "buythelook"
+    hostname: "app",
+    cleartext: true
+    // Removed direct URL override to use the default index.html
   },
-  // Add specific deep linking schemes
   ios: {
     scheme: "buythelook"
   }
