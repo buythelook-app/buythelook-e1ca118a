@@ -39,9 +39,9 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
     
     console.log('Generating outfit with params:', requestBody);
     
-    // Decrease timeout to 15 seconds to allow for faster retries
+    // Increase timeout to 30 seconds to allow for slower responses
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     
     try {
       const response = await fetch(API_URL, {
@@ -67,7 +67,7 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
       }
 
       const data = await response.json();
-      console.log('API response received successfully');
+      console.log('API response:', data);
       
       requestCache.set(cacheKey, data);
       
@@ -80,13 +80,12 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
     } catch (error) {
       clearTimeout(timeoutId);
       if (error.name === 'AbortError') {
-        console.error('Request timed out after 15 seconds');
+        console.error('Request timed out after 30 seconds');
       }
       throw error;
     }
   } catch (error) {
     console.error('Error in generateOutfit:', error);
-    // Return a default empty structure instead of throwing
-    return { data: [] };
+    throw error;
   }
 };
