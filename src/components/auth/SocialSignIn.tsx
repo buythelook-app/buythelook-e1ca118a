@@ -28,24 +28,16 @@ export const SocialSignIn = () => {
     try {
       setIsLoading(prev => ({ ...prev, google: true }));
       
-      if (!redirectUrl) {
-        console.error("Redirect URL not set");
-        throw new Error("Could not determine app URL for authentication");
-      }
-      
       toast({
         title: "Google Sign In",
         description: "Connecting to Google...",
       });
       
-      console.log("Starting Google sign-in with simplified approach");
+      console.log("Starting Google auth flow");
       
-      // Simplified approach without extra parameters
+      // Basic configuration with no extra parameters
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-        }
       });
       
       if (error) {
@@ -53,7 +45,13 @@ export const SocialSignIn = () => {
         throw error;
       }
       
-      console.log("OAuth flow initiated, Supabase handling redirect");
+      console.log("OAuth data received:", data);
+      
+      // If on web, data.url will be available and we should redirect
+      if (data?.url) {
+        console.log("Redirecting to:", data.url);
+        window.location.href = data.url;
+      }
       
     } catch (error: any) {
       console.error("Google sign-in error:", error);
