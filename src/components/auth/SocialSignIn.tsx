@@ -38,18 +38,13 @@ export const SocialSignIn = () => {
         description: "Connecting to Google...",
       });
       
-      console.log("Starting Google sign-in with redirect URL:", redirectUrl);
+      console.log("Starting Google sign-in with simplified approach");
       
-      // Always use this approach for web
+      // Simplified approach without extra parameters
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          skipBrowserRedirect: false, // Let Supabase handle redirect for both web and mobile
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
         }
       });
       
@@ -58,8 +53,7 @@ export const SocialSignIn = () => {
         throw error;
       }
       
-      // No need to manually redirect - Supabase will handle it
-      console.log("OAuth flow initiated, waiting for redirect");
+      console.log("OAuth flow initiated, Supabase handling redirect");
       
     } catch (error: any) {
       console.error("Google sign-in error:", error);
