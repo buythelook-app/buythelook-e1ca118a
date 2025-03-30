@@ -42,7 +42,8 @@ const config: CapacitorConfig = {
     }
   },
   ios: {
-    scheme: "buythelook"
+    scheme: "buythelook",
+    limitsNavigationsToAppBoundDomains: true
   }
 }
 

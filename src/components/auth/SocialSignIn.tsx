@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Bot } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export const SocialSignIn = () => {
   const { toast } = useToast();
@@ -11,18 +11,6 @@ export const SocialSignIn = () => {
     apple: false,
     ai: false
   });
-  
-  // Store the redirect URL after component mount
-  const [redirectUrl, setRedirectUrl] = useState("");
-  
-  useEffect(() => {
-    // Get the base URL for the current environment
-    const baseUrl = window.location.origin;
-    const redirectPath = "/auth"; // Path to redirect to after auth
-    setRedirectUrl(baseUrl + redirectPath);
-    
-    console.log("Base URL for auth redirect set to:", baseUrl + redirectPath);
-  }, []);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -33,23 +21,25 @@ export const SocialSignIn = () => {
         description: "Connecting to Google...",
       });
       
-      console.log("Starting Google auth flow");
+      console.log("Starting Google sign-in");
       
-      // Basic configuration with no extra parameters
+      // Simple approach with minimal configuration
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/auth'
+        }
       });
       
       if (error) {
-        console.error("Error during OAuth setup:", error);
+        console.error("OAuth setup error:", error);
         throw error;
       }
       
-      console.log("OAuth data received:", data);
+      console.log("OAuth redirect URL:", data?.url);
       
-      // If on web, data.url will be available and we should redirect
       if (data?.url) {
-        console.log("Redirecting to:", data.url);
+        // Directly navigate to the authorization URL
         window.location.href = data.url;
       }
       
