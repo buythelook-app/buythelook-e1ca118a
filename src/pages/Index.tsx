@@ -1,4 +1,3 @@
-
 import { HeroSection } from "@/components/HeroSection";
 import { Navbar } from "@/components/Navbar";
 import { FilterOptions } from "@/components/filters/FilterOptions";
@@ -34,13 +33,16 @@ export default function Index() {
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
 
   useEffect(() => {
+    console.log("Index page loaded");
     const styleAnalysis = localStorage.getItem('styleAnalysis');
     if (styleAnalysis) {
       setUserStyle(JSON.parse(styleAnalysis));
+      console.log("Style analysis loaded:", JSON.parse(styleAnalysis));
+    } else {
+      console.log("No style analysis found in localStorage");
     }
   }, []);
 
-  // Updated to use fetchDashboardItems with occasion categorization
   const { data: occasionOutfits, isLoading, refetch } = useQuery({
     queryKey: ['dashboardItems', selectedMood],
     queryFn: fetchDashboardItems,
@@ -48,7 +50,6 @@ export default function Index() {
     staleTime: 0,
   });
 
-  // Refetch when mood changes
   useEffect(() => {
     if (selectedMood) {
       localStorage.setItem('current-mood', selectedMood);
@@ -56,7 +57,6 @@ export default function Index() {
     }
   }, [selectedMood, refetch]);
 
-  // Create a look from items for a specific occasion
   const createLookFromItems = (items: any[] = [], occasion: string, index: number): Look | null => {
     if (!items || items.length === 0) return null;
     
@@ -66,7 +66,6 @@ export default function Index() {
       type: item.type.toLowerCase() as 'top' | 'bottom' | 'shoes'
     }));
     
-    // Calculate total price
     let totalPrice = 0;
     items.forEach(item => {
       const itemPrice = item.price?.replace(/[^0-9.]/g, '') || '0';
