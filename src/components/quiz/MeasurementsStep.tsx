@@ -1,3 +1,4 @@
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
@@ -107,6 +108,18 @@ export const MeasurementsStep = ({
     }
   };
 
+  // Convert cm to inches for display and input
+  const cmToInches = (cm: string): string => {
+    if (!cm || cm === "prefer_not_to_answer") return "";
+    return (parseInt(cm) / 2.54).toFixed(1);
+  };
+
+  // Convert inches to cm for storage
+  const inchesToCm = (inches: string): string => {
+    if (!inches) return "";
+    return Math.round(parseFloat(inches) * 2.54).toString();
+  };
+
   const RemarkMessage = ({ show }: { show: boolean }) => {
     if (!show) return null;
     
@@ -185,14 +198,21 @@ export const MeasurementsStep = ({
       <div className="flex-1 flex flex-col">
         <h2 className="text-2xl font-display font-semibold mb-6">What's your weight?</h2>
         <div className="flex-1 flex flex-col gap-4">
-          <Input
-            type="number"
-            placeholder="Weight in kg"
-            value={weight === "prefer_not_to_answer" ? "" : weight}
-            onChange={(e) => onWeightChange(e.target.value)}
-            className="w-full"
-            disabled={weight === "prefer_not_to_answer"}
-          />
+          <div className="w-full">
+            <Label htmlFor="weight">Weight (lbs)</Label>
+            <Input
+              id="weight"
+              type="number"
+              placeholder="Weight in pounds"
+              value={weight === "prefer_not_to_answer" ? "" : Math.round(parseInt(weight || "0") * 2.2)}
+              onChange={(e) => onWeightChange(Math.round(parseInt(e.target.value || "0") / 2.2).toString())}
+              className="w-full"
+              disabled={weight === "prefer_not_to_answer"}
+            />
+            <div className="mt-1 text-xs text-gray-500">
+              {weight && weight !== "prefer_not_to_answer" ? `${weight} kg` : ""}
+            </div>
+          </div>
           <Button 
             type="button" 
             variant="outline" 
@@ -212,15 +232,20 @@ export const MeasurementsStep = ({
       <h2 className="text-2xl font-display font-semibold mb-6">Your measurements</h2>
       <div className="flex-1 flex flex-col gap-4">
         <div>
-          <Label htmlFor="waist">Waist (cm)</Label>
+          <Label htmlFor="waist">Waist (inches)</Label>
           <Input
             id="waist"
             type="number"
-            value={waist === "prefer_not_to_answer" ? "" : waist}
-            onChange={(e) => onWaistChange(e.target.value)}
+            placeholder="Waist in inches"
+            value={waist === "prefer_not_to_answer" ? "" : cmToInches(waist)}
+            onChange={(e) => onWaistChange(inchesToCm(e.target.value))}
             className="w-full mt-1"
             disabled={waist === "prefer_not_to_answer"}
+            step="0.1"
           />
+          <div className="mt-1 text-xs text-gray-500">
+            {waist && waist !== "prefer_not_to_answer" ? `${waist} cm` : ""}
+          </div>
           <Button 
             type="button" 
             variant="outline" 
@@ -232,15 +257,20 @@ export const MeasurementsStep = ({
           <RemarkMessage show={showWaistRemark} />
         </div>
         <div>
-          <Label htmlFor="chest">Chest (cm)</Label>
+          <Label htmlFor="chest">Chest (inches)</Label>
           <Input
             id="chest"
             type="number"
-            value={chest === "prefer_not_to_answer" ? "" : chest}
-            onChange={(e) => onChestChange(e.target.value)}
+            placeholder="Chest in inches"
+            value={chest === "prefer_not_to_answer" ? "" : cmToInches(chest)}
+            onChange={(e) => onChestChange(inchesToCm(e.target.value))}
             className="w-full mt-1"
             disabled={chest === "prefer_not_to_answer"}
+            step="0.1"
           />
+          <div className="mt-1 text-xs text-gray-500">
+            {chest && chest !== "prefer_not_to_answer" ? `${chest} cm` : ""}
+          </div>
           <Button 
             type="button" 
             variant="outline" 
