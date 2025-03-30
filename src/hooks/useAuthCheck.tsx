@@ -1,11 +1,12 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 export const useAuthCheck = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
   
   useEffect(() => {
     const checkAuth = async () => {
@@ -15,6 +16,11 @@ export const useAuthCheck = () => {
         
         if (error) {
           console.error("Error checking authentication:", error);
+          toast({
+            title: "Error",
+            description: "There was a problem checking your login status",
+            variant: "destructive",
+          });
           setIsAuthenticated(false);
         } else {
           setIsAuthenticated(!!data.session);
@@ -40,7 +46,7 @@ export const useAuthCheck = () => {
     return () => {
       authListener?.subscription.unsubscribe();
     };
-  }, []);
+  }, [toast]);
   
   return { isAuthenticated, isLoading };
 };

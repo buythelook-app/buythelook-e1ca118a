@@ -10,6 +10,9 @@ export const Entrance = () => {
   useEffect(() => {
     // Only redirect once we've checked authentication status
     if (!isLoading) {
+      console.log("Auth check completed, navigating based on state:", isAuthenticated);
+      
+      // Use a short delay to ensure any auth state changes have propagated
       const timer = setTimeout(() => {
         if (isAuthenticated) {
           console.log("User is authenticated, navigating to home");
@@ -18,7 +21,7 @@ export const Entrance = () => {
           console.log("User is not authenticated, navigating to auth");
           navigate("/auth");
         }
-      }, 2000); // Short delay to show splash screen
+      }, 1000); // Use a 1 second delay to show splash screen
 
       return () => clearTimeout(timer);
     }
