@@ -19,7 +19,7 @@ export const mapBodyShape = (shape: string): "X" | "V" | "H" | "O" | "A" => {
 
 export const mapStyle = (style: string): "classic" | "romantic" | "minimalist" | "casual" | "boohoo" | "sporty" => {
   // Normalize style name to lowercase for case-insensitive matching
-  const normalizedStyle = style.toLowerCase().trim();
+  const normalizedStyle = style?.toLowerCase().trim() || "casual";
   
   const styleMap: { [key: string]: "classic" | "romantic" | "minimalist" | "casual" | "boohoo" | "sporty" } = {
     // Original mappings

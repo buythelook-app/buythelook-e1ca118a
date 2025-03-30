@@ -14,10 +14,26 @@ export const extractImageUrl = (product: any): string => {
     if (Array.isArray(product.image)) {
       return product.image[0] || '';
     }
-    return product.image || '';
+    
+    if (typeof product.image === 'string' && product.image.trim() !== '') {
+      return product.image;
+    }
+    
+    // Fallback image URLs based on item type
+    const fallbacks = {
+      top: 'https://i.imgur.com/1j9ZXed.png',
+      bottom: 'https://i.imgur.com/RWCV0G0.png',
+      shoes: 'https://i.imgur.com/PzAHrXN.png'
+    };
+    
+    if (product.type && fallbacks[product.type as keyof typeof fallbacks]) {
+      return fallbacks[product.type as keyof typeof fallbacks];
+    }
+    
+    return 'https://i.imgur.com/1j9ZXed.png'; // Default fallback
   } catch (error) {
     console.error('Error extracting image URL:', error);
-    return '';
+    return 'https://i.imgur.com/1j9ZXed.png'; // Default fallback
   }
 };
 
@@ -54,34 +70,58 @@ export const convertToDashboardItem = (item: any, type: string, userStyle: strin
       normalizedStyle.includes('nordic') || 
       normalizedStyle.includes('modern')) {
     
+    // For minimalist style, we still want items even if they don't pass strict filters
+    // We'll just log the rejection reasons but not return null
     if (hasPatternInName(item)) {
       const name = item.product_name || '';
-      console.log(`Rejected ${type} item for having pattern in name: ${name}`);
-      return null;
+      console.log(`Note: ${type} item has pattern in name: ${name}`);
     }
     
     if (!isMinimalistStyleItem(item, type)) {
       const name = item.product_name || '';
-      console.log(`Rejected ${type} item for minimalist style: ${name}`);
-      return null;
+      console.log(`Note: ${type} item may not be ideal for minimalist style: ${name}`);
     }
   }
   
   const imageUrl = extractImageUrl(item);
-  if (!imageUrl) return null;
+  
+  // Generate a unique ID if none exists
+  const itemId = item.product_id || 
+                 item.id || 
+                 `${type}-${Math.floor(Math.random() * 10000)}`;
+  
+  // Use product name or provide a sensible default
+  const itemName = item.product_name || 
+                   item.name || 
+                   `${type.charAt(0).toUpperCase() + type.slice(1)} Item`;
+  
+  // Ensure we have a price (string format with $)
+  let itemPrice = "$49.99"; // Default
+  if (item.price) {
+    const price = typeof item.price === 'string' 
+      ? parseFloat(item.price.replace(/[^0-9.]/g, '')) 
+      : Number(item.price);
+    
+    if (!isNaN(price)) {
+      itemPrice = `$${price.toFixed(2)}`;
+    }
+  }
 
   return {
-    id: String(item.product_id || Math.random()),
-    name: item.product_name || `${type.charAt(0).toUpperCase() + type.slice(1)} Item`,
-    description: item.description || '',
+    id: String(itemId),
+    name: itemName,
+    description: item.description || `Stylish ${type} to complete your look`,
     image: imageUrl,
-    price: item.price ? `$${Number(item.price).toFixed(2)}` : '$49.99',
+    price: itemPrice,
     type: type
   };
 };
 
 export const getItemIdentifier = (item: any): string => {
+  if (!item) return Math.random().toString();
+  
   if (item.product_id?.toString()) return item.product_id.toString();
+  if (item.id?.toString()) return item.id.toString();
   if (item.image?.toString()) return item.image.toString();
   return Math.random().toString();
 };
