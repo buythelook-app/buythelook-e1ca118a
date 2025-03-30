@@ -37,5 +37,18 @@ export interface MinimalistCriteria {
     top: string[];
     bottom: string[];
     shoes: string[];
+    accessories: string[];
+  };
+  colorPalette: {
+    neutrals: string[];
+    accent: string[];
+    monochrome: string[];
+  };
+  avoidanceTerms: string[];
+  preferredMaterials: string[];
+  silhouettes: {
+    top: string[];
+    bottom: string[];
+    dress: string[];
   };
 }
