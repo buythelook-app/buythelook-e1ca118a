@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -97,7 +98,7 @@ function App() {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Navigate to="/home" replace />} />
+            <Route path="/" element={<Entrance />} />
             <Route path="/home" element={<Index />} />
             <Route path="/quiz" element={<StyleQuiz />} />
             <Route path="/suggestions" element={<LookSuggestions />} />
