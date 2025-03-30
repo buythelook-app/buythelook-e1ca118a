@@ -17,3 +17,23 @@ export interface StyleRecommendations {
     items: string[];
   }>;
 }
+
+export interface ColorPalette {
+  primary: string;
+  secondary: string;
+  accent: string;
+  neutral: string;
+}
+
+export interface StyleAnalysis {
+  analysis: {
+    styleProfile: string;
+    colorPalette: ColorPalette;
+    fitRecommendations: {
+      top: string;
+      bottom: string;
+      shoes: string;
+    };
+  };
+  recommendations: StyleRecommendations;
+}
