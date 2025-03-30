@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -55,6 +54,12 @@ export const LookSuggestions = () => {
         const styleProfile = parsedData?.analysis?.styleProfile || null;
         setUserStylePreference(styleProfile);
         console.log("Loaded user style preference:", styleProfile);
+        
+        // If style is minimalist, set appropriate elegance and color intensity defaults
+        if (styleProfile === 'Minimalist') {
+          setElegance(85); // Higher elegance for minimalist style
+          setColorIntensity(30); // Lower color intensity for minimalist style
+        }
       } catch (error) {
         console.error("Error parsing style data:", error);
       }
@@ -277,6 +282,7 @@ export const LookSuggestions = () => {
         {userStylePreference && (
           <p className="text-lg text-netflix-accent mb-6">
             Based on your {userStylePreference} style preference
+            {userStylePreference === 'Minimalist' && " - clean lines, neutral colors, timeless pieces"}
           </p>
         )}
         

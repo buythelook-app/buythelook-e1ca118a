@@ -1,4 +1,3 @@
-
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 import { EventType, EVENT_TO_STYLES } from "@/components/filters/eventTypes";
 
@@ -25,6 +24,7 @@ const mapStyle = (style: string): "classic" | "romantic" | "minimalist" | "casua
     romantic: "romantic",
     minimal: "minimalist",
     minimalist: "minimalist",
+    Minimalist: "minimalist",
     casual: "casual",
     bohemian: "boohoo",
     boohoo: "boohoo",
@@ -170,14 +170,54 @@ const isUnderwear = (item: any): boolean => {
   );
 };
 
+// Helper function to check if an item matches minimalist style
+const isMinimalistStyleItem = (item: any): boolean => {
+  if (!item) return false;
+  
+  // Check item name and description for minimalist terms
+  const itemName = (item.product_name || '').toLowerCase();
+  const itemDesc = (item.description || '').toLowerCase();
+  const itemType = (item.type || '').toLowerCase();
+  
+  // Colors that match minimalist aesthetic
+  const minimalistColors = ['white', 'black', 'gray', 'beige', 'cream', 'navy', 'brown', 'tan', 'neutral'];
+  const hasMinimalistColor = minimalistColors.some(color => 
+    itemName.includes(color) || 
+    itemDesc.includes(color)
+  );
+  
+  // Patterns that don't match minimalist aesthetic
+  const nonMinimalistPatterns = ['floral', 'stripe', 'print', 'pattern', 'graphic', 'logo', 'sequin', 'embellish', 'embroidery'];
+  const hasNonMinimalistPattern = nonMinimalistPatterns.some(pattern => 
+    itemName.includes(pattern) || 
+    itemDesc.includes(pattern)
+  );
+  
+  // Terms that match minimalist aesthetic
+  const minimalistTerms = ['simple', 'clean', 'minimal', 'basic', 'timeless', 'essential', 'classic', 'sleek', 'streamlined'];
+  const hasMinimalistTerm = minimalistTerms.some(term => 
+    itemName.includes(term) || 
+    itemDesc.includes(term)
+  );
+  
+  // If the style preference is explicitly minimalist, prioritize items that match
+  return (hasMinimalistColor || hasMinimalistTerm) && !hasNonMinimalistPattern;
+};
+
 // Helper function to convert API item to DashboardItem
-const convertToDashboardItem = (item: any, type: string): DashboardItem | null => {
+const convertToDashboardItem = (item: any, type: string, userStyle: string = ''): DashboardItem | null => {
   if (!item) return null;
   
   // Skip underwear items
   if (isUnderwear(item)) {
     console.log('Filtering out underwear item:', item.product_name);
     return null;
+  }
+  
+  // For minimalist style, apply additional filtering
+  if (userStyle === 'Minimalist' && !isMinimalistStyleItem(item)) {
+    console.log('Item does not match minimalist style criteria:', item.product_name);
+    // Don't immediately reject, but we'll prioritize minimalist items
   }
   
   const imageUrl = extractImageUrl(item);
@@ -225,10 +265,32 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
 
     // Only process the first outfit suggestion
     if (Array.isArray(response.data) && response.data.length > 0) {
-      const firstOutfit = response.data[0];
-      const top = convertToDashboardItem(firstOutfit.top, 'top');
-      const bottom = convertToDashboardItem(firstOutfit.bottom, 'bottom');
-      const shoes = convertToDashboardItem(firstOutfit.shoes, 'shoes');
+      // Try to find the best matching outfit for user's style
+      let bestMatch = response.data[0];
+      
+      // If user prefers minimalist style, prioritize outfits with minimalist items
+      if (preferredStyle === 'Minimalist') {
+        for (const outfit of response.data) {
+          const topIsMinimalist = outfit.top ? isMinimalistStyleItem(outfit.top) : false;
+          const bottomIsMinimalist = outfit.bottom ? isMinimalistStyleItem(outfit.bottom) : false;
+          const shoesIsMinimalist = outfit.shoes ? isMinimalistStyleItem(outfit.shoes) : false;
+          
+          // If more items match minimalist style, use this outfit
+          const currentMatchCount = (topIsMinimalist ? 1 : 0) + (bottomIsMinimalist ? 1 : 0) + (shoesIsMinimalist ? 1 : 0);
+          const bestMatchCount = 
+            (bestMatch.top ? isMinimalistStyleItem(bestMatch.top) : 0) + 
+            (bestMatch.bottom ? isMinimalistStyleItem(bestMatch.bottom) : 0) + 
+            (bestMatch.shoes ? isMinimalistStyleItem(bestMatch.shoes) : 0);
+          
+          if (currentMatchCount > bestMatchCount) {
+            bestMatch = outfit;
+          }
+        }
+      }
+      
+      const top = convertToDashboardItem(bestMatch.top, 'top', preferredStyle);
+      const bottom = convertToDashboardItem(bestMatch.bottom, 'bottom', preferredStyle);
+      const shoes = convertToDashboardItem(bestMatch.shoes, 'shoes', preferredStyle);
 
       if (top) items.push(top);
       if (bottom) items.push(bottom);
