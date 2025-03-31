@@ -9,7 +9,7 @@ import { mapBodyShape, mapStyle, getEventStyles } from "./mappers/styleMappers";
 import { convertToDashboardItem, getItemIdentifier } from "./outfitFactory";
 import { isMinimalistTop, isMinimalistBottom, isMinimalistShoe } from "./filters/minimalistStyleCheckers";
 import { scoreItem } from "./filters/styleFilters";
-import { supabase, getSupabaseUrl } from "@/lib/supabase";
+import { supabase, getSupabaseUrl, getImageUrl } from "@/lib/supabase";
 
 // Fallback items for when API doesn't return anything useful
 const FALLBACK_ITEMS = {
@@ -80,7 +80,7 @@ const fetchItemsByType = async (type: string): Promise<DashboardItem[]> => {
       id: item.id || `generated-${Math.random().toString(36).substring(2, 9)}`,
       name: item.name || `Stylish ${type}`,
       description: item.description || `Stylish ${type}`,
-      image: item.image || '',
+      image: getImageUrl(item.image) || '', // Process image URL
       price: item.price || '$49.99',
       type: type
     }));

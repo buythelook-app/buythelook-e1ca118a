@@ -20,6 +20,25 @@ export const getSupabaseUrl = () => {
   return supabaseUrl;
 };
 
+// Helper for getting public URLs for images
+export const getImageUrl = (path: string): string => {
+  if (!path) return '';
+  
+  // If it's already an HTTPS URL, return it as is
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  
+  // If it's a path in storage
+  if (path.startsWith('public/') || path.startsWith('items/')) {
+    // Construct URL to storage
+    return `${supabaseUrl}/storage/v1/object/public/${path}`;
+  }
+  
+  // Return as is if we can't determine the type
+  return path;
+};
+
 // Log initialization for debugging
 console.log('[Supabase] Client initialized with URL:', supabaseUrl);
 
