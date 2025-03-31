@@ -1,5 +1,5 @@
-
 import { useEffect, useRef } from "react";
+import { transformImageUrl } from "@/utils/imageUtils";
 
 interface OutfitItem {
   id: string;
@@ -54,7 +54,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       top: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
       bottom: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
       dress: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.9 },
-      shoes: { x: width * 0.2, y: height * 0.6, width: width * 0.6, height: height * 0.3 }, // Adjusted position and size for shoes
+      shoes: { x: width * 0.2, y: height * 0.6, width: width * 0.6, height: height * 0.3 }, 
       accessory: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
       sunglasses: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
       cart: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 }
@@ -68,10 +68,12 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
           const img = new Image();
           img.crossOrigin = "anonymous";
           
+          // Transform the image URL and append a timestamp to bypass cache
           const timestamp = new Date().getTime();
-          const imageUrl = item.image.includes('?') 
-            ? `${item.image}&t=${timestamp}` 
-            : `${item.image}?t=${timestamp}`;
+          const transformedUrl = transformImageUrl(item.image);
+          const imageUrl = transformedUrl.includes('?') 
+            ? `${transformedUrl}&t=${timestamp}` 
+            : `${transformedUrl}?t=${timestamp}`;
           
           img.src = imageUrl;
 
@@ -83,9 +85,16 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               };
               img.onerror = (e) => {
                 console.error('Error loading image:', imageUrl, e);
-                reject(e);
+                // Continue with the next image instead of stopping the whole process
+                resolve(null);
               };
             });
+
+            // Skip rendering if there was an error loading the image
+            if (img.naturalWidth === 0) {
+              console.log('Skipping image with zero width:', imageUrl);
+              continue;
+            }
 
             const position = item.position || defaultPositions[item.type];
             if (position) {
