@@ -19,13 +19,13 @@ export const LookImage = ({ image, title }: LookImageProps) => {
     setImgSrc(transformedUrl);
   }, [image]);
   
-  const fallbackImage = 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158';
+  const fallbackImage = '/placeholder-image.jpg';
   
   return (
     <AspectRatio ratio={3/4} className="relative overflow-hidden bg-gray-100">
       {!imageLoaded && !imageError && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-          <div className="h-8 w-8 rounded-full border-2 border-t-transparent border-gray-500 animate-spin"></div>
+          <div className="h-8 w-8 rounded-full border-2 border-t-transparent border-netflix-accent animate-spin"></div>
         </div>
       )}
       <img 

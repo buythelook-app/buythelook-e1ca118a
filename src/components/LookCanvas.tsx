@@ -65,11 +65,16 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     const loadImages = async () => {
       setIsLoading(true);
       try {
+        console.log("Loading images for items:", sortedItems);
+        let loadedCount = 0;
+        const totalItems = sortedItems.length;
+        
         for (const item of sortedItems) {
           console.log('Loading image for item:', item);
           
           if (!item.image) {
             console.warn('Missing image for item:', item.id, item.type);
+            loadedCount++;
             continue;
           }
           
@@ -110,6 +115,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
             // Skip rendering if there was an error loading the image
             if (img.naturalWidth === 0) {
               console.log('Skipping image with zero width:', imageUrl);
+              loadedCount++;
               continue;
             }
 
@@ -117,7 +123,10 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
             if (position) {
               const offscreenCanvas = document.createElement('canvas');
               const offscreenCtx = offscreenCanvas.getContext('2d');
-              if (!offscreenCtx) continue;
+              if (!offscreenCtx) {
+                loadedCount++;
+                continue;
+              }
 
               offscreenCanvas.width = img.width;
               offscreenCanvas.height = img.height;
@@ -198,25 +207,38 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               );
               ctx.restore();
             }
+            
+            loadedCount++;
           } catch (imgError) {
             console.error('Error processing image:', imgError);
+            loadedCount++;
           }
+        }
+        
+        // Set loading to false once all items are processed
+        if (loadedCount >= totalItems) {
+          setIsLoading(false);
         }
       } catch (error) {
         console.error('Error in loadImages:', error);
-      } finally {
         setIsLoading(false);
       }
     };
 
+    // Start loading images
     loadImages();
+    
+    // Cleanup function
+    return () => {
+      // Any cleanup code if needed
+    };
   }, [items, width, height]);
 
   return (
     <div className="relative">
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
-          <div className="h-8 w-8 rounded-full border-2 border-t-transparent border-purple-500 animate-spin"></div>
+          <div className="h-8 w-8 rounded-full border-2 border-t-transparent border-netflix-accent animate-spin"></div>
         </div>
       )}
       <canvas

@@ -58,7 +58,8 @@ const fetchItemsByType = async (type: string): Promise<DashboardItem[]> => {
     const { data, error } = await supabase
       .from('items')
       .select('*')
-      .eq('type', type);
+      .eq('type', type)
+      .limit(10);
     
     if (error) {
       console.error(`Error fetching ${type} items:`, error);
@@ -70,9 +71,11 @@ const fetchItemsByType = async (type: string): Promise<DashboardItem[]> => {
       return [];
     }
     
+    console.log(`Found ${data.length} ${type} items in Supabase:`, data);
+    
     return data.map(item => ({
       id: item.id,
-      name: item.name,
+      name: item.name || `Stylish ${type}`,
       description: item.description || `Stylish ${type}`,
       image: item.image || '',
       price: item.price || '$49.99',
@@ -98,7 +101,48 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
       return [FALLBACK_ITEMS.top, FALLBACK_ITEMS.bottom, FALLBACK_ITEMS.shoes];
     }
 
-    // Extract and log user preferences for debugging
+    // First, try to fetch items from Supabase
+    console.log("Attempting to fetch items from Supabase database");
+    const databaseTops = await fetchItemsByType('top');
+    const databaseBottoms = await fetchItemsByType('bottom');
+    const databaseShoes = await fetchItemsByType('shoes');
+    
+    console.log(`Found ${databaseTops.length} tops, ${databaseBottoms.length} bottoms, and ${databaseShoes.length} shoes in database`);
+    
+    // If we have enough items in the database, use them
+    if (databaseTops.length > 0 || databaseBottoms.length > 0 || databaseShoes.length > 0) {
+      console.log("Using items from database for outfit");
+      
+      const outfit: DashboardItem[] = [];
+      
+      // Add top item if available or use fallback
+      if (databaseTops.length > 0) {
+        const randomTop = databaseTops[Math.floor(Math.random() * databaseTops.length)];
+        outfit.push(randomTop);
+      } else {
+        outfit.push(FALLBACK_ITEMS.top);
+      }
+      
+      // Add bottom item if available or use fallback
+      if (databaseBottoms.length > 0) {
+        const randomBottom = databaseBottoms[Math.floor(Math.random() * databaseBottoms.length)];
+        outfit.push(randomBottom);
+      } else {
+        outfit.push(FALLBACK_ITEMS.bottom);
+      }
+      
+      // Add shoes item if available or use fallback
+      if (databaseShoes.length > 0) {
+        const randomShoes = databaseShoes[Math.floor(Math.random() * databaseShoes.length)];
+        outfit.push(randomShoes);
+      } else {
+        outfit.push(FALLBACK_ITEMS.shoes);
+      }
+      
+      return outfit;
+    }
+    
+    // If we don't have any items in the database, extract user preferences from quiz
     const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
     const preferredStyle = styleAnalysis.analysis.styleProfile || 'classic';
     console.log("User's preferred style from quiz:", preferredStyle);
@@ -110,29 +154,6 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     
     const mood = validateMood(currentMood);
     console.log("Using mood:", mood);
-
-    // First, try to fetch items from Supabase
-    console.log("Attempting to fetch items from Supabase database");
-    const databaseTops = await fetchItemsByType('top');
-    const databaseBottoms = await fetchItemsByType('bottom');
-    const databaseShoes = await fetchItemsByType('shoes');
-    
-    console.log(`Found ${databaseTops.length} tops, ${databaseBottoms.length} bottoms, and ${databaseShoes.length} shoes in database`);
-    
-    // If we have enough items in the database, use them
-    if (databaseTops.length > 0 && databaseBottoms.length > 0 && databaseShoes.length > 0) {
-      console.log("Using items from database for outfit");
-      
-      // Sort database items randomly to get variety
-      const randomTop = databaseTops[Math.floor(Math.random() * databaseTops.length)];
-      const randomBottom = databaseBottoms[Math.floor(Math.random() * databaseBottoms.length)];
-      const randomShoes = databaseShoes[Math.floor(Math.random() * databaseShoes.length)];
-      
-      return [randomTop, randomBottom, randomShoes];
-    }
-    
-    // Fallback to API if database doesn't have enough items
-    console.log("Not enough items in database, falling back to API");
     
     // Make API requests for outfit suggestions
     const requests = 8; // Increased for better chances of complete outfits
@@ -168,34 +189,32 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     // Create the final outfit items array
     const items: DashboardItem[] = [];
     
-    // Check if we have items for all types
-    const hasAllTypes = allTops.length > 0 && allBottoms.length > 0 && allShoes.length > 0;
-    
-    if (hasAllTypes) {
-      console.log("We have items for all types, creating outfit");
-      
-      // Sort items by score
-      allTops.sort((a, b) => scoreItem(b, 'top') - scoreItem(a, 'top'));
-      allBottoms.sort((a, b) => scoreItem(b, 'bottom') - scoreItem(a, 'bottom'));
-      allShoes.sort((a, b) => scoreItem(b, 'shoes') - scoreItem(a, 'shoes'));
-      
-      // Add top item
+    // Add top item
+    if (allTops.length > 0) {
       const topItem = convertToDashboardItem(allTops[0], 'top', preferredStyle);
       if (topItem) {
         items.push(topItem);
       } else {
         items.push(FALLBACK_ITEMS.top);
       }
-      
-      // Add bottom item
+    } else {
+      items.push(FALLBACK_ITEMS.top);
+    }
+    
+    // Add bottom item
+    if (allBottoms.length > 0) {
       const bottomItem = convertToDashboardItem(allBottoms[0], 'bottom', preferredStyle);
       if (bottomItem) {
         items.push(bottomItem);
       } else {
         items.push(FALLBACK_ITEMS.bottom);
       }
-      
-      // Add shoes item
+    } else {
+      items.push(FALLBACK_ITEMS.bottom);
+    }
+    
+    // Add shoes item
+    if (allShoes.length > 0) {
       const shoesItem = convertToDashboardItem(allShoes[0], 'shoes', preferredStyle);
       if (shoesItem) {
         items.push(shoesItem);
@@ -203,53 +222,8 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
         items.push(FALLBACK_ITEMS.shoes);
       }
     } else {
-      // We're missing some item types, use fallbacks as needed
-      console.log("Missing some item types, using fallbacks as needed");
-      
-      if (allTops.length > 0) {
-        const topItem = convertToDashboardItem(allTops[0], 'top', preferredStyle);
-        if (topItem) {
-          items.push(topItem);
-        } else {
-          items.push(FALLBACK_ITEMS.top);
-        }
-      } else {
-        items.push(FALLBACK_ITEMS.top);
-      }
-      
-      if (allBottoms.length > 0) {
-        const bottomItem = convertToDashboardItem(allBottoms[0], 'bottom', preferredStyle);
-        if (bottomItem) {
-          items.push(bottomItem);
-        } else {
-          items.push(FALLBACK_ITEMS.bottom);
-        }
-      } else {
-        items.push(FALLBACK_ITEMS.bottom);
-      }
-      
-      if (allShoes.length > 0) {
-        const shoesItem = convertToDashboardItem(allShoes[0], 'shoes', preferredStyle);
-        if (shoesItem) {
-          items.push(shoesItem);
-        } else {
-          items.push(FALLBACK_ITEMS.shoes);
-        }
-      } else {
-        items.push(FALLBACK_ITEMS.shoes);
-      }
+      items.push(FALLBACK_ITEMS.shoes);
     }
-    
-    console.log("Final outfit:", items);
-    
-    // Double-check to make sure we have all three item types
-    const finalHasTop = items.some(item => item.type === 'top');
-    const finalHasBottom = items.some(item => item.type === 'bottom');
-    const finalHasShoes = items.some(item => item.type === 'shoes');
-    
-    if (!finalHasTop) items.push(FALLBACK_ITEMS.top);
-    if (!finalHasBottom) items.push(FALLBACK_ITEMS.bottom);
-    if (!finalHasShoes) items.push(FALLBACK_ITEMS.shoes);
     
     return items;
   } catch (error) {

@@ -2,10 +2,10 @@
  * Service for fetching and organizing dashboard items
  */
 
-import { DashboardItem, OutfitItem } from "@/types/lookTypes";
+import { DashboardItem } from "@/types/lookTypes";
 import { generateOutfit } from "./api/outfitApi";
-import { mapBodyShape, mapStyle, getEventStyles, mapDashboardItemToOutfitItem } from "./mappers/styleMappers";
-import { convertToDashboardItem, getItemIdentifier } from "./outfitFactory";
+import { mapBodyShape, mapStyle, getEventStyles } from "./mappers/styleMappers";
+import { convertToDashboardItem } from "./outfitFactory";
 import { supabase } from "@/lib/supabase";
 
 // Fallback items for when API doesn't return usable data
@@ -118,6 +118,8 @@ const FALLBACK_ITEMS = {
 
 const fetchItemsByTypeAndOccasion = async (type: string, occasion: string): Promise<DashboardItem[]> => {
   try {
+    console.log(`Fetching ${type} items for ${occasion} from Supabase`);
+    
     // Try to match the item type and a description that might indicate the occasion
     const { data, error } = await supabase
       .from('items')
@@ -132,6 +134,8 @@ const fetchItemsByTypeAndOccasion = async (type: string, occasion: string): Prom
     
     // If no items were found with the occasion in description, fetch any items of that type
     if (!data || data.length === 0) {
+      console.log(`No ${type} items found with description containing ${occasion}, fetching any ${type} items`);
+      
       const { data: generalData, error: generalError } = await supabase
         .from('items')
         .select('*')
@@ -143,9 +147,11 @@ const fetchItemsByTypeAndOccasion = async (type: string, occasion: string): Prom
         return [];
       }
       
+      console.log(`Found ${generalData.length} general ${type} items:`, generalData);
+      
       return generalData.map(item => ({
         id: item.id,
-        name: item.name,
+        name: item.name || `Stylish ${type} for ${occasion}`,
         description: item.description || `Stylish ${type} for ${occasion}`,
         image: item.image || '',
         price: item.price || '$49.99',
@@ -153,9 +159,11 @@ const fetchItemsByTypeAndOccasion = async (type: string, occasion: string): Prom
       }));
     }
     
+    console.log(`Found ${data.length} ${type} items for ${occasion}:`, data);
+    
     return data.map(item => ({
       id: item.id,
-      name: item.name,
+      name: item.name || `Stylish ${type} for ${occasion}`,
       description: item.description || `Stylish ${type} for ${occasion}`,
       image: item.image || '',
       price: item.price || '$49.99',
@@ -183,6 +191,8 @@ const validateMood = (mood: string | null): string => {
 
 export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardItem[]}> => {
   try {
+    console.log("Fetching dashboard items from Supabase");
+    
     const quizData = localStorage.getItem('styleAnalysis');
     const currentMood = localStorage.getItem('current-mood');
     const styleAnalysis = quizData ? JSON.parse(quizData) : null;
@@ -197,6 +207,50 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
       };
     }
 
+    const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
+    const occasionOutfits: {[key: string]: DashboardItem[]} = {};
+    
+    // Try to fetch items from Supabase for each occasion
+    for (const occasion of occasions) {
+      console.log(`Fetching items from database for ${occasion}`);
+      
+      const dbTops = await fetchItemsByTypeAndOccasion('top', occasion);
+      const dbBottoms = await fetchItemsByTypeAndOccasion('bottom', occasion);
+      const dbShoes = await fetchItemsByTypeAndOccasion('shoes', occasion);
+      
+      console.log(`Found ${dbTops.length} tops, ${dbBottoms.length} bottoms, and ${dbShoes.length} shoes in database for ${occasion}`);
+      
+      // If we have items for any type, use them along with fallbacks for missing types
+      const outfit: DashboardItem[] = [];
+      
+      // Add top item if available or use fallback
+      if (dbTops.length > 0) {
+        const randomTop = dbTops[Math.floor(Math.random() * dbTops.length)];
+        outfit.push(randomTop);
+      } else {
+        outfit.push(FALLBACK_ITEMS[occasion as keyof typeof FALLBACK_ITEMS][0]);
+      }
+      
+      // Add bottom item if available or use fallback
+      if (dbBottoms.length > 0) {
+        const randomBottom = dbBottoms[Math.floor(Math.random() * dbBottoms.length)];
+        outfit.push(randomBottom);
+      } else {
+        outfit.push(FALLBACK_ITEMS[occasion as keyof typeof FALLBACK_ITEMS][1]);
+      }
+      
+      // Add shoes item if available or use fallback
+      if (dbShoes.length > 0) {
+        const randomShoes = dbShoes[Math.floor(Math.random() * dbShoes.length)];
+        outfit.push(randomShoes);
+      } else {
+        outfit.push(FALLBACK_ITEMS[occasion as keyof typeof FALLBACK_ITEMS][2]);
+      }
+      
+      occasionOutfits[occasion] = outfit;
+    }
+
+    // If we have any empty occasions, try the API as a fallback
     const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
     
     const userPreferredStyle = styleAnalysis.analysis.styleProfile || 'classic';
@@ -207,34 +261,6 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
     
     const mood = validateMood(currentMood);
 
-    const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
-    const occasionOutfits: {[key: string]: DashboardItem[]} = {};
-    
-    // Try to fetch items from Supabase first for each occasion
-    for (const occasion of occasions) {
-      console.log(`Fetching items from database for ${occasion}`);
-      
-      const dbTops = await fetchItemsByTypeAndOccasion('top', occasion);
-      const dbBottoms = await fetchItemsByTypeAndOccasion('bottom', occasion);
-      const dbShoes = await fetchItemsByTypeAndOccasion('shoes', occasion);
-      
-      console.log(`Found ${dbTops.length} tops, ${dbBottoms.length} bottoms, and ${dbShoes.length} shoes in database for ${occasion}`);
-      
-      // If we have all types of items, use them
-      if (dbTops.length > 0 && dbBottoms.length > 0 && dbShoes.length > 0) {
-        // Pick random items for each occasion to create variety
-        const randomTop = dbTops[Math.floor(Math.random() * dbTops.length)];
-        const randomBottom = dbBottoms[Math.floor(Math.random() * dbBottoms.length)];
-        const randomShoes = dbShoes[Math.floor(Math.random() * dbShoes.length)];
-        
-        occasionOutfits[occasion] = [randomTop, randomBottom, randomShoes];
-      } else {
-        // Not enough items in database, use API and fallbacks
-        occasionOutfits[occasion] = [...FALLBACK_ITEMS[occasion as keyof typeof FALLBACK_ITEMS]];
-      }
-    }
-
-    // If we didn't get complete outfits from the database, try the API
     const occasionStyles = {
       'Work': [baseStyle, 'classic', 'minimalist'],
       'Casual': [baseStyle, 'casual', 'sporty'],

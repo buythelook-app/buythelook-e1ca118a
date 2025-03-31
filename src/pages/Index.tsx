@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { fetchDashboardItems } from "@/services/lookService";
 import { useQuery } from "@tanstack/react-query";
 import { Shuffle } from "lucide-react";
+import { logDatabaseItems } from "@/utils/supabaseUtils";
 
 interface Look {
   id: string;
@@ -35,6 +36,12 @@ export default function Index() {
 
   useEffect(() => {
     console.log("Index page loaded");
+    
+    // Debug: Log all items in Supabase database
+    logDatabaseItems().catch(err => {
+      console.error("Error logging database items:", err);
+    });
+    
     const styleAnalysis = localStorage.getItem('styleAnalysis');
     if (styleAnalysis) {
       setUserStyle(JSON.parse(styleAnalysis));
