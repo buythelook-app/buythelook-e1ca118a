@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -10,6 +9,7 @@ import { LookCanvas } from "./LookCanvas";
 import { useCartStore } from "./Cart";
 import { HomeButton } from "./HomeButton";
 import { StyleRulers } from "./look/StyleRulers";
+import { DebugDataViewer } from "./DebugDataViewer";
 import {
   Card,
   CardContent,
@@ -47,7 +47,6 @@ export const LookSuggestions = () => {
   const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
 
   useEffect(() => {
-    // Load user style preference from localStorage
     const styleData = localStorage.getItem('styleAnalysis');
     if (styleData) {
       try {
@@ -56,7 +55,6 @@ export const LookSuggestions = () => {
         setUserStylePreference(styleProfile);
         console.log("Loaded user style preference:", styleProfile);
         
-        // Adjust elegance and color intensity based on style
         if (styleProfile?.toLowerCase().includes('minimalist') || 
             styleProfile?.toLowerCase().includes('minimal') || 
             styleProfile?.toLowerCase().includes('nordic') || 
@@ -81,7 +79,7 @@ export const LookSuggestions = () => {
   const { data: dashboardItems, isLoading, error, refetch } = useQuery({
     queryKey: ['firstOutfitSuggestion'],
     queryFn: fetchFirstOutfitSuggestion,
-    retry: 3, // Increased retries for more resilience
+    retry: 3,
     staleTime: 0,
     refetchOnWindowFocus: false,
     enabled: hasQuizData,
@@ -295,6 +293,8 @@ export const LookSuggestions = () => {
             Based on your {userStylePreference} style preference
           </p>
         )}
+        
+        <DebugDataViewer />
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2">

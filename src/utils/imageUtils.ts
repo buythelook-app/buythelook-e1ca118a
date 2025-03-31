@@ -2,26 +2,38 @@
 export const transformImageUrl = (url: string) => {
   if (!url) return '';
   
+  // Check if URL includes "imgur" but returns an error
+  if (url.includes('imgur.com') && !url.includes('i.imgur.com')) {
+    console.log('Converting imgur URL to direct image URL:', url);
+    // Try to convert to direct image URL format
+    return url.replace('imgur.com', 'i.imgur.com') + '.png';
+  }
+  
   // Handle relative paths to public folder
   if (url.startsWith('/')) {
+    console.log('Using local path:', url);
     return url;
   }
   
   // Check if URL already has https protocol
   if (url.startsWith('https://')) {
+    console.log('Using existing HTTPS URL:', url);
     return url;
   }
   
   // Transform http URLs to https
   if (url.startsWith('http://')) {
+    console.log('Converting HTTP to HTTPS:', url);
     return url.replace('http://', 'https://');
   }
   
   // If URL doesn't have a protocol, assume it's HTTPS
   if (!url.includes('://') && !url.startsWith('/')) {
+    console.log('Adding HTTPS protocol to URL:', url);
     return `https://${url}`;
   }
   
+  console.log('Using URL as-is:', url);
   return url;
 };
 
@@ -38,4 +50,19 @@ export const validateImageUrl = (url: string): boolean => {
   if (url.startsWith('http://')) return true;
   
   return false;
+};
+
+// Add a helper function to get default images by type
+export const getDefaultImageByType = (type: string): string => {
+  const defaultImages = {
+    top: '/placeholder-image.jpg',
+    bottom: '/placeholder-image.jpg',
+    shoes: '/placeholder-image.jpg',
+    dress: '/placeholder-image.jpg',
+    accessory: '/placeholder-image.jpg',
+    outerwear: '/placeholder-image.jpg',
+    default: '/placeholder-image.jpg'
+  };
+  
+  return defaultImages[type as keyof typeof defaultImages] || defaultImages.default;
 };

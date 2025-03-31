@@ -17,24 +17,24 @@ const FALLBACK_ITEMS = {
     id: "fallback-top-1",
     name: "Classic White Shirt",
     description: "A timeless white shirt that pairs with everything",
-    image: "https://i.imgur.com/1j9ZXed.png",
-    price: "$39.99",
+    image: "/placeholder-image.jpg", // Use local placeholder
+    price: "$45.99",
     type: "top"
   },
   bottom: {
     id: "fallback-bottom-1",
     name: "Black Slim Pants",
     description: "Essential black pants for any style",
-    image: "https://i.imgur.com/RWCV0G0.png",
-    price: "$49.99",
+    image: "/placeholder-image.jpg", // Use local placeholder
+    price: "$55.99",
     type: "bottom"
   },
   shoes: {
     id: "fallback-shoes-1",
     name: "Classic Loafers",
     description: "Versatile loafers to complete your look",
-    image: "https://i.imgur.com/PzAHrXN.png",
-    price: "$79.99",
+    image: "/placeholder-image.jpg", // Use local placeholder
+    price: "$75.99",
     type: "shoes"
   }
 };
@@ -55,6 +55,9 @@ const validateMood = (mood: string | null): string => {
 
 const fetchItemsByType = async (type: string): Promise<DashboardItem[]> => {
   try {
+    console.log(`[Supabase] Fetching ${type} items from database`);
+    
+    // Include detailed logging for debugging
     const { data, error } = await supabase
       .from('items')
       .select('*')
@@ -62,19 +65,19 @@ const fetchItemsByType = async (type: string): Promise<DashboardItem[]> => {
       .limit(10);
     
     if (error) {
-      console.error(`Error fetching ${type} items:`, error);
+      console.error(`[Supabase] Error fetching ${type} items:`, error);
       return [];
     }
     
     if (!data || data.length === 0) {
-      console.log(`No ${type} items found in database`);
+      console.log(`[Supabase] No ${type} items found in database`);
       return [];
     }
     
-    console.log(`Found ${data.length} ${type} items in Supabase:`, data);
+    console.log(`[Supabase] Found ${data.length} ${type} items:`, data);
     
     return data.map(item => ({
-      id: item.id,
+      id: item.id || `generated-${Math.random().toString(36).substring(2, 9)}`,
       name: item.name || `Stylish ${type}`,
       description: item.description || `Stylish ${type}`,
       image: item.image || '',
@@ -82,60 +85,60 @@ const fetchItemsByType = async (type: string): Promise<DashboardItem[]> => {
       type: type
     }));
   } catch (e) {
-    console.error(`Error in fetchItemsByType for ${type}:`, e);
+    console.error(`[Supabase] Exception in fetchItemsByType for ${type}:`, e);
     return [];
   }
 };
 
 export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => {
   try {
-    console.log("Starting to fetch outfit suggestions");
-    const quizData = localStorage.getItem('styleAnalysis');
-    const currentMood = localStorage.getItem('current-mood');
-    console.log("Quiz data from localStorage:", quizData);
+    console.log("[OutfitService] Starting to fetch outfit suggestions");
     
-    const styleAnalysis = quizData ? JSON.parse(quizData) : null;
+    // Debug: Log the Supabase client configuration
+    console.log("[Supabase] Client URL:", supabase.supabaseUrl);
     
-    if (!styleAnalysis?.analysis) {
-      console.error('Missing style analysis data');
-      return [FALLBACK_ITEMS.top, FALLBACK_ITEMS.bottom, FALLBACK_ITEMS.shoes];
-    }
-
-    // First, try to fetch items from Supabase
-    console.log("Attempting to fetch items from Supabase database");
+    // Try to fetch items directly from Supabase first
+    console.log("[Supabase] Attempting to fetch items from database");
+    
     const databaseTops = await fetchItemsByType('top');
     const databaseBottoms = await fetchItemsByType('bottom');
     const databaseShoes = await fetchItemsByType('shoes');
     
-    console.log(`Found ${databaseTops.length} tops, ${databaseBottoms.length} bottoms, and ${databaseShoes.length} shoes in database`);
+    console.log(`[Supabase] Found ${databaseTops.length} tops, ${databaseBottoms.length} bottoms, and ${databaseShoes.length} shoes in database`);
     
-    // If we have enough items in the database, use them
+    // If we have items in the database, use them
     if (databaseTops.length > 0 || databaseBottoms.length > 0 || databaseShoes.length > 0) {
-      console.log("Using items from database for outfit");
+      console.log("[OutfitService] Using items from Supabase database for outfit");
       
       const outfit: DashboardItem[] = [];
       
       // Add top item if available or use fallback
       if (databaseTops.length > 0) {
         const randomTop = databaseTops[Math.floor(Math.random() * databaseTops.length)];
+        console.log("[OutfitService] Selected top item:", randomTop);
         outfit.push(randomTop);
       } else {
+        console.log("[OutfitService] Using fallback top");
         outfit.push(FALLBACK_ITEMS.top);
       }
       
       // Add bottom item if available or use fallback
       if (databaseBottoms.length > 0) {
         const randomBottom = databaseBottoms[Math.floor(Math.random() * databaseBottoms.length)];
+        console.log("[OutfitService] Selected bottom item:", randomBottom);
         outfit.push(randomBottom);
       } else {
+        console.log("[OutfitService] Using fallback bottom");
         outfit.push(FALLBACK_ITEMS.bottom);
       }
       
       // Add shoes item if available or use fallback
       if (databaseShoes.length > 0) {
         const randomShoes = databaseShoes[Math.floor(Math.random() * databaseShoes.length)];
+        console.log("[OutfitService] Selected shoes item:", randomShoes);
         outfit.push(randomShoes);
       } else {
+        console.log("[OutfitService] Using fallback shoes");
         outfit.push(FALLBACK_ITEMS.shoes);
       }
       
@@ -227,7 +230,7 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     
     return items;
   } catch (error) {
-    console.error('Error in fetchFirstOutfitSuggestion:', error);
+    console.error('[OutfitService] Error in fetchFirstOutfitSuggestion:', error);
     // Return fallback items if anything goes wrong
     return [FALLBACK_ITEMS.top, FALLBACK_ITEMS.bottom, FALLBACK_ITEMS.shoes];
   }
