@@ -15,6 +15,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
+// Helper method to safely get the URL
+export const getSupabaseUrl = () => {
+  return supabaseUrl;
+};
+
 // Log initialization for debugging
 console.log('[Supabase] Client initialized with URL:', supabaseUrl);
 

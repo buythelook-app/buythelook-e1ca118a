@@ -17,7 +17,7 @@ const FALLBACK_ITEMS = {
     id: "fallback-top-1",
     name: "Classic White Shirt",
     description: "A timeless white shirt that pairs with everything",
-    image: "/placeholder-image.jpg", // Use local placeholder
+    image: "https://i.imgur.com/1j9ZXed.png", // Using direct image URL instead of local placeholder
     price: "$45.99",
     type: "top"
   },
@@ -25,7 +25,7 @@ const FALLBACK_ITEMS = {
     id: "fallback-bottom-1",
     name: "Black Slim Pants",
     description: "Essential black pants for any style",
-    image: "/placeholder-image.jpg", // Use local placeholder
+    image: "https://i.imgur.com/RWCV0G0.png", // Using direct image URL instead of local placeholder
     price: "$55.99",
     type: "bottom"
   },
@@ -33,7 +33,7 @@ const FALLBACK_ITEMS = {
     id: "fallback-shoes-1",
     name: "Classic Loafers",
     description: "Versatile loafers to complete your look",
-    image: "/placeholder-image.jpg", // Use local placeholder
+    image: "https://i.imgur.com/PzAHrXN.png", // Using direct image URL instead of local placeholder
     price: "$75.99",
     type: "shoes"
   }
@@ -94,8 +94,9 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
   try {
     console.log("[OutfitService] Starting to fetch outfit suggestions");
     
-    // Debug: Log the Supabase client configuration
-    console.log("[Supabase] Client URL:", supabase.supabaseUrl);
+    // Debug: Get Supabase client URL for logging
+    const supabaseUrl = supabase.getUrl();
+    console.log("[Supabase] Client URL:", supabaseUrl);
     
     // Try to fetch items directly from Supabase first
     console.log("[Supabase] Attempting to fetch items from database");
@@ -146,6 +147,14 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     }
     
     // If we don't have any items in the database, extract user preferences from quiz
+    const quizData = localStorage.getItem('styleAnalysis');
+    const styleAnalysis = quizData ? JSON.parse(quizData) : null;
+    
+    if (!styleAnalysis?.analysis) {
+      console.log("[OutfitService] No style analysis data found, using fallback items");
+      return [FALLBACK_ITEMS.top, FALLBACK_ITEMS.bottom, FALLBACK_ITEMS.shoes];
+    }
+    
     const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
     const preferredStyle = styleAnalysis.analysis.styleProfile || 'classic';
     console.log("User's preferred style from quiz:", preferredStyle);
@@ -155,7 +164,8 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     const style = mapStyle(eventStyle || preferredStyle);
     console.log("Mapped style for API request:", style);
     
-    const mood = validateMood(currentMood);
+    const currentMoodData = localStorage.getItem('current-mood');
+    const mood = validateMood(currentMoodData);
     console.log("Using mood:", mood);
     
     // Make API requests for outfit suggestions

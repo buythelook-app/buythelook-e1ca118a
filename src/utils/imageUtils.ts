@@ -12,7 +12,9 @@ export const transformImageUrl = (url: string) => {
   // Handle relative paths to public folder
   if (url.startsWith('/')) {
     console.log('Using local path:', url);
-    return url;
+    // Add base URL for local paths if we're in a deployed environment
+    const baseUrl = window.location.origin;
+    return `${baseUrl}${url}`;
   }
   
   // Check if URL already has https protocol
@@ -55,13 +57,13 @@ export const validateImageUrl = (url: string): boolean => {
 // Add a helper function to get default images by type
 export const getDefaultImageByType = (type: string): string => {
   const defaultImages = {
-    top: '/placeholder-image.jpg',
-    bottom: '/placeholder-image.jpg',
-    shoes: '/placeholder-image.jpg',
-    dress: '/placeholder-image.jpg',
-    accessory: '/placeholder-image.jpg',
-    outerwear: '/placeholder-image.jpg',
-    default: '/placeholder-image.jpg'
+    top: 'https://i.imgur.com/1j9ZXed.png',
+    bottom: 'https://i.imgur.com/RWCV0G0.png',
+    shoes: 'https://i.imgur.com/PzAHrXN.png',
+    dress: 'https://i.imgur.com/1j9ZXed.png',
+    accessory: 'https://i.imgur.com/1j9ZXed.png',
+    outerwear: 'https://i.imgur.com/1j9ZXed.png',
+    default: 'https://i.imgur.com/1j9ZXed.png'
   };
   
   return defaultImages[type as keyof typeof defaultImages] || defaultImages.default;
