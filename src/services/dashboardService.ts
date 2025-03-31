@@ -6,7 +6,7 @@ import { DashboardItem } from "@/types/lookTypes";
 import { generateOutfit } from "./api/outfitApi";
 import { mapBodyShape, mapStyle, getEventStyles } from "./mappers/styleMappers";
 import { convertToDashboardItem } from "./outfitFactory";
-import { supabase } from "@/lib/supabase";
+import { supabase, getSupabaseUrl } from "@/lib/supabase";
 
 // Fallback items for when API doesn't return usable data
 const FALLBACK_ITEMS = {
@@ -192,6 +192,10 @@ const validateMood = (mood: string | null): string => {
 export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardItem[]}> => {
   try {
     console.log("Fetching dashboard items from Supabase");
+    
+    // Debug: Get Supabase client URL if needed
+    const supabaseUrl = getSupabaseUrl();
+    console.log("[Supabase] Dashboard service using URL:", supabaseUrl);
     
     const quizData = localStorage.getItem('styleAnalysis');
     const currentMood = localStorage.getItem('current-mood');

@@ -9,7 +9,7 @@ import { mapBodyShape, mapStyle, getEventStyles } from "./mappers/styleMappers";
 import { convertToDashboardItem, getItemIdentifier } from "./outfitFactory";
 import { isMinimalistTop, isMinimalistBottom, isMinimalistShoe } from "./filters/minimalistStyleCheckers";
 import { scoreItem } from "./filters/styleFilters";
-import { supabase } from "@/lib/supabase";
+import { supabase, getSupabaseUrl } from "@/lib/supabase";
 
 // Fallback items for when API doesn't return anything useful
 const FALLBACK_ITEMS = {
@@ -95,7 +95,7 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     console.log("[OutfitService] Starting to fetch outfit suggestions");
     
     // Debug: Get Supabase client URL for logging
-    const supabaseUrl = supabase.getUrl();
+    const supabaseUrl = getSupabaseUrl();
     console.log("[Supabase] Client URL:", supabaseUrl);
     
     // Try to fetch items directly from Supabase first
