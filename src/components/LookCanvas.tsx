@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+
+import { useEffect, useRef, useState } from "react";
 import { transformImageUrl } from "@/utils/imageUtils";
 
 interface OutfitItem {
@@ -21,6 +22,7 @@ interface LookCanvasProps {
 
 export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -61,9 +63,15 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     };
 
     const loadImages = async () => {
+      setIsLoading(true);
       try {
         for (const item of sortedItems) {
           console.log('Loading image for item:', item);
+          
+          if (!item.image) {
+            console.warn('Missing image for item:', item.id, item.type);
+            continue;
+          }
           
           const img = new Image();
           img.crossOrigin = "anonymous";
@@ -75,6 +83,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
             ? `${transformedUrl}&t=${timestamp}` 
             : `${transformedUrl}?t=${timestamp}`;
           
+          console.log('Attempting to load image from URL:', imageUrl);
           img.src = imageUrl;
 
           try {
@@ -88,6 +97,14 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                 // Continue with the next image instead of stopping the whole process
                 resolve(null);
               };
+              
+              // Set a timeout in case the image never loads or errors
+              setTimeout(() => {
+                if (!img.complete) {
+                  console.warn('Image load timed out:', imageUrl);
+                  resolve(null);
+                }
+              }, 5000);
             });
 
             // Skip rendering if there was an error loading the image
@@ -187,6 +204,8 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
         }
       } catch (error) {
         console.error('Error in loadImages:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -194,14 +213,21 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
   }, [items, width, height]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="border rounded-lg shadow-lg bg-white"
-      style={{ 
-        maxWidth: '100%',
-        width: `${width}px`,
-        height: `${height}px`
-      }}
-    />
+    <div className="relative">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
+          <div className="h-8 w-8 rounded-full border-2 border-t-transparent border-purple-500 animate-spin"></div>
+        </div>
+      )}
+      <canvas
+        ref={canvasRef}
+        className="border rounded-lg shadow-lg bg-white"
+        style={{ 
+          maxWidth: '100%',
+          width: `${width}px`,
+          height: `${height}px`
+        }}
+      />
+    </div>
   );
 };
