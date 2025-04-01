@@ -3,7 +3,7 @@
  * API service for outfit generation
  */
 
-import { supabase } from "@/lib/supabase";
+import { validateMood } from "@/services/utils/validationUtils";
 
 // Cache for API requests to avoid duplications
 const requestCache = new Map();
@@ -43,22 +43,37 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
       return requestCache.get(cacheKey);
     }
     
-    console.log('Generating outfit with params:', { bodyStructure, style, mood });
+    // Validate mood
+    const validatedMood = validateMood(mood);
     
-    // Use Supabase Functions to generate the outfit
-    const { data, error } = await supabase.functions.invoke('generate-outfit', {
-      body: { 
+    console.log('Generating outfit with params:', { bodyStructure, style, mood: validatedMood });
+    
+    // Correct URL and API key for the outfit generation endpoint
+    const SUPABASE_FUNCTION_URL = 'https://mwsblnposuyhrgzrtoyo.supabase.co/functions/v1/generate-outfit';
+    const SUPABASE_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13c2JsbnBvc3V5aHJnenJ0b3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4OTUyOTYsImV4cCI6MjA1MzQ3MTI5Nn0.gyU3tLyZ_1yY82BKkii8EyeaGzFn9muZR6G6ELJocQk';
+    
+    // Make direct API request to the specified endpoint
+    const response = await fetch(SUPABASE_FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_API_KEY}`,
+        'apikey': SUPABASE_API_KEY
+      },
+      body: JSON.stringify({
         bodyStructure,
         style,
-        mood
-      }
+        mood: validatedMood
+      })
     });
     
-    if (error) {
-      console.error('API Error:', error);
-      console.log('Using fallback data due to API error');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error:', response.status, errorText);
       return FALLBACK_DATA;
     }
+    
+    const data = await response.json();
     
     // If the response doesn't have the expected structure
     if (!data || !data.data || !Array.isArray(data.data)) {
