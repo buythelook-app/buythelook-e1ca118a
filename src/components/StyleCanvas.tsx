@@ -4,9 +4,10 @@ import { useEffect, useRef } from "react";
 interface StyleCanvasProps {
   id: string;
   styleType: number;
+  outfitData?: any;
 }
 
-export const StyleCanvas = ({ id, styleType }: StyleCanvasProps) => {
+export const StyleCanvas = ({ id, styleType, outfitData }: StyleCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -20,9 +21,9 @@ export const StyleCanvas = ({ id, styleType }: StyleCanvasProps) => {
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw different patterns based on styleType only if requested
+    // In the future, we could draw outfit visualization based on outfitData
     // Currently disabled to show blank white canvases
-  }, [id, styleType]);
+  }, [id, styleType, outfitData]);
 
   return null; // This component doesn't render anything, it just manipulates the canvas
 };

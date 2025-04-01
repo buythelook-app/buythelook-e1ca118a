@@ -13,6 +13,7 @@ export const FilterOptions = () => {
   const [isUnlimited, setIsUnlimited] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
+  const [outfitSuggestions, setOutfitSuggestions] = useState<any[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -20,8 +21,12 @@ export const FilterOptions = () => {
     const generateInitialOutfit = async () => {
       try {
         console.log("Generating initial outfit suggestions on home page load");
-        await generateOutfitFromUserPreferences();
-        console.log("Initial outfit suggestions generated successfully");
+        const response = await generateOutfitFromUserPreferences();
+        console.log("Initial outfit suggestions generated successfully", response);
+        
+        if (response && response.data && Array.isArray(response.data)) {
+          setOutfitSuggestions(response.data);
+        }
       } catch (error) {
         console.error("Error generating initial outfit suggestions:", error);
       }
@@ -61,7 +66,12 @@ export const FilterOptions = () => {
     setIsLoading(true);
     try {
       // Generate outfit based on user preferences without passing any parameters
-      await generateOutfitFromUserPreferences();
+      const response = await generateOutfitFromUserPreferences();
+      
+      if (response && response.data && Array.isArray(response.data)) {
+        setOutfitSuggestions(response.data);
+      }
+      
       navigate('/suggestions');
     } catch (error) {
       console.error('Error generating outfit suggestions:', error);
@@ -74,6 +84,20 @@ export const FilterOptions = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Draw white backgrounds on all canvases whenever outfitSuggestions changes
+    outfitSuggestions.forEach((_, index) => {
+      const canvas = document.getElementById(`style-canvas-${index}`) as HTMLCanvasElement;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+    });
+  }, [outfitSuggestions]);
 
   return (
     <div className="space-y-6 mb-8">
@@ -100,23 +124,40 @@ export const FilterOptions = () => {
         {isLoading ? "Loading..." : "View All Suggestions"}
       </Button>
       
-      {/* Four canvas elements for style visualization - 2 per row */}
+      {/* Dynamic number of canvas elements based on outfit suggestions */}
       <div className="mt-8">
         <h3 className="text-lg font-semibold mb-4">Style Visualization</h3>
         <div className="grid grid-cols-2 gap-4">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
-              <canvas 
-                id={`style-canvas-${index}`} 
-                className="w-full h-80 object-cover" // Doubled height from h-40 to h-80
-                width="200"
-                height="320" // Doubled height from 160 to 320
-              ></canvas>
-              <div className="p-3 text-center">
-                <p className="text-sm font-medium">Style Option {index + 1}</p>
+          {outfitSuggestions.length > 0 ? (
+            outfitSuggestions.map((_, index) => (
+              <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
+                <canvas 
+                  id={`style-canvas-${index}`} 
+                  className="w-full h-80 object-cover"
+                  width="200"
+                  height="320"
+                ></canvas>
+                <div className="p-3 text-center">
+                  <p className="text-sm font-medium">Style Option {index + 1}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            // Show placeholders when no suggestions are loaded yet
+            Array.from({ length: 2 }).map((_, index) => (
+              <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
+                <canvas 
+                  id={`style-canvas-${index}`} 
+                  className="w-full h-80 object-cover"
+                  width="200"
+                  height="320"
+                ></canvas>
+                <div className="p-3 text-center">
+                  <p className="text-sm font-medium">Loading styles...</p>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
