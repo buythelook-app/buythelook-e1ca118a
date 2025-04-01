@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from "react";
 import type { Mood } from "@/components/filters/MoodFilter";
 import { MoodFilter } from "@/components/filters/MoodFilter";
 import { useToast } from "@/hooks/use-toast";
-import { fetchDashboardItems } from "@/services/lookService";
+import { fetchItemsForOccasion } from "@/services/lookService";
 import { useQuery } from "@tanstack/react-query";
 import { Shuffle } from "lucide-react";
 import { logDatabaseItems } from "@/utils/supabaseUtils";
@@ -61,7 +61,7 @@ export default function Index() {
 
   const { data: occasionOutfits, isLoading, refetch } = useQuery({
     queryKey: ['dashboardItems', selectedMood],
-    queryFn: fetchDashboardItems,
+    queryFn: fetchItemsForOccasion,
     enabled: !!userStyle,
     staleTime: 300000, // 5 minutes
     refetchOnWindowFocus: false,

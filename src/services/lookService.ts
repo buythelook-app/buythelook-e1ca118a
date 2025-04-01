@@ -4,11 +4,12 @@
  */
 
 import { fetchFirstOutfitSuggestion } from './outfitService';
-import { fetchDashboardItems } from './dashboardService';
+import { fetchItemsForOccasion, getAllItemsFromSupabase } from './dashboardService';
 import { mapDashboardItemToOutfitItem } from './mappers/styleMappers';
 
 export {
   fetchFirstOutfitSuggestion,
-  fetchDashboardItems,
+  fetchItemsForOccasion,
+  getAllItemsFromSupabase,
   mapDashboardItemToOutfitItem
 };
