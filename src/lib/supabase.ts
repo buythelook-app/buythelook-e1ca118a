@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://aqkeprwxxsryropnhfvm.supabase.co';
@@ -27,25 +26,19 @@ export const getImageUrl = (path: string): string => {
     return '/placeholder.svg';
   }
   
-  // Always return placeholder for Imgur URLs
-  if (path.includes('imgur.com')) {
-    console.log('[Supabase] Returning placeholder for Imgur URL:', path);
+  // Skip empty and invalid paths
+  if (path === 'null' || path === 'undefined' || path.length < 3) {
+    console.log('[Supabase] Invalid path, using placeholder:', path);
     return '/placeholder.svg';
   }
   
-  // If it's already a URL, validate before returning
+  // If it's already a URL, verify before returning
   if (path.startsWith('http://') || path.startsWith('https://')) {
     if (path.includes('null') || path.includes('undefined')) {
       console.log('[Supabase] Invalid URL, using placeholder:', path);
       return '/placeholder.svg';
     }
     return path;
-  }
-  
-  // Skip empty and invalid paths
-  if (path === 'null' || path === 'undefined' || path.length < 3) {
-    console.log('[Supabase] Invalid path, using placeholder:', path);
-    return '/placeholder.svg';
   }
   
   // If it's a path in storage
@@ -62,14 +55,16 @@ export const getImageUrl = (path: string): string => {
     }
   }
   
-  // If it's a relative path in the public folder
-  if (path.startsWith('/')) {
-    return path;
+  // Try to interpret as a storage path with default bucket
+  try {
+    const timestamp = Date.now();
+    const imageUrl = `${supabaseUrl}/storage/v1/object/public/items/${path}?t=${timestamp}`;
+    console.log('[Supabase] Generated storage URL with default bucket:', imageUrl);
+    return imageUrl;
+  } catch (error) {
+    console.error('[Supabase] Error generating storage URL with default bucket:', error);
+    return '/placeholder.svg';
   }
-  
-  // Return placeholder for other cases
-  console.log('[Supabase] Unknown path format, using placeholder:', path);
-  return '/placeholder.svg';
 };
 
 // Log initialization for debugging

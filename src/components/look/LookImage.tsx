@@ -1,7 +1,7 @@
 
 import { AspectRatio } from "../ui/aspect-ratio";
 import { useState, useEffect } from "react";
-import { transformImageUrl, isImgurUrl } from "@/utils/imageUtils";
+import { transformImageUrl } from "@/utils/imageUtils";
 
 interface LookImageProps {
   image: string;
@@ -21,14 +21,6 @@ export const LookImage = ({ image, title, type = 'default' }: LookImageProps) =>
     
     if (!image) {
       console.log(`[LookImage] No image provided for ${title}, using placeholder`);
-      setImageError(true);
-      setDisplayImage('/placeholder.svg');
-      return;
-    }
-    
-    // Always use placeholder for imgur URLs
-    if (isImgurUrl(image)) {
-      console.log(`[LookImage] Using placeholder for imgur URL: ${image}`);
       setImageError(true);
       setDisplayImage('/placeholder.svg');
       return;

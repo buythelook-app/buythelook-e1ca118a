@@ -4,7 +4,7 @@ import { Button } from "../ui/button";
 import { toast } from "sonner";
 import { useCartStore } from "../Cart";
 import { useState, useEffect } from "react";
-import { transformImageUrl, isImgurUrl } from "@/utils/imageUtils";
+import { transformImageUrl } from "@/utils/imageUtils";
 
 interface LookItemProps {
   item: {
@@ -32,14 +32,7 @@ export const LookItem = ({ item }: LookItemProps) => {
       return;
     }
     
-    // Always use placeholder for imgur URLs
-    if (isImgurUrl(item.image)) {
-      console.log(`Using placeholder for imgur URL: ${item.image}`);
-      setDisplayImage('/placeholder.svg');
-      return;
-    }
-    
-    // Transform URL for all other cases
+    // Transform URL for all cases
     try {
       const transformed = transformImageUrl(item.image);
       console.log(`Transformed URL: ${transformed} from original: ${item.image}`);
