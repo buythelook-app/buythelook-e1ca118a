@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import { useToast } from "../ui/use-toast";
@@ -14,6 +14,21 @@ export const FilterOptions = () => {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Automatically generate outfit suggestions when component mounts
+    const generateInitialOutfit = async () => {
+      try {
+        console.log("Generating initial outfit suggestions on home page load");
+        await generateOutfitFromUserPreferences();
+        console.log("Initial outfit suggestions generated successfully");
+      } catch (error) {
+        console.error("Error generating initial outfit suggestions:", error);
+      }
+    };
+    
+    generateInitialOutfit();
+  }, []);
 
   const handleBudgetChange = (value: number[]) => {
     if (value[0] >= 1000) {
