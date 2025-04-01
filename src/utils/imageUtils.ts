@@ -5,26 +5,41 @@
 
 import { getImageUrl as getSupabaseImageUrl } from "@/lib/supabase";
 
-// Transform image URL for display
+/**
+ * Checks if a URL is from Imgur
+ */
+export const isImgurUrl = (url: string): boolean => {
+  return url && url.includes('imgur.com');
+};
+
+/**
+ * Checks if URL is valid
+ */
+export const isValidUrl = (url: string): boolean => {
+  if (!url || url.trim() === '' || url.includes('undefined') || url.includes('null')) {
+    return false;
+  }
+  return true;
+};
+
+/**
+ * Transform image URL for display
+ */
 export const transformImageUrl = (url: string): string => {
-  if (!url || url.trim() === '') {
-    console.log('Empty URL, using placeholder');
+  // Return placeholder for empty or invalid URLs
+  if (!isValidUrl(url)) {
+    console.log('Invalid URL, using placeholder:', url);
     return '/placeholder.svg';
   }
   
-  // Check for imgur URLs and always return placeholder
-  if (url.includes('imgur.com')) {
+  // Always return placeholder for Imgur URLs
+  if (isImgurUrl(url)) {
     console.log('Imgur URL detected, using placeholder instead:', url);
     return '/placeholder.svg';
   }
   
-  // If it's already a full URL (but not imgur), validate it
+  // If it's already a full URL (but not imgur), use it
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    // Skip any invalid or known-problematic URLs
-    if (url.includes('undefined') || url.includes('null')) {
-      console.warn('Invalid URL detected, using placeholder:', url);
-      return '/placeholder.svg';
-    }
     return url;
   }
   

@@ -4,7 +4,7 @@ import { Button } from "../ui/button";
 import { toast } from "sonner";
 import { useCartStore } from "../Cart";
 import { useState, useEffect } from "react";
-import { transformImageUrl } from "@/utils/imageUtils";
+import { transformImageUrl, isImgurUrl } from "@/utils/imageUtils";
 
 interface LookItemProps {
   item: {
@@ -22,6 +22,9 @@ export const LookItem = ({ item }: LookItemProps) => {
   
   // Pre-process image URL on component mount or when item changes
   useEffect(() => {
+    // Reset error state when item changes
+    setImageError(false);
+    
     // Always use placeholder for empty URLs
     if (!item.image) {
       console.log(`Empty image URL for item: ${item.title}, using placeholder`);
@@ -30,7 +33,7 @@ export const LookItem = ({ item }: LookItemProps) => {
     }
     
     // Always use placeholder for imgur URLs
-    if (item.image.includes('imgur.com')) {
+    if (isImgurUrl(item.image)) {
       console.log(`Using placeholder for imgur URL: ${item.image}`);
       setDisplayImage('/placeholder.svg');
       return;
@@ -41,8 +44,6 @@ export const LookItem = ({ item }: LookItemProps) => {
       const transformed = transformImageUrl(item.image);
       console.log(`Transformed URL: ${transformed} from original: ${item.image}`);
       setDisplayImage(transformed);
-      // Reset error state when changing image
-      setImageError(false);
     } catch (error) {
       console.error(`Error transforming URL for ${item.title}:`, error);
       setDisplayImage('/placeholder.svg');
