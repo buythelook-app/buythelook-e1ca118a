@@ -1,3 +1,4 @@
+
 import { HeroSection } from "@/components/HeroSection";
 import { Navbar } from "@/components/Navbar";
 import { FilterOptions } from "@/components/filters/FilterOptions";
@@ -14,6 +15,7 @@ import { logDatabaseItems } from "@/utils/supabaseUtils";
 import { generateOutfit } from "@/services/api/outfitApi";
 import { mapBodyShape, mapStyle } from "@/services/mappers/styleMappers";
 import { validateMood } from "@/services/utils/validationUtils";
+import { DashboardItem } from "@/types/lookTypes";
 
 interface Look {
   id: string;
@@ -59,9 +61,13 @@ export default function Index() {
     }
   }, []);
 
+  // Modified to correctly handle the fetchItemsForOccasion function
   const { data: occasionOutfits, isLoading, refetch } = useQuery({
     queryKey: ['dashboardItems', selectedMood],
-    queryFn: fetchItemsForOccasion,
+    queryFn: async () => {
+      const outfits = await fetchItemsForOccasion();
+      return outfits;
+    },
     enabled: !!userStyle,
     staleTime: 300000, // 5 minutes
     refetchOnWindowFocus: false,
@@ -74,7 +80,7 @@ export default function Index() {
     }
   }, [selectedMood, refetch]);
 
-  const createLookFromItems = (items: any[] = [], occasion: string, index: number): Look | null => {
+  const createLookFromItems = (items: DashboardItem[] = [], occasion: string, index: number): Look | null => {
     if (!items || items.length === 0) return null;
     
     const lookItems = items.map(item => ({

@@ -109,7 +109,7 @@ const fetchShoesItemsForOccasion = async (occasion: string): Promise<DashboardIt
   return shoesItems;
 };
 
-const getAllItemsFromSupabase = async (): Promise<DashboardItem[]> => {
+export const getAllItemsFromSupabase = async (): Promise<DashboardItem[]> => {
   try {
     // First check if we should query the database at all
     const hasItems = await checkDatabaseHasItems();
@@ -147,23 +147,34 @@ const getAllItemsFromSupabase = async (): Promise<DashboardItem[]> => {
   }
 };
 
-export const fetchItemsForOccasion = async (occasion: string): Promise<DashboardItem[]> => {
+export const fetchItemsForOccasion = async (): Promise<Record<string, DashboardItem[]>> => {
   try {
-    const [topItems, bottomItems, shoesItems] = await Promise.all([
-      fetchTopItemsForOccasion(occasion),
-      fetchBottomItemsForOccasion(occasion),
-      fetchShoesItemsForOccasion(occasion),
-    ]);
+    // Define a list of occasions to fetch items for
+    const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
+    const result: Record<string, DashboardItem[]> = {};
     
-    // Combine items and remove duplicates
-    const combinedItems = [...topItems, ...bottomItems, ...shoesItems];
-    const uniqueItems = Array.from(new Map(combinedItems.map(item => [item.id, item])).values());
+    // Fetch items for each occasion
+    await Promise.all(
+      occasions.map(async (occasion) => {
+        const [topItems, bottomItems, shoesItems] = await Promise.all([
+          fetchTopItemsForOccasion(occasion),
+          fetchBottomItemsForOccasion(occasion),
+          fetchShoesItemsForOccasion(occasion),
+        ]);
+        
+        // Combine items for this occasion
+        const combinedItems = [...topItems, ...bottomItems, ...shoesItems];
+        const uniqueItems = Array.from(new Map(combinedItems.map(item => [item.id, item])).values());
+        
+        result[occasion] = uniqueItems;
+        console.log(`Total unique items for ${occasion}: ${uniqueItems.length}`);
+      })
+    );
     
-    console.log(`Total unique items for ${occasion}: ${uniqueItems.length}`);
-    return uniqueItems;
+    return result;
   } catch (error) {
-    console.error('Error fetching items for occasion:', error);
-    return [];
+    console.error('Error fetching items for occasions:', error);
+    return {};
   }
 };
 
