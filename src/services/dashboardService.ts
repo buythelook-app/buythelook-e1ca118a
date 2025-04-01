@@ -1,9 +1,11 @@
+
 import { DashboardItem } from "@/types/lookTypes";
 import { supabase } from "@/lib/supabase";
 import { checkDatabaseHasItems } from "./fetchers/itemsFetcher";
 
 console.log("Fetching dashboard items from Supabase");
-console.log("[Supabase] Dashboard service using URL:", process.env.SUPABASE_URL || 'https://aqkeprwxxsryropnhfvm.supabase.co');
+// Use import.meta.env instead of process.env for Vite applications
+console.log("[Supabase] Dashboard service using URL:", import.meta.env.VITE_SUPABASE_URL || 'https://aqkeprwxxsryropnhfvm.supabase.co');
 
 // Cache for item filters to prevent redundant processing 
 const topItemsByOccasionCache = new Map();
