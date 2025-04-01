@@ -1,4 +1,3 @@
-
 import { HeroSection } from "@/components/HeroSection";
 import { Navbar } from "@/components/Navbar";
 import { FilterOptions } from "@/components/filters/FilterOptions";
@@ -61,12 +60,12 @@ export default function Index() {
     }
   }, []);
 
-  // Modified to correctly handle the fetchItemsForOccasion function
+  // Fixed useQuery to correctly handle the queryFn with no parameters
   const { data: occasionOutfits, isLoading, refetch } = useQuery({
     queryKey: ['dashboardItems', selectedMood],
     queryFn: async () => {
-      const outfits = await fetchItemsForOccasion();
-      return outfits;
+      console.log("Fetching dashboard items with mood:", selectedMood);
+      return await fetchItemsForOccasion();
     },
     enabled: !!userStyle,
     staleTime: 300000, // 5 minutes

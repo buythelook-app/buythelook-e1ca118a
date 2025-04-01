@@ -20,6 +20,8 @@ const BLACKLISTED_URLS = [
  * Check if a URL is in the blacklist or from blocked storage
  */
 const isBlockedUrl = (url: string): boolean => {
+  if (!url) return true;
+  
   // Block all URLs from Supabase storage items path
   if (url.startsWith(BLOCKED_STORAGE_PREFIX)) {
     console.log('Blocking URL from Supabase storage items path:', url);
@@ -53,7 +55,12 @@ export const transformImageUrl = (url: string): string => {
     return '/placeholder.svg';
   }
   
-  // If it's already a full URL, check if it's from blocked storage
+  // Handle relative paths from public folder
+  if (url.startsWith('/')) {
+    return url;
+  }
+  
+  // If it's already a full URL but not from blocked storage
   if (url.startsWith('http://') || url.startsWith('https://')) {
     // Block all URLs from Supabase storage items path
     if (isBlockedUrl(url)) {
@@ -62,11 +69,6 @@ export const transformImageUrl = (url: string): string => {
     }
     
     // For other URLs, use as is
-    return url;
-  }
-  
-  // If it's a relative path from public folder
-  if (url.startsWith('/')) {
     return url;
   }
   
