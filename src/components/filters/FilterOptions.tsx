@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
@@ -6,6 +5,7 @@ import { useToast } from "../ui/use-toast";
 import { EventFilter } from "./EventFilter";
 import { BudgetFilter } from "./BudgetFilter";
 import { generateOutfitFromUserPreferences } from "@/services/api/outfitApi";
+import { StyleCanvas } from "../StyleCanvas";
 
 export const FilterOptions = () => {
   const navigate = useNavigate();
@@ -129,7 +129,7 @@ export const FilterOptions = () => {
         <h3 className="text-lg font-semibold mb-4">Style Visualization</h3>
         <div className="grid grid-cols-2 gap-4">
           {outfitSuggestions.length > 0 ? (
-            outfitSuggestions.map((_, index) => (
+            outfitSuggestions.map((outfit, index) => (
               <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
                 <canvas 
                   id={`style-canvas-${index}`} 
@@ -137,8 +137,19 @@ export const FilterOptions = () => {
                   width="200"
                   height="320"
                 ></canvas>
+                <StyleCanvas 
+                  id={`style-canvas-${index}`} 
+                  styleType={index} 
+                  outfitData={outfit.colors || { 
+                    top: outfit.top, 
+                    bottom: outfit.bottom, 
+                    shoes: outfit.shoes 
+                  }}
+                />
                 <div className="p-3 text-center">
-                  <p className="text-sm font-medium">Style Option {index + 1}</p>
+                  <p className="text-sm font-medium">
+                    {outfit.occasion ? outfit.occasion.charAt(0).toUpperCase() + outfit.occasion.slice(1) : `Style Option ${index + 1}`}
+                  </p>
                 </div>
               </div>
             ))
