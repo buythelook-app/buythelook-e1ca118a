@@ -133,8 +133,8 @@ export const FilterOptions = () => {
                 <canvas 
                   id={`style-canvas-${index}`} 
                   className="w-full h-80 object-cover"
-                  width="300"
-                  height="480"
+                  width="450"
+                  height="600"
                 ></canvas>
                 <StyleCanvas 
                   id={`style-canvas-${index}`} 
@@ -155,8 +155,8 @@ export const FilterOptions = () => {
                 <canvas 
                   id={`style-canvas-${index}`} 
                   className="w-full h-80 object-cover"
-                  width="300"
-                  height="480"
+                  width="450"
+                  height="600"
                 ></canvas>
                 <div className="p-3 text-center">
                   <p className="text-sm font-medium">Loading styles...</p>
