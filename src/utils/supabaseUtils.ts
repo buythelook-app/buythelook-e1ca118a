@@ -8,9 +8,16 @@ const itemsCache = new Map();
 let hasInitialLogged = false;
 // Track if we're currently fetching
 let isFetchingAllItems = false;
+// Flag to track if we've already determined that the database is empty
+let isDatabaseEmpty = false;
 
 export const fetchAllItems = async () => {
   try {
+    // If we already know database is empty, return empty array immediately
+    if (isDatabaseEmpty) {
+      return [];
+    }
+    
     // If we're already fetching, return cached or empty array
     if (isFetchingAllItems) {
       return itemsCache.get('all-items') || [];
@@ -27,6 +34,7 @@ export const fetchAllItems = async () => {
     
     if (!hasItems) {
       console.log('No items in database according to cache check. Using empty array.');
+      isDatabaseEmpty = true;
       itemsCache.set('all-items', []);
       return [];
     }
@@ -49,6 +57,7 @@ export const fetchAllItems = async () => {
     
     if (!data || data.length === 0) {
       console.log('No items found in the database. Using empty array.');
+      isDatabaseEmpty = true;
       itemsCache.set('all-items', []);
       return [];
     }
@@ -67,15 +76,29 @@ export const fetchAllItems = async () => {
 };
 
 export const logDatabaseItems = async () => {
+  // If we already know database is empty, exit early
+  if (isDatabaseEmpty) {
+    if (!hasInitialLogged) {
+      console.log('Database is empty according to cache. You may need to add some items first.');
+      hasInitialLogged = true;
+    }
+    return;
+  }
+  
   // Check if we have already logged items in this session
   if (itemsCache.has('logged-items')) {
-    //console.log('Items have already been logged this session');
     return;
   }
   
   // Early exit if we know database is empty
   const hasItems = await checkDatabaseHasItems();
-  if (!hasItems && hasInitialLogged) {
+  if (!hasItems) {
+    if (!hasInitialLogged) {
+      console.log('No items found in the database. You may need to add some items first.');
+      hasInitialLogged = true;
+    }
+    isDatabaseEmpty = true;
+    itemsCache.set('logged-items', true);
     return;
   }
   
@@ -83,6 +106,7 @@ export const logDatabaseItems = async () => {
   
   if (items.length === 0) {
     console.log('No items found in the database. You may need to add some items first.');
+    isDatabaseEmpty = true;
   } else {
     console.log('Database items by type:');
     

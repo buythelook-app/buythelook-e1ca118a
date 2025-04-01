@@ -122,7 +122,7 @@ const FALLBACK_ITEMS = {
 };
 
 // Cache for dashboard items
-const dashboardCache = new Map<string, Record<string, DashboardItem[]>>();
+const dashboardCache = new Map<string, DashboardItem[]>();
 
 const fetchItemsByTypeAndOccasion = async (type: string, occasion: string): Promise<DashboardItem[]> => {
   try {

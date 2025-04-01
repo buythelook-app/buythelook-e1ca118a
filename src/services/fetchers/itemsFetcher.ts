@@ -120,7 +120,8 @@ export const findBestColorMatch = async (hexColor: string, itemType: string): Pr
     const selectedItem = items[randomIndex];
     
     // Cache the selected item
-    itemsCache.set(cacheKey, [selectedItem]);
+    const cacheItems: DashboardItem[] = [selectedItem];
+    itemsCache.set(cacheKey, cacheItems);
     
     return selectedItem;
   } catch (error) {
@@ -165,6 +166,8 @@ export const checkDatabaseHasItems = async (): Promise<boolean> => {
     if (!hasItems) {
       hasCheckedDatabase = true;
       console.log('[Supabase] No items found in database. Using fallbacks.');
+    } else {
+      console.log('[Supabase] Connection test successful. Items count:', count);
     }
     
     return hasItems;
