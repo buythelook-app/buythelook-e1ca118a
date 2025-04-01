@@ -52,14 +52,6 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
     
     console.log('Generating outfit with params:', { bodyStructure, style, mood: validatedMood });
     
-    // Log request details for debugging
-    console.log('Making POST request to:', SUPABASE_FUNCTION_URL);
-    console.log('With request body:', JSON.stringify({
-      bodyStructure,
-      style,
-      mood: validatedMood
-    }));
-    
     // Make direct API request to the specified endpoint with the provided API key
     const response = await fetch(SUPABASE_FUNCTION_URL, {
       method: 'POST',
@@ -82,7 +74,6 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
     }
     
     const data = await response.json();
-    console.log('API response data:', data);
     
     // If the response doesn't have the expected structure
     if (!data || !data.data || !Array.isArray(data.data)) {
@@ -113,18 +104,16 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
  */
 export const generateOutfitFromUserPreferences = async () => {
   try {
-    console.log('Generating outfit from user preferences');
-    
     // Extract user preferences from quiz
     const quizData = localStorage.getItem('styleAnalysis');
     if (!quizData) {
-      console.log('No style analysis data found, cannot generate outfit');
+      console.log('No style analysis data found, using fallback');
       return FALLBACK_DATA;
     }
     
     const styleAnalysis = JSON.parse(quizData);
     if (!styleAnalysis?.analysis) {
-      console.log('Invalid style analysis data, cannot generate outfit');
+      console.log('Invalid style analysis data, using fallback');
       return FALLBACK_DATA;
     }
     

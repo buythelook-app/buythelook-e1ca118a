@@ -11,19 +11,39 @@ import { validateMood } from "./utils/validationUtils";
 import { findBestColorMatch } from "./fetchers/itemsFetcher";
 import { OutfitColors, storeOutfitColors, storeStyleRecommendations } from "./utils/outfitStorageUtils";
 
+// Cache for outfit suggestions
+const outfitCache = new Map<string, DashboardItem[]>();
+
 /**
  * Main function to fetch outfit suggestion
  */
 export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => {
   try {
+    // Generate a cache key based on user preferences
+    const quizData = localStorage.getItem('styleAnalysis');
+    const currentMoodData = localStorage.getItem('current-mood');
+    const selectedEvent = localStorage.getItem('selected-event');
+    
+    if (!quizData) {
+      console.log("[OutfitService] No style analysis data found, using fallback items");
+      return getFallbackItems();
+    }
+    
+    const cacheKey = `outfit-${quizData}-${currentMoodData}-${selectedEvent}`;
+    
+    // Check if we already have this outfit cached
+    if (outfitCache.has(cacheKey)) {
+      console.log("[OutfitService] Using cached outfit");
+      return outfitCache.get(cacheKey) || getFallbackItems();
+    }
+    
     console.log("[OutfitService] Starting to fetch outfit suggestions");
     
     // Extract user preferences from quiz
-    const quizData = localStorage.getItem('styleAnalysis');
-    const styleAnalysis = quizData ? JSON.parse(quizData) : null;
+    const styleAnalysis = JSON.parse(quizData);
     
     if (!styleAnalysis?.analysis) {
-      console.log("[OutfitService] No style analysis data found, using fallback items");
+      console.log("[OutfitService] Invalid style analysis data, using fallback items");
       return getFallbackItems();
     }
     
@@ -32,19 +52,16 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     console.log("User's preferred style from quiz:", preferredStyle);
     
     // Get selected event style (if any) or use preferred style from quiz
-    const selectedEvent = localStorage.getItem('selected-event');
     const eventStyle = selectedEvent ? getEventStyles() : null;
     const style = mapStyle(eventStyle || preferredStyle);
     console.log("Selected event:", selectedEvent, "Mapped style for API request:", style);
     
     // Get the current mood selection from localStorage
-    const currentMoodData = localStorage.getItem('current-mood');
     const mood = validateMood(currentMoodData);
-    console.log("Using mood:", mood, "Original mood data:", currentMoodData);
+    console.log("Using mood:", mood);
     
     // Make API request for outfit suggestions
     const response = await generateOutfit(bodyShape, style, mood);
-    console.log("Outfit API response:", response);
     
     if (!response || !response.data || !Array.isArray(response.data) || response.data.length === 0) {
       console.log("No valid outfit data returned, using fallbacks");
@@ -52,7 +69,6 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     }
     
     const outfitSuggestion = response.data[0];
-    console.log("Using outfit suggestion:", outfitSuggestion);
     
     // Store recommendations for display in the UI
     if (outfitSuggestion.recommendations && Array.isArray(outfitSuggestion.recommendations)) {
@@ -92,6 +108,9 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
         items.push(coatItem);
       }
     }
+    
+    // Cache the results
+    outfitCache.set(cacheKey, items);
     
     return items;
   } catch (error) {
