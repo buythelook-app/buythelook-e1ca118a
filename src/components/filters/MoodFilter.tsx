@@ -8,6 +8,7 @@ import {
   DialogTrigger,
 } from "../ui/dialog";
 import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export type Mood = "mystery" | "quiet" | "elegant" | "energized" | "flowing" | "optimist" | 
            "calm" | "romantic" | "unique" | "sweet" | "childish" | "passionate" | "powerful";
@@ -35,11 +36,13 @@ interface MoodFilterProps {
 
 export const MoodFilter = ({ selectedMood, onMoodSelect }: MoodFilterProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Initialize from localStorage if exists
     const storedMood = localStorage.getItem('current-mood') as Mood;
     if (storedMood && !selectedMood) {
+      console.log("Loading stored mood from localStorage:", storedMood);
       onMoodSelect(storedMood);
     }
   }, [selectedMood, onMoodSelect]);
@@ -47,6 +50,21 @@ export const MoodFilter = ({ selectedMood, onMoodSelect }: MoodFilterProps) => {
   const handleMoodSelect = (mood: Mood) => {
     onMoodSelect(mood);
     localStorage.setItem('current-mood', mood);
+    console.log("Mood selected and saved to localStorage:", mood);
+    
+    // Trigger a custom event so other components can react to the mood change
+    const event = new StorageEvent('storage', {
+      key: 'current-mood',
+      newValue: mood,
+      storageArea: localStorage
+    });
+    window.dispatchEvent(event);
+    
+    toast({
+      title: "Mood Updated",
+      description: `Your mood is now set to ${mood}`,
+    });
+    
     setIsOpen(false); // Close the dialog after selection
   };
 
@@ -57,7 +75,7 @@ export const MoodFilter = ({ selectedMood, onMoodSelect }: MoodFilterProps) => {
           {selectedMood ? (
             <>
               <span className="mr-2 text-lg">{moodIcons[selectedMood]}</span>
-              <span>Mood</span>
+              <span>Mood: {selectedMood}</span>
             </>
           ) : (
             <>

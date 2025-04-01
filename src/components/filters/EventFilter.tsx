@@ -26,11 +26,21 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Load saved event on component mount
+  useEffect(() => {
+    const savedEvent = localStorage.getItem('selected-event') as EventType;
+    if (savedEvent) {
+      setSelectedEvent(savedEvent);
+      console.log("Loaded saved event:", savedEvent);
+    }
+  }, []);
+
   // Add an effect to handle navigation when both date and event are selected
   useEffect(() => {
     if (selectedEvent && date) {
       // Store the selected event in localStorage for the lookService to use
       localStorage.setItem('selected-event', selectedEvent);
+      console.log("Saved event to localStorage:", selectedEvent);
       
       // Close dialog and navigate to suggestions
       setIsOpen(false);
@@ -51,6 +61,9 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
       
       // Store recommended styles in localStorage for other components to use
       localStorage.setItem('event-recommended-styles', JSON.stringify(recommendedStyles));
+      // Store the selected event directly
+      localStorage.setItem('selected-event', event);
+      console.log("Selected event:", event, "with styles:", recommendedStyles);
     }
   };
 
@@ -61,6 +74,8 @@ export const EventFilter = ({ date, onDateSelect, onSyncCalendar }: EventFilterP
         title: "Date Selected",
         description: `Selected date: ${newDate.toLocaleDateString()}`,
       });
+      localStorage.setItem('selected-date', newDate.toISOString());
+      console.log("Selected date:", newDate.toISOString());
     }
   };
 

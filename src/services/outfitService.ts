@@ -10,6 +10,7 @@ import { convertToDashboardItem, getItemIdentifier } from "./outfitFactory";
 import { isMinimalistTop, isMinimalistBottom, isMinimalistShoe } from "./filters/minimalistStyleCheckers";
 import { scoreItem } from "./filters/styleFilters";
 import { supabase, getSupabaseUrl, getImageUrl } from "@/lib/supabase";
+import { transformImageUrl } from "@/utils/imageUtils";
 
 // Fallback items for when API doesn't return anything useful
 const FALLBACK_ITEMS = {
@@ -80,7 +81,7 @@ const fetchItemsByType = async (type: string): Promise<DashboardItem[]> => {
       id: item.id || `generated-${Math.random().toString(36).substring(2, 9)}`,
       name: item.name || `Stylish ${type}`,
       description: item.description || `Stylish ${type}`,
-      image: getImageUrl(item.image) || '', // Process image URL
+      image: transformImageUrl(item.image) || '', // Process image URL properly
       price: item.price || '$49.99',
       type: type
     }));
@@ -159,14 +160,16 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     const preferredStyle = styleAnalysis.analysis.styleProfile || 'classic';
     console.log("User's preferred style from quiz:", preferredStyle);
     
-    // Get event style or use preferred style
-    const eventStyle = getEventStyles();
+    // Get selected event style (if any) or use preferred style from quiz
+    const selectedEvent = localStorage.getItem('selected-event');
+    const eventStyle = selectedEvent ? getEventStyles() : null;
     const style = mapStyle(eventStyle || preferredStyle);
-    console.log("Mapped style for API request:", style);
+    console.log("Selected event:", selectedEvent, "Mapped style for API request:", style);
     
+    // Get the current mood selection from localStorage
     const currentMoodData = localStorage.getItem('current-mood');
     const mood = validateMood(currentMoodData);
-    console.log("Using mood:", mood);
+    console.log("Using mood:", mood, "Original mood data:", currentMoodData);
     
     // Make API requests for outfit suggestions
     const requests = 8; // Increased for better chances of complete outfits
