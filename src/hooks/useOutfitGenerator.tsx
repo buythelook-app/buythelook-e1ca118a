@@ -63,10 +63,6 @@ export const useOutfitGenerator = () => {
       return;
     }
 
-    generateOutfitFromUserPreferences()
-      .then(() => console.log("Generated outfit from user preferences on component load"))
-      .catch(err => console.error("Error generating outfit on component load:", err));
-
     const storedRecommendations = localStorage.getItem('style-recommendations');
     const storedColors = localStorage.getItem('outfit-colors');
     
@@ -121,7 +117,6 @@ export const useOutfitGenerator = () => {
     setIsRefreshing(true);
     console.log("Trying different look - generating new outfit...");
     try {
-      // Get user preferences from quiz data
       const quizData = localStorage.getItem('styleAnalysis');
       const styleAnalysis = quizData ? JSON.parse(quizData) : null;
       
@@ -129,18 +124,15 @@ export const useOutfitGenerator = () => {
         throw new Error("Style analysis data missing");
       }
       
-      // Extract necessary parameters for API request
       const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
       const preferredStyle = styleAnalysis.analysis.styleProfile || 'classic';
       const style = mapStyle(preferredStyle);
       
-      // Get the current mood or use default
       const currentMoodData = localStorage.getItem('current-mood');
       const mood = validateMood(currentMoodData);
       
       console.log("Generating new outfit with params:", { bodyStructure: bodyShape, style, mood });
       
-      // Make direct API request to generate outfit - using the updated function
       const response = await generateOutfit(bodyShape, style, mood);
       console.log("Outfit API response:", response);
       
@@ -148,16 +140,13 @@ export const useOutfitGenerator = () => {
         throw new Error("Invalid API response");
       }
       
-      // Process the first outfit suggestion
       const outfitSuggestion = response.data[0];
       
-      // Store recommendations and color palette
       if (outfitSuggestion.recommendations && Array.isArray(outfitSuggestion.recommendations)) {
         storeStyleRecommendations(outfitSuggestion.recommendations);
         setRecommendations(outfitSuggestion.recommendations);
       }
       
-      // Store and set color palette
       const newOutfitColors: OutfitColors = {
         top: outfitSuggestion.top,
         bottom: outfitSuggestion.bottom,
@@ -171,7 +160,6 @@ export const useOutfitGenerator = () => {
       storeOutfitColors(newOutfitColors);
       setOutfitColors(newOutfitColors);
       
-      // Find matching items for each color
       const topItem = await findBestColorMatch(outfitSuggestion.top, 'top');
       const bottomItem = await findBestColorMatch(outfitSuggestion.bottom, 'bottom');
       const shoesItem = await findBestColorMatch(outfitSuggestion.shoes, 'shoes');
@@ -182,7 +170,6 @@ export const useOutfitGenerator = () => {
         shoesItem || getFallbackItems()[2]
       ];
       
-      // Add coat if present in the suggestion
       if (outfitSuggestion.coat) {
         const coatItem = await findBestColorMatch(outfitSuggestion.coat, 'outerwear');
         if (coatItem) {
@@ -190,7 +177,6 @@ export const useOutfitGenerator = () => {
         }
       }
       
-      // Trigger refetch to update the UI
       await refetch();
       
       toast({

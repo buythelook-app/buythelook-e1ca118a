@@ -31,10 +31,19 @@ export const useAuthFlow = () => {
         console.log("User signed in successfully:", session.user?.id);
         
         // Generate outfit based on user preferences when they log in
+        // BUT ONLY if they've completed the quiz
         setTimeout(async () => {
           try {
-            await generateOutfitFromUserPreferences();
-            console.log("Generated outfit suggestions after login");
+            // Check if user has completed the quiz
+            const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
+            
+            if (hasQuizData) {
+              console.log("Quiz data found, generating outfit suggestions");
+              await generateOutfitFromUserPreferences();
+              console.log("Generated outfit suggestions after login");
+            } else {
+              console.log("No quiz data found, skipping outfit generation");
+            }
           } catch (error) {
             console.error("Error generating outfit after login:", error);
           }
