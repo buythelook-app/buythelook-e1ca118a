@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
@@ -84,11 +85,13 @@ export const FilterOptions = () => {
   };
 
   useEffect(() => {
+    // Reset and prepare canvases whenever outfit suggestions change
     outfitSuggestions.forEach((_, index) => {
       const canvas = document.getElementById(`style-canvas-${index}`) as HTMLCanvasElement;
       if (canvas) {
         const ctx = canvas.getContext('2d');
         if (ctx) {
+          // Clear canvas with white background
           ctx.fillStyle = "#FFFFFF";
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
@@ -130,8 +133,8 @@ export const FilterOptions = () => {
                 <canvas 
                   id={`style-canvas-${index}`} 
                   className="w-full h-80 object-cover"
-                  width="200"
-                  height="320"
+                  width="300"
+                  height="480"
                 ></canvas>
                 <StyleCanvas 
                   id={`style-canvas-${index}`} 
@@ -152,8 +155,8 @@ export const FilterOptions = () => {
                 <canvas 
                   id={`style-canvas-${index}`} 
                   className="w-full h-80 object-cover"
-                  width="200"
-                  height="320"
+                  width="300"
+                  height="480"
                 ></canvas>
                 <div className="p-3 text-center">
                   <p className="text-sm font-medium">Loading styles...</p>

@@ -43,11 +43,14 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
             topImg.src = outfitData.top.image[0];
             
             topImg.onload = () => {
+              // Preserve original aspect ratio for best quality
               const aspectRatio = topImg.width / topImg.height;
               const drawHeight = canvasHeight * 0.3; // Top takes 30% of canvas height
               const drawWidth = drawHeight * aspectRatio;
               const xPos = (canvasWidth - drawWidth) / 2;
               
+              // Draw at full quality without compression
+              ctx.imageSmoothingQuality = 'high';
               ctx.drawImage(topImg, xPos, topPositionY, drawWidth, drawHeight);
             };
             
@@ -73,11 +76,14 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
             bottomImg.src = outfitData.bottom.image[0];
             
             bottomImg.onload = () => {
+              // Preserve original aspect ratio for best quality
               const aspectRatio = bottomImg.width / bottomImg.height;
               const drawHeight = canvasHeight * 0.35; // Bottom takes 35% of canvas height
               const drawWidth = Math.min(drawHeight * aspectRatio, canvasWidth * 0.6);
               const xPos = (canvasWidth - drawWidth) / 2;
               
+              // Draw at full quality without compression
+              ctx.imageSmoothingQuality = 'high';
               ctx.drawImage(bottomImg, xPos, bottomPositionY, drawWidth, drawHeight);
             };
             
@@ -103,11 +109,14 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
             shoesImg.src = outfitData.shoes.image[0];
             
             shoesImg.onload = () => {
+              // Preserve original aspect ratio for best quality
               const aspectRatio = shoesImg.width / shoesImg.height;
               const drawHeight = canvasHeight * 0.15; // Shoes take 15% of canvas height
               const drawWidth = drawHeight * aspectRatio;
               const xPos = (canvasWidth - drawWidth) / 2;
               
+              // Draw at full quality without compression
+              ctx.imageSmoothingQuality = 'high';
               ctx.drawImage(shoesImg, xPos, shoesPositionY, drawWidth, drawHeight);
             };
             
