@@ -1,6 +1,7 @@
 
 import { AspectRatio } from "../ui/aspect-ratio";
 import { useState, useEffect } from "react";
+import { transformImageUrl } from "@/utils/imageUtils";
 
 interface LookImageProps {
   image: string;
@@ -11,15 +12,31 @@ interface LookImageProps {
 export const LookImage = ({ image, title, type = 'default' }: LookImageProps) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [displayImage, setDisplayImage] = useState<string>('/placeholder.svg');
   
-  // Always use local fallback for simplicity
-  const fallbackImage = '/placeholder.svg';
-  
-  // Validate image URL on component mount
+  // Process image URL on component mount
   useEffect(() => {
-    // If image URL contains imgur, mark it as an error immediately
-    if (!image || image.includes('imgur.com')) {
-      console.log(`[LookImage] Using placeholder for ${title} - image URL was empty or Imgur:`, image);
+    if (!image) {
+      console.log(`[LookImage] No image provided for ${title}, using placeholder`);
+      setImageError(true);
+      setImageLoaded(true);
+      return;
+    }
+    
+    // Always use placeholder for imgur URLs
+    if (image.includes('imgur.com')) {
+      console.log(`[LookImage] Using placeholder for imgur URL: ${image}`);
+      setImageError(true);
+      setImageLoaded(true);
+      return;
+    }
+    
+    try {
+      const transformed = transformImageUrl(image);
+      console.log(`[LookImage] Transformed URL for ${title}: ${transformed}`);
+      setDisplayImage(transformed);
+    } catch (error) {
+      console.error(`[LookImage] Error transforming URL: ${error}`);
       setImageError(true);
       setImageLoaded(true);
     }
@@ -39,15 +56,15 @@ export const LookImage = ({ image, title, type = 'default' }: LookImageProps) =>
         </div>
       )}
       <img 
-        src={imageError ? fallbackImage : image} 
+        src={imageError ? '/placeholder.svg' : displayImage} 
         alt={title}
         className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
         onLoad={() => {
-          console.log('[LookImage] Image loaded successfully:', image);
+          console.log('[LookImage] Image loaded successfully:', displayImage);
           setImageLoaded(true);
         }}
         onError={() => {
-          console.error('[LookImage] Error loading image:', image);
+          console.error('[LookImage] Error loading image:', displayImage);
           setImageError(true);
           setImageLoaded(true);
         }}

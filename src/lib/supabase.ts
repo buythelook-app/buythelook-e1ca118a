@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://aqkeprwxxsryropnhfvm.supabase.co';
@@ -21,12 +22,16 @@ export const getSupabaseUrl = () => {
 
 // Helper for getting public URLs for images
 export const getImageUrl = (path: string): string => {
-  if (!path) return '/placeholder.svg';
+  if (!path || path.trim() === '') {
+    console.log('[Supabase] Empty path, using placeholder');
+    return '/placeholder.svg';
+  }
   
   // If it's already a URL, handle special cases
   if (path.startsWith('http://') || path.startsWith('https://')) {
-    // Immediately return placeholder for Imgur URLs
+    // Always return placeholder for Imgur URLs
     if (path.includes('imgur.com')) {
+      console.log('[Supabase] Returning placeholder for Imgur URL:', path);
       return '/placeholder.svg';
     }
     return path;
@@ -34,6 +39,7 @@ export const getImageUrl = (path: string): string => {
   
   // Skip empty and invalid paths
   if (path === 'null' || path === 'undefined' || path.length < 3) {
+    console.log('[Supabase] Invalid path, using placeholder:', path);
     return '/placeholder.svg';
   }
   
@@ -42,8 +48,11 @@ export const getImageUrl = (path: string): string => {
     try {
       // Construct URL to storage with cache busting
       const timestamp = Date.now();
-      return `${supabaseUrl}/storage/v1/object/public/${path}?t=${timestamp}`;
+      const imageUrl = `${supabaseUrl}/storage/v1/object/public/${path}?t=${timestamp}`;
+      console.log('[Supabase] Generated storage URL:', imageUrl);
+      return imageUrl;
     } catch (error) {
+      console.error('[Supabase] Error generating storage URL:', error);
       return '/placeholder.svg';
     }
   }
@@ -54,6 +63,7 @@ export const getImageUrl = (path: string): string => {
   }
   
   // Return placeholder for other cases
+  console.log('[Supabase] Unknown path format, using placeholder:', path);
   return '/placeholder.svg';
 };
 

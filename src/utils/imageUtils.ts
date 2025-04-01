@@ -7,7 +7,10 @@ import { getImageUrl as getSupabaseImageUrl } from "@/lib/supabase";
 
 // Transform image URL for display
 export const transformImageUrl = (url: string): string => {
-  if (!url) return '/placeholder.svg';
+  if (!url || url.trim() === '') {
+    console.log('Empty URL, using placeholder');
+    return '/placeholder.svg';
+  }
   
   // Always use local placeholder for imgur URLs
   if (url.includes('imgur.com')) {
@@ -15,7 +18,7 @@ export const transformImageUrl = (url: string): string => {
     return '/placeholder.svg';
   }
   
-  // If it's already a full URL (but not imgur), return it
+  // If it's already a full URL (but not imgur), validate it
   if (url.startsWith('http://') || url.startsWith('https://')) {
     // Skip any invalid or known-problematic URLs
     if (url.includes('undefined') || url.includes('null')) {
@@ -25,7 +28,7 @@ export const transformImageUrl = (url: string): string => {
     return url;
   }
   
-  // If it's a Supabase storage path, get the full URL
+  // If it's a Supabase storage path, get the full URL 
   if (url.startsWith('public/') || url.startsWith('items/')) {
     try {
       return getSupabaseImageUrl(url);
@@ -35,12 +38,13 @@ export const transformImageUrl = (url: string): string => {
     }
   }
   
-  // If it's a relative path, assume it's from the public folder
+  // If it's a relative path from public folder
   if (url.startsWith('/')) {
     return url;
   }
   
-  // Use placeholder for any other case
+  // For any other case, use placeholder
+  console.log('Unknown URL format, using placeholder:', url);
   return '/placeholder.svg';
 };
 
