@@ -107,3 +107,52 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
     return FALLBACK_DATA;
   }
 };
+
+/**
+ * Get user preferences from quiz data and send outfit generation request
+ */
+export const generateOutfitFromUserPreferences = async () => {
+  try {
+    console.log('Generating outfit from user preferences');
+    
+    // Extract user preferences from quiz
+    const quizData = localStorage.getItem('styleAnalysis');
+    if (!quizData) {
+      console.log('No style analysis data found, cannot generate outfit');
+      return FALLBACK_DATA;
+    }
+    
+    const styleAnalysis = JSON.parse(quizData);
+    if (!styleAnalysis?.analysis) {
+      console.log('Invalid style analysis data, cannot generate outfit');
+      return FALLBACK_DATA;
+    }
+    
+    // Map body shape from quiz data
+    const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
+    
+    // Get style preference from quiz data
+    const preferredStyle = styleAnalysis.analysis.styleProfile || 'classic';
+    const style = mapStyle(preferredStyle);
+    
+    // Get current mood from localStorage or use a default
+    const currentMoodData = localStorage.getItem('current-mood');
+    const mood = validateMood(currentMoodData);
+    
+    console.log('Using user preferences for outfit generation:', {
+      bodyShape,
+      style,
+      mood
+    });
+    
+    // Call the outfit generation API with the user's preferences
+    return generateOutfit(bodyShape, style, mood);
+    
+  } catch (error) {
+    console.error('Error in generateOutfitFromUserPreferences:', error);
+    return FALLBACK_DATA;
+  }
+};
+
+// Import needed mappers
+import { mapBodyShape, mapStyle } from "@/services/mappers/styleMappers";

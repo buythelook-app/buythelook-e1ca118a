@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { fetchFirstOutfitSuggestion } from "@/services/lookService";
-import { generateOutfit } from "@/services/api/outfitApi";
+import { generateOutfit, generateOutfitFromUserPreferences } from "@/services/api/outfitApi";
 import { useNavigate } from "react-router-dom";
 import { mapBodyShape, mapStyle } from "@/services/mappers/styleMappers";
 import { storeOutfitColors, storeStyleRecommendations, OutfitColors } from "@/services/utils/outfitStorageUtils";
@@ -63,6 +63,11 @@ export const useOutfitGenerator = () => {
       navigate('/quiz');
       return;
     }
+
+    // Generate a fresh outfit suggestion based on user preferences when component loads
+    generateOutfitFromUserPreferences()
+      .then(() => console.log("Generated outfit from user preferences on component load"))
+      .catch(err => console.error("Error generating outfit on component load:", err));
 
     const storedRecommendations = localStorage.getItem('style-recommendations');
     const storedColors = localStorage.getItem('outfit-colors');

@@ -5,12 +5,14 @@ import { Button } from "../ui/button";
 import { useToast } from "../ui/use-toast";
 import { EventFilter } from "./EventFilter";
 import { BudgetFilter } from "./BudgetFilter";
+import { generateOutfitFromUserPreferences } from "@/services/api/outfitApi";
 
 export const FilterOptions = () => {
   const navigate = useNavigate();
   const [budget, setBudget] = useState<number>(100);
   const [isUnlimited, setIsUnlimited] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleBudgetChange = (value: number[]) => {
@@ -40,6 +42,24 @@ export const FilterOptions = () => {
     });
   };
 
+  const handleViewSuggestions = async () => {
+    setIsLoading(true);
+    try {
+      // Generate outfit based on user preferences
+      await generateOutfitFromUserPreferences();
+      navigate('/suggestions');
+    } catch (error) {
+      console.error('Error generating outfit suggestions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate outfit suggestions",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6 mb-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -58,10 +78,11 @@ export const FilterOptions = () => {
       </div>
 
       <Button 
-        onClick={() => navigate('/suggestions')}
+        onClick={handleViewSuggestions}
         className="bg-netflix-accent hover:bg-netflix-accent/80 w-full"
+        disabled={isLoading}
       >
-        View All Suggestions
+        {isLoading ? "Loading..." : "View All Suggestions"}
       </Button>
     </div>
   );

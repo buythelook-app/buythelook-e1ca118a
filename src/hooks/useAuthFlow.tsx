@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { generateOutfitFromUserPreferences } from "@/services/api/outfitApi";
 
 export const useAuthFlow = () => {
   const navigate = useNavigate();
@@ -27,6 +29,17 @@ export const useAuthFlow = () => {
       
       if (event === 'SIGNED_IN' && session) {
         console.log("User signed in successfully:", session.user?.id);
+        
+        // Generate outfit based on user preferences when they log in
+        setTimeout(async () => {
+          try {
+            await generateOutfitFromUserPreferences();
+            console.log("Generated outfit suggestions after login");
+          } catch (error) {
+            console.error("Error generating outfit after login:", error);
+          }
+        }, 0);
+        
         toast({
           title: "Success",
           description: "You have been signed in successfully.",
