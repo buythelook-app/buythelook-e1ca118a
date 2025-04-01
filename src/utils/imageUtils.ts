@@ -12,9 +12,9 @@ export const transformImageUrl = (url: string): string => {
     return '/placeholder.svg';
   }
   
-  // Always use local placeholder for imgur URLs
+  // Check for imgur URLs and always return placeholder
   if (url.includes('imgur.com')) {
-    console.log('Using local placeholder instead of Imgur URL:', url);
+    console.log('Imgur URL detected, using placeholder instead:', url);
     return '/placeholder.svg';
   }
   
@@ -31,7 +31,9 @@ export const transformImageUrl = (url: string): string => {
   // If it's a Supabase storage path, get the full URL 
   if (url.startsWith('public/') || url.startsWith('items/')) {
     try {
-      return getSupabaseImageUrl(url);
+      const fullUrl = getSupabaseImageUrl(url);
+      console.log('Transformed Supabase URL:', fullUrl);
+      return fullUrl;
     } catch (error) {
       console.error('Error transforming Supabase URL:', error);
       return '/placeholder.svg';

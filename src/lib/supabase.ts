@@ -27,11 +27,16 @@ export const getImageUrl = (path: string): string => {
     return '/placeholder.svg';
   }
   
-  // If it's already a URL, handle special cases
+  // Always return placeholder for Imgur URLs
+  if (path.includes('imgur.com')) {
+    console.log('[Supabase] Returning placeholder for Imgur URL:', path);
+    return '/placeholder.svg';
+  }
+  
+  // If it's already a URL, validate before returning
   if (path.startsWith('http://') || path.startsWith('https://')) {
-    // Always return placeholder for Imgur URLs
-    if (path.includes('imgur.com')) {
-      console.log('[Supabase] Returning placeholder for Imgur URL:', path);
+    if (path.includes('null') || path.includes('undefined')) {
+      console.log('[Supabase] Invalid URL, using placeholder:', path);
       return '/placeholder.svg';
     }
     return path;

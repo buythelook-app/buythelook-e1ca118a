@@ -14,12 +14,11 @@ export const LookImage = ({ image, title, type = 'default' }: LookImageProps) =>
   const [imageLoaded, setImageLoaded] = useState(false);
   const [displayImage, setDisplayImage] = useState<string>('/placeholder.svg');
   
-  // Process image URL on component mount
   useEffect(() => {
     if (!image) {
       console.log(`[LookImage] No image provided for ${title}, using placeholder`);
       setImageError(true);
-      setImageLoaded(true);
+      setDisplayImage('/placeholder.svg');
       return;
     }
     
@@ -27,18 +26,21 @@ export const LookImage = ({ image, title, type = 'default' }: LookImageProps) =>
     if (image.includes('imgur.com')) {
       console.log(`[LookImage] Using placeholder for imgur URL: ${image}`);
       setImageError(true);
-      setImageLoaded(true);
+      setDisplayImage('/placeholder.svg');
       return;
     }
     
     try {
       const transformed = transformImageUrl(image);
-      console.log(`[LookImage] Transformed URL for ${title}: ${transformed}`);
+      console.log(`[LookImage] Transformed URL for ${title}: ${transformed} (original: ${image})`);
       setDisplayImage(transformed);
+      // Reset error state when changing image
+      setImageError(false);
+      setImageLoaded(false);
     } catch (error) {
       console.error(`[LookImage] Error transforming URL: ${error}`);
       setImageError(true);
-      setImageLoaded(true);
+      setDisplayImage('/placeholder.svg');
     }
   }, [image, title]);
 
@@ -49,12 +51,7 @@ export const LookImage = ({ image, title, type = 'default' }: LookImageProps) =>
           <div className="h-8 w-8 rounded-full border-2 border-t-transparent border-netflix-accent animate-spin"></div>
         </div>
       )}
-      {imageError && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-200 p-4 text-center">
-          <span className="text-sm text-gray-500">Image not available</span>
-          <span className="text-xs text-gray-400 mt-1">{type}</span>
-        </div>
-      )}
+      
       <img 
         src={imageError ? '/placeholder.svg' : displayImage} 
         alt={title}
@@ -67,8 +64,16 @@ export const LookImage = ({ image, title, type = 'default' }: LookImageProps) =>
           console.error('[LookImage] Error loading image:', displayImage);
           setImageError(true);
           setImageLoaded(true);
+          setDisplayImage('/placeholder.svg');
         }}
       />
+      
+      {imageError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-200 p-4 text-center">
+          <span className="text-sm text-gray-500">Image not available</span>
+          <span className="text-xs text-gray-400 mt-1">{type}</span>
+        </div>
+      )}
     </AspectRatio>
   );
 };

@@ -20,25 +20,42 @@ export const LookItem = ({ item }: LookItemProps) => {
   const [imageError, setImageError] = useState(false);
   const [displayImage, setDisplayImage] = useState<string>('/placeholder.svg');
   
-  // Pre-process image URL on component mount
+  // Pre-process image URL on component mount or when item changes
   useEffect(() => {
+    // Always use placeholder for empty URLs
+    if (!item.image) {
+      console.log(`Empty image URL for item: ${item.title}, using placeholder`);
+      setDisplayImage('/placeholder.svg');
+      return;
+    }
+    
     // Always use placeholder for imgur URLs
-    if (item.image && item.image.includes('imgur.com')) {
+    if (item.image.includes('imgur.com')) {
       console.log(`Using placeholder for imgur URL: ${item.image}`);
       setDisplayImage('/placeholder.svg');
-    } else if (item.image) {
+      return;
+    }
+    
+    // Transform URL for all other cases
+    try {
       const transformed = transformImageUrl(item.image);
       console.log(`Transformed URL: ${transformed} from original: ${item.image}`);
       setDisplayImage(transformed);
+      // Reset error state when changing image
+      setImageError(false);
+    } catch (error) {
+      console.error(`Error transforming URL for ${item.title}:`, error);
+      setDisplayImage('/placeholder.svg');
+      setImageError(true);
     }
-  }, [item.image]);
+  }, [item.image, item.title]);
 
   const handleAddItemToCart = () => {
     addItem({
       id: item.id,
       title: item.title,
       price: item.price,
-      image: displayImage,
+      image: imageError ? '/placeholder.svg' : displayImage,
     });
     toast.success(`${item.title} added to cart`);
   };
@@ -53,6 +70,7 @@ export const LookItem = ({ item }: LookItemProps) => {
           onError={() => {
             console.error(`Failed to load image for ${item.title}, using placeholder`);
             setImageError(true);
+            setDisplayImage('/placeholder.svg');
           }}
         />
       </div>
