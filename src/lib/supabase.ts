@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://aqkeprwxxsryropnhfvm.supabase.co';
@@ -24,11 +23,10 @@ export const getSupabaseUrl = () => {
 export const getImageUrl = (path: string): string => {
   if (!path) return '/placeholder.svg';
   
-  // If it's already an HTTPS URL, return it as is
+  // If it's already a URL, handle special cases
   if (path.startsWith('http://') || path.startsWith('https://')) {
-    // Skip Imgur URLs and replace with local placeholders
+    // Immediately return placeholder for Imgur URLs
     if (path.includes('imgur.com')) {
-      console.log('Replacing Imgur URL with local placeholder:', path);
       return '/placeholder.svg';
     }
     return path;
@@ -36,13 +34,6 @@ export const getImageUrl = (path: string): string => {
   
   // Skip empty and invalid paths
   if (path === 'null' || path === 'undefined' || path.length < 3) {
-    console.warn('Invalid image path:', path);
-    return '/placeholder.svg';
-  }
-  
-  // For imgur URLs without protocol
-  if (path.includes('imgur.com')) {
-    console.log('Replacing Imgur URL without protocol with local placeholder:', path);
     return '/placeholder.svg';
   }
   
@@ -51,11 +42,8 @@ export const getImageUrl = (path: string): string => {
     try {
       // Construct URL to storage with cache busting
       const timestamp = Date.now();
-      const fullUrl = `${supabaseUrl}/storage/v1/object/public/${path}?t=${timestamp}`;
-      console.log('Generated Supabase storage URL:', fullUrl);
-      return fullUrl;
+      return `${supabaseUrl}/storage/v1/object/public/${path}?t=${timestamp}`;
     } catch (error) {
-      console.error('Error generating Supabase URL:', error, 'for path:', path);
       return '/placeholder.svg';
     }
   }
@@ -66,7 +54,6 @@ export const getImageUrl = (path: string): string => {
   }
   
   // Return placeholder for other cases
-  console.log('Using placeholder for unrecognized path format:', path);
   return '/placeholder.svg';
 };
 

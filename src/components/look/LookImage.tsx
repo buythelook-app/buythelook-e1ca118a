@@ -1,7 +1,6 @@
 
 import { AspectRatio } from "../ui/aspect-ratio";
 import { useState, useEffect } from "react";
-import { getDefaultImageByType } from "@/utils/imageUtils";
 
 interface LookImageProps {
   image: string;
@@ -13,22 +12,16 @@ export const LookImage = ({ image, title, type = 'default' }: LookImageProps) =>
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   
-  // Always use local fallback
+  // Always use local fallback for simplicity
   const fallbackImage = '/placeholder.svg';
   
-  // Handle fallback directly
-  const handleImageError = () => {
-    console.error(`[LookImage] Error loading image for ${title}:`, image);
-    setImageError(true);
-    setImageLoaded(true);
-  };
-
-  // Log image details
+  // Validate image URL on component mount
   useEffect(() => {
-    console.log(`[LookImage] Rendering ${title} with image:`, image);
-    if (!image) {
-      console.warn('[LookImage] No image URL provided for', title);
+    // If image URL contains imgur, mark it as an error immediately
+    if (!image || image.includes('imgur.com')) {
+      console.log(`[LookImage] Using placeholder for ${title} - image URL was empty or Imgur:`, image);
       setImageError(true);
+      setImageLoaded(true);
     }
   }, [image, title]);
 
@@ -53,7 +46,11 @@ export const LookImage = ({ image, title, type = 'default' }: LookImageProps) =>
           console.log('[LookImage] Image loaded successfully:', image);
           setImageLoaded(true);
         }}
-        onError={handleImageError}
+        onError={() => {
+          console.error('[LookImage] Error loading image:', image);
+          setImageError(true);
+          setImageLoaded(true);
+        }}
       />
     </AspectRatio>
   );

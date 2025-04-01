@@ -3,6 +3,7 @@ import { ShoppingCart } from "lucide-react";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
 import { useCartStore } from "../Cart";
+import { useState } from "react";
 
 interface LookItemProps {
   item: {
@@ -15,6 +16,7 @@ interface LookItemProps {
 
 export const LookItem = ({ item }: LookItemProps) => {
   const { addItem } = useCartStore();
+  const [imageError, setImageError] = useState(false);
 
   const handleAddItemToCart = () => {
     addItem({
@@ -30,14 +32,12 @@ export const LookItem = ({ item }: LookItemProps) => {
     <div className="flex items-center gap-4 bg-netflix-background p-4 rounded-lg group relative hover:bg-netflix-card/80 transition-colors">
       <div className="w-20 h-20 relative bg-gray-100 rounded-md overflow-hidden">
         <img 
-          src={item.image || '/placeholder.svg'} 
+          src={imageError ? '/placeholder.svg' : item.image} 
           alt={item.title}
           className="w-full h-full object-cover"
-          onError={(e) => {
+          onError={() => {
             console.error(`Failed to load image for ${item.title}:`, item.image);
-            const target = e.target as HTMLImageElement;
-            target.src = '/placeholder.svg';
-            target.onerror = null; // Prevent infinite loop
+            setImageError(true);
           }}
         />
       </div>
