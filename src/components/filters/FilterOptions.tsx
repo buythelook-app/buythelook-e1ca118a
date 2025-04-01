@@ -35,6 +35,20 @@ export const FilterOptions = () => {
     generateInitialOutfit();
   }, []);
 
+  // Listen for mood changes to regenerate outfits
+  useEffect(() => {
+    const handleMoodChange = () => {
+      console.log("Mood changed event detected, regenerating outfits");
+      handleGenerateNewLooks();
+    };
+    
+    window.addEventListener('mood-changed', handleMoodChange);
+    
+    return () => {
+      window.removeEventListener('mood-changed', handleMoodChange);
+    };
+  }, []);
+
   const handleBudgetChange = (value: number[]) => {
     if (value[0] >= 1000) {
       setIsUnlimited(true);
@@ -105,6 +119,17 @@ export const FilterOptions = () => {
       setIsLoading(false);
     }
   };
+
+  // Make the refetch function available globally for direct trigger from mood changes
+  useEffect(() => {
+    // @ts-ignore
+    window.refetchOutfits = handleGenerateNewLooks;
+    
+    return () => {
+      // @ts-ignore
+      delete window.refetchOutfits;
+    };
+  }, []);
 
   useEffect(() => {
     outfitSuggestions.forEach((_, index) => {

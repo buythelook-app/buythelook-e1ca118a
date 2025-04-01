@@ -137,6 +137,7 @@ export const generateOutfitFromUserPreferences = async () => {
     
     // Get current mood from localStorage or use a default
     const currentMoodData = localStorage.getItem('current-mood');
+    // Don't provide a default to validateMood - let the function itself decide the default
     const mood = validateMood(currentMoodData);
     
     console.log('Using user preferences for outfit generation:', {

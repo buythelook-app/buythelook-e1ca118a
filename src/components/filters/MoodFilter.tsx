@@ -62,19 +62,15 @@ export const MoodFilter = ({ selectedMood, onMoodSelect }: MoodFilterProps) => {
     
     // Also dispatch a storage event for compatibility with existing code
     try {
-      const event = new StorageEvent('storage', {
-        key: 'current-mood',
-        newValue: mood,
-        storageArea: localStorage
-      });
-      window.dispatchEvent(event);
+      // Create a storage event
+      window.dispatchEvent(new Event('storage'));
+      
+      // Directly trigger a refetch if needed
+      if (typeof window.refetchOutfits === 'function') {
+        window.refetchOutfits();
+      }
     } catch (e) {
       console.error("Error dispatching storage event:", e);
-      // Fallback - manually trigger a reload if the event doesn't work
-      setTimeout(() => {
-        console.log("Triggering page reload to apply mood change");
-        window.location.reload();
-      }, 1000);
     }
     
     toast({
