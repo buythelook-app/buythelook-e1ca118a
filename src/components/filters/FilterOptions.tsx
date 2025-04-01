@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
@@ -62,7 +61,7 @@ export const FilterOptions = () => {
     });
   };
 
-  const handleViewSuggestions = async () => {
+  const handleGenerateNewLooks = async () => {
     setIsLoading(true);
     try {
       const response = await generateOutfitFromUserPreferences();
@@ -76,7 +75,7 @@ export const FilterOptions = () => {
       console.error('Error generating outfit suggestions:', error);
       toast({
         title: "Error",
-        description: "Failed to generate outfit suggestions",
+        description: "Failed to generate new outfit looks",
         variant: "destructive",
       });
     } finally {
@@ -85,13 +84,11 @@ export const FilterOptions = () => {
   };
 
   useEffect(() => {
-    // Reset and prepare canvases whenever outfit suggestions change
     outfitSuggestions.forEach((_, index) => {
       const canvas = document.getElementById(`style-canvas-${index}`) as HTMLCanvasElement;
       if (canvas) {
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          // Clear canvas with white background
           ctx.fillStyle = "#FFFFFF";
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
@@ -117,11 +114,11 @@ export const FilterOptions = () => {
       </div>
 
       <Button 
-        onClick={handleViewSuggestions}
+        onClick={handleGenerateNewLooks}
         className="bg-netflix-accent hover:bg-netflix-accent/80 w-full"
         disabled={isLoading}
       >
-        {isLoading ? "Loading..." : "View All Suggestions"}
+        {isLoading ? "Generating..." : "Create Fresh Style Ideas"}
       </Button>
       
       <div className="mt-8">
