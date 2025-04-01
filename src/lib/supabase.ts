@@ -1,7 +1,13 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://aqkeprwxxsryropnhfvm.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxa2Vwcnd4eHNyeXJvcG5oZnZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4MzE4MjksImV4cCI6MjA1MzQwNzgyOX0.1nstrLtlahU3kGAu-UrzgOVw6XwyKU6n5H5q4Taqtus';
+
+// Blacklisted paths
+const BLOCKED_PATHS = [
+  'items/default_shoes.png'
+];
 
 // Create and export the Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -19,10 +25,21 @@ export const getSupabaseUrl = () => {
   return supabaseUrl;
 };
 
+// Check if a path is blocked
+const isBlockedPath = (path: string): boolean => {
+  return BLOCKED_PATHS.some(blockedPath => path.includes(blockedPath));
+};
+
 // Helper for getting public URLs for images
 export const getImageUrl = (path: string): string => {
   if (!path || path.trim() === '') {
     console.log('[Supabase] Empty path, using placeholder');
+    return '/placeholder.svg';
+  }
+  
+  // Check if path is blocked
+  if (isBlockedPath(path)) {
+    console.log('[Supabase] Blocked path detected, using placeholder:', path);
     return '/placeholder.svg';
   }
   
@@ -34,8 +51,8 @@ export const getImageUrl = (path: string): string => {
   
   // If it's already a URL, verify before returning
   if (path.startsWith('http://') || path.startsWith('https://')) {
-    if (path.includes('null') || path.includes('undefined')) {
-      console.log('[Supabase] Invalid URL, using placeholder:', path);
+    if (path.includes('null') || path.includes('undefined') || isBlockedPath(path)) {
+      console.log('[Supabase] Invalid or blocked URL, using placeholder:', path);
       return '/placeholder.svg';
     }
     return path;
@@ -43,6 +60,12 @@ export const getImageUrl = (path: string): string => {
   
   // If it's a path in storage
   if (path.startsWith('public/') || path.startsWith('items/')) {
+    // Check if path is blocked
+    if (isBlockedPath(path)) {
+      console.log('[Supabase] Blocked storage path, using placeholder:', path);
+      return '/placeholder.svg';
+    }
+    
     try {
       // Construct URL to storage with cache busting
       const timestamp = Date.now();
@@ -57,8 +80,16 @@ export const getImageUrl = (path: string): string => {
   
   // Try to interpret as a storage path with default bucket
   try {
+    const fullPath = `items/${path}`;
+    
+    // Check if constructed path is blocked
+    if (isBlockedPath(fullPath)) {
+      console.log('[Supabase] Blocked constructed path, using placeholder:', fullPath);
+      return '/placeholder.svg';
+    }
+    
     const timestamp = Date.now();
-    const imageUrl = `${supabaseUrl}/storage/v1/object/public/items/${path}?t=${timestamp}`;
+    const imageUrl = `${supabaseUrl}/storage/v1/object/public/${fullPath}?t=${timestamp}`;
     console.log('[Supabase] Generated storage URL with default bucket:', imageUrl);
     return imageUrl;
   } catch (error) {

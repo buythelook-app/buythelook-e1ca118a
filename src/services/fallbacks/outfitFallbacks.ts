@@ -27,7 +27,7 @@ export const FALLBACK_ITEMS: Record<string, DashboardItem> = {
     id: "fallback-shoes-1",
     name: "Classic Loafers",
     description: "Versatile loafers to complete your look",
-    image: "items/default_shoes.png",
+    image: "/placeholder.svg", // Using placeholder instead of default_shoes.png
     price: "$75.99",
     type: "shoes"
   }
