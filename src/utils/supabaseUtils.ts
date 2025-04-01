@@ -1,8 +1,11 @@
 
 import { supabase } from "@/lib/supabase";
+import { checkDatabaseHasItems } from "@/services/fetchers/itemsFetcher";
 
 // Cache for database items to prevent repeated fetches
 const itemsCache = new Map();
+// Track if we've already done the initial log
+let hasInitialLogged = false;
 
 export const fetchAllItems = async () => {
   try {
@@ -10,6 +13,15 @@ export const fetchAllItems = async () => {
     if (itemsCache.has('all-items')) {
       console.log('Using cached items instead of fetching again');
       return itemsCache.get('all-items');
+    }
+    
+    // Check if database has any items first (uses the shared cache mechanism)
+    const hasItems = await checkDatabaseHasItems();
+    
+    if (!hasItems) {
+      console.log('No items in database according to cache check. Using empty array.');
+      itemsCache.set('all-items', []);
+      return [];
     }
     
     console.log('Fetching all items from Supabase...');
@@ -28,7 +40,7 @@ export const fetchAllItems = async () => {
       return [];
     }
     
-    console.log(`Successfully fetched ${data.length} items:`, data);
+    console.log(`Successfully fetched ${data.length} items`);
     
     // Cache the results
     itemsCache.set('all-items', data);
@@ -44,6 +56,12 @@ export const logDatabaseItems = async () => {
   // Check if we have already logged items in this session
   if (itemsCache.has('logged-items')) {
     console.log('Items have already been logged this session');
+    return;
+  }
+  
+  // Early exit if we know database is empty
+  const hasItems = await checkDatabaseHasItems();
+  if (!hasItems && hasInitialLogged) {
     return;
   }
   
@@ -74,6 +92,7 @@ export const logDatabaseItems = async () => {
     }
   }
   
-  // Mark that we've logged items
+  // Mark that we've logged items and done initial logging
   itemsCache.set('logged-items', true);
+  hasInitialLogged = true;
 };

@@ -6,8 +6,12 @@
 import { DashboardItem } from "@/types/lookTypes";
 import { supabase } from "@/lib/supabase";
 
-// Cache to avoid redundant fetches
+// Cache to avoid redundant fetches - global application level cache
 const itemsCache = new Map<string, DashboardItem[]>();
+// Flag to track if we've already checked for items in this session
+let hasCheckedDatabase = false;
+// Flag to track if we've already displayed the "no items" message
+let hasLoggedNoItems = false;
 
 /**
  * Fetch items from Supabase database by type
@@ -18,6 +22,11 @@ export const fetchItemsByType = async (type: string): Promise<DashboardItem[]> =
     const cacheKey = `items-${type}`;
     if (itemsCache.has(cacheKey)) {
       return itemsCache.get(cacheKey) || [];
+    }
+    
+    // If we've already checked the database and found no items, don't check again
+    if (hasCheckedDatabase) {
+      return [];
     }
     
     console.log(`[Supabase] Fetching ${type} items from database`);
@@ -34,17 +43,22 @@ export const fetchItemsByType = async (type: string): Promise<DashboardItem[]> =
     }
     
     if (!data || data.length === 0) {
-      console.log(`[Supabase] No ${type} items found in database`);
-      const fallbackItems = getFallbackItemsByType(type);
-      itemsCache.set(cacheKey, fallbackItems);
-      return fallbackItems;
+      // Only log this message once per type
+      if (!hasLoggedNoItems) {
+        console.log(`[Supabase] No ${type} items found in database`);
+        hasLoggedNoItems = true;
+      }
+      
+      // Save empty result in cache
+      itemsCache.set(cacheKey, []);
+      return [];
     }
     
     const formattedItems = data.map(item => ({
       id: item.id || `generated-${Math.random().toString(36).substring(2, 9)}`,
       name: item.name || `Stylish ${type}`,
       description: item.description || `Stylish ${type}`,
-      image: item.image || `items/default_${type}.png`,
+      image: item.image || `/placeholder.svg`,
       price: item.price || '$49.99',
       type: type
     }));
@@ -84,10 +98,17 @@ export const findBestColorMatch = async (hexColor: string, itemType: string): Pr
       return itemsCache.get(cacheKey)?.[0] || null;
     }
     
+    // If we've already checked the database and found no items, don't check again
+    if (hasCheckedDatabase) {
+      return null;
+    }
+    
     // Try to find items by type
     const items = await fetchItemsByType(itemType);
     
     if (items.length === 0) {
+      // After checking for items, update our flag
+      hasCheckedDatabase = true;
       return null;
     }
     
@@ -104,4 +125,45 @@ export const findBestColorMatch = async (hexColor: string, itemType: string): Pr
     console.error(`Error finding color match for ${itemType}:`, error);
     return null;
   }
+};
+
+// Method to check if the database has any items at all
+export const checkDatabaseHasItems = async (): Promise<boolean> => {
+  try {
+    // If we've already checked, use our cached result
+    if (hasCheckedDatabase) {
+      return false; // We know there are no items if hasCheckedDatabase is true
+    }
+    
+    console.log('[Supabase] Checking if database has any items');
+    
+    const { count, error } = await supabase
+      .from('items')
+      .select('*', { count: 'exact', head: true });
+    
+    if (error) {
+      console.error('[Supabase] Error checking items count:', error);
+      return false;
+    }
+    
+    const hasItems = count !== null && count > 0;
+    
+    // If no items, set our flag to avoid future checks
+    if (!hasItems) {
+      hasCheckedDatabase = true;
+      console.log('[Supabase] No items found in database. Using fallbacks.');
+    }
+    
+    return hasItems;
+  } catch (e) {
+    console.error('[Supabase] Exception in checkDatabaseHasItems:', e);
+    return false;
+  }
+};
+
+// Reset the cache and flags - useful for testing
+export const resetItemsCache = () => {
+  itemsCache.clear();
+  hasCheckedDatabase = false;
+  hasLoggedNoItems = false;
 };

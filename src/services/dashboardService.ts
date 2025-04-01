@@ -6,8 +6,12 @@ import { DashboardItem } from "@/types/lookTypes";
 import { generateOutfit } from "./api/outfitApi";
 import { mapBodyShape, mapStyle, getEventStyles } from "./mappers/styleMappers";
 import { convertToDashboardItem } from "./outfitFactory";
-import { supabase, getSupabaseUrl, getImageUrl } from "@/lib/supabase";
+import { getSupabaseUrl } from "@/lib/supabase";
 import { transformImageUrl } from "@/utils/imageUtils";
+import { 
+  fetchItemsByType, 
+  checkDatabaseHasItems
+} from "./fetchers/itemsFetcher";
 
 // Fallback items for when API doesn't return usable data
 const FALLBACK_ITEMS = {
@@ -117,9 +121,28 @@ const FALLBACK_ITEMS = {
   ]
 };
 
+// Cache for dashboard items
+const dashboardCache = new Map<string, Record<string, DashboardItem[]>>();
+
 const fetchItemsByTypeAndOccasion = async (type: string, occasion: string): Promise<DashboardItem[]> => {
   try {
+    // Cache key for this type and occasion
+    const cacheKey = `${type}-${occasion}`;
+    
+    // Check if we've already tried to fetch items of this type and occasion
+    if (dashboardCache.has(cacheKey)) {
+      return dashboardCache.get(cacheKey) || [];
+    }
+    
     console.log(`Fetching ${type} items for ${occasion} from Supabase`);
+    
+    // First check if database has any items to avoid unnecessary queries
+    const hasItems = await checkDatabaseHasItems();
+    
+    if (!hasItems) {
+      dashboardCache.set(cacheKey, []);
+      return [];
+    }
     
     // Try to match the item type and a description that might indicate the occasion
     const { data, error } = await supabase
@@ -130,6 +153,7 @@ const fetchItemsByTypeAndOccasion = async (type: string, occasion: string): Prom
     
     if (error) {
       console.error(`Error fetching ${type} items for ${occasion}:`, error);
+      dashboardCache.set(cacheKey, []);
       return [];
     }
     
@@ -145,33 +169,41 @@ const fetchItemsByTypeAndOccasion = async (type: string, occasion: string): Prom
       
       if (generalError || !generalData || generalData.length === 0) {
         console.log(`No ${type} items found in database for ${occasion}`);
+        dashboardCache.set(cacheKey, []);
         return [];
       }
       
-      console.log(`Found ${generalData.length} general ${type} items:`, generalData);
+      console.log(`Found ${generalData.length} general ${type} items`);
       
-      return generalData.map(item => ({
+      const items = generalData.map(item => ({
         id: item.id,
         name: item.name || `Stylish ${type} for ${occasion}`,
         description: item.description || `Stylish ${type} for ${occasion}`,
-        image: transformImageUrl(item.image || ''), // Use transformImageUrl from imageUtils
+        image: transformImageUrl(item.image || ''),
         price: item.price || '$49.99',
         type: type
       }));
+      
+      dashboardCache.set(cacheKey, items);
+      return items;
     }
     
-    console.log(`Found ${data.length} ${type} items for ${occasion}:`, data);
+    console.log(`Found ${data.length} ${type} items for ${occasion}`);
     
-    return data.map(item => ({
+    const items = data.map(item => ({
       id: item.id,
       name: item.name || `Stylish ${type} for ${occasion}`,
       description: item.description || `Stylish ${type} for ${occasion}`,
-      image: transformImageUrl(item.image || ''), // Use transformImageUrl from imageUtils
+      image: transformImageUrl(item.image || ''),
       price: item.price || '$49.99',
       type: type
     }));
+    
+    dashboardCache.set(cacheKey, items);
+    return items;
   } catch (e) {
     console.error(`Error in fetchItemsByTypeAndOccasion for ${type} and ${occasion}:`, e);
+    dashboardCache.set(`${type}-${occasion}`, []);
     return [];
   }
 };
@@ -190,8 +222,20 @@ const validateMood = (mood: string | null): string => {
   return mood.toLowerCase();
 };
 
+// Main dashboard cache
+let cachedDashboardItems: Record<string, DashboardItem[]> | null = null;
+let lastFetchTime = 0;
+const CACHE_LIFETIME = 60000; // 1 minute cache
+
 export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardItem[]}> => {
   try {
+    // Check if we have a recent cache
+    const now = Date.now();
+    if (cachedDashboardItems && now - lastFetchTime < CACHE_LIFETIME) {
+      console.log("Using cached dashboard items instead of fetching again");
+      return cachedDashboardItems;
+    }
+    
     console.log("Fetching dashboard items from Supabase");
     
     // Debug: Get Supabase client URL if needed
@@ -204,16 +248,34 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
     
     if (!styleAnalysis?.analysis) {
       console.log('No style analysis data, using fallbacks');
-      return {
+      cachedDashboardItems = {
         Work: FALLBACK_ITEMS.Work,
         Casual: FALLBACK_ITEMS.Casual,
         Evening: FALLBACK_ITEMS.Evening,
         Weekend: FALLBACK_ITEMS.Weekend
       };
+      lastFetchTime = now;
+      return cachedDashboardItems;
     }
 
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     const occasionOutfits: {[key: string]: DashboardItem[]} = {};
+    
+    // Check if database has any items at all first
+    const hasItems = await checkDatabaseHasItems();
+    
+    // If no items, use fallbacks immediately
+    if (!hasItems) {
+      console.log('No items in database, using fallbacks for all occasions');
+      cachedDashboardItems = {
+        Work: FALLBACK_ITEMS.Work,
+        Casual: FALLBACK_ITEMS.Casual,
+        Evening: FALLBACK_ITEMS.Evening,
+        Weekend: FALLBACK_ITEMS.Weekend
+      };
+      lastFetchTime = now;
+      return cachedDashboardItems;
+    }
     
     // Try to fetch items from Supabase for each occasion
     for (const occasion of occasions) {
@@ -380,6 +442,11 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
     }
 
     console.log('Final outfit items by occasion:', occasionOutfits);
+    
+    // Cache results
+    cachedDashboardItems = occasionOutfits;
+    lastFetchTime = now;
+    
     return occasionOutfits;
   } catch (error) {
     console.error('Error in fetchDashboardItems:', error);

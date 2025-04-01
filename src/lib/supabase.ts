@@ -12,6 +12,10 @@ const BLOCKED_PATHS = [
   '1j9ZXed.png'
 ];
 
+// Connection status tracking
+let isConnected = false;
+let hasLoggedConnectionStatus = false;
+
 // Create and export the Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -32,7 +36,6 @@ export const getSupabaseUrl = () => {
 const isBlockedPath = (path: string): boolean => {
   // Block all paths in the 'items' folder
   if (path.startsWith('items/')) {
-    console.log('[Supabase] Blocking all items paths:', path);
     return true;
   }
   
@@ -42,25 +45,21 @@ const isBlockedPath = (path: string): boolean => {
 // Helper for getting public URLs for images
 export const getImageUrl = (path: string): string => {
   if (!path || path.trim() === '') {
-    console.log('[Supabase] Empty path, using placeholder');
     return '/placeholder.svg';
   }
   
   // Block all storage items paths
   if (path.startsWith('items/')) {
-    console.log('[Supabase] Blocking all items paths:', path);
     return '/placeholder.svg';
   }
   
   // Check if path is blocked
   if (isBlockedPath(path)) {
-    console.log('[Supabase] Blocked path detected, using placeholder:', path);
     return '/placeholder.svg';
   }
   
   // Skip empty and invalid paths
   if (path === 'null' || path === 'undefined' || path.length < 3) {
-    console.log('[Supabase] Invalid path, using placeholder:', path);
     return '/placeholder.svg';
   }
   
@@ -68,12 +67,10 @@ export const getImageUrl = (path: string): string => {
   if (path.startsWith('http://') || path.startsWith('https://')) {
     // Block all URLs from the items storage
     if (path.includes('/storage/v1/object/public/items/')) {
-      console.log('[Supabase] Blocking URL from items storage:', path);
       return '/placeholder.svg';
     }
     
     if (path.includes('null') || path.includes('undefined') || isBlockedPath(path)) {
-      console.log('[Supabase] Invalid or blocked URL, using placeholder:', path);
       return '/placeholder.svg';
     }
     return path;
@@ -81,37 +78,55 @@ export const getImageUrl = (path: string): string => {
   
   // Block all storage items paths
   if (path.startsWith('public/') || path.startsWith('items/')) {
-    console.log('[Supabase] Blocking all storage paths:', path);
     return '/placeholder.svg';
   }
   
   // For any other case, use placeholder to be safe
-  console.log('[Supabase] Using placeholder for unrecognized path pattern:', path);
   return '/placeholder.svg';
 };
 
-// Log initialization for debugging
-console.log('[Supabase] Client initialized with URL:', supabaseUrl);
+// Log initialization only once
+if (!hasLoggedConnectionStatus) {
+  console.log('[Supabase] Client initialized with URL:', supabaseUrl);
+  hasLoggedConnectionStatus = true;
+}
 
-// Helper to check Supabase connectivity
+// Helper to check Supabase connectivity with caching
 export const checkSupabaseConnection = async () => {
   try {
+    // Skip check if we've already verified connection
+    if (isConnected) {
+      return true;
+    }
+    
     const { count, error } = await supabase
       .from('items')
       .select('*', { count: 'exact', head: true });
     
     if (error) {
-      console.error('[Supabase] Connection test failed:', error);
+      if (!hasLoggedConnectionStatus) {
+        console.error('[Supabase] Connection test failed:', error);
+        hasLoggedConnectionStatus = true;
+      }
       return false;
     }
     
-    console.log('[Supabase] Connection test successful. Items count:', count);
+    isConnected = true;
+    
+    if (!hasLoggedConnectionStatus) {
+      console.log('[Supabase] Connection test successful. Items count:', count);
+      hasLoggedConnectionStatus = true;
+    }
+    
     return true;
   } catch (err) {
-    console.error('[Supabase] Connection test exception:', err);
+    if (!hasLoggedConnectionStatus) {
+      console.error('[Supabase] Connection test exception:', err);
+      hasLoggedConnectionStatus = true;
+    }
     return false;
   }
 };
 
-// Run a connection test on init
+// Run a connection test on init, but don't log the result
 checkSupabaseConnection();
