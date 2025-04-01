@@ -42,8 +42,9 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
   try {
     const cacheKey = `${bodyStructure}:${style}:${mood}`;
     
-    // Check cache first
-    if (requestCache.has(cacheKey)) {
+    // Check cache first but skip cache when testing to ensure we see the POST request
+    const skipCache = process.env.NODE_ENV === 'development';
+    if (!skipCache && requestCache.has(cacheKey)) {
       console.log('Using cached outfit data for:', cacheKey);
       return requestCache.get(cacheKey);
     }
@@ -52,6 +53,15 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
     const validatedMood = validateMood(mood);
     
     console.log('Generating outfit with params:', { bodyStructure, style, mood: validatedMood });
+    console.log('Sending POST request to:', SUPABASE_FUNCTION_URL);
+    
+    const requestBody = {
+      bodyStructure,
+      style,
+      mood: validatedMood
+    };
+    
+    console.log('Request payload:', JSON.stringify(requestBody));
     
     // Make direct API request to the specified endpoint with the provided API key
     const response = await fetch(SUPABASE_FUNCTION_URL, {
@@ -61,12 +71,10 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
         'Authorization': `Bearer ${SUPABASE_API_KEY}`,
         'apikey': SUPABASE_API_KEY
       },
-      body: JSON.stringify({
-        bodyStructure,
-        style,
-        mood: validatedMood
-      })
+      body: JSON.stringify(requestBody)
     });
+    
+    console.log('API Response status:', response.status);
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -75,6 +83,7 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
     }
     
     const data = await response.json();
+    console.log('API Response data:', data);
     
     // If the response doesn't have the expected structure
     if (!data || !data.data || !Array.isArray(data.data)) {
@@ -136,8 +145,12 @@ export const generateOutfitFromUserPreferences = async () => {
       mood
     });
     
+    // Force a new request by adding a timestamp to bypass cache in development
+    const timestamp = new Date().getTime();
+    const forcedMood = process.env.NODE_ENV === 'development' ? `${mood}-${timestamp}` : mood;
+    
     // Call the outfit generation API with the user's preferences
-    return generateOutfit(bodyShape, style, mood);
+    return generateOutfit(bodyShape, style, forcedMood);
     
   } catch (error) {
     console.error('Error in generateOutfitFromUserPreferences:', error);

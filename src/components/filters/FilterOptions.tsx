@@ -64,11 +64,26 @@ export const FilterOptions = () => {
 
   const handleGenerateNewLooks = async () => {
     setIsLoading(true);
+    console.log("Generate new looks button clicked, sending API request...");
+    
     try {
+      // Get user preferences from localStorage
+      const quizData = localStorage.getItem('styleAnalysis');
+      const styleAnalysis = quizData ? JSON.parse(quizData) : null;
+      const currentMoodData = localStorage.getItem('current-mood');
+      
+      console.log("User preferences:", { 
+        styleAnalysis: styleAnalysis?.analysis, 
+        mood: currentMoodData 
+      });
+      
+      // Call the API with user preferences
       const response = await generateOutfitFromUserPreferences();
+      console.log("API response received:", response);
       
       if (response && response.data && Array.isArray(response.data)) {
         // Update the outfit suggestions with the new data from the API
+        console.log("Updating outfit suggestions with new data:", response.data);
         setOutfitSuggestions(response.data);
         
         toast({
@@ -76,6 +91,7 @@ export const FilterOptions = () => {
           description: "New outfit suggestions have been generated!",
         });
       } else {
+        console.error("Invalid API response format:", response);
         throw new Error("Invalid response format");
       }
     } catch (error) {
