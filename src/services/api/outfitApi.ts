@@ -27,23 +27,6 @@ const FALLBACK_DATA = {
 };
 
 /**
- * Validates the mood parameter against allowed values
- */
-const validateMood = (mood: string | null): string => {
-  const validMoods = [
-    "mystery", "quiet", "elegant", "energized", 
-    "flowing", "optimist", "calm", "romantic", 
-    "unique", "sweet", "childish", "passionate", 
-    "powerful"
-  ];
-  
-  if (!mood || !validMoods.includes(mood.toLowerCase())) {
-    return "energized";
-  }
-  return mood.toLowerCase();
-};
-
-/**
  * Generates outfit suggestions using the Supabase Edge Function
  * @param bodyStructure Body structure type: 'X', 'V', 'H', 'O', or 'A'
  * @param style Clothing style: 'classic', 'romantic', 'minimalist', 'casual', 'boohoo', 'sporty'
@@ -60,14 +43,14 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
       return requestCache.get(cacheKey);
     }
     
-    console.log('Generating outfit with params:', { bodyStructure, style, mood: validateMood(mood) });
+    console.log('Generating outfit with params:', { bodyStructure, style, mood });
     
     // Use Supabase Functions to generate the outfit
     const { data, error } = await supabase.functions.invoke('generate-outfit', {
       body: { 
         bodyStructure,
         style,
-        mood: validateMood(mood)
+        mood
       }
     });
     
