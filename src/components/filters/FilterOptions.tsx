@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
@@ -45,8 +44,8 @@ export const FilterOptions = () => {
   const handleViewSuggestions = async () => {
     setIsLoading(true);
     try {
-      // Generate outfit based on user preferences
-      await generateOutfitFromUserPreferences();
+      // Generate outfit based on user preferences without database check
+      await generateOutfitFromUserPreferences(false);
       navigate('/suggestions');
     } catch (error) {
       console.error('Error generating outfit suggestions:', error);

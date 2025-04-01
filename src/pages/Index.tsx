@@ -1,4 +1,3 @@
-
 import { HeroSection } from "@/components/HeroSection";
 import { Navbar } from "@/components/Navbar";
 import { FilterOptions } from "@/components/filters/FilterOptions";
@@ -11,7 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { fetchItemsForOccasion, findBestColorMatch } from "@/services/lookService";
 import { useQuery } from "@tanstack/react-query";
 import { Shuffle } from "lucide-react";
-import { logDatabaseItems } from "@/utils/supabaseUtils";
 import { generateOutfit } from "@/services/api/outfitApi";
 import { mapBodyShape, mapStyle } from "@/services/mappers/styleMappers";
 import { validateMood } from "@/services/utils/validationUtils";
@@ -38,38 +36,21 @@ export default function Index() {
   const [combinations, setCombinations] = useState<{ [key: string]: number }>({});
   const [isRefreshing, setIsRefreshing] = useState<{ [key: string]: boolean }>({});
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
-  const hasLoggedOnMount = useRef(false);
 
   useEffect(() => {
-    console.log("Index page loaded");
-    
-    // Only log database items once per session
-    if (!hasLoggedOnMount.current) {
-      // Debug: Log all items in Supabase database
-      logDatabaseItems().catch(err => {
-        console.error("Error logging database items:", err);
-      });
-      hasLoggedOnMount.current = true;
-    }
-    
     const styleAnalysis = localStorage.getItem('styleAnalysis');
     if (styleAnalysis) {
       setUserStyle(JSON.parse(styleAnalysis));
-      console.log("Style analysis loaded:", JSON.parse(styleAnalysis));
-    } else {
-      console.log("No style analysis found in localStorage");
     }
   }, []);
 
-  // Fixed useQuery to correctly handle the queryFn with no parameters
   const { data: occasionOutfits, isLoading, refetch } = useQuery({
     queryKey: ['dashboardItems', selectedMood],
     queryFn: async () => {
-      console.log("Fetching dashboard items with mood:", selectedMood);
-      return await fetchItemsForOccasion(true); // Pass true to trigger the actual fetch
+      return await fetchItemsForOccasion(false);
     },
     enabled: !!userStyle,
-    staleTime: 300000, // 5 minutes
+    staleTime: 300000,
     refetchOnWindowFocus: false,
   });
 
@@ -114,7 +95,6 @@ export default function Index() {
     try {
       setIsRefreshing({ ...isRefreshing, [occasion]: true });
       
-      // Get user preferences from quiz data
       const quizData = localStorage.getItem('styleAnalysis');
       const styleAnalysis = quizData ? JSON.parse(quizData) : null;
       
@@ -122,28 +102,20 @@ export default function Index() {
         throw new Error("Style analysis data missing");
       }
       
-      // Extract necessary parameters for API request
       const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
       const preferredStyle = styleAnalysis.analysis.styleProfile || 'classic';
       const style = mapStyle(preferredStyle);
       
-      // Get the current mood or use default
       const currentMoodData = localStorage.getItem('current-mood');
       const mood = validateMood(currentMoodData);
       
-      console.log("Generating new outfit with params:", { bodyStructure: bodyShape, style, mood });
-      
-      // Make direct API request to generate outfit using the correct endpoint and API key
       const response = await generateOutfit(bodyShape, style, mood);
-      console.log("Outfit API response for shuffle:", response);
       
-      // Update UI to show a new combination
       setCombinations(prev => ({
         ...prev,
         [occasion]: (prev[occasion] || 0) + 1
       }));
       
-      // Refetch the data to update the UI
       await refetch();
       
       toast({

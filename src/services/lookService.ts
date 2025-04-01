@@ -6,11 +6,12 @@
 import { fetchFirstOutfitSuggestion } from './outfitService';
 import { fetchItemsForOccasion } from './dashboardService';
 import { mapDashboardItemToOutfitItem } from './mappers/styleMappers';
-import { findBestColorMatch } from './fetchers/itemsFetcher';
+import { findBestColorMatch, getAllItemsFromSupabase } from './fetchers/itemsFetcher';
 
 export {
   fetchFirstOutfitSuggestion,
   fetchItemsForOccasion,
   mapDashboardItemToOutfitItem,
-  findBestColorMatch
+  findBestColorMatch,
+  getAllItemsFromSupabase
 };

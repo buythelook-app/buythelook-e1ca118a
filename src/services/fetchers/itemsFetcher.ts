@@ -128,10 +128,15 @@ export const findBestColorMatch = async (hexColor: string, itemType: string): Pr
 };
 
 // Method to check if the database has any items at all
-export const checkDatabaseHasItems = async (): Promise<boolean> => {
+export const checkDatabaseHasItems = async (forceCheck: boolean = false): Promise<boolean> => {
   try {
+    // Skip check unless explicitly requested
+    if (!forceCheck) {
+      return false;
+    }
+    
     // If we've already checked or are currently checking, use our cached result
-    if (hasCheckedDatabase) {
+    if (hasCheckedDatabase && !forceCheck) {
       return false; // We know there are no items if hasCheckedDatabase is true
     }
     
@@ -178,4 +183,26 @@ export const resetItemsCache = () => {
   hasCheckedDatabase = false;
   hasLoggedNoItems = false;
   isCheckingDatabase = false;
+};
+
+// Export additional functions for explicit checks
+export const getAllItemsFromSupabase = async (forceCheck: boolean = false) => {
+  if (!forceCheck) {
+    return [];
+  }
+  
+  try {
+    const { data, error } = await supabase
+      .from('items')
+      .select('*');
+      
+    if (error) {
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching all items:', error);
+    return [];
+  }
 };
