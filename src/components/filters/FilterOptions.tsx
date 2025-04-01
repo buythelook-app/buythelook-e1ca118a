@@ -93,9 +93,9 @@ export const FilterOptions = () => {
             <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
               <canvas 
                 id={`style-canvas-${index}`} 
-                className="w-full h-40 object-cover"
+                className="w-full h-80 object-cover" // Doubled height from h-40 to h-80
                 width="200"
-                height="160"
+                height="320" // Doubled height from 160 to 320
               ></canvas>
               <div className="p-3 text-center">
                 <p className="text-sm font-medium">Style Option {index + 1}</p>
