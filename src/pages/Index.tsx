@@ -1,3 +1,4 @@
+
 import { HeroSection } from "@/components/HeroSection";
 import { Navbar } from "@/components/Navbar";
 import { FilterOptions } from "@/components/filters/FilterOptions";
@@ -7,7 +8,7 @@ import { useState, useEffect, useRef } from "react";
 import type { Mood } from "@/components/filters/MoodFilter";
 import { MoodFilter } from "@/components/filters/MoodFilter";
 import { useToast } from "@/hooks/use-toast";
-import { fetchItemsForOccasion } from "@/services/lookService";
+import { fetchItemsForOccasion, findBestColorMatch } from "@/services/lookService";
 import { useQuery } from "@tanstack/react-query";
 import { Shuffle } from "lucide-react";
 import { logDatabaseItems } from "@/utils/supabaseUtils";
@@ -65,7 +66,7 @@ export default function Index() {
     queryKey: ['dashboardItems', selectedMood],
     queryFn: async () => {
       console.log("Fetching dashboard items with mood:", selectedMood);
-      return await fetchItemsForOccasion();
+      return await fetchItemsForOccasion(true); // Pass true to trigger the actual fetch
     },
     enabled: !!userStyle,
     staleTime: 300000, // 5 minutes
