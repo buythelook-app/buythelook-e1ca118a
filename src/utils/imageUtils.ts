@@ -7,28 +7,34 @@ import { getImageUrl as getSupabaseImageUrl } from "@/lib/supabase";
 
 // Transform image URL for display
 export const transformImageUrl = (url: string): string => {
-  if (!url) return '';
+  if (!url) return '/placeholder.svg';
   
-  // Use local image from public folder for test URLs
+  // Always use local placeholder for imgur URLs
   if (url.includes('imgur.com')) {
-    console.log('Replacing Imgur URL with local fallback:', url);
-    // Return default placeholder based on image type pattern in URL
-    if (url.includes('PzAHrXN')) return '/placeholder.svg'; // Shoes fallback
-    if (url.includes('RWCV0G0')) return '/placeholder.svg'; // Bottom fallback
-    if (url.includes('1j9ZXed')) return '/placeholder.svg'; // Top fallback
+    console.log('Using local placeholder instead of Imgur URL:', url);
     return '/placeholder.svg';
   }
   
   // If it's already a full URL, return it
   if (url.startsWith('http://') || url.startsWith('https://')) {
+    // Skip any invalid or known-problematic URLs
+    if (url.includes('undefined') || url.includes('null')) {
+      console.warn('Invalid URL detected, using placeholder:', url);
+      return '/placeholder.svg';
+    }
     return url;
   }
   
   // If it's a Supabase storage path, get the full URL
   if (url.startsWith('public/') || url.startsWith('items/')) {
-    const transformedUrl = getSupabaseImageUrl(url);
-    console.log('Transformed Supabase URL:', transformedUrl, 'Original:', url);
-    return transformedUrl;
+    try {
+      const transformedUrl = getSupabaseImageUrl(url);
+      console.log('Transformed Supabase URL:', transformedUrl);
+      return transformedUrl;
+    } catch (error) {
+      console.error('Error transforming Supabase URL:', error);
+      return '/placeholder.svg';
+    }
   }
   
   // If it's a relative path, assume it's from the public folder
@@ -36,15 +42,16 @@ export const transformImageUrl = (url: string): string => {
     return url;
   }
   
-  // Return as is if we can't determine the type
-  return url;
+  // Use placeholder for any other case
+  console.log('Using placeholder for unrecognized URL format:', url);
+  return '/placeholder.svg';
 };
 
 // Add cache buster to force image reload
 export const addTimestampToUrl = (url: string): string => {
-  if (!url) return '';
+  if (!url || url === '/placeholder.svg') return url;
   
-  // Don't add timestamp to data URLs
+  // Don't add timestamp to data URLs or placeholder
   if (url.startsWith('data:')) return url;
   
   const separator = url.includes('?') ? '&' : '?';
@@ -60,9 +67,8 @@ export const isValidImageUrl = (url: string): boolean => {
          url.startsWith('/');
 };
 
-// Get default images by item type - using local placeholders instead of Imgur URLs
+// Get default images by item type - using local placeholders
 export const getDefaultImageByType = (type: string): string => {
-  // Use local placeholders from public folder instead of Imgur URLs
   return '/placeholder.svg';
 };
 

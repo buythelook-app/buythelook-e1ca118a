@@ -1,7 +1,7 @@
 
 import { AspectRatio } from "../ui/aspect-ratio";
 import { useState, useEffect } from "react";
-import { transformImageUrl, getDefaultImageByType } from "@/utils/imageUtils";
+import { getDefaultImageByType } from "@/utils/imageUtils";
 
 interface LookImageProps {
   image: string;
@@ -12,30 +12,25 @@ interface LookImageProps {
 export const LookImage = ({ image, title, type = 'default' }: LookImageProps) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [imgSrc, setImgSrc] = useState('');
   
-  useEffect(() => {
-    if (!image) {
-      console.warn('No image URL provided for', title);
-      setImageError(true);
-      return;
-    }
-    
-    // Transform the image URL
-    const transformedUrl = transformImageUrl(image);
-    console.log(`[LookImage] Transformed URL for ${title}:`, transformedUrl, 'Original:', image);
-    setImgSrc(transformedUrl);
-  }, [image, title]);
-  
-  // Always use local fallback instead of relying on Imgur
+  // Always use local fallback
   const fallbackImage = '/placeholder.svg';
   
   // Handle fallback directly
   const handleImageError = () => {
-    console.error(`[LookImage] Error loading image for ${title}:`, imgSrc);
+    console.error(`[LookImage] Error loading image for ${title}:`, image);
     setImageError(true);
     setImageLoaded(true);
   };
+
+  // Log image details
+  useEffect(() => {
+    console.log(`[LookImage] Rendering ${title} with image:`, image);
+    if (!image) {
+      console.warn('[LookImage] No image URL provided for', title);
+      setImageError(true);
+    }
+  }, [image, title]);
 
   return (
     <AspectRatio ratio={3/4} className="relative overflow-hidden bg-gray-100">
@@ -47,15 +42,15 @@ export const LookImage = ({ image, title, type = 'default' }: LookImageProps) =>
       {imageError && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-200 p-4 text-center">
           <span className="text-sm text-gray-500">Image not available</span>
-          <span className="text-xs text-gray-400 mt-1">Using fallback image</span>
+          <span className="text-xs text-gray-400 mt-1">{type}</span>
         </div>
       )}
       <img 
-        src={imageError ? fallbackImage : imgSrc} 
+        src={imageError ? fallbackImage : image} 
         alt={title}
         className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
         onLoad={() => {
-          console.log('[LookImage] Image loaded successfully:', imgSrc);
+          console.log('[LookImage] Image loaded successfully:', image);
           setImageLoaded(true);
         }}
         onError={handleImageError}

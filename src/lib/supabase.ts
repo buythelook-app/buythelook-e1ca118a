@@ -34,17 +34,30 @@ export const getImageUrl = (path: string): string => {
     return path;
   }
   
+  // Skip empty and invalid paths
+  if (path === 'null' || path === 'undefined' || path.length < 3) {
+    console.warn('Invalid image path:', path);
+    return '/placeholder.svg';
+  }
+  
   // For imgur URLs without protocol
-  if (path.includes('imgur.com') && !path.startsWith('http')) {
+  if (path.includes('imgur.com')) {
     console.log('Replacing Imgur URL without protocol with local placeholder:', path);
     return '/placeholder.svg';
   }
   
   // If it's a path in storage
   if (path.startsWith('public/') || path.startsWith('items/')) {
-    // Construct URL to storage with cache busting
-    const timestamp = Date.now();
-    return `${supabaseUrl}/storage/v1/object/public/${path}?t=${timestamp}`;
+    try {
+      // Construct URL to storage with cache busting
+      const timestamp = Date.now();
+      const fullUrl = `${supabaseUrl}/storage/v1/object/public/${path}?t=${timestamp}`;
+      console.log('Generated Supabase storage URL:', fullUrl);
+      return fullUrl;
+    } catch (error) {
+      console.error('Error generating Supabase URL:', error, 'for path:', path);
+      return '/placeholder.svg';
+    }
   }
   
   // If it's a relative path in the public folder
@@ -53,7 +66,7 @@ export const getImageUrl = (path: string): string => {
   }
   
   // Return placeholder for other cases
-  console.log('Using placeholder for image URL:', path);
+  console.log('Using placeholder for unrecognized path format:', path);
   return '/placeholder.svg';
 };
 
