@@ -85,10 +85,10 @@ export const FilterOptions = () => {
         {isLoading ? "Loading..." : "View All Suggestions"}
       </Button>
       
-      {/* Four canvas elements for style visualization */}
+      {/* Four canvas elements for style visualization - 2 per row */}
       <div className="mt-8">
         <h3 className="text-lg font-semibold mb-4">Style Visualization</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
               <canvas 
