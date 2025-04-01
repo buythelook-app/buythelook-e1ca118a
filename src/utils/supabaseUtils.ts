@@ -25,7 +25,6 @@ export const fetchAllItems = async () => {
     
     // Check cache first
     if (itemsCache.has('all-items')) {
-      console.log('Using cached items instead of fetching again');
       return itemsCache.get('all-items');
     }
     
@@ -33,7 +32,6 @@ export const fetchAllItems = async () => {
     const hasItems = await checkDatabaseHasItems();
     
     if (!hasItems) {
-      console.log('No items in database according to cache check. Using empty array.');
       isDatabaseEmpty = true;
       itemsCache.set('all-items', []);
       return [];
@@ -42,7 +40,6 @@ export const fetchAllItems = async () => {
     // Set fetching flag
     isFetchingAllItems = true;
     
-    console.log('Fetching all items from Supabase...');
     const { data, error } = await supabase
       .from('items')
       .select('*');
@@ -56,13 +53,10 @@ export const fetchAllItems = async () => {
     }
     
     if (!data || data.length === 0) {
-      console.log('No items found in the database. Using empty array.');
       isDatabaseEmpty = true;
       itemsCache.set('all-items', []);
       return [];
     }
-    
-    console.log(`Successfully fetched ${data.length} items`);
     
     // Cache the results
     itemsCache.set('all-items', data);
@@ -79,7 +73,6 @@ export const logDatabaseItems = async () => {
   // If we already know database is empty, exit early
   if (isDatabaseEmpty) {
     if (!hasInitialLogged) {
-      console.log('Database is empty according to cache. You may need to add some items first.');
       hasInitialLogged = true;
     }
     return;

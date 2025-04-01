@@ -31,8 +31,6 @@ export const fetchItemsByType = async (type: string): Promise<DashboardItem[]> =
       return [];
     }
     
-    console.log(`[Supabase] Fetching ${type} items from database`);
-    
     const { data, error } = await supabase
       .from('items')
       .select('*')
@@ -40,14 +38,13 @@ export const fetchItemsByType = async (type: string): Promise<DashboardItem[]> =
       .limit(10);
     
     if (error) {
-      console.error(`[Supabase] Error fetching ${type} items:`, error);
+      console.error(`Error fetching ${type} items:`, error);
       return [];
     }
     
     if (!data || data.length === 0) {
       // Only log this message once per type
       if (!hasLoggedNoItems) {
-        console.log(`[Supabase] No ${type} items found in database`);
         hasLoggedNoItems = true;
       }
       
@@ -70,7 +67,7 @@ export const fetchItemsByType = async (type: string): Promise<DashboardItem[]> =
     
     return formattedItems;
   } catch (e) {
-    console.error(`[Supabase] Exception in fetchItemsByType for ${type}:`, e);
+    console.error(`Exception in fetchItemsByType for ${type}:`, e);
     return [];
   }
 };
@@ -146,7 +143,6 @@ export const checkDatabaseHasItems = async (): Promise<boolean> => {
     }
     
     isCheckingDatabase = true;
-    console.log('[Supabase] Checking if database has any items');
     
     const { count, error } = await supabase
       .from('items')
@@ -155,7 +151,7 @@ export const checkDatabaseHasItems = async (): Promise<boolean> => {
     isCheckingDatabase = false;
     
     if (error) {
-      console.error('[Supabase] Error checking items count:', error);
+      console.error('Error checking items count:', error);
       hasCheckedDatabase = true;
       return false;
     }
@@ -165,14 +161,11 @@ export const checkDatabaseHasItems = async (): Promise<boolean> => {
     // If no items, set our flag to avoid future checks
     if (!hasItems) {
       hasCheckedDatabase = true;
-      console.log('[Supabase] No items found in database. Using fallbacks.');
-    } else {
-      console.log('[Supabase] Connection test successful. Items count:', count);
     }
     
     return hasItems;
   } catch (e) {
-    console.error('[Supabase] Exception in checkDatabaseHasItems:', e);
+    console.error('Exception in checkDatabaseHasItems:', e);
     isCheckingDatabase = false;
     hasCheckedDatabase = true;
     return false;
