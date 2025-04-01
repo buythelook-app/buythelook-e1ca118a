@@ -26,6 +26,10 @@ const FALLBACK_DATA = {
   ]
 };
 
+// Supabase Edge Function URL and API key for outfit generation
+const SUPABASE_FUNCTION_URL = 'https://mwsblnposuyhrgzrtoyo.supabase.co/functions/v1/generate-outfit';
+const SUPABASE_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13c2JsbnBvc3V5aHJnenJ0b3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4OTUyOTYsImV4cCI6MjA1MzQ3MTI5Nn0.gyU3tLyZ_1yY82BKkii8EyeaGzFn9muZR6G6ELJocQk';
+
 /**
  * Generates outfit suggestions using the Supabase Edge Function
  * @param bodyStructure Body structure type: 'X', 'V', 'H', 'O', or 'A'
@@ -48,10 +52,6 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
     
     console.log('Generating outfit with params:', { bodyStructure, style, mood: validatedMood });
     
-    // Correct URL and API key for the outfit generation endpoint
-    const SUPABASE_FUNCTION_URL = 'https://mwsblnposuyhrgzrtoyo.supabase.co/functions/v1/generate-outfit';
-    const SUPABASE_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13c2JsbnBvc3V5aHJnenJ0b3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4OTUyOTYsImV4cCI6MjA1MzQ3MTI5Nn0.gyU3tLyZ_1yY82BKkii8EyeaGzFn9muZR6G6ELJocQk';
-    
     // Log request details for debugging
     console.log('Making POST request to:', SUPABASE_FUNCTION_URL);
     console.log('With request body:', JSON.stringify({
@@ -60,7 +60,7 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
       mood: validatedMood
     }));
     
-    // Make direct API request to the specified endpoint
+    // Make direct API request to the specified endpoint with the provided API key
     const response = await fetch(SUPABASE_FUNCTION_URL, {
       method: 'POST',
       headers: {

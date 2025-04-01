@@ -12,6 +12,9 @@ import { fetchDashboardItems } from "@/services/lookService";
 import { useQuery } from "@tanstack/react-query";
 import { Shuffle } from "lucide-react";
 import { logDatabaseItems } from "@/utils/supabaseUtils";
+import { generateOutfit } from "@/services/api/outfitApi";
+import { mapBodyShape, mapStyle } from "@/services/mappers/styleMappers";
+import { validateMood } from "@/services/utils/validationUtils";
 
 interface Look {
   id: string;
@@ -32,6 +35,7 @@ export default function Index() {
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [userStyle, setUserStyle] = useState<any>(null);
   const [combinations, setCombinations] = useState<{ [key: string]: number }>({});
+  const [isRefreshing, setIsRefreshing] = useState<{ [key: string]: boolean }>({});
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
 
   useEffect(() => {
@@ -95,12 +99,56 @@ export default function Index() {
     localStorage.setItem('current-mood', mood);
   };
 
-  const handleShuffleLook = (occasion: string) => {
-    setCombinations(prev => ({
-      ...prev,
-      [occasion]: (prev[occasion] || 0) + 1
-    }));
-    refetch();
+  const handleShuffleLook = async (occasion: string) => {
+    try {
+      setIsRefreshing({ ...isRefreshing, [occasion]: true });
+      
+      // Get user preferences from quiz data
+      const quizData = localStorage.getItem('styleAnalysis');
+      const styleAnalysis = quizData ? JSON.parse(quizData) : null;
+      
+      if (!styleAnalysis?.analysis) {
+        throw new Error("Style analysis data missing");
+      }
+      
+      // Extract necessary parameters for API request
+      const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
+      const preferredStyle = styleAnalysis.analysis.styleProfile || 'classic';
+      const style = mapStyle(preferredStyle);
+      
+      // Get the current mood or use default
+      const currentMoodData = localStorage.getItem('current-mood');
+      const mood = validateMood(currentMoodData);
+      
+      console.log("Generating new outfit with params:", { bodyStructure: bodyShape, style, mood });
+      
+      // Make direct API request to generate outfit using the provided API key
+      const response = await generateOutfit(bodyShape, style, mood);
+      console.log("Outfit API response for shuffle:", response);
+      
+      // Update UI to show a new combination
+      setCombinations(prev => ({
+        ...prev,
+        [occasion]: (prev[occasion] || 0) + 1
+      }));
+      
+      // Refetch the data to update the UI
+      await refetch();
+      
+      toast({
+        title: "New Look Generated",
+        description: "Here's a fresh style combination for you!",
+      });
+    } catch (error) {
+      console.error("Error generating outfit:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate a new look. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing({ ...isRefreshing, [occasion]: false });
+    }
   };
 
   if (!userStyle) {
@@ -173,8 +221,9 @@ export default function Index() {
                           onClick={() => handleShuffleLook(look.occasion)}
                           className="absolute bottom-4 right-4 bg-netflix-accent text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                           title="Try different combination"
+                          disabled={isRefreshing[look.occasion]}
                         >
-                          <Shuffle className="w-4 h-4" />
+                          <Shuffle className={`w-4 h-4 ${isRefreshing[look.occasion] ? 'animate-spin' : ''}`} />
                         </button>
                       </div>
                       <div className="flex justify-between items-center">
