@@ -6,7 +6,8 @@ import { DashboardItem } from "@/types/lookTypes";
 import { generateOutfit } from "./api/outfitApi";
 import { mapBodyShape, mapStyle, getEventStyles } from "./mappers/styleMappers";
 import { convertToDashboardItem } from "./outfitFactory";
-import { supabase, getSupabaseUrl, getImageUrl, transformImageUrl } from "@/lib/supabase";
+import { supabase, getSupabaseUrl, getImageUrl } from "@/lib/supabase";
+import { transformImageUrl } from "@/utils/imageUtils";
 
 // Fallback items for when API doesn't return usable data
 const FALLBACK_ITEMS = {
@@ -153,7 +154,7 @@ const fetchItemsByTypeAndOccasion = async (type: string, occasion: string): Prom
         id: item.id,
         name: item.name || `Stylish ${type} for ${occasion}`,
         description: item.description || `Stylish ${type} for ${occasion}`,
-        image: transformImageUrl(item.image || ''), // Use transformImageUrl instead of getImageUrl
+        image: transformImageUrl(item.image || ''), // Use transformImageUrl from imageUtils
         price: item.price || '$49.99',
         type: type
       }));
@@ -165,7 +166,7 @@ const fetchItemsByTypeAndOccasion = async (type: string, occasion: string): Prom
       id: item.id,
       name: item.name || `Stylish ${type} for ${occasion}`,
       description: item.description || `Stylish ${type} for ${occasion}`,
-      image: transformImageUrl(item.image || ''), // Use transformImageUrl instead of getImageUrl
+      image: transformImageUrl(item.image || ''), // Use transformImageUrl from imageUtils
       price: item.price || '$49.99',
       type: type
     }));
