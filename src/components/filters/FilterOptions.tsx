@@ -17,7 +17,6 @@ export const FilterOptions = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Automatically generate outfit suggestions when component mounts
     const generateInitialOutfit = async () => {
       try {
         console.log("Generating initial outfit suggestions on home page load");
@@ -65,7 +64,6 @@ export const FilterOptions = () => {
   const handleViewSuggestions = async () => {
     setIsLoading(true);
     try {
-      // Generate outfit based on user preferences without passing any parameters
       const response = await generateOutfitFromUserPreferences();
       
       if (response && response.data && Array.isArray(response.data)) {
@@ -86,7 +84,6 @@ export const FilterOptions = () => {
   };
 
   useEffect(() => {
-    // Draw white backgrounds on all canvases whenever outfitSuggestions changes
     outfitSuggestions.forEach((_, index) => {
       const canvas = document.getElementById(`style-canvas-${index}`) as HTMLCanvasElement;
       if (canvas) {
@@ -124,7 +121,6 @@ export const FilterOptions = () => {
         {isLoading ? "Loading..." : "View All Suggestions"}
       </Button>
       
-      {/* Dynamic number of canvas elements based on outfit suggestions */}
       <div className="mt-8">
         <h3 className="text-lg font-semibold mb-4">Style Visualization</h3>
         <div className="grid grid-cols-2 gap-4">
@@ -140,11 +136,8 @@ export const FilterOptions = () => {
                 <StyleCanvas 
                   id={`style-canvas-${index}`} 
                   styleType={index} 
-                  outfitData={outfit.colors || { 
-                    top: outfit.top, 
-                    bottom: outfit.bottom, 
-                    shoes: outfit.shoes 
-                  }}
+                  outfitData={outfit}
+                  occasion={outfit.occasion}
                 />
                 <div className="p-3 text-center">
                   <p className="text-sm font-medium">
@@ -154,7 +147,6 @@ export const FilterOptions = () => {
               </div>
             ))
           ) : (
-            // Show placeholders when no suggestions are loaded yet
             Array.from({ length: 2 }).map((_, index) => (
               <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
                 <canvas 
