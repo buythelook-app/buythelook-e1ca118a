@@ -10,15 +10,7 @@ export const extractImageUrl = (product: any): string => {
   if (!product) return '';
   
   try {
-    if (Array.isArray(product.image)) {
-      return product.image[0] || '';
-    }
-    
-    if (typeof product.image === 'string' && product.image.trim() !== '') {
-      return product.image;
-    }
-    
-    // Always return placeholder to avoid problematic URLs
+    // Always return placeholder to avoid Supabase storage items
     return '/placeholder.svg';
   } catch (error) {
     console.error('Error extracting image URL:', error);
@@ -72,7 +64,8 @@ export const convertToDashboardItem = (item: any, type: string, userStyle: strin
     }
   }
   
-  const imageUrl = extractImageUrl(item);
+  // Always use placeholder image to avoid Supabase storage URLs
+  const imageUrl = '/placeholder.svg';
   
   // Generate a unique ID if none exists
   const itemId = item.product_id || 

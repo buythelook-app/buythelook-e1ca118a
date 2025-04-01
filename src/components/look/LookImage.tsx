@@ -19,8 +19,9 @@ export const LookImage = ({ image, title, type = 'default' }: LookImageProps) =>
     setImageError(false);
     setImageLoaded(false);
     
-    if (!image) {
-      console.log(`[LookImage] No image provided for ${title}, using placeholder`);
+    // Always use placeholder to avoid Supabase storage URLs
+    if (!image || image.includes('supabase') || image.includes('storage/v1/object/public/items')) {
+      console.log(`[LookImage] Using placeholder for ${title} to avoid Supabase storage URL`);
       setImageError(true);
       setDisplayImage('/placeholder.svg');
       return;

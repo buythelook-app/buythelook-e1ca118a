@@ -25,10 +25,11 @@ export const LookItem = ({ item }: LookItemProps) => {
     // Reset error state when item changes
     setImageError(false);
     
-    // Always use placeholder for empty URLs
-    if (!item.image) {
-      console.log(`Empty image URL for item: ${item.title}, using placeholder`);
+    // Always use placeholder for empty URLs or Supabase storage URLs
+    if (!item.image || item.image.includes('supabase') || item.image.includes('storage/v1/object/public/items')) {
+      console.log(`Using placeholder for ${item.title} to avoid Supabase storage URL`);
       setDisplayImage('/placeholder.svg');
+      setImageError(true);
       return;
     }
     

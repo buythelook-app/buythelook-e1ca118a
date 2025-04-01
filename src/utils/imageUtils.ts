@@ -5,6 +5,9 @@
 
 import { getImageUrl as getSupabaseImageUrl } from "@/lib/supabase";
 
+// Block all Supabase storage items paths
+const BLOCKED_STORAGE_PREFIX = 'https://aqkeprwxxsryropnhfvm.supabase.co/storage/v1/object/public/items';
+
 // Blacklisted image URLs
 const BLACKLISTED_URLS = [
   'items/default_shoes.png',
@@ -14,9 +17,16 @@ const BLACKLISTED_URLS = [
 ];
 
 /**
- * Check if a URL is in the blacklist
+ * Check if a URL is in the blacklist or from blocked storage
  */
-const isBlacklistedUrl = (url: string): boolean => {
+const isBlockedUrl = (url: string): boolean => {
+  // Block all URLs from Supabase storage items path
+  if (url.startsWith(BLOCKED_STORAGE_PREFIX)) {
+    console.log('Blocking URL from Supabase storage items path:', url);
+    return true;
+  }
+  
+  // Also check specific blacklisted paths/filenames
   return BLACKLISTED_URLS.some(blocked => url.includes(blocked));
 };
 
@@ -30,58 +40,28 @@ export const transformImageUrl = (url: string): string => {
     return '/placeholder.svg';
   }
   
-  // Check if URL is blacklisted
-  if (isBlacklistedUrl(url)) {
-    console.log('Blacklisted URL detected, using placeholder:', url);
+  // Check if URL is blocked
+  if (isBlockedUrl(url)) {
+    console.log('Blocked URL detected, using placeholder:', url);
     return '/placeholder.svg';
   }
   
-  // If it's a Supabase storage path, get the full URL 
+  // If it's a Supabase storage path, don't convert it - use placeholder instead
   if (url.startsWith('public/') || url.startsWith('items/')) {
-    try {
-      // Check again if path contains blacklisted item
-      if (isBlacklistedUrl(url)) {
-        console.log('Blacklisted Supabase path detected, using placeholder:', url);
-        return '/placeholder.svg';
-      }
-      
-      const fullUrl = getSupabaseImageUrl(url);
-      console.log('Using Supabase URL:', fullUrl);
-      return fullUrl;
-    } catch (error) {
-      console.error('Error with Supabase URL:', error);
-      return '/placeholder.svg';
-    }
+    // We're blocking all Supabase storage items, so return placeholder
+    console.log('Supabase storage path detected, using placeholder instead:', url);
+    return '/placeholder.svg';
   }
   
-  // If it's already a full URL, use it
+  // If it's already a full URL, check if it's from blocked storage
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    // Check if URL is blacklisted
-    if (isBlacklistedUrl(url)) {
-      console.log('Blacklisted full URL detected, using placeholder:', url);
+    // Block all URLs from Supabase storage items path
+    if (isBlockedUrl(url)) {
+      console.log('Blocked full URL detected, using placeholder:', url);
       return '/placeholder.svg';
     }
     
-    // Convert to Supabase URL if possible based on user preferences
-    try {
-      // Extract the filename from the URL
-      const filename = url.split('/').pop();
-      if (filename) {
-        // Check if filename is blacklisted
-        if (isBlacklistedUrl(filename)) {
-          console.log('Blacklisted filename detected, using placeholder:', filename);
-          return '/placeholder.svg';
-        }
-        
-        // Try to find a matching file in Supabase storage
-        const supabaseUrl = `items/${filename}`;
-        const fullUrl = getSupabaseImageUrl(supabaseUrl);
-        console.log('Converted external URL to Supabase URL:', fullUrl);
-        return fullUrl;
-      }
-    } catch (error) {
-      console.log('Using original URL as fallback:', url);
-    }
+    // For other URLs, use as is
     return url;
   }
   
@@ -90,24 +70,12 @@ export const transformImageUrl = (url: string): string => {
     return url;
   }
   
-  // For any other case, try to interpret as Supabase path
-  try {
-    // Check if path contains blacklisted item
-    if (isBlacklistedUrl(`items/${url}`)) {
-      console.log('Blacklisted path detected, using placeholder:', url);
-      return '/placeholder.svg';
-    }
-    
-    const fullUrl = getSupabaseImageUrl(`items/${url}`);
-    console.log('Interpreted as Supabase path:', fullUrl);
-    return fullUrl;
-  } catch (error) {
-    console.error('Error interpreting as Supabase path:', error);
-    return '/placeholder.svg';
-  }
+  // For any other case, use placeholder to be safe
+  console.log('Using placeholder for unrecognized URL pattern:', url);
+  return '/placeholder.svg';
 };
 
-// Get default images by item type from Supabase
+// Get default images by item type
 export const getDefaultImageByType = (type: string): string => {
   // Always return placeholder for any type to avoid problematic URLs
   return '/placeholder.svg';

@@ -1,4 +1,3 @@
-
 /**
  * Service for fetching and organizing dashboard items
  */
@@ -7,7 +6,7 @@ import { DashboardItem } from "@/types/lookTypes";
 import { generateOutfit } from "./api/outfitApi";
 import { mapBodyShape, mapStyle, getEventStyles } from "./mappers/styleMappers";
 import { convertToDashboardItem } from "./outfitFactory";
-import { supabase, getSupabaseUrl, getImageUrl } from "@/lib/supabase";
+import { supabase, getSupabaseUrl } from "@/lib/supabase";
 
 // Fallback items for when API doesn't return usable data
 const FALLBACK_ITEMS = {
