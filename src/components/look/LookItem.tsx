@@ -37,10 +37,9 @@ export const LookItem = ({ item }: LookItemProps) => {
         alt={item.title}
         className="w-20 h-20 object-cover rounded-md"
         onError={(e) => {
-          // Use inline fallback for the item image
           console.error(`Failed to load image for ${item.title}:`, item.image);
           const target = e.target as HTMLImageElement;
-          target.src = 'https://i.imgur.com/1j9ZXed.png'; // Direct fallback URL
+          target.src = '/placeholder.svg'; // Use local placeholder instead of Imgur URL
           target.onerror = null; // Prevent infinite loop
         }}
       />

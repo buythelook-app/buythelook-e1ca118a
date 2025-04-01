@@ -22,16 +22,22 @@ export const getSupabaseUrl = () => {
 
 // Helper for getting public URLs for images
 export const getImageUrl = (path: string): string => {
-  if (!path) return '';
+  if (!path) return '/placeholder.svg';
   
   // If it's already an HTTPS URL, return it as is
   if (path.startsWith('http://') || path.startsWith('https://')) {
+    // Skip Imgur URLs and replace with local placeholders
+    if (path.includes('imgur.com')) {
+      console.log('Replacing Imgur URL with local placeholder:', path);
+      return '/placeholder.svg';
+    }
     return path;
   }
   
   // For imgur URLs without protocol
   if (path.includes('imgur.com') && !path.startsWith('http')) {
-    return `https://${path}`;
+    console.log('Replacing Imgur URL without protocol with local placeholder:', path);
+    return '/placeholder.svg';
   }
   
   // If it's a path in storage
@@ -46,9 +52,9 @@ export const getImageUrl = (path: string): string => {
     return path;
   }
   
-  // Return as is for other cases
-  console.log('Using image URL as is:', path);
-  return path;
+  // Return placeholder for other cases
+  console.log('Using placeholder for image URL:', path);
+  return '/placeholder.svg';
 };
 
 // Log initialization for debugging

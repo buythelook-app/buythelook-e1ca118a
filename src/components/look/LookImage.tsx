@@ -21,15 +21,16 @@ export const LookImage = ({ image, title, type = 'default' }: LookImageProps) =>
       return;
     }
     
-    // Use a different approach for transforming image URLs
+    // Transform the image URL
     const transformedUrl = transformImageUrl(image);
     console.log(`[LookImage] Transformed URL for ${title}:`, transformedUrl, 'Original:', image);
     setImgSrc(transformedUrl);
   }, [image, title]);
   
-  const fallbackImage = getDefaultImageByType(type);
+  // Always use local fallback instead of relying on Imgur
+  const fallbackImage = '/placeholder.svg';
   
-  // Handle fallback directly rather than relying solely on onError
+  // Handle fallback directly
   const handleImageError = () => {
     console.error(`[LookImage] Error loading image for ${title}:`, imgSrc);
     setImageError(true);

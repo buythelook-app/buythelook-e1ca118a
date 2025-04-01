@@ -9,12 +9,18 @@ import { getImageUrl as getSupabaseImageUrl } from "@/lib/supabase";
 export const transformImageUrl = (url: string): string => {
   if (!url) return '';
   
+  // Use local image from public folder for test URLs
+  if (url.includes('imgur.com')) {
+    console.log('Replacing Imgur URL with local fallback:', url);
+    // Return default placeholder based on image type pattern in URL
+    if (url.includes('PzAHrXN')) return '/placeholder.svg'; // Shoes fallback
+    if (url.includes('RWCV0G0')) return '/placeholder.svg'; // Bottom fallback
+    if (url.includes('1j9ZXed')) return '/placeholder.svg'; // Top fallback
+    return '/placeholder.svg';
+  }
+  
   // If it's already a full URL, return it
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    // For imgur images, ensure we're using HTTPS
-    if (url.includes('imgur.com') && url.startsWith('http://')) {
-      return url.replace('http://', 'https://');
-    }
     return url;
   }
   
@@ -28,11 +34,6 @@ export const transformImageUrl = (url: string): string => {
   // If it's a relative path, assume it's from the public folder
   if (url.startsWith('/')) {
     return url;
-  }
-  
-  // Special handling for image URLs that might need a protocol
-  if (url.includes('imgur.com') && !url.startsWith('http')) {
-    return `https://${url}`;
   }
   
   // Return as is if we can't determine the type
@@ -55,24 +56,14 @@ export const isValidImageUrl = (url: string): boolean => {
   if (!url) return false;
   return url.startsWith('http://') || 
          url.startsWith('https://') ||
-         url.startsWith('data:image/');
+         url.startsWith('data:image/') ||
+         url.startsWith('/');
 };
 
-// Get default images by item type - using direct HTTPS URLs
+// Get default images by item type - using local placeholders instead of Imgur URLs
 export const getDefaultImageByType = (type: string): string => {
-  const fallbacks: Record<string, string> = {
-    'top': 'https://i.imgur.com/1j9ZXed.png',
-    'bottom': 'https://i.imgur.com/RWCV0G0.png',
-    'shoes': 'https://i.imgur.com/PzAHrXN.png',
-    'dress': 'https://i.imgur.com/1j9ZXed.png',
-    'accessory': 'https://i.imgur.com/PzAHrXN.png',
-    'sunglasses': 'https://i.imgur.com/PzAHrXN.png',
-    'outerwear': 'https://i.imgur.com/1j9ZXed.png',
-    'cart': 'https://i.imgur.com/1j9ZXed.png',
-    'default': 'https://i.imgur.com/1j9ZXed.png'
-  };
-  
-  return fallbacks[type.toLowerCase()] || fallbacks['default'];
+  // Use local placeholders from public folder instead of Imgur URLs
+  return '/placeholder.svg';
 };
 
 // Log detailed image information
