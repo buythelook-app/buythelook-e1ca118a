@@ -99,6 +99,9 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
   }
 };
 
+// Import needed mappers
+import { mapBodyShape, mapStyle } from "@/services/mappers/styleMappers";
+
 /**
  * Get user preferences from quiz data and send outfit generation request
  */
@@ -142,6 +145,3 @@ export const generateOutfitFromUserPreferences = async () => {
     return FALLBACK_DATA;
   }
 };
-
-// Import needed mappers
-import { mapBodyShape, mapStyle } from "@/services/mappers/styleMappers";

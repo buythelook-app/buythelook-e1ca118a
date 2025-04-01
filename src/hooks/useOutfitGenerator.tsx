@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +15,7 @@ export const useOutfitGenerator = () => {
   const { toast } = useToast();
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [outfitColors, setOutfitColors] = useState<OutfitColors | null>(null);
-  const [isRefetching, setIsRefetching] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [elegance, setElegance] = useState(75);
   const [colorIntensity, setColorIntensity] = useState(60);
   const [userStylePreference, setUserStylePreference] = useState<string | null>(null);
@@ -119,7 +118,7 @@ export const useOutfitGenerator = () => {
   });
 
   const handleTryDifferentLook = async () => {
-    setIsRefetching(true);
+    setIsRefreshing(true);
     console.log("Trying different look - generating new outfit...");
     try {
       // Get user preferences from quiz data
@@ -141,7 +140,7 @@ export const useOutfitGenerator = () => {
       
       console.log("Generating new outfit with params:", { bodyStructure: bodyShape, style, mood });
       
-      // Make direct API request to generate outfit
+      // Make direct API request to generate outfit - using the updated function
       const response = await generateOutfit(bodyShape, style, mood);
       console.log("Outfit API response:", response);
       
@@ -206,7 +205,7 @@ export const useOutfitGenerator = () => {
         variant: "destructive",
       });
     } finally {
-      setIsRefetching(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -222,7 +221,7 @@ export const useOutfitGenerator = () => {
     dashboardItems,
     isLoading,
     error,
-    isRefetching,
+    isRefreshing,
     recommendations,
     outfitColors,
     elegance,

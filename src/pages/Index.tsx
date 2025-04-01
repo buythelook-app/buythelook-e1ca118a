@@ -122,7 +122,7 @@ export default function Index() {
       
       console.log("Generating new outfit with params:", { bodyStructure: bodyShape, style, mood });
       
-      // Make direct API request to generate outfit using the provided API key
+      // Make direct API request to generate outfit using the correct endpoint and API key
       const response = await generateOutfit(bodyShape, style, mood);
       console.log("Outfit API response for shuffle:", response);
       
