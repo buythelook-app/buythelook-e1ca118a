@@ -6,7 +6,10 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 // Blacklisted paths
 const BLOCKED_PATHS = [
-  'items/default_shoes.png'
+  'items/default_shoes.png',
+  'PzAHrXN.png',
+  'RWCV0G0.png',
+  '1j9ZXed.png'
 ];
 
 // Create and export the Supabase client

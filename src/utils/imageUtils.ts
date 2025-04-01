@@ -7,7 +7,10 @@ import { getImageUrl as getSupabaseImageUrl } from "@/lib/supabase";
 
 // Blacklisted image URLs
 const BLACKLISTED_URLS = [
-  'items/default_shoes.png'
+  'items/default_shoes.png',
+  'PzAHrXN.png',
+  'RWCV0G0.png',
+  '1j9ZXed.png'
 ];
 
 /**
@@ -106,22 +109,6 @@ export const transformImageUrl = (url: string): string => {
 
 // Get default images by item type from Supabase
 export const getDefaultImageByType = (type: string): string => {
-  // Special case for shoes
-  if (type.toLowerCase() === 'shoes') {
-    console.log('Returning alternate placeholder for shoes');
-    return '/placeholder.svg';
-  }
-  
-  const defaultPath = `items/default_${type.toLowerCase()}.png`;
-  try {
-    // Check if this is a blacklisted path
-    if (isBlacklistedUrl(defaultPath)) {
-      console.log('Blacklisted default image path, using placeholder:', defaultPath);
-      return '/placeholder.svg';
-    }
-    
-    return getSupabaseImageUrl(defaultPath);
-  } catch (error) {
-    return '/placeholder.svg';
-  }
+  // Always return placeholder for any type to avoid problematic URLs
+  return '/placeholder.svg';
 };

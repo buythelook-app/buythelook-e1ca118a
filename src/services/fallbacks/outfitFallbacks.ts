@@ -11,7 +11,7 @@ export const FALLBACK_ITEMS: Record<string, DashboardItem> = {
     id: "fallback-top-1",
     name: "Classic White Shirt",
     description: "A timeless white shirt that pairs with everything",
-    image: "items/default_top.png",
+    image: "/placeholder.svg",
     price: "$45.99",
     type: "top"
   },
@@ -19,7 +19,7 @@ export const FALLBACK_ITEMS: Record<string, DashboardItem> = {
     id: "fallback-bottom-1",
     name: "Black Slim Pants",
     description: "Essential black pants for any style",
-    image: "items/default_bottom.png",
+    image: "/placeholder.svg",
     price: "$55.99",
     type: "bottom"
   },
@@ -27,7 +27,7 @@ export const FALLBACK_ITEMS: Record<string, DashboardItem> = {
     id: "fallback-shoes-1",
     name: "Classic Loafers",
     description: "Versatile loafers to complete your look",
-    image: "/placeholder.svg", // Using placeholder instead of default_shoes.png
+    image: "/placeholder.svg",
     price: "$75.99",
     type: "shoes"
   }

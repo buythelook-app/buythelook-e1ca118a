@@ -1,4 +1,3 @@
-
 /**
  * Factory functions for creating outfit items and converting data formats
  */
@@ -19,21 +18,11 @@ export const extractImageUrl = (product: any): string => {
       return product.image;
     }
     
-    // Fallback image URLs based on item type
-    const fallbacks = {
-      top: 'https://i.imgur.com/1j9ZXed.png',
-      bottom: 'https://i.imgur.com/RWCV0G0.png',
-      shoes: 'https://i.imgur.com/PzAHrXN.png'
-    };
-    
-    if (product.type && fallbacks[product.type as keyof typeof fallbacks]) {
-      return fallbacks[product.type as keyof typeof fallbacks];
-    }
-    
-    return 'https://i.imgur.com/1j9ZXed.png'; // Default fallback
+    // Always return placeholder to avoid problematic URLs
+    return '/placeholder.svg';
   } catch (error) {
     console.error('Error extracting image URL:', error);
-    return 'https://i.imgur.com/1j9ZXed.png'; // Default fallback
+    return '/placeholder.svg';
   }
 };
 

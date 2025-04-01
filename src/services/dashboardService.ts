@@ -1,3 +1,4 @@
+
 /**
  * Service for fetching and organizing dashboard items
  */
@@ -15,7 +16,7 @@ const FALLBACK_ITEMS = {
       id: "work-top",
       name: "Professional Shirt",
       description: "Elegant shirt for work environments",
-      image: "https://i.imgur.com/1j9ZXed.png",
+      image: "/placeholder.svg",
       price: "$45.99",
       type: "top"
     },
@@ -23,7 +24,7 @@ const FALLBACK_ITEMS = {
       id: "work-bottom",
       name: "Tailored Trousers",
       description: "Professional pants for the office",
-      image: "https://i.imgur.com/RWCV0G0.png",
+      image: "/placeholder.svg",
       price: "$65.99",
       type: "bottom"
     },
@@ -31,7 +32,7 @@ const FALLBACK_ITEMS = {
       id: "work-shoes",
       name: "Business Shoes",
       description: "Elegant footwear for professional settings",
-      image: "https://i.imgur.com/PzAHrXN.png",
+      image: "/placeholder.svg",
       price: "$95.99",
       type: "shoes"
     }
@@ -41,7 +42,7 @@ const FALLBACK_ITEMS = {
       id: "casual-top",
       name: "Relaxed T-Shirt",
       description: "Comfortable tee for casual days",
-      image: "https://i.imgur.com/1j9ZXed.png",
+      image: "/placeholder.svg",
       price: "$29.99",
       type: "top"
     },
@@ -49,7 +50,7 @@ const FALLBACK_ITEMS = {
       id: "casual-bottom",
       name: "Jeans",
       description: "Classic denim jeans",
-      image: "https://i.imgur.com/RWCV0G0.png",
+      image: "/placeholder.svg",
       price: "$49.99",
       type: "bottom"
     },
@@ -57,7 +58,7 @@ const FALLBACK_ITEMS = {
       id: "casual-shoes",
       name: "Sneakers",
       description: "Comfortable sneakers for everyday wear",
-      image: "https://i.imgur.com/PzAHrXN.png",
+      image: "/placeholder.svg",
       price: "$79.99",
       type: "shoes"
     }
@@ -67,7 +68,7 @@ const FALLBACK_ITEMS = {
       id: "evening-top",
       name: "Elegant Blouse",
       description: "Sophisticated top for evening events",
-      image: "https://i.imgur.com/1j9ZXed.png",
+      image: "/placeholder.svg",
       price: "$59.99",
       type: "top"
     },
@@ -75,7 +76,7 @@ const FALLBACK_ITEMS = {
       id: "evening-bottom",
       name: "Evening Skirt",
       description: "Elegant skirt for special occasions",
-      image: "https://i.imgur.com/RWCV0G0.png",
+      image: "/placeholder.svg",
       price: "$69.99",
       type: "bottom"
     },
@@ -83,7 +84,7 @@ const FALLBACK_ITEMS = {
       id: "evening-shoes",
       name: "Dressy Heels",
       description: "Elegant heels for evening wear",
-      image: "https://i.imgur.com/PzAHrXN.png",
+      image: "/placeholder.svg",
       price: "$89.99",
       type: "shoes"
     }
@@ -93,7 +94,7 @@ const FALLBACK_ITEMS = {
       id: "weekend-top",
       name: "Casual Sweatshirt",
       description: "Comfortable sweatshirt for relaxed weekends",
-      image: "https://i.imgur.com/1j9ZXed.png",
+      image: "/placeholder.svg",
       price: "$39.99",
       type: "top"
     },
@@ -101,7 +102,7 @@ const FALLBACK_ITEMS = {
       id: "weekend-bottom",
       name: "Relaxed Pants",
       description: "Comfortable pants for weekend activities",
-      image: "https://i.imgur.com/RWCV0G0.png",
+      image: "/placeholder.svg",
       price: "$45.99",
       type: "bottom"
     },
@@ -109,7 +110,7 @@ const FALLBACK_ITEMS = {
       id: "weekend-shoes",
       name: "Casual Flats",
       description: "Comfortable shoes for weekend outings",
-      image: "https://i.imgur.com/PzAHrXN.png",
+      image: "/placeholder.svg",
       price: "$65.99",
       type: "shoes"
     }
