@@ -167,12 +167,22 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     }
     
     // Store color palette for display in the UI
-    const outfitColors = {
+    // Define the interface for outfit colors to ensure type safety
+    interface OutfitColors {
+      top: string;
+      bottom: string;
+      shoes: string;
+      coat?: string;
+      [key: string]: string | undefined;
+    }
+    
+    const outfitColors: OutfitColors = {
       top: outfitSuggestion.top,
       bottom: outfitSuggestion.bottom,
       shoes: outfitSuggestion.shoes
     };
     
+    // Only add coat if it exists in the outfit suggestion
     if (outfitSuggestion.coat) {
       outfitColors.coat = outfitSuggestion.coat;
     }
