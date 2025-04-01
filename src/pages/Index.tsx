@@ -14,6 +14,7 @@ import { generateOutfit } from "@/services/api/outfitApi";
 import { mapBodyShape, mapStyle } from "@/services/mappers/styleMappers";
 import { validateMood } from "@/services/utils/validationUtils";
 import { DashboardItem } from "@/types/lookTypes";
+import { StyleCanvas } from "@/components/StyleCanvas";
 
 interface Look {
   id: string;
@@ -41,6 +42,19 @@ export default function Index() {
     const styleAnalysis = localStorage.getItem('styleAnalysis');
     if (styleAnalysis) {
       setUserStyle(JSON.parse(styleAnalysis));
+    }
+  }, []);
+
+  useEffect(() => {
+    for (let i = 0; i < 4; i++) {
+      const canvas = document.getElementById(`style-canvas-${i}`) as HTMLCanvasElement;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = '#f9f9f9';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+      }
     }
   }, []);
 
@@ -163,6 +177,13 @@ export default function Index() {
           <MoodFilter selectedMood={selectedMood} onMoodSelect={handleMoodSelect} />
         </div>
         <FilterOptions />
+        
+        <div className="hidden">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <StyleCanvas key={index} id={`style-canvas-${index}`} styleType={index} />
+          ))}
+        </div>
+        
         <section className="py-8">
           <div className="container mx-auto px-4">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">

@@ -84,6 +84,26 @@ export const FilterOptions = () => {
       >
         {isLoading ? "Loading..." : "View All Suggestions"}
       </Button>
+      
+      {/* Four canvas elements for style visualization */}
+      <div className="mt-8">
+        <h3 className="text-lg font-semibold mb-4">Style Visualization</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
+              <canvas 
+                id={`style-canvas-${index}`} 
+                className="w-full h-40 object-cover"
+                width="200"
+                height="160"
+              ></canvas>
+              <div className="p-3 text-center">
+                <p className="text-sm font-medium">Style Option {index + 1}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
