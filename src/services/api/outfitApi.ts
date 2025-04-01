@@ -1,3 +1,4 @@
+
 /**
  * API service for outfit generation
  */
@@ -101,6 +102,7 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
 
 /**
  * Get user preferences from quiz data and send outfit generation request
+ * No parameters needed as it uses data from localStorage
  */
 export const generateOutfitFromUserPreferences = async () => {
   try {
