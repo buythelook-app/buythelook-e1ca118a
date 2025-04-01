@@ -11,7 +11,10 @@ export const transformImageUrl = (url: string): string => {
   
   // If it's already a full URL, return it
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    console.log('Using existing HTTPS URL:', url);
+    // For imgur images, ensure we're using HTTPS
+    if (url.includes('imgur.com') && url.startsWith('http://')) {
+      return url.replace('http://', 'https://');
+    }
     return url;
   }
   
@@ -24,16 +27,19 @@ export const transformImageUrl = (url: string): string => {
   
   // If it's a relative path, assume it's from the public folder
   if (url.startsWith('/')) {
-    console.log('Using relative path:', url);
     return url;
   }
   
+  // Special handling for image URLs that might need a protocol
+  if (url.includes('imgur.com') && !url.startsWith('http')) {
+    return `https://${url}`;
+  }
+  
   // Return as is if we can't determine the type
-  console.log('Using URL as is:', url);
   return url;
 };
 
-// Add cache or timestamp to force image reload
+// Add cache buster to force image reload
 export const addTimestampToUrl = (url: string): string => {
   if (!url) return '';
   
@@ -52,7 +58,7 @@ export const isValidImageUrl = (url: string): boolean => {
          url.startsWith('data:image/');
 };
 
-// Get default images by item type
+// Get default images by item type - using direct HTTPS URLs
 export const getDefaultImageByType = (type: string): string => {
   const fallbacks: Record<string, string> = {
     'top': 'https://i.imgur.com/1j9ZXed.png',
@@ -69,34 +75,11 @@ export const getDefaultImageByType = (type: string): string => {
   return fallbacks[type.toLowerCase()] || fallbacks['default'];
 };
 
-// Debug function to log database items
-export const logDatabaseItems = async () => {
-  try {
-    // Import supabase dynamically to avoid circular dependencies
-    const { supabase } = await import('@/lib/supabase');
-    
-    console.log("Checking Supabase items table contents...");
-    
-    const { data, error } = await supabase
-      .from('items')
-      .select('*')
-      .limit(20);
-      
-    if (error) {
-      console.error("Error fetching items:", error);
-      return;
-    }
-    
-    console.log(`Found ${data?.length || 0} items in the database:`, data);
-    
-    // Log image URLs specifically
-    if (data && data.length > 0) {
-      console.log("Image URLs in database:");
-      data.forEach(item => {
-        console.log(`${item.id} (${item.type}): ${item.image}`);
-      });
-    }
-  } catch (err) {
-    console.error("Exception in logDatabaseItems:", err);
-  }
+// Log detailed image information
+export const logImageDetails = (imageUrl: string, component: string, itemId?: string): void => {
+  console.log(`[${component}] Processing image:`, {
+    originalUrl: imageUrl,
+    transformedUrl: transformImageUrl(imageUrl),
+    forItem: itemId || 'unknown'
+  });
 };

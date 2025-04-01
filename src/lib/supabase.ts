@@ -29,13 +29,25 @@ export const getImageUrl = (path: string): string => {
     return path;
   }
   
-  // If it's a path in storage
-  if (path.startsWith('public/') || path.startsWith('items/')) {
-    // Construct URL to storage
-    return `${supabaseUrl}/storage/v1/object/public/${path}`;
+  // For imgur URLs without protocol
+  if (path.includes('imgur.com') && !path.startsWith('http')) {
+    return `https://${path}`;
   }
   
-  // Return as is if we can't determine the type
+  // If it's a path in storage
+  if (path.startsWith('public/') || path.startsWith('items/')) {
+    // Construct URL to storage with cache busting
+    const timestamp = Date.now();
+    return `${supabaseUrl}/storage/v1/object/public/${path}?t=${timestamp}`;
+  }
+  
+  // If it's a relative path in the public folder
+  if (path.startsWith('/')) {
+    return path;
+  }
+  
+  // Return as is for other cases
+  console.log('Using image URL as is:', path);
   return path;
 };
 

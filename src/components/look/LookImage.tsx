@@ -21,6 +21,7 @@ export const LookImage = ({ image, title, type = 'default' }: LookImageProps) =>
       return;
     }
     
+    // Use a different approach for transforming image URLs
     const transformedUrl = transformImageUrl(image);
     console.log(`[LookImage] Transformed URL for ${title}:`, transformedUrl, 'Original:', image);
     setImgSrc(transformedUrl);
@@ -28,6 +29,13 @@ export const LookImage = ({ image, title, type = 'default' }: LookImageProps) =>
   
   const fallbackImage = getDefaultImageByType(type);
   
+  // Handle fallback directly rather than relying solely on onError
+  const handleImageError = () => {
+    console.error(`[LookImage] Error loading image for ${title}:`, imgSrc);
+    setImageError(true);
+    setImageLoaded(true);
+  };
+
   return (
     <AspectRatio ratio={3/4} className="relative overflow-hidden bg-gray-100">
       {!imageLoaded && !imageError && (
@@ -49,11 +57,7 @@ export const LookImage = ({ image, title, type = 'default' }: LookImageProps) =>
           console.log('[LookImage] Image loaded successfully:', imgSrc);
           setImageLoaded(true);
         }}
-        onError={(e) => {
-          console.error(`[LookImage] Error loading image for ${title}:`, imgSrc, e);
-          setImageError(true);
-          setImageLoaded(true);
-        }}
+        onError={handleImageError}
       />
     </AspectRatio>
   );

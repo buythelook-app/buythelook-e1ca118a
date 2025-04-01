@@ -1,7 +1,9 @@
+
 import { ShoppingCart } from "lucide-react";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
 import { useCartStore } from "../Cart";
+import { logImageDetails } from "@/utils/imageUtils";
 
 interface LookItemProps {
   item: {
@@ -14,6 +16,9 @@ interface LookItemProps {
 
 export const LookItem = ({ item }: LookItemProps) => {
   const { addItem } = useCartStore();
+
+  // Log image details for debugging
+  logImageDetails(item.image, 'LookItem', item.id);
 
   const handleAddItemToCart = () => {
     addItem({
@@ -31,6 +36,13 @@ export const LookItem = ({ item }: LookItemProps) => {
         src={item.image} 
         alt={item.title}
         className="w-20 h-20 object-cover rounded-md"
+        onError={(e) => {
+          // Use inline fallback for the item image
+          console.error(`Failed to load image for ${item.title}:`, item.image);
+          const target = e.target as HTMLImageElement;
+          target.src = 'https://i.imgur.com/1j9ZXed.png'; // Direct fallback URL
+          target.onerror = null; // Prevent infinite loop
+        }}
       />
       <div className="flex-1">
         <h3 className="font-medium">{item.title}</h3>
