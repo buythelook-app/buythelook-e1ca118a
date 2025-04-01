@@ -1,9 +1,9 @@
-
 /**
  * API service for outfit generation
  */
 
 import { validateMood } from "@/services/utils/validationUtils";
+import { mapBodyShape, mapStyle } from "@/services/mappers/styleMappers";
 
 // Cache for API requests to avoid duplications
 const requestCache = new Map();
@@ -98,9 +98,6 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
     return FALLBACK_DATA;
   }
 };
-
-// Import needed mappers
-import { mapBodyShape, mapStyle } from "@/services/mappers/styleMappers";
 
 /**
  * Get user preferences from quiz data and send outfit generation request

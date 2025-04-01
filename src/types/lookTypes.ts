@@ -31,6 +31,7 @@ export interface DashboardItem {
   price: string;
   type: string;
   description: string;
+  color?: string; // Optional color hexcode for items generated from the API
 }
 
 export interface OutfitItem {
