@@ -1,3 +1,4 @@
+
 import { useOutfitGenerator } from "@/hooks/useOutfitGenerator";
 import { Button } from "./ui/button";
 import { Loader2, ShoppingCart, Shuffle } from "lucide-react";
@@ -24,7 +25,7 @@ export const LookSuggestions = () => {
     dashboardItems,
     isLoading,
     error,
-    isRefetching,
+    isRefreshing, // Changed from isRefetching to isRefreshing to match the hook
     recommendations,
     outfitColors,
     elegance,
@@ -173,7 +174,7 @@ export const LookSuggestions = () => {
               <div className="relative w-[300px]">
                 <div className="bg-white rounded-lg shadow-lg overflow-hidden pb-4">
                   <div className="relative">
-                    {isRefetching ? (
+                    {isRefreshing ? ( // Changed from isRefetching to isRefreshing
                       <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
                         <Loader2 className="h-8 w-8 animate-spin text-netflix-accent" />
                       </div>
@@ -183,7 +184,7 @@ export const LookSuggestions = () => {
                       <Button 
                         onClick={() => handleAddToCart(dashboardItems)}
                         className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
-                        disabled={isRefetching}
+                        disabled={isRefreshing} // Changed from isRefetching to isRefreshing
                       >
                         <ShoppingCart className="mr-1 h-3 w-3" />
                         Buy the look
@@ -191,7 +192,7 @@ export const LookSuggestions = () => {
                       <Button
                         onClick={handleTryDifferentLook}
                         className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
-                        disabled={isRefetching}
+                        disabled={isRefreshing} // Changed from isRefetching to isRefreshing
                       >
                         <Shuffle className="mr-1 h-3 w-3" />
                         Try different
@@ -212,7 +213,7 @@ export const LookSuggestions = () => {
                       size="icon"
                       onClick={() => handleAddToCart(item)}
                       className="bg-white/10 hover:bg-netflix-accent/20 hover:text-netflix-accent rounded-full shadow-md"
-                      disabled={isRefetching}
+                      disabled={isRefreshing} // Changed from isRefetching to isRefreshing
                     >
                       <ShoppingCart className="h-5 w-5" />
                     </Button>
