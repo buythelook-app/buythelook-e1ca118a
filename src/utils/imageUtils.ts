@@ -3,6 +3,36 @@
  * Utility functions for handling image URLs and transformations.
  */
 
+import { getImageUrl as getSupabaseImageUrl } from "@/lib/supabase";
+
+// Transform image URL for display
+export const transformImageUrl = (url: string): string => {
+  if (!url) return '';
+  
+  // If it's already a full URL, return it
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    console.log('Using existing HTTPS URL:', url);
+    return url;
+  }
+  
+  // If it's a Supabase storage path, get the full URL
+  if (url.startsWith('public/') || url.startsWith('items/')) {
+    const transformedUrl = getSupabaseImageUrl(url);
+    console.log('Transformed Supabase URL:', transformedUrl, 'Original:', url);
+    return transformedUrl;
+  }
+  
+  // If it's a relative path, assume it's from the public folder
+  if (url.startsWith('/')) {
+    console.log('Using relative path:', url);
+    return url;
+  }
+  
+  // Return as is if we can't determine the type
+  console.log('Using URL as is:', url);
+  return url;
+};
+
 // Add cache or timestamp to force image reload
 export const addTimestampToUrl = (url: string): string => {
   if (!url) return '';
@@ -22,8 +52,8 @@ export const isValidImageUrl = (url: string): boolean => {
          url.startsWith('data:image/');
 };
 
-// Get a fallback image if the primary image fails
-export const getFallbackImage = (type: string): string => {
+// Get default images by item type
+export const getDefaultImageByType = (type: string): string => {
   const fallbacks: Record<string, string> = {
     'top': 'https://i.imgur.com/1j9ZXed.png',
     'bottom': 'https://i.imgur.com/RWCV0G0.png',
@@ -31,10 +61,12 @@ export const getFallbackImage = (type: string): string => {
     'dress': 'https://i.imgur.com/1j9ZXed.png',
     'accessory': 'https://i.imgur.com/PzAHrXN.png',
     'sunglasses': 'https://i.imgur.com/PzAHrXN.png',
-    'outerwear': 'https://i.imgur.com/1j9ZXed.png'
+    'outerwear': 'https://i.imgur.com/1j9ZXed.png',
+    'cart': 'https://i.imgur.com/1j9ZXed.png',
+    'default': 'https://i.imgur.com/1j9ZXed.png'
   };
   
-  return fallbacks[type.toLowerCase()] || 'https://i.imgur.com/1j9ZXed.png';
+  return fallbacks[type.toLowerCase()] || fallbacks['default'];
 };
 
 // Debug function to log database items
