@@ -6,9 +6,16 @@ import { checkDatabaseHasItems } from "@/services/fetchers/itemsFetcher";
 const itemsCache = new Map();
 // Track if we've already done the initial log
 let hasInitialLogged = false;
+// Track if we're currently fetching
+let isFetchingAllItems = false;
 
 export const fetchAllItems = async () => {
   try {
+    // If we're already fetching, return cached or empty array
+    if (isFetchingAllItems) {
+      return itemsCache.get('all-items') || [];
+    }
+    
     // Check cache first
     if (itemsCache.has('all-items')) {
       console.log('Using cached items instead of fetching again');
@@ -24,10 +31,16 @@ export const fetchAllItems = async () => {
       return [];
     }
     
+    // Set fetching flag
+    isFetchingAllItems = true;
+    
     console.log('Fetching all items from Supabase...');
     const { data, error } = await supabase
       .from('items')
       .select('*');
+    
+    // Reset fetching flag
+    isFetchingAllItems = false;
     
     if (error) {
       console.error('Error fetching items:', error);
@@ -48,6 +61,7 @@ export const fetchAllItems = async () => {
     return data;
   } catch (e) {
     console.error('Exception in fetchAllItems:', e);
+    isFetchingAllItems = false;
     return [];
   }
 };
@@ -55,7 +69,7 @@ export const fetchAllItems = async () => {
 export const logDatabaseItems = async () => {
   // Check if we have already logged items in this session
   if (itemsCache.has('logged-items')) {
-    console.log('Items have already been logged this session');
+    //console.log('Items have already been logged this session');
     return;
   }
   

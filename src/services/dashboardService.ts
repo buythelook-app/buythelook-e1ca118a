@@ -6,7 +6,7 @@ import { DashboardItem } from "@/types/lookTypes";
 import { generateOutfit } from "./api/outfitApi";
 import { mapBodyShape, mapStyle, getEventStyles } from "./mappers/styleMappers";
 import { convertToDashboardItem } from "./outfitFactory";
-import { getSupabaseUrl } from "@/lib/supabase";
+import { getSupabaseUrl, supabase } from "@/lib/supabase";
 import { transformImageUrl } from "@/utils/imageUtils";
 import { 
   fetchItemsByType, 
@@ -140,8 +140,9 @@ const fetchItemsByTypeAndOccasion = async (type: string, occasion: string): Prom
     const hasItems = await checkDatabaseHasItems();
     
     if (!hasItems) {
-      dashboardCache.set(cacheKey, []);
-      return [];
+      const emptyArray: DashboardItem[] = [];
+      dashboardCache.set(cacheKey, emptyArray);
+      return emptyArray;
     }
     
     // Try to match the item type and a description that might indicate the occasion
@@ -153,8 +154,9 @@ const fetchItemsByTypeAndOccasion = async (type: string, occasion: string): Prom
     
     if (error) {
       console.error(`Error fetching ${type} items for ${occasion}:`, error);
-      dashboardCache.set(cacheKey, []);
-      return [];
+      const emptyArray: DashboardItem[] = [];
+      dashboardCache.set(cacheKey, emptyArray);
+      return emptyArray;
     }
     
     // If no items were found with the occasion in description, fetch any items of that type
@@ -169,8 +171,9 @@ const fetchItemsByTypeAndOccasion = async (type: string, occasion: string): Prom
       
       if (generalError || !generalData || generalData.length === 0) {
         console.log(`No ${type} items found in database for ${occasion}`);
-        dashboardCache.set(cacheKey, []);
-        return [];
+        const emptyArray: DashboardItem[] = [];
+        dashboardCache.set(cacheKey, emptyArray);
+        return emptyArray;
       }
       
       console.log(`Found ${generalData.length} general ${type} items`);
@@ -203,8 +206,9 @@ const fetchItemsByTypeAndOccasion = async (type: string, occasion: string): Prom
     return items;
   } catch (e) {
     console.error(`Error in fetchItemsByTypeAndOccasion for ${type} and ${occasion}:`, e);
-    dashboardCache.set(`${type}-${occasion}`, []);
-    return [];
+    const emptyArray: DashboardItem[] = [];
+    dashboardCache.set(`${type}-${occasion}`, emptyArray);
+    return emptyArray;
   }
 };
 
@@ -225,16 +229,32 @@ const validateMood = (mood: string | null): string => {
 // Main dashboard cache
 let cachedDashboardItems: Record<string, DashboardItem[]> | null = null;
 let lastFetchTime = 0;
-const CACHE_LIFETIME = 60000; // 1 minute cache
+const CACHE_LIFETIME = 300000; // 5 minutes cache (increased from 1 minute)
+let isFetchingDashboardItems = false; // Flag to prevent concurrent fetches
 
-export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardItem[]}> => {
+export const fetchDashboardItems = async (): Promise<Record<string, DashboardItem[]>> => {
   try {
+    // Check if we're already fetching
+    if (isFetchingDashboardItems) {
+      console.log("Dashboard items fetch already in progress, waiting...");
+      // Return cached items if available, otherwise fallbacks
+      return cachedDashboardItems || {
+        Work: FALLBACK_ITEMS.Work,
+        Casual: FALLBACK_ITEMS.Casual,
+        Evening: FALLBACK_ITEMS.Evening,
+        Weekend: FALLBACK_ITEMS.Weekend
+      };
+    }
+    
     // Check if we have a recent cache
     const now = Date.now();
     if (cachedDashboardItems && now - lastFetchTime < CACHE_LIFETIME) {
       console.log("Using cached dashboard items instead of fetching again");
       return cachedDashboardItems;
     }
+    
+    // Set fetching flag
+    isFetchingDashboardItems = true;
     
     console.log("Fetching dashboard items from Supabase");
     
@@ -248,18 +268,20 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
     
     if (!styleAnalysis?.analysis) {
       console.log('No style analysis data, using fallbacks');
-      cachedDashboardItems = {
+      const fallbacks = {
         Work: FALLBACK_ITEMS.Work,
         Casual: FALLBACK_ITEMS.Casual,
         Evening: FALLBACK_ITEMS.Evening,
         Weekend: FALLBACK_ITEMS.Weekend
       };
+      cachedDashboardItems = fallbacks;
       lastFetchTime = now;
-      return cachedDashboardItems;
+      isFetchingDashboardItems = false;
+      return fallbacks;
     }
 
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
-    const occasionOutfits: {[key: string]: DashboardItem[]} = {};
+    const occasionOutfits: Record<string, DashboardItem[]> = {};
     
     // Check if database has any items at all first
     const hasItems = await checkDatabaseHasItems();
@@ -267,14 +289,16 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
     // If no items, use fallbacks immediately
     if (!hasItems) {
       console.log('No items in database, using fallbacks for all occasions');
-      cachedDashboardItems = {
+      const fallbacks = {
         Work: FALLBACK_ITEMS.Work,
         Casual: FALLBACK_ITEMS.Casual,
         Evening: FALLBACK_ITEMS.Evening,
         Weekend: FALLBACK_ITEMS.Weekend
       };
+      cachedDashboardItems = fallbacks;
       lastFetchTime = now;
-      return cachedDashboardItems;
+      isFetchingDashboardItems = false;
+      return fallbacks;
     }
     
     // Try to fetch items from Supabase for each occasion
@@ -446,17 +470,22 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
     // Cache results
     cachedDashboardItems = occasionOutfits;
     lastFetchTime = now;
+    isFetchingDashboardItems = false;
     
     return occasionOutfits;
   } catch (error) {
     console.error('Error in fetchDashboardItems:', error);
+    isFetchingDashboardItems = false;
     
     // Return fallback items for all occasions
-    return {
+    const fallbacks = {
       Work: FALLBACK_ITEMS.Work,
       Casual: FALLBACK_ITEMS.Casual,
       Evening: FALLBACK_ITEMS.Evening,
       Weekend: FALLBACK_ITEMS.Weekend
     };
+    
+    cachedDashboardItems = fallbacks;
+    return fallbacks;
   }
 };

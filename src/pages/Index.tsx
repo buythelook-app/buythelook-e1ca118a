@@ -1,10 +1,9 @@
-
 import { HeroSection } from "@/components/HeroSection";
 import { Navbar } from "@/components/Navbar";
 import { FilterOptions } from "@/components/filters/FilterOptions";
 import { LookCanvas } from "@/components/LookCanvas";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Mood } from "@/components/filters/MoodFilter";
 import { MoodFilter } from "@/components/filters/MoodFilter";
 import { useToast } from "@/hooks/use-toast";
@@ -37,14 +36,19 @@ export default function Index() {
   const [combinations, setCombinations] = useState<{ [key: string]: number }>({});
   const [isRefreshing, setIsRefreshing] = useState<{ [key: string]: boolean }>({});
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
+  const hasLoggedOnMount = useRef(false);
 
   useEffect(() => {
     console.log("Index page loaded");
     
-    // Debug: Log all items in Supabase database
-    logDatabaseItems().catch(err => {
-      console.error("Error logging database items:", err);
-    });
+    // Only log database items once per session
+    if (!hasLoggedOnMount.current) {
+      // Debug: Log all items in Supabase database
+      logDatabaseItems().catch(err => {
+        console.error("Error logging database items:", err);
+      });
+      hasLoggedOnMount.current = true;
+    }
     
     const styleAnalysis = localStorage.getItem('styleAnalysis');
     if (styleAnalysis) {
@@ -59,7 +63,8 @@ export default function Index() {
     queryKey: ['dashboardItems', selectedMood],
     queryFn: fetchDashboardItems,
     enabled: !!userStyle,
-    staleTime: 0,
+    staleTime: 300000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {

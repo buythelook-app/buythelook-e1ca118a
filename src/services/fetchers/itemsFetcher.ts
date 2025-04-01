@@ -12,6 +12,8 @@ const itemsCache = new Map<string, DashboardItem[]>();
 let hasCheckedDatabase = false;
 // Flag to track if we've already displayed the "no items" message
 let hasLoggedNoItems = false;
+// Flag to track if we're currently checking the database
+let isCheckingDatabase = false;
 
 /**
  * Fetch items from Supabase database by type
@@ -130,19 +132,30 @@ export const findBestColorMatch = async (hexColor: string, itemType: string): Pr
 // Method to check if the database has any items at all
 export const checkDatabaseHasItems = async (): Promise<boolean> => {
   try {
-    // If we've already checked, use our cached result
+    // If we've already checked or are currently checking, use our cached result
     if (hasCheckedDatabase) {
       return false; // We know there are no items if hasCheckedDatabase is true
     }
     
+    // Prevent multiple concurrent checks
+    if (isCheckingDatabase) {
+      // Wait a bit and then return cached result or false
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return !hasCheckedDatabase;
+    }
+    
+    isCheckingDatabase = true;
     console.log('[Supabase] Checking if database has any items');
     
     const { count, error } = await supabase
       .from('items')
       .select('*', { count: 'exact', head: true });
     
+    isCheckingDatabase = false;
+    
     if (error) {
       console.error('[Supabase] Error checking items count:', error);
+      hasCheckedDatabase = true;
       return false;
     }
     
@@ -157,6 +170,8 @@ export const checkDatabaseHasItems = async (): Promise<boolean> => {
     return hasItems;
   } catch (e) {
     console.error('[Supabase] Exception in checkDatabaseHasItems:', e);
+    isCheckingDatabase = false;
+    hasCheckedDatabase = true;
     return false;
   }
 };
@@ -166,4 +181,5 @@ export const resetItemsCache = () => {
   itemsCache.clear();
   hasCheckedDatabase = false;
   hasLoggedNoItems = false;
+  isCheckingDatabase = false;
 };
