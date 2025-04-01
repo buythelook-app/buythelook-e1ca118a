@@ -52,6 +52,14 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
     const SUPABASE_FUNCTION_URL = 'https://mwsblnposuyhrgzrtoyo.supabase.co/functions/v1/generate-outfit';
     const SUPABASE_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13c2JsbnBvc3V5aHJnenJ0b3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4OTUyOTYsImV4cCI6MjA1MzQ3MTI5Nn0.gyU3tLyZ_1yY82BKkii8EyeaGzFn9muZR6G6ELJocQk';
     
+    // Log request details for debugging
+    console.log('Making POST request to:', SUPABASE_FUNCTION_URL);
+    console.log('With request body:', JSON.stringify({
+      bodyStructure,
+      style,
+      mood: validatedMood
+    }));
+    
     // Make direct API request to the specified endpoint
     const response = await fetch(SUPABASE_FUNCTION_URL, {
       method: 'POST',
@@ -74,6 +82,7 @@ export const generateOutfit = async (bodyStructure: string, style: string, mood:
     }
     
     const data = await response.json();
+    console.log('API response data:', data);
     
     // If the response doesn't have the expected structure
     if (!data || !data.data || !Array.isArray(data.data)) {

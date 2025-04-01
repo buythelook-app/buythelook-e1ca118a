@@ -136,7 +136,7 @@ export const useOutfitGenerator = () => {
       
       console.log("Generating new outfit with params:", { bodyStructure: bodyShape, style, mood });
       
-      // Make direct API request following the documentation
+      // Make direct API request to generate outfit
       const response = await generateOutfit(bodyShape, style, mood);
       console.log("Outfit API response:", response);
       

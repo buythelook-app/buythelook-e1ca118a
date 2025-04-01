@@ -1,10 +1,6 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { fetchFirstOutfitSuggestion } from "@/services/lookService";
+import { useOutfitGenerator } from "@/hooks/useOutfitGenerator";
 import { Button } from "./ui/button";
 import { Loader2, ShoppingCart, Shuffle } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import { LookCanvas } from "./LookCanvas";
 import { useCartStore } from "./Cart";
 import { HomeButton } from "./HomeButton";
@@ -16,127 +12,29 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-interface OutfitItem {
-  id: string;
-  image: string;
-  name: string;
-  price: string;
-  type: string;
-  description: string;
-}
-
-interface OutfitColors {
-  top: string;
-  bottom: string;
-  shoes: string;
-  coat?: string;
-  [key: string]: string;
-}
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
 
 export const LookSuggestions = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [recommendations, setRecommendations] = useState<string[]>([]);
-  const [outfitColors, setOutfitColors] = useState<OutfitColors | null>(null);
   const { addItems } = useCartStore();
-  const [isRefetching, setIsRefetching] = useState(false);
-  const [elegance, setElegance] = useState(75);
-  const [colorIntensity, setColorIntensity] = useState(60);
-  const [userStylePreference, setUserStylePreference] = useState<string | null>(null);
-
-  const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
-
-  useEffect(() => {
-    const styleData = localStorage.getItem('styleAnalysis');
-    if (styleData) {
-      try {
-        const parsedData = JSON.parse(styleData);
-        const styleProfile = parsedData?.analysis?.styleProfile || null;
-        setUserStylePreference(styleProfile);
-        console.log("Loaded user style preference:", styleProfile);
-        
-        if (styleProfile?.toLowerCase().includes('minimalist') || 
-            styleProfile?.toLowerCase().includes('minimal') || 
-            styleProfile?.toLowerCase().includes('nordic') || 
-            styleProfile?.toLowerCase().includes('modern')) {
-          setElegance(85);
-          setColorIntensity(30);
-        } else if (styleProfile?.toLowerCase().includes('boohoo') || 
-                  styleProfile?.toLowerCase().includes('bohemian')) {
-          setElegance(60);
-          setColorIntensity(80);
-        } else if (styleProfile?.toLowerCase().includes('classic') || 
-                  styleProfile?.toLowerCase().includes('elegant')) {
-          setElegance(90);
-          setColorIntensity(50);
-        }
-      } catch (error) {
-        console.error("Error parsing style data:", error);
-      }
-    }
-  }, []);
-
-  const { data: dashboardItems, isLoading, error, refetch } = useQuery({
-    queryKey: ['firstOutfitSuggestion', elegance, colorIntensity, userStylePreference],
-    queryFn: fetchFirstOutfitSuggestion,
-    retry: 3,
-    staleTime: 0,
-    refetchOnWindowFocus: false,
-    enabled: hasQuizData,
-    meta: {
-      onError: () => {
-        toast({
-          title: "Error",
-          description: "Failed to load outfit suggestions. Please try again.",
-          variant: "destructive",
-        });
-      }
-    }
-  });
-
-  useEffect(() => {
-    if (!hasQuizData) {
-      toast({
-        title: "Style Quiz Required",
-        description: "Please complete the style quiz first to get personalized suggestions.",
-        variant: "destructive",
-      });
-      navigate('/quiz');
-      return;
-    }
-
-    const storedRecommendations = localStorage.getItem('style-recommendations');
-    const storedColors = localStorage.getItem('outfit-colors');
-    
-    if (storedRecommendations) {
-      try {
-        setRecommendations(JSON.parse(storedRecommendations));
-      } catch (e) {
-        console.error('Error parsing recommendations:', e);
-      }
-    }
-    
-    if (storedColors) {
-      try {
-        const parsedColors = JSON.parse(storedColors) as OutfitColors;
-        setOutfitColors(parsedColors);
-      } catch (e) {
-        console.error('Error parsing outfit colors:', e);
-      }
-    }
-  }, [hasQuizData, navigate, toast]);
-
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'current-mood') {
-        refetch();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [refetch]);
+  const { toast } = useToast();
+  const {
+    dashboardItems,
+    isLoading,
+    error,
+    isRefetching,
+    recommendations,
+    outfitColors,
+    elegance,
+    colorIntensity,
+    userStylePreference,
+    hasQuizData,
+    handleTryDifferentLook,
+    handleEleganceChange,
+    handleColorIntensityChange
+  } = useOutfitGenerator();
 
   const handleAddToCart = (items: Array<any> | any) => {
     const itemsToAdd = Array.isArray(items) ? items : [items];
@@ -210,33 +108,6 @@ export const LookSuggestions = () => {
     return mappedType || 'top';
   };
 
-  const handleEleganceChange = (value: number[]) => {
-    setElegance(value[0]);
-  };
-
-  const handleColorIntensityChange = (value: number[]) => {
-    setColorIntensity(value[0]);
-  };
-
-  const handleTryDifferentLook = async () => {
-    setIsRefetching(true);
-    try {
-      await refetch();
-      toast({
-        title: "New Look Generated",
-        description: "Here's a fresh style combination for you!",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to generate a new look. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRefetching(false);
-    }
-  };
-
   if (!hasQuizData) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
@@ -260,7 +131,6 @@ export const LookSuggestions = () => {
       <div className="container mx-auto px-4 py-8 text-center">
         <p className="text-red-500 mb-4">Unable to load outfit suggestions</p>
         <div className="space-x-4">
-          <Button onClick={() => refetch()} variant="outline">Try Again</Button>
           <Button onClick={() => navigate('/quiz')}>Retake Style Quiz</Button>
         </div>
       </div>
