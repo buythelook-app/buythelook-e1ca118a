@@ -1,8 +1,17 @@
 
 import { supabase } from "@/lib/supabase";
 
+// Cache for database items to prevent repeated fetches
+const itemsCache = new Map();
+
 export const fetchAllItems = async () => {
   try {
+    // Check cache first
+    if (itemsCache.has('all-items')) {
+      console.log('Using cached items instead of fetching again');
+      return itemsCache.get('all-items');
+    }
+    
     console.log('Fetching all items from Supabase...');
     const { data, error } = await supabase
       .from('items')
@@ -13,7 +22,17 @@ export const fetchAllItems = async () => {
       return [];
     }
     
+    if (!data || data.length === 0) {
+      console.log('No items found in the database. Using empty array.');
+      itemsCache.set('all-items', []);
+      return [];
+    }
+    
     console.log(`Successfully fetched ${data.length} items:`, data);
+    
+    // Cache the results
+    itemsCache.set('all-items', data);
+    
     return data;
   } catch (e) {
     console.error('Exception in fetchAllItems:', e);
@@ -22,6 +41,12 @@ export const fetchAllItems = async () => {
 };
 
 export const logDatabaseItems = async () => {
+  // Check if we have already logged items in this session
+  if (itemsCache.has('logged-items')) {
+    console.log('Items have already been logged this session');
+    return;
+  }
+  
   const items = await fetchAllItems();
   
   if (items.length === 0) {
@@ -48,4 +73,7 @@ export const logDatabaseItems = async () => {
       otherItems.forEach(item => console.log(`- ${item.name} (${item.type}): ${item.image}`));
     }
   }
+  
+  // Mark that we've logged items
+  itemsCache.set('logged-items', true);
 };

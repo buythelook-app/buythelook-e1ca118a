@@ -4,14 +4,35 @@ import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { supabase } from '@/lib/supabase';
 
+// Cache for debug data 
+const debugCache = {
+  items: null,
+  lastFetchTime: 0
+};
+
 export const DebugDataViewer = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   
   const fetchDebugData = async () => {
+    // Only fetch if cache is older than 1 minute or doesn't exist
+    const now = Date.now();
+    if (debugCache.items && now - debugCache.lastFetchTime < 60000) {
+      console.log('[Debug] Using cached debug data');
+      setItems(debugCache.items);
+      return;
+    }
+    
     setLoading(true);
     try {
+      // Check if we already have items in the state
+      if (items.length > 0) {
+        console.log('[Debug] Using existing items data');
+        setLoading(false);
+        return;
+      }
+      
       // Fetch items from Supabase
       const { data, error } = await supabase
         .from('items')
@@ -24,6 +45,9 @@ export const DebugDataViewer = () => {
       } else {
         console.log('[Debug] Items fetched:', data);
         setItems(data || []);
+        // Update cache
+        debugCache.items = data || [];
+        debugCache.lastFetchTime = now;
       }
     } catch (e) {
       console.error('[Debug] Exception:', e);
