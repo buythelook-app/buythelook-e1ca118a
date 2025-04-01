@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
@@ -67,10 +68,16 @@ export const FilterOptions = () => {
       const response = await generateOutfitFromUserPreferences();
       
       if (response && response.data && Array.isArray(response.data)) {
+        // Update the outfit suggestions with the new data from the API
         setOutfitSuggestions(response.data);
+        
+        toast({
+          title: "Success",
+          description: "New outfit suggestions have been generated!",
+        });
+      } else {
+        throw new Error("Invalid response format");
       }
-      
-      navigate('/suggestions');
     } catch (error) {
       console.error('Error generating outfit suggestions:', error);
       toast({
