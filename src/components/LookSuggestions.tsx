@@ -30,6 +30,7 @@ interface OutfitColors {
   top: string;
   bottom: string;
   shoes: string;
+  coat?: string;
   [key: string]: string;
 }
 
@@ -77,7 +78,7 @@ export const LookSuggestions = () => {
   }, []);
 
   const { data: dashboardItems, isLoading, error, refetch } = useQuery({
-    queryKey: ['firstOutfitSuggestion'],
+    queryKey: ['firstOutfitSuggestion', elegance, colorIntensity, userStylePreference],
     queryFn: fetchFirstOutfitSuggestion,
     retry: 3,
     staleTime: 0,
@@ -93,6 +94,49 @@ export const LookSuggestions = () => {
       }
     }
   });
+
+  useEffect(() => {
+    if (!hasQuizData) {
+      toast({
+        title: "Style Quiz Required",
+        description: "Please complete the style quiz first to get personalized suggestions.",
+        variant: "destructive",
+      });
+      navigate('/quiz');
+      return;
+    }
+
+    const storedRecommendations = localStorage.getItem('style-recommendations');
+    const storedColors = localStorage.getItem('outfit-colors');
+    
+    if (storedRecommendations) {
+      try {
+        setRecommendations(JSON.parse(storedRecommendations));
+      } catch (e) {
+        console.error('Error parsing recommendations:', e);
+      }
+    }
+    
+    if (storedColors) {
+      try {
+        const parsedColors = JSON.parse(storedColors) as OutfitColors;
+        setOutfitColors(parsedColors);
+      } catch (e) {
+        console.error('Error parsing outfit colors:', e);
+      }
+    }
+  }, [hasQuizData, navigate, toast]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'current-mood') {
+        refetch();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [refetch]);
 
   const handleAddToCart = (items: Array<any> | any) => {
     const itemsToAdd = Array.isArray(items) ? items : [items];
@@ -173,49 +217,6 @@ export const LookSuggestions = () => {
   const handleColorIntensityChange = (value: number[]) => {
     setColorIntensity(value[0]);
   };
-
-  useEffect(() => {
-    if (!hasQuizData) {
-      toast({
-        title: "Style Quiz Required",
-        description: "Please complete the style quiz first to get personalized suggestions.",
-        variant: "destructive",
-      });
-      navigate('/quiz');
-      return;
-    }
-
-    const storedRecommendations = localStorage.getItem('style-recommendations');
-    const storedColors = localStorage.getItem('outfit-colors');
-    
-    if (storedRecommendations) {
-      try {
-        setRecommendations(JSON.parse(storedRecommendations));
-      } catch (e) {
-        console.error('Error parsing recommendations:', e);
-      }
-    }
-    
-    if (storedColors) {
-      try {
-        const parsedColors = JSON.parse(storedColors) as OutfitColors;
-        setOutfitColors(parsedColors);
-      } catch (e) {
-        console.error('Error parsing outfit colors:', e);
-      }
-    }
-  }, [hasQuizData, navigate, toast]);
-
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'current-mood') {
-        refetch();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [refetch]);
 
   const handleTryDifferentLook = async () => {
     setIsRefetching(true);

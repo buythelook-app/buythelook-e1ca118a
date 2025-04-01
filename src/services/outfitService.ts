@@ -7,10 +7,7 @@ import { DashboardItem } from "@/types/lookTypes";
 import { generateOutfit } from "./api/outfitApi";
 import { mapBodyShape, mapStyle, getEventStyles } from "./mappers/styleMappers";
 import { convertToDashboardItem, getItemIdentifier } from "./outfitFactory";
-import { isMinimalistTop, isMinimalistBottom, isMinimalistShoe } from "./filters/minimalistStyleCheckers";
-import { scoreItem } from "./filters/styleFilters";
-import { supabase, getSupabaseUrl, getImageUrl } from "@/lib/supabase";
-import { transformImageUrl } from "@/utils/imageUtils";
+import { supabase, getImageUrl } from "@/lib/supabase";
 
 // Fallback items for when API doesn't return anything useful
 const FALLBACK_ITEMS = {
@@ -18,7 +15,7 @@ const FALLBACK_ITEMS = {
     id: "fallback-top-1",
     name: "Classic White Shirt",
     description: "A timeless white shirt that pairs with everything",
-    image: "https://i.imgur.com/1j9ZXed.png", // Using direct image URL instead of local placeholder
+    image: "items/default_top.png",
     price: "$45.99",
     type: "top"
   },
@@ -26,7 +23,7 @@ const FALLBACK_ITEMS = {
     id: "fallback-bottom-1",
     name: "Black Slim Pants",
     description: "Essential black pants for any style",
-    image: "https://i.imgur.com/RWCV0G0.png", // Using direct image URL instead of local placeholder
+    image: "items/default_bottom.png",
     price: "$55.99",
     type: "bottom"
   },
@@ -34,12 +31,15 @@ const FALLBACK_ITEMS = {
     id: "fallback-shoes-1",
     name: "Classic Loafers",
     description: "Versatile loafers to complete your look",
-    image: "https://i.imgur.com/PzAHrXN.png", // Using direct image URL instead of local placeholder
+    image: "items/default_shoes.png",
     price: "$75.99",
     type: "shoes"
   }
 };
 
+/**
+ * Validates mood against the allowed values
+ */
 const validateMood = (mood: string | null): string => {
   const validMoods = [
     "mystery", "quiet", "elegant", "energized", 
@@ -54,11 +54,13 @@ const validateMood = (mood: string | null): string => {
   return mood.toLowerCase();
 };
 
+/**
+ * Fetch items from Supabase database by type
+ */
 const fetchItemsByType = async (type: string): Promise<DashboardItem[]> => {
   try {
     console.log(`[Supabase] Fetching ${type} items from database`);
     
-    // Include detailed logging for debugging
     const { data, error } = await supabase
       .from('items')
       .select('*')
@@ -75,13 +77,13 @@ const fetchItemsByType = async (type: string): Promise<DashboardItem[]> => {
       return [];
     }
     
-    console.log(`[Supabase] Found ${data.length} ${type} items:`, data);
+    console.log(`[Supabase] Found ${data.length} ${type} items`);
     
     return data.map(item => ({
       id: item.id || `generated-${Math.random().toString(36).substring(2, 9)}`,
       name: item.name || `Stylish ${type}`,
       description: item.description || `Stylish ${type}`,
-      image: transformImageUrl(item.image) || '', // Process image URL properly
+      image: item.image || `items/default_${type}.png`,
       price: item.price || '$49.99',
       type: type
     }));
@@ -91,63 +93,39 @@ const fetchItemsByType = async (type: string): Promise<DashboardItem[]> => {
   }
 };
 
+/**
+ * Find the best matching item color from database
+ */
+const findBestColorMatch = async (hexColor: string, itemType: string): Promise<DashboardItem | null> => {
+  try {
+    console.log(`Finding ${itemType} item matching color ${hexColor}`);
+    
+    // Try to find items by type
+    const items = await fetchItemsByType(itemType);
+    
+    if (items.length === 0) {
+      console.log(`No ${itemType} items found, using fallback`);
+      return null;
+    }
+    
+    // For now, just return a random item of the correct type
+    // In a real app, we would try to match the color
+    const randomIndex = Math.floor(Math.random() * items.length);
+    return items[randomIndex];
+  } catch (error) {
+    console.error(`Error finding color match for ${itemType}:`, error);
+    return null;
+  }
+};
+
+/**
+ * Main function to fetch outfit suggestion
+ */
 export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => {
   try {
     console.log("[OutfitService] Starting to fetch outfit suggestions");
     
-    // Debug: Get Supabase client URL for logging
-    const supabaseUrl = getSupabaseUrl();
-    console.log("[Supabase] Client URL:", supabaseUrl);
-    
-    // Try to fetch items directly from Supabase first
-    console.log("[Supabase] Attempting to fetch items from database");
-    
-    const databaseTops = await fetchItemsByType('top');
-    const databaseBottoms = await fetchItemsByType('bottom');
-    const databaseShoes = await fetchItemsByType('shoes');
-    
-    console.log(`[Supabase] Found ${databaseTops.length} tops, ${databaseBottoms.length} bottoms, and ${databaseShoes.length} shoes in database`);
-    
-    // If we have items in the database, use them
-    if (databaseTops.length > 0 || databaseBottoms.length > 0 || databaseShoes.length > 0) {
-      console.log("[OutfitService] Using items from Supabase database for outfit");
-      
-      const outfit: DashboardItem[] = [];
-      
-      // Add top item if available or use fallback
-      if (databaseTops.length > 0) {
-        const randomTop = databaseTops[Math.floor(Math.random() * databaseTops.length)];
-        console.log("[OutfitService] Selected top item:", randomTop);
-        outfit.push(randomTop);
-      } else {
-        console.log("[OutfitService] Using fallback top");
-        outfit.push(FALLBACK_ITEMS.top);
-      }
-      
-      // Add bottom item if available or use fallback
-      if (databaseBottoms.length > 0) {
-        const randomBottom = databaseBottoms[Math.floor(Math.random() * databaseBottoms.length)];
-        console.log("[OutfitService] Selected bottom item:", randomBottom);
-        outfit.push(randomBottom);
-      } else {
-        console.log("[OutfitService] Using fallback bottom");
-        outfit.push(FALLBACK_ITEMS.bottom);
-      }
-      
-      // Add shoes item if available or use fallback
-      if (databaseShoes.length > 0) {
-        const randomShoes = databaseShoes[Math.floor(Math.random() * databaseShoes.length)];
-        console.log("[OutfitService] Selected shoes item:", randomShoes);
-        outfit.push(randomShoes);
-      } else {
-        console.log("[OutfitService] Using fallback shoes");
-        outfit.push(FALLBACK_ITEMS.shoes);
-      }
-      
-      return outfit;
-    }
-    
-    // If we don't have any items in the database, extract user preferences from quiz
+    // Extract user preferences from quiz
     const quizData = localStorage.getItem('styleAnalysis');
     const styleAnalysis = quizData ? JSON.parse(quizData) : null;
     
@@ -171,74 +149,49 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     const mood = validateMood(currentMoodData);
     console.log("Using mood:", mood, "Original mood data:", currentMoodData);
     
-    // Make API requests for outfit suggestions
-    const requests = 8; // Increased for better chances of complete outfits
-    const promises = [];
+    // Make API request for outfit suggestions
+    const response = await generateOutfit(bodyShape, style, mood);
+    console.log("Outfit API response:", response);
     
-    for (let i = 0; i < requests; i++) {
-      promises.push(generateOutfit(bodyShape, style, mood));
+    if (!response || !response.data || !Array.isArray(response.data) || response.data.length === 0) {
+      console.log("No valid outfit data returned, using fallbacks");
+      return [FALLBACK_ITEMS.top, FALLBACK_ITEMS.bottom, FALLBACK_ITEMS.shoes];
     }
     
-    // Handle API responses
-    const responses = await Promise.allSettled(promises);
-    const successfulResponses = responses.filter(r => r.status === 'fulfilled');
-    console.log(`Received ${responses.length} API responses`);
-    console.log(`API success rate: ${successfulResponses.length}/${requests}`);
+    const outfitSuggestion = response.data[0];
+    console.log("Using outfit suggestion:", outfitSuggestion);
     
-    // Process all successful responses
-    const allTops: any[] = [];
-    const allBottoms: any[] = [];
-    const allShoes: any[] = [];
-    
-    responses.forEach(result => {
-      if (result.status === 'fulfilled' && result.value && Array.isArray(result.value.data)) {
-        result.value.data.forEach((outfit: any) => {
-          if (outfit.top) allTops.push(outfit.top);
-          if (outfit.bottom) allBottoms.push(outfit.bottom);
-          if (outfit.shoes) allShoes.push(outfit.shoes);
-        });
-      }
-    });
-    
-    console.log(`Found ${allTops.length} tops, ${allBottoms.length} bottoms, and ${allShoes.length} shoes from API`);
-    
-    // Create the final outfit items array
-    const items: DashboardItem[] = [];
-    
-    // Add top item
-    if (allTops.length > 0) {
-      const topItem = convertToDashboardItem(allTops[0], 'top', preferredStyle);
-      if (topItem) {
-        items.push(topItem);
-      } else {
-        items.push(FALLBACK_ITEMS.top);
-      }
-    } else {
-      items.push(FALLBACK_ITEMS.top);
+    // Store recommendations for display in the UI
+    if (outfitSuggestion.recommendations && Array.isArray(outfitSuggestion.recommendations)) {
+      localStorage.setItem('style-recommendations', JSON.stringify(outfitSuggestion.recommendations));
     }
     
-    // Add bottom item
-    if (allBottoms.length > 0) {
-      const bottomItem = convertToDashboardItem(allBottoms[0], 'bottom', preferredStyle);
-      if (bottomItem) {
-        items.push(bottomItem);
-      } else {
-        items.push(FALLBACK_ITEMS.bottom);
-      }
-    } else {
-      items.push(FALLBACK_ITEMS.bottom);
+    // Store color palette for display in the UI
+    const outfitColors = {
+      top: outfitSuggestion.top,
+      bottom: outfitSuggestion.bottom,
+      shoes: outfitSuggestion.shoes
+    };
+    
+    if (outfitSuggestion.coat) {
+      outfitColors.coat = outfitSuggestion.coat;
     }
     
-    // Add shoes item
-    if (allShoes.length > 0) {
-      const shoesItem = convertToDashboardItem(allShoes[0], 'shoes', preferredStyle);
-      if (shoesItem) {
-        items.push(shoesItem);
-      } else {
-        items.push(FALLBACK_ITEMS.shoes);
+    localStorage.setItem('outfit-colors', JSON.stringify(outfitColors));
+    
+    // Find matching items for each color
+    const topItem = await findBestColorMatch(outfitSuggestion.top, 'top') || FALLBACK_ITEMS.top;
+    const bottomItem = await findBestColorMatch(outfitSuggestion.bottom, 'bottom') || FALLBACK_ITEMS.bottom;
+    const shoesItem = await findBestColorMatch(outfitSuggestion.shoes, 'shoes') || FALLBACK_ITEMS.shoes;
+    
+    const items = [topItem, bottomItem, shoesItem];
+    
+    // Add coat if present in the suggestion
+    if (outfitSuggestion.coat) {
+      const coatItem = await findBestColorMatch(outfitSuggestion.coat, 'outerwear');
+      if (coatItem) {
+        items.push(coatItem);
       }
-    } else {
-      items.push(FALLBACK_ITEMS.shoes);
     }
     
     return items;
