@@ -58,16 +58,16 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     console.log("Rendering canvas with items:", sortedItems);
 
-    // Define positions with enhanced shoe positioning and cropping
+    // Improved position calculations for better alignment
     const defaultPositions = {
-      outerwear: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
-      top: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
-      bottom: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
-      dress: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.9 },
-      shoes: { x: width * 0.2, y: height * 0.6, width: width * 0.6, height: height * 0.3 }, 
-      accessory: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
-      sunglasses: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
-      cart: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 }
+      outerwear: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
+      top: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
+      bottom: { x: width * 0.1, y: height * 0.25, width: width * 0.8, height: height * 0.5 },
+      dress: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.9 },
+      shoes: { x: width * 0.25, y: height * 0.6, width: width * 0.5, height: height * 0.3 }, 
+      accessory: { x: width * 0.1, y: height * 0.25, width: width * 0.8, height: height * 0.5 },
+      sunglasses: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
+      cart: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.5 }
     };
 
     // Check if there are any items to render
@@ -165,13 +165,13 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               offscreenCanvas.width = img.width;
               offscreenCanvas.height = img.height;
 
-              // Special handling for shoes - more aggressive cropping and background removal
+              // Special handling for shoes - more accurate centering
               if (item.type === 'shoes') {
-                // Crop more aggressively for shoes to focus on the item
-                const cropX = img.width * 0.2;
-                const cropWidth = img.width * 0.6;
-                const cropY = img.height * 0.2;
-                const cropHeight = img.height * 0.6;
+                // Focus on the center of the shoe image
+                const cropX = img.width * 0.15;
+                const cropWidth = img.width * 0.7;
+                const cropY = img.height * 0.15;
+                const cropHeight = img.height * 0.7;
                 
                 offscreenCtx.drawImage(
                   img,
@@ -188,7 +188,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                   const g = data[i + 1];
                   const b = data[i + 2];
                   
-                  // More aggressive background removal for shoes
+                  // Better background detection
                   const brightness = (r + g + b) / 3;
                   const whiteness = Math.abs(r - g) + Math.abs(g - b) + Math.abs(r - b);
                   
@@ -218,6 +218,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                 offscreenCtx.putImageData(imageData, 0, 0);
               }
 
+              // Improved aspect ratio handling to maintain proportions
               const aspectRatio = img.width / img.height;
               let drawWidth = position.width;
               let drawHeight = position.height;
@@ -228,6 +229,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                 drawHeight = drawWidth / aspectRatio;
               }
 
+              // Ensure perfect horizontal centering
               const centerX = position.x + (position.width - drawWidth) / 2;
               const centerY = position.y + (position.height - drawHeight) / 2;
 

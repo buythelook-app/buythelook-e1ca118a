@@ -46,10 +46,10 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
       const canvasWidth = originalWidth;
       const canvasHeight = originalHeight;
       
-      // Position calculations for a human-like outfit visualization
-      const topPositionY = canvasHeight * 0.1; // Top of the canvas for top item
+      // Improved position calculations for better alignment
+      const topPositionY = canvasHeight * 0.05; // Top of the canvas for top item
       const bottomPositionY = canvasHeight * 0.4; // Middle part for bottom item
-      const shoesPositionY = canvasHeight * 0.8; // Bottom part for shoes
+      const shoesPositionY = canvasHeight * 0.75; // Bottom part for shoes
       
       // Draw each outfit component based on images in the API response
       const loadImages = async () => {
@@ -72,45 +72,24 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
               topImg.src = imageUrl;
               
               topImg.onload = () => {
-                // Preserve original aspect ratio for best quality
+                // Calculate dimensions to maintain aspect ratio and center
                 const aspectRatio = topImg.width / topImg.height;
                 const drawHeight = canvasHeight * 0.3; // Top takes 30% of canvas height
                 const drawWidth = drawHeight * aspectRatio;
+                
+                // Center horizontally
                 const xPos = (canvasWidth - drawWidth) / 2;
                 
-                // Draw at full quality without compression
                 ctx.imageSmoothingQuality = 'high';
                 
-                // Use createPattern for better quality of repeating patterns
-                if (topImg.width > 0 && topImg.height > 0) {
-                  const offscreenCanvas = document.createElement('canvas');
-                  const offscreenCtx = offscreenCanvas.getContext('2d', { alpha: true });
-                  
-                  if (offscreenCtx) {
-                    // High resolution offscreen canvas
-                    offscreenCanvas.width = topImg.width;
-                    offscreenCanvas.height = topImg.height;
-                    
-                    // Configure for quality
-                    offscreenCtx.imageSmoothingEnabled = true;
-                    offscreenCtx.imageSmoothingQuality = 'high';
-                    
-                    // Draw original image to offscreen
-                    offscreenCtx.drawImage(topImg, 0, 0, topImg.width, topImg.height);
-                    
-                    // Draw to main canvas with crisp edges
-                    ctx.drawImage(
-                      offscreenCanvas,
-                      xPos, 
-                      topPositionY, 
-                      drawWidth, 
-                      drawHeight
-                    );
-                  } else {
-                    // Fallback direct draw
-                    ctx.drawImage(topImg, xPos, topPositionY, drawWidth, drawHeight);
-                  }
-                }
+                // Draw image with proper centering
+                ctx.drawImage(
+                  topImg,
+                  xPos, 
+                  topPositionY, 
+                  drawWidth, 
+                  drawHeight
+                );
                 
                 resolve();
               };
@@ -120,6 +99,8 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                 ctx.fillStyle = outfitData.top;
                 const topWidth = canvasWidth * 0.7;
                 const topHeight = canvasHeight * 0.3;
+                
+                // Center horizontally for fallback color block too
                 ctx.fillRect((canvasWidth - topWidth) / 2, topPositionY, topWidth, topHeight);
                 resolve();
               };
@@ -143,16 +124,17 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
             ctx.fillStyle = outfitData.top;
             const topWidth = canvasWidth * 0.7;
             const topHeight = canvasHeight * 0.3;
+            
+            // Center horizontally
             ctx.fillRect((canvasWidth - topWidth) / 2, topPositionY, topWidth, topHeight);
           }
           
-          // Draw bottom item
+          // Draw bottom item - with improved centering
           if (outfitData.bottom && outfitData.bottom.image && outfitData.bottom.image.length > 0) {
             const bottomPromise = new Promise<void>((resolve) => {
               const bottomImg = new Image();
               bottomImg.crossOrigin = "anonymous";
               
-              // Append timestamp to prevent caching
               const timestamp = new Date().getTime();
               const imageUrl = outfitData.bottom.image[0].includes('?') 
                 ? `${outfitData.bottom.image[0]}&t=${timestamp}` 
@@ -161,45 +143,22 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
               bottomImg.src = imageUrl;
               
               bottomImg.onload = () => {
-                // Preserve original aspect ratio for best quality
+                // Improved aspect ratio calculation for better proportions
                 const aspectRatio = bottomImg.width / bottomImg.height;
                 const drawHeight = canvasHeight * 0.35; // Bottom takes 35% of canvas height
-                const drawWidth = Math.min(drawHeight * aspectRatio, canvasWidth * 0.6);
+                const drawWidth = drawHeight * aspectRatio;
+                
+                // Center horizontally
                 const xPos = (canvasWidth - drawWidth) / 2;
                 
-                // Draw at full quality without compression
                 ctx.imageSmoothingQuality = 'high';
-                
-                // Use offscreen canvas for better quality
-                if (bottomImg.width > 0 && bottomImg.height > 0) {
-                  const offscreenCanvas = document.createElement('canvas');
-                  const offscreenCtx = offscreenCanvas.getContext('2d', { alpha: true });
-                  
-                  if (offscreenCtx) {
-                    // High resolution offscreen canvas
-                    offscreenCanvas.width = bottomImg.width;
-                    offscreenCanvas.height = bottomImg.height;
-                    
-                    // Configure for quality
-                    offscreenCtx.imageSmoothingEnabled = true;
-                    offscreenCtx.imageSmoothingQuality = 'high';
-                    
-                    // Draw original image to offscreen
-                    offscreenCtx.drawImage(bottomImg, 0, 0, bottomImg.width, bottomImg.height);
-                    
-                    // Draw to main canvas with proper settings
-                    ctx.drawImage(
-                      offscreenCanvas,
-                      xPos, 
-                      bottomPositionY, 
-                      drawWidth, 
-                      drawHeight
-                    );
-                  } else {
-                    // Fallback direct draw
-                    ctx.drawImage(bottomImg, xPos, bottomPositionY, drawWidth, drawHeight);
-                  }
-                }
+                ctx.drawImage(
+                  bottomImg,
+                  xPos, 
+                  bottomPositionY, 
+                  drawWidth, 
+                  drawHeight
+                );
                 
                 resolve();
               };
@@ -209,11 +168,12 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                 ctx.fillStyle = outfitData.bottom;
                 const bottomWidth = canvasWidth * 0.5;
                 const bottomHeight = canvasHeight * 0.35;
+                
+                // Center horizontally
                 ctx.fillRect((canvasWidth - bottomWidth) / 2, bottomPositionY, bottomWidth, bottomHeight);
                 resolve();
               };
               
-              // Set timeout to prevent hanging
               setTimeout(() => {
                 if (!bottomImg.complete) {
                   console.warn("Bottom image load timeout");
@@ -232,16 +192,17 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
             ctx.fillStyle = outfitData.bottom;
             const bottomWidth = canvasWidth * 0.5;
             const bottomHeight = canvasHeight * 0.35;
+            
+            // Center horizontally
             ctx.fillRect((canvasWidth - bottomWidth) / 2, bottomPositionY, bottomWidth, bottomHeight);
           }
           
-          // Draw shoes
+          // Draw shoes - with improved positioning
           if (outfitData.shoes && outfitData.shoes.image && outfitData.shoes.image.length > 0) {
             const shoesPromise = new Promise<void>((resolve) => {
               const shoesImg = new Image();
               shoesImg.crossOrigin = "anonymous";
               
-              // Append timestamp to prevent caching
               const timestamp = new Date().getTime();
               const imageUrl = outfitData.shoes.image[0].includes('?') 
                 ? `${outfitData.shoes.image[0]}&t=${timestamp}` 
@@ -250,45 +211,22 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
               shoesImg.src = imageUrl;
               
               shoesImg.onload = () => {
-                // Preserve original aspect ratio for best quality
+                // Preserve original aspect ratio but limit size for shoes
                 const aspectRatio = shoesImg.width / shoesImg.height;
-                const drawHeight = canvasHeight * 0.15; // Shoes take 15% of canvas height
+                const drawHeight = canvasHeight * 0.2; // Shoes take 20% of canvas height
                 const drawWidth = drawHeight * aspectRatio;
+                
+                // Center horizontally
                 const xPos = (canvasWidth - drawWidth) / 2;
                 
-                // Draw at full quality without compression
                 ctx.imageSmoothingQuality = 'high';
-                
-                // Use offscreen canvas for better quality
-                if (shoesImg.width > 0 && shoesImg.height > 0) {
-                  const offscreenCanvas = document.createElement('canvas');
-                  const offscreenCtx = offscreenCanvas.getContext('2d', { alpha: true });
-                  
-                  if (offscreenCtx) {
-                    // High resolution offscreen canvas
-                    offscreenCanvas.width = shoesImg.width;
-                    offscreenCanvas.height = shoesImg.height;
-                    
-                    // Configure for quality
-                    offscreenCtx.imageSmoothingEnabled = true;
-                    offscreenCtx.imageSmoothingQuality = 'high';
-                    
-                    // Draw original image to offscreen
-                    offscreenCtx.drawImage(shoesImg, 0, 0, shoesImg.width, shoesImg.height);
-                    
-                    // Draw to main canvas with proper settings
-                    ctx.drawImage(
-                      offscreenCanvas,
-                      xPos, 
-                      shoesPositionY, 
-                      drawWidth, 
-                      drawHeight
-                    );
-                  } else {
-                    // Fallback direct draw
-                    ctx.drawImage(shoesImg, xPos, shoesPositionY, drawWidth, drawHeight);
-                  }
-                }
+                ctx.drawImage(
+                  shoesImg,
+                  xPos, 
+                  shoesPositionY, 
+                  drawWidth, 
+                  drawHeight
+                );
                 
                 resolve();
               };
@@ -298,11 +236,12 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                 ctx.fillStyle = outfitData.shoes;
                 const shoesWidth = canvasWidth * 0.4;
                 const shoesHeight = canvasHeight * 0.15;
+                
+                // Center horizontally
                 ctx.fillRect((canvasWidth - shoesWidth) / 2, shoesPositionY, shoesWidth, shoesHeight);
                 resolve();
               };
               
-              // Set timeout to prevent hanging
               setTimeout(() => {
                 if (!shoesImg.complete) {
                   console.warn("Shoes image load timeout");
@@ -321,6 +260,8 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
             ctx.fillStyle = outfitData.shoes;
             const shoesWidth = canvasWidth * 0.4;
             const shoesHeight = canvasHeight * 0.15;
+            
+            // Center horizontally
             ctx.fillRect((canvasWidth - shoesWidth) / 2, shoesPositionY, shoesWidth, shoesHeight);
           }
           
