@@ -1,3 +1,8 @@
+
+/**
+ * Type definitions for look-related components
+ */
+
 export interface MinimalistCriteria {
   naturalColors: string[];
   nonMinimalistPatterns: string[];
@@ -32,6 +37,13 @@ export interface DashboardItem {
   type: string;
   description: string;
   color?: string; // Optional color hexcode for items generated from the API
+  occasion?: string; // Added occasion property for event context
+  event?: string; // Alternative event/occasion property
+  metadata?: {
+    occasion?: string;
+    event?: string;
+    [key: string]: any; // Allow other metadata properties
+  };
 }
 
 export interface OutfitItem {

@@ -1,4 +1,3 @@
-
 import { useOutfitGenerator } from "@/hooks/useOutfitGenerator";
 import { useCartStore } from "./Cart";
 import { HomeButton } from "./HomeButton";
@@ -77,10 +76,9 @@ export const LookSuggestions = () => {
   }));
 
   // Get the occasion from the dashboardItems, if available
-  // The occasion is typically available from the first dashboard item's occasion property
-  // If not available in the item directly, we can check if it's in a metadata field or default to undefined
+  // We first check the direct properties, then look in metadata as a fallback
   const currentOccasion = dashboardItems[0]?.occasion || 
-                         dashboardItems[0]?.metadata?.occasion || 
+                         (dashboardItems[0]?.metadata && dashboardItems[0].metadata.occasion) || 
                          dashboardItems[0]?.event || 
                          undefined;
 
