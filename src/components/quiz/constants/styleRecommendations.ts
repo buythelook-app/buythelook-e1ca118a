@@ -4,7 +4,7 @@ import { StyleRecommendations } from '../types/styleTypes';
 export const styleRecommendations: Record<string, StyleRecommendations> = {
   Classic: {
     top: { type: "Blouse", color: "white", style: "elegant" },
-    bottom: { type: "Trousers", color: "navy", style: "tailored" },
+    bottom: { type: "Tailored Trousers", color: "navy", style: "fitted" },
     shoes: { type: "Heels", color: "black", style: "classic" },
     accessory: { type: "Pearl Necklace", color: "white", style: "timeless" },
     sunglasses: { type: "Aviator", color: "gold", style: "classic" },
@@ -28,7 +28,7 @@ export const styleRecommendations: Record<string, StyleRecommendations> = {
   },
   "Boo Hoo": {
     top: { type: "Halter Top", color: "black", style: "fitted" },
-    bottom: { type: "Jeans", color: "gray", style: "high-waisted" },
+    bottom: { type: "High-Waisted Jeans", color: "gray", style: "distressed" },
     shoes: { type: "Ankle Boots", color: "black", style: "heeled" },
     accessory: { type: "Statement Earrings", color: "silver", style: "dangling" },
     sunglasses: { type: "Round", color: "brown", style: "oversized" },
@@ -56,5 +56,13 @@ export const styleRecommendations: Record<string, StyleRecommendations> = {
       { category: "outerwear", items: ["Black structured blazer", "Beige trench coat", "Navy wool coat", "Black leather jacket"] },
       { category: "shoes", items: ["Black leather loafers", "White leather sneakers", "Black Chelsea boots", "Nude pointed-toe pumps", "Black strappy sandals"] }
     ]
+  },
+  Work: {
+    top: { type: "Button-down Shirt", color: "light blue", style: "crisp" },
+    bottom: { type: "Tailored Trousers", color: "navy", style: "straight-leg" },
+    shoes: { type: "Loafers", color: "brown", style: "polished" },
+    accessory: { type: "Watch", color: "silver", style: "professional" },
+    sunglasses: { type: "Classic", color: "black", style: "subtle" },
+    outerwear: { type: "Blazer", color: "navy", style: "structured" }
   }
 };

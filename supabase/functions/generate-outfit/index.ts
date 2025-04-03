@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // Define CORS headers
@@ -25,6 +24,30 @@ interface OutfitSuggestion {
   recommendations: string[];
   occasion?: 'work' | 'casual' | 'weekend' | 'date night' | 'general';
 }
+
+// Style compatibility rules to improve outfit coherence
+interface StyleCompatibilityRules {
+  incompatiblePairs: {
+    tops: string[];
+    bottoms: string[];
+  }[];
+}
+
+// Define style compatibility rules
+const styleCompatibilityRules: StyleCompatibilityRules = {
+  incompatiblePairs: [
+    // Button-down shirts don't work well with mini skirts
+    {
+      tops: ['button-down', 'button-up', 'oxford', 'dress shirt', 'formal shirt'],
+      bottoms: ['mini skirt', 'short skirt', 'mini', 'ultra short']
+    },
+    // Formal tops don't pair well with casual bottoms
+    {
+      tops: ['blouse', 'formal', 'business'],
+      bottoms: ['distressed jeans', 'ripped', 'cargo', 'joggers']
+    }
+  ]
+};
 
 // Generate a random hex color
 function getRandomColor(): string {
@@ -85,8 +108,13 @@ function generateOutfitSuggestions(params: OutfitRequest): OutfitSuggestion[] {
   const numOutfits = Math.floor(Math.random() * 3) + 1;
   
   for (let i = 0; i < numOutfits; i++) {
-    const top = getRandomArrayElement(moodAdjustedColors.tops);
-    const bottom = getRandomArrayElement(moodAdjustedColors.bottoms);
+    // Generate compatible top-bottom combinations
+    const { top, topItem, bottom, bottomItem } = generateCompatibleOutfitPieces(
+      moodAdjustedColors, 
+      params.style,
+      params.bodyStructure
+    );
+    
     const shoes = getRandomArrayElement(moodAdjustedColors.shoes);
     
     // Sometimes add a coat
@@ -94,13 +122,29 @@ function generateOutfitSuggestions(params: OutfitRequest): OutfitSuggestion[] {
     const coat = hasCoat ? getRandomArrayElement([...moodAdjustedColors.tops, ...moodAdjustedColors.bottoms]) : undefined;
     
     // Generate description and recommendations
-    const description = generateDescription(top, bottom, shoes, coat, params.style);
+    const description = generateDescription(top, bottom, shoes, coat, params.style, topItem, bottomItem);
     const recommendations = generateRecommendations(params.style, params.bodyStructure);
     
     // Determine appropriate occasion
     const occasions: Array<'work' | 'casual' | 'weekend' | 'date night' | 'general'> = 
       ['work', 'casual', 'weekend', 'date night', 'general'];
-    const occasion = getRandomArrayElement(occasions);
+    
+    // Outfit coherence - assign work outfits to more formal combinations
+    let occasion = getRandomArrayElement(occasions);
+    
+    // Button-downs and formal tops are more likely work outfits
+    if (topItem.toLowerCase().includes('button-down') || 
+        topItem.toLowerCase().includes('blouse') || 
+        topItem.toLowerCase().includes('formal')) {
+      occasion = Math.random() > 0.3 ? 'work' : occasion;
+    }
+    
+    // Mini skirts and casual pants are more likely weekend/casual outfits
+    if (bottomItem.toLowerCase().includes('mini') || 
+        bottomItem.toLowerCase().includes('jeans') || 
+        bottomItem.toLowerCase().includes('casual')) {
+      occasion = Math.random() > 0.3 ? (Math.random() > 0.5 ? 'casual' : 'weekend') : occasion;
+    }
     
     outfits.push({
       top,
@@ -114,6 +158,125 @@ function generateOutfitSuggestions(params: OutfitRequest): OutfitSuggestion[] {
   }
   
   return outfits;
+}
+
+// Generate compatible top and bottom pieces that follow style rules
+function generateCompatibleOutfitPieces(colors: any, style: string, bodyStructure: string): { 
+  top: string; 
+  topItem: string; 
+  bottom: string; 
+  bottomItem: string; 
+} {
+  // Style-specific item words
+  const topItems = {
+    classic: ['blouse', 'button-down shirt', 'structured top'],
+    romantic: ['ruffled blouse', 'floral top', 'lace detail top'],
+    minimalist: ['t-shirt', 'simple top', 'sleek shirt'],
+    casual: ['tee', 'casual top', 'comfortable shirt'],
+    boohoo: ['statement top', 'crop top', 'graphic tee'],
+    sporty: ['athletic top', 'sporty tee', 'performance shirt']
+  };
+  
+  const bottomItems = {
+    classic: ['tailored trousers', 'pencil skirt', 'slacks'],
+    romantic: ['maxi skirt', 'flowing pants', 'A-line skirt'],
+    minimalist: ['straight-leg pants', 'tailored trousers', 'sleek bottoms'],
+    casual: ['jeans', 'casual pants', 'chinos'],
+    boohoo: ['mini skirt', 'ripped jeans', 'leather pants'],
+    sporty: ['track pants', 'athletic shorts', 'performance leggings']
+  };
+  
+  // Get style-specific items
+  const styleKey = style as keyof typeof topItems;
+  const availableTopItems = topItems[styleKey] || topItems.classic;
+  const availableBottomItems = bottomItems[styleKey] || bottomItems.classic;
+
+  let attempts = 0;
+  let isCompatible = false;
+  let topItem = '';
+  let bottomItem = '';
+  
+  // Keep trying until we find a compatible combination or max attempts reached
+  while (!isCompatible && attempts < 10) {
+    topItem = getRandomArrayElement(availableTopItems);
+    bottomItem = getRandomArrayElement(availableBottomItems);
+    
+    // Check compatibility based on rules
+    isCompatible = checkOutfitCompatibility(topItem, bottomItem);
+    attempts++;
+    
+    // If we're struggling to find a compatible combination, 
+    // adjust based on occasion-appropriate items
+    if (attempts > 5) {
+      // For work outfits, avoid casual combinations
+      if (Math.random() > 0.5) {
+        topItem = topItems.classic[Math.floor(Math.random() * topItems.classic.length)];
+        bottomItem = bottomItems.classic[Math.floor(Math.random() * bottomItems.classic.length)];
+      } else {
+        // For casual/weekend outfits, use more relaxed pairings
+        topItem = topItems.casual[Math.floor(Math.random() * topItems.casual.length)];
+        bottomItem = bottomItems.casual[Math.floor(Math.random() * bottomItems.casual.length)];
+      }
+      
+      isCompatible = checkOutfitCompatibility(topItem, bottomItem);
+    }
+  }
+  
+  // If we still couldn't find a compatible combination, use safe defaults
+  if (!isCompatible) {
+    topItem = 'blouse';
+    bottomItem = 'tailored trousers';
+  }
+  
+  // Select colors
+  const top = getRandomArrayElement(colors.tops);
+  const bottom = getRandomArrayElement(colors.bottoms);
+  
+  return { top, topItem, bottom, bottomItem };
+}
+
+// Check if the top and bottom are compatible based on style rules
+function checkOutfitCompatibility(topItem: string, bottomItem: string): boolean {
+  // Check against incompatible pairs
+  for (const rule of styleCompatibilityRules.incompatiblePairs) {
+    let topMatches = false;
+    let bottomMatches = false;
+    
+    // Check if top matches any incompatible top types
+    for (const incompatibleTop of rule.tops) {
+      if (topItem.toLowerCase().includes(incompatibleTop.toLowerCase())) {
+        topMatches = true;
+        break;
+      }
+    }
+    
+    // Check if bottom matches any incompatible bottom types
+    for (const incompatibleBottom of rule.bottoms) {
+      if (bottomItem.toLowerCase().includes(incompatibleBottom.toLowerCase())) {
+        bottomMatches = true;
+        break;
+      }
+    }
+    
+    // If both match the rule's incompatible pair, return false
+    if (topMatches && bottomMatches) {
+      return false;
+    }
+  }
+  
+  // Additional specific rules
+  
+  // Button-down shirts don't pair well with mini skirts
+  if ((topItem.toLowerCase().includes('button-down') || 
+       topItem.toLowerCase().includes('oxford') || 
+       topItem.toLowerCase().includes('dress shirt')) && 
+      (bottomItem.toLowerCase().includes('mini') || 
+       bottomItem.toLowerCase().includes('short skirt'))) {
+    return false;
+  }
+  
+  // Default: items are compatible
+  return true;
 }
 
 // Helper to get random array element
@@ -157,15 +320,12 @@ function adjustColorsForBody(colors: any, bodyStructure: string): any {
 
 // Basic check if a color is lighter
 function isLighterColor(hexColor: string): boolean {
-  // Remove # if present
   const hex = hexColor.replace('#', '');
   
-  // Convert to RGB
   const r = parseInt(hex.substring(0, 2), 16) || 0;
   const g = parseInt(hex.substring(2, 4), 16) || 0;
   const b = parseInt(hex.substring(4, 6), 16) || 0;
   
-  // Calculate perceived brightness
   const brightness = (r * 299 + g * 587 + b * 114) / 1000;
   
   return brightness > 128;
@@ -177,29 +337,22 @@ function adjustColorsForMood(colors: any, mood: string): any {
   
   switch (mood.toLowerCase()) {
     case 'mystery':
-      // Darker, more muted colors
       adjustedColors.tops = [...colors.tops.filter((c: string) => !isLighterColor(c))];
       adjustedColors.bottoms = [...colors.bottoms.filter((c: string) => !isLighterColor(c))];
       break;
     case 'elegant':
-      // Sophisticated colors
       break;
     case 'energized':
-      // Brighter colors
       break;
     case 'calm':
-      // Soft, muted colors
       break;
     case 'passionate':
-      // Add some reds
       adjustedColors.tops = [...colors.tops, '#B71C1C', '#C62828'];
       break;
     case 'powerful':
-      // Add some deep colors
       adjustedColors.tops = [...colors.tops, '#1A237E', '#311B92'];
       break;
     default:
-      // No specific adjustment
       break;
   }
   
@@ -207,7 +360,15 @@ function adjustColorsForMood(colors: any, mood: string): any {
 }
 
 // Generate description for outfit
-function generateDescription(top: string, bottom: string, shoes: string, coat: string | undefined, style: string): string {
+function generateDescription(
+  top: string, 
+  bottom: string, 
+  shoes: string, 
+  coat: string | undefined, 
+  style: string,
+  topItem: string = '',
+  bottomItem: string = ''
+): string {
   const topDescriptions: Record<string, string[]> = {
     '#FFFFFF': ['white', 'pure white', 'clean white', 'crisp white'],
     '#000000': ['black', 'sleek black', 'classic black', 'deep black'],
@@ -226,7 +387,6 @@ function generateDescription(top: string, bottom: string, shoes: string, coat: s
     '#FFFFFF': ['white', 'bright white', 'clean white', 'fresh white']
   };
   
-  // Get color descriptions or generate generic ones
   const topDesc = topDescriptions[top]
     ? getRandomArrayElement(topDescriptions[top])
     : 'sophisticated';
@@ -239,51 +399,12 @@ function generateDescription(top: string, bottom: string, shoes: string, coat: s
     ? getRandomArrayElement(shoesDescriptions[shoes])
     : 'complementary';
   
-  // Style-specific item words
-  const topItems = {
-    classic: ['blouse', 'shirt', 'top'],
-    romantic: ['blouse', 'ruffled top', 'floral top'],
-    minimalist: ['t-shirt', 'simple top', 'sleek shirt'],
-    casual: ['tee', 'casual top', 'comfortable shirt'],
-    boohoo: ['statement top', 'bold shirt', 'graphic tee'],
-    sporty: ['athletic top', 'sporty tee', 'performance shirt']
-  };
+  const finalTopItem = topItem || getDefaultTopItem(style);
+  const finalBottomItem = bottomItem || getDefaultBottomItem(style);
+  const shoesItem = getDefaultShoesItem(style);
   
-  const bottomItems = {
-    classic: ['trousers', 'pants', 'slacks'],
-    romantic: ['skirt', 'flowing pants', 'maxi skirt'],
-    minimalist: ['pants', 'tailored trousers', 'sleek bottoms'],
-    casual: ['jeans', 'casual pants', 'comfortable bottoms'],
-    boohoo: ['statement pants', 'bold bottoms', 'patterned skirt'],
-    sporty: ['track pants', 'athletic bottoms', 'performance leggings']
-  };
+  let description = `A ${style} ensemble featuring a ${topDesc} ${finalTopItem} paired with ${bottomDesc} ${finalBottomItem} and ${shoesDesc} ${shoesItem}.`;
   
-  const shoesItems = {
-    classic: ['shoes', 'loafers', 'pumps'],
-    romantic: ['heels', 'strappy sandals', 'elegant flats'],
-    minimalist: ['flats', 'minimal sneakers', 'clean shoes'],
-    casual: ['sneakers', 'casual shoes', 'comfortable footwear'],
-    boohoo: ['statement shoes', 'bold footwear', 'eye-catching boots'],
-    sporty: ['athletic shoes', 'trainers', 'running shoes']
-  };
-  
-  // Get style-specific items
-  const topItem = topItems[style as keyof typeof topItems]
-    ? getRandomArrayElement(topItems[style as keyof typeof topItems])
-    : 'top';
-    
-  const bottomItem = bottomItems[style as keyof typeof bottomItems]
-    ? getRandomArrayElement(bottomItems[style as keyof typeof bottomItems])
-    : 'bottom';
-    
-  const shoesItem = shoesItems[style as keyof typeof shoesItems]
-    ? getRandomArrayElement(shoesItems[style as keyof typeof shoesItems])
-    : 'shoes';
-  
-  // Generate description
-  let description = `A ${style} ensemble featuring a ${topDesc} ${topItem} paired with ${bottomDesc} ${bottomItem} and ${shoesDesc} ${shoesItem}.`;
-  
-  // Add coat to description if present
   if (coat) {
     const coatDesc = topDescriptions[coat]
       ? getRandomArrayElement(topDescriptions[coat])
@@ -293,6 +414,52 @@ function generateDescription(top: string, bottom: string, shoes: string, coat: s
   }
   
   return description;
+}
+
+// Get default item types by style if none specified
+function getDefaultTopItem(style: string): string {
+  const topItems = {
+    classic: ['blouse', 'shirt', 'top'],
+    romantic: ['blouse', 'ruffled top', 'floral top'],
+    minimalist: ['t-shirt', 'simple top', 'sleek shirt'],
+    casual: ['tee', 'casual top', 'comfortable shirt'],
+    boohoo: ['statement top', 'bold shirt', 'graphic tee'],
+    sporty: ['athletic top', 'sporty tee', 'performance shirt']
+  };
+  
+  return topItems[style as keyof typeof topItems]
+    ? getRandomArrayElement(topItems[style as keyof typeof topItems])
+    : 'top';
+}
+
+function getDefaultBottomItem(style: string): string {
+  const bottomItems = {
+    classic: ['trousers', 'pants', 'slacks'],
+    romantic: ['skirt', 'flowing pants', 'maxi skirt'],
+    minimalist: ['pants', 'tailored trousers', 'sleek bottoms'],
+    casual: ['jeans', 'casual pants', 'comfortable bottoms'],
+    boohoo: ['statement pants', 'bold bottoms', 'patterned skirt'],
+    sporty: ['track pants', 'athletic bottoms', 'performance leggings']
+  };
+  
+  return bottomItems[style as keyof typeof bottomItems]
+    ? getRandomArrayElement(bottomItems[style as keyof typeof bottomItems])
+    : 'bottom';
+}
+
+function getDefaultShoesItem(style: string): string {
+  const shoesItems = {
+    classic: ['shoes', 'loafers', 'pumps'],
+    romantic: ['heels', 'strappy sandals', 'elegant flats'],
+    minimalist: ['flats', 'minimal sneakers', 'clean shoes'],
+    casual: ['sneakers', 'casual shoes', 'comfortable footwear'],
+    boohoo: ['statement shoes', 'bold footwear', 'eye-catching boots'],
+    sporty: ['athletic shoes', 'trainers', 'running shoes']
+  };
+  
+  return shoesItems[style as keyof typeof shoesItems]
+    ? getRandomArrayElement(shoesItems[style as keyof typeof shoesItems])
+    : 'shoes';
 }
 
 // Generate style recommendations
@@ -364,32 +531,27 @@ function generateRecommendations(style: string, bodyStructure: string): string[]
     ]
   };
   
-  // Get recommendations specific to style and body type
   const specificStyleRecs = styleRecommendations[style] || [];
   const specificBodyRecs = bodyRecommendations[bodyStructure] || [];
   
-  // Combine and select 2-4 recommendations
   const allRecommendations = [...specificStyleRecs, ...specificBodyRecs, ...generalRecommendations];
   const shuffled = allRecommendations.sort(() => 0.5 - Math.random());
   
-  const numRecommendations = Math.floor(Math.random() * 3) + 2; // 2-4 recommendations
+  const numRecommendations = Math.floor(Math.random() * 3) + 2;
   return shuffled.slice(0, numRecommendations);
 }
 
 // Main server function
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
   
   try {
-    // Parse the request
     const { bodyStructure, style, mood } = await req.json() as OutfitRequest;
     
     console.log("Received request with parameters:", { bodyStructure, style, mood });
     
-    // Validate required parameters
     if (!bodyStructure || !style) {
       return new Response(
         JSON.stringify({ 
@@ -403,14 +565,12 @@ serve(async (req) => {
       );
     }
     
-    // Generate outfit suggestions
     const outfitSuggestions = generateOutfitSuggestions({
       bodyStructure: bodyStructure as 'X' | 'V' | 'H' | 'O' | 'A',
       style: style as 'classic' | 'romantic' | 'minimalist' | 'casual' | 'boohoo' | 'sporty',
       mood: mood || 'energized'
     });
     
-    // Return the response
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -423,7 +583,6 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error processing request:", error);
     
-    // Return error response
     return new Response(
       JSON.stringify({ 
         success: false, 
