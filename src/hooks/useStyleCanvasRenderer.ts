@@ -61,10 +61,10 @@ export const useStyleCanvasRenderer = ({
       const centerX = width / 2;
       
       // Define positions for different outfit parts with improved vertical spacing
-      // These values are adjusted to ensure items are centered in their respective areas
-      const topPositionY = height * 0.18; // Moved down slightly
-      const bottomPositionY = height * 0.45; // Adjusted to be more centered
-      const shoesPositionY = height * 0.72; // Adjusted to be more centered
+      // These values are based on the provided example image's proportions
+      const topPositionY = height * 0.22;       // Top item at approximately 22% from top
+      const bottomPositionY = height * 0.52;    // Bottom item at approximately 52% from top (middle)
+      const shoesPositionY = height * 0.82;     // Shoes at approximately 82% from top (bottom area)
 
       // No outfit data to render
       if (!outfitData) {
@@ -86,8 +86,8 @@ export const useStyleCanvasRenderer = ({
             ctx,
             centerX,
             positionY: topPositionY,
-            maxWidth: width * 0.7,
-            maxHeight: height * 0.25 // Slightly reduced to prevent overlap
+            maxWidth: width * 0.6,  // Allow top to take up to 60% of width
+            maxHeight: height * 0.2  // Allow top to take up to 20% of height
           });
           imagePromises.push(topPromise);
         }
@@ -99,8 +99,8 @@ export const useStyleCanvasRenderer = ({
             ctx,
             centerX,
             positionY: bottomPositionY,
-            maxWidth: width * 0.5,
-            maxHeight: height * 0.3 // Slightly increased for better visibility
+            maxWidth: width * 0.5,    // Allow bottom to take up to 50% of width
+            maxHeight: height * 0.25   // Allow bottom to take up to 25% of height
           });
           imagePromises.push(bottomPromise);
         }
@@ -112,8 +112,8 @@ export const useStyleCanvasRenderer = ({
             ctx,
             centerX,
             positionY: shoesPositionY,
-            maxWidth: width * 0.4,
-            maxHeight: height * 0.2
+            maxWidth: width * 0.4,    // Allow shoes to take up to 40% of width
+            maxHeight: height * 0.15   // Allow shoes to take up to 15% of height
           });
           imagePromises.push(shoesPromise);
         }

@@ -91,7 +91,7 @@ export const renderItemImage = async ({
     
     // Calculate dimensions while preserving aspect ratio
     // Increase the scale factor to make images larger
-    const scaleFactor = 1.2; // Increase image size by 20%
+    const scaleFactor = 1.5; // Increase image size by 50%
     const { width: rawWidth, height: rawHeight } = calculateDimensions(
       img.width,
       img.height,
@@ -104,11 +104,11 @@ export const renderItemImage = async ({
     const drawHeight = Math.round(rawHeight);
     
     // Calculate X position for exact center alignment
-    const xPos = centerX - (drawWidth / 2);
+    const xPos = Math.round(centerX - (drawWidth / 2));
     
-    // Calculate Y position to center vertically within the allocated space
-    // This centers the image in its designated vertical space
-    const yPos = positionY - (maxHeight * 0.1); // Shift up slightly to compensate for visual balance
+    // Position the item directly at the specified Y position without offset
+    // We'll let the canvas renderer control the vertical spacing
+    const yPos = Math.round(positionY - (drawHeight / 2));
     
     // Ensure high quality rendering
     ctx.imageSmoothingEnabled = true;
