@@ -6,13 +6,20 @@ interface LookCanvasProps {
   items: CanvasItem[];
   width?: number;
   height?: number;
+  occasion?: string; // Added optional occasion prop
 }
 
-export const LookCanvas = ({ items, width = 600, height = 900 }: LookCanvasProps) => {
+export const LookCanvas = ({ 
+  items, 
+  width = 600, 
+  height = 900,
+  occasion 
+}: LookCanvasProps) => {
   const { canvasRef, isLoading, error: canvasError } = useCanvasRenderer({
     items,
     width,
-    height
+    height,
+    occasion
   });
 
   return (

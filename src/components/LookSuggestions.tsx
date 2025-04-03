@@ -76,6 +76,9 @@ export const LookSuggestions = () => {
     type: mapItemType(item.type)
   }));
 
+  // Get the occasion from the dashboardItems, if available
+  const currentOccasion = dashboardItems[0]?.occasion || undefined;
+
   return (
     <>
       <HomeButton />
@@ -96,6 +99,7 @@ export const LookSuggestions = () => {
               isRefreshing={isRefreshing} 
               onAddToCart={() => handleAddToCart(dashboardItems)}
               onTryDifferent={handleTryDifferentLook}
+              occasion={currentOccasion}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">

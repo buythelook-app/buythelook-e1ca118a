@@ -64,7 +64,7 @@ export const LookItem = ({
         <span className="text-sm text-netflix-accent">{look.occasion}</span>
       </div>
       <div className="mb-4 bg-white rounded-lg overflow-hidden relative group flex justify-center">
-        <LookCanvas items={look.items} width={300} height={500} />
+        <LookCanvas items={look.items} width={300} height={500} occasion={occasion} />
         <button
           onClick={() => onShuffleLook(look.occasion)}
           className="absolute bottom-4 right-4 bg-netflix-accent text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"

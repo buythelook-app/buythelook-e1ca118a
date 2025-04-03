@@ -13,6 +13,7 @@ export interface RenderCanvasItemsProps {
   height: number;
   onComplete: () => void;
   onError: (message: string) => void;
+  occasion?: string; // Added optional occasion parameter
 }
 
 export const renderCanvasItems = async ({
@@ -21,7 +22,8 @@ export const renderCanvasItems = async ({
   width,
   height,
   onComplete,
-  onError
+  onError,
+  occasion
 }: RenderCanvasItemsProps): Promise<void> => {
   try {
     if (items.length === 0) {
@@ -95,6 +97,14 @@ export const renderCanvasItems = async ({
       }
       
       loadedCount++;
+    }
+    
+    // Render occasion text at the bottom if provided
+    if (occasion) {
+      ctx.font = 'bold 18px Arial';
+      ctx.fillStyle = '#333333';
+      ctx.textAlign = 'center';
+      ctx.fillText(occasion, width / 2, height - 20); // Position text at the bottom with 20px padding
     }
     
     // All items processed

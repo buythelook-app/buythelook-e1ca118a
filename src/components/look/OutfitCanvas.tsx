@@ -9,13 +9,15 @@ interface OutfitCanvasProps {
   isRefreshing: boolean;
   onAddToCart: () => void;
   onTryDifferent: () => void;
+  occasion?: string; // Added optional occasion prop
 }
 
 export const OutfitCanvas = ({ 
   canvasItems, 
   isRefreshing, 
   onAddToCart, 
-  onTryDifferent 
+  onTryDifferent,
+  occasion
 }: OutfitCanvasProps) => {
   return (
     <div className="mb-8 flex flex-col items-center">
@@ -27,7 +29,7 @@ export const OutfitCanvas = ({
                 <Loader2 className="h-8 w-8 animate-spin text-netflix-accent" />
               </div>
             ) : null}
-            <LookCanvas items={canvasItems} width={300} height={480} />
+            <LookCanvas items={canvasItems} width={300} height={480} occasion={occasion} />
             <div className="absolute bottom-0 left-4 right-4 flex justify-between gap-2">
               <Button 
                 onClick={onAddToCart}

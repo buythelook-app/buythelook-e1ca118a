@@ -8,6 +8,7 @@ interface UseCanvasRendererProps {
   items: CanvasItem[];
   width: number;
   height: number;
+  occasion?: string; // Added optional occasion parameter
 }
 
 interface UseCanvasRendererResult {
@@ -19,7 +20,8 @@ interface UseCanvasRendererResult {
 export const useCanvasRenderer = ({
   items,
   width,
-  height
+  height,
+  occasion
 }: UseCanvasRendererProps): UseCanvasRendererResult => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,6 +44,7 @@ export const useCanvasRenderer = ({
       items,
       width,
       height,
+      occasion,
       onComplete: () => setIsLoading(false),
       onError: (errorMessage) => {
         setError(errorMessage);
@@ -49,7 +52,7 @@ export const useCanvasRenderer = ({
       }
     });
     
-  }, [items, width, height]);
+  }, [items, width, height, occasion]);
 
   return {
     canvasRef,
