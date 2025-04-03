@@ -59,13 +59,13 @@ export const useCanvasRenderer = ({
     }
 
     // Draw a center line for debugging
-    drawCenterLine(ctx, width, height);
+    // drawCenterLine(ctx, width, height);
     
     // Draw debug grid to visualize positions
-    drawDebugGrid(ctx, width, height);
+    // drawDebugGrid(ctx, width, height);
     
     // Draw canvas bounds to see exact edges
-    drawCanvasBounds(ctx, width, height);
+    // drawCanvasBounds(ctx, width, height);
 
     // Sort items in correct rendering order
     const renderOrder = { outerwear: 0, top: 1, bottom: 2, shoes: 3 };
@@ -141,21 +141,14 @@ export const useCanvasRenderer = ({
                 position.height
               );
 
-              // HARD FORCE THE POSITION TO CENTER
-              // Calculate center and position regardless of any other factors
-              const extreme_x_position = width * 0.75; // Position at 75% of canvas width
+              // Position exactly in the middle (50% of canvas width)
+              const centerX = width / 2;
               
-              // Position from extreme rightward point
-              const drawX = Math.round(extreme_x_position - (drawWidth / 2));
+              // Calculate drawing position from center point
+              const drawX = Math.round(centerX - (drawWidth / 2));
               const drawY = Math.round(position.y);
               
-              // Log the forced positioning
-              console.log(`FORCE POSITIONING ${item.type}: x=${drawX}, extreme_point=${extreme_x_position}`);
-              
-              // Draw debugging info
-              drawDebugInfo(ctx, drawX, drawY, drawWidth, drawHeight, item.type, extreme_x_position);
-              
-              // Draw the image at the forced position
+              // Draw the image centered on the canvas
               ctx.drawImage(
                 processedCanvas,
                 drawX,
