@@ -4,6 +4,7 @@ import { StyleCanvas } from "@/components/StyleCanvas";
 
 export const StyleCanvasContainer = () => {
   useEffect(() => {
+    // Initialize the canvases with a background color
     for (let i = 0; i < 4; i++) {
       const canvas = document.getElementById(`style-canvas-${i}`) as HTMLCanvasElement;
       if (canvas) {
