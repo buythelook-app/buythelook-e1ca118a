@@ -48,6 +48,16 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
+    // Draw a center line for debugging
+    // Comment out in production
+    /*
+    ctx.beginPath();
+    ctx.moveTo(width/2, 0);
+    ctx.lineTo(width/2, height);
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+    ctx.stroke();
+    */
+
     // Sort items in correct rendering order
     const renderOrder = { outerwear: 0, top: 1, bottom: 2, shoes: 3 };
     const sortedItems = [...items].sort((a, b) => {
@@ -58,16 +68,19 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     console.log("Rendering canvas with items:", sortedItems);
 
-    // Improved centrally positioned items with more precise centering
+    // Calculate exact center point of canvas
+    const centerX = width / 2;
+
+    // Improved centrally positioned items with precise centering
     const defaultPositions = {
-      outerwear: { x: width * 0.5, y: height * 0.15, width: width * 0.7, height: height * 0.4 },
-      top: { x: width * 0.5, y: height * 0.15, width: width * 0.7, height: height * 0.4 },
-      bottom: { x: width * 0.5, y: height * 0.5, width: width * 0.6, height: height * 0.4 },
-      dress: { x: width * 0.5, y: height * 0.3, width: width * 0.7, height: height * 0.7 },
-      shoes: { x: width * 0.5, y: height * 0.75, width: width * 0.5, height: height * 0.2 }, 
-      accessory: { x: width * 0.5, y: height * 0.4, width: width * 0.4, height: height * 0.4 },
-      sunglasses: { x: width * 0.5, y: height * 0.1, width: width * 0.5, height: height * 0.2 },
-      cart: { x: width * 0.5, y: height * 0.4, width: width * 0.7, height: height * 0.4 }
+      outerwear: { x: centerX, y: height * 0.15, width: width * 0.7, height: height * 0.4 },
+      top: { x: centerX, y: height * 0.15, width: width * 0.7, height: height * 0.4 },
+      bottom: { x: centerX, y: height * 0.5, width: width * 0.6, height: height * 0.4 },
+      dress: { x: centerX, y: height * 0.3, width: width * 0.7, height: height * 0.7 },
+      shoes: { x: centerX, y: height * 0.75, width: width * 0.5, height: height * 0.2 }, 
+      accessory: { x: centerX, y: height * 0.4, width: width * 0.4, height: height * 0.4 },
+      sunglasses: { x: centerX, y: height * 0.1, width: width * 0.5, height: height * 0.2 },
+      cart: { x: centerX, y: height * 0.4, width: width * 0.7, height: height * 0.4 }
     };
 
     // Check if there are any items to render
@@ -76,7 +89,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       ctx.font = '16px Arial';
       ctx.fillStyle = '#666666';
       ctx.textAlign = 'center';
-      ctx.fillText('No items to display', width / 2, height / 2);
+      ctx.fillText('No items to display', centerX, height / 2);
       setIsLoading(false);
       return;
     }
@@ -196,25 +209,19 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                 drawHeight = drawWidth / aspectRatio;
               }
 
-              // Perfect center alignment - ensure exact center positioning
-              const centerX = position.x - (drawWidth / 2);
+              // Perfect center alignment - calculate X position so the image center aligns with the canvas center
+              const imageCenter = drawWidth / 2;
+              const xPos = position.x - imageCenter; // This ensures the center of the image is at the specified x position
               
               ctx.save();
               ctx.drawImage(
                 offscreenCanvas,
-                centerX,
+                xPos,
                 position.y,
                 drawWidth,
                 drawHeight
               );
               ctx.restore();
-              
-              // Debug centerline (uncomment if needed for debugging)
-              // ctx.beginPath();
-              // ctx.moveTo(width/2, 0);
-              // ctx.lineTo(width/2, height);
-              // ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
-              // ctx.stroke();
             }
             
             loadedCount++;
@@ -234,7 +241,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
             ctx.font = '10px Arial';
             ctx.fillStyle = 'rgba(0,0,0,0.3)';
             ctx.textAlign = 'center';
-            ctx.fillText('Some images could not be displayed', width / 2, height - 10);
+            ctx.fillText('Some images could not be displayed', centerX, height - 10);
           }
         }
       } catch (error) {
@@ -246,7 +253,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
         ctx.font = '16px Arial';
         ctx.fillStyle = '#ff0000';
         ctx.textAlign = 'center';
-        ctx.fillText('Error loading images', width / 2, height / 2);
+        ctx.fillText('Error loading images', centerX, height / 2);
       }
     };
 
@@ -287,4 +294,3 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     </div>
   );
 };
-

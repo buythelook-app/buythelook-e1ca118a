@@ -39,6 +39,19 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
     // Clear canvas and set a white background
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, originalWidth, originalHeight);
+    
+    // Calculate exact center of canvas
+    const centerX = originalWidth / 2;
+
+    // Draw a centerline for debugging
+    // Comment out in production
+    /*
+    ctx.beginPath();
+    ctx.moveTo(centerX, 0);
+    ctx.lineTo(centerX, originalHeight);
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+    ctx.stroke();
+    */
 
     // If we have outfit data, draw the outfit items to look like a human outfit
     if (outfitData) {
@@ -77,8 +90,8 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                 const drawHeight = canvasHeight * 0.3; // Top takes 30% of canvas height
                 const drawWidth = drawHeight * aspectRatio;
                 
-                // Exact center positioning
-                const xPos = (canvasWidth - drawWidth) / 2;
+                // Calculate X position to ensure the center of the image aligns with the center of canvas
+                const xPos = centerX - (drawWidth / 2);
                 
                 ctx.imageSmoothingQuality = 'high';
                 
@@ -100,8 +113,8 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                 const topWidth = canvasWidth * 0.7;
                 const topHeight = canvasHeight * 0.3;
                 
-                // True center positioning for fallback color block
-                ctx.fillRect((canvasWidth - topWidth) / 2, topPositionY, topWidth, topHeight);
+                // Exact center positioning for fallback color block
+                ctx.fillRect(centerX - (topWidth / 2), topPositionY, topWidth, topHeight);
                 resolve();
               };
               
@@ -112,7 +125,7 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                   ctx.fillStyle = outfitData.top;
                   const topWidth = canvasWidth * 0.7;
                   const topHeight = canvasHeight * 0.3;
-                  ctx.fillRect((canvasWidth - topWidth) / 2, topPositionY, topWidth, topHeight);
+                  ctx.fillRect(centerX - (topWidth / 2), topPositionY, topWidth, topHeight);
                   resolve();
                 }
               }, 5000);
@@ -126,7 +139,7 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
             const topHeight = canvasHeight * 0.3;
             
             // Exact center positioning
-            ctx.fillRect((canvasWidth - topWidth) / 2, topPositionY, topWidth, topHeight);
+            ctx.fillRect(centerX - (topWidth / 2), topPositionY, topWidth, topHeight);
           }
           
           // Draw bottom item with enhanced centering
@@ -148,8 +161,8 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                 const drawHeight = canvasHeight * 0.35; // Bottom takes 35% of canvas height
                 const drawWidth = drawHeight * aspectRatio;
                 
-                // Exact center positioning
-                const xPos = (canvasWidth - drawWidth) / 2;
+                // Calculate X position for exact center alignment
+                const xPos = centerX - (drawWidth / 2);
                 
                 ctx.imageSmoothingQuality = 'high';
                 ctx.drawImage(
@@ -170,7 +183,7 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                 const bottomHeight = canvasHeight * 0.35;
                 
                 // Exact center positioning for fallback
-                ctx.fillRect((canvasWidth - bottomWidth) / 2, bottomPositionY, bottomWidth, bottomHeight);
+                ctx.fillRect(centerX - (bottomWidth / 2), bottomPositionY, bottomWidth, bottomHeight);
                 resolve();
               };
               
@@ -180,7 +193,7 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                   ctx.fillStyle = outfitData.bottom;
                   const bottomWidth = canvasWidth * 0.5;
                   const bottomHeight = canvasHeight * 0.35;
-                  ctx.fillRect((canvasWidth - bottomWidth) / 2, bottomPositionY, bottomWidth, bottomHeight);
+                  ctx.fillRect(centerX - (bottomWidth / 2), bottomPositionY, bottomWidth, bottomHeight);
                   resolve();
                 }
               }, 5000);
@@ -194,7 +207,7 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
             const bottomHeight = canvasHeight * 0.35;
             
             // Exact center positioning
-            ctx.fillRect((canvasWidth - bottomWidth) / 2, bottomPositionY, bottomWidth, bottomHeight);
+            ctx.fillRect(centerX - (bottomWidth / 2), bottomPositionY, bottomWidth, bottomHeight);
           }
           
           // Draw shoes with perfect centering
@@ -216,8 +229,8 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                 const drawHeight = canvasHeight * 0.2; // Shoes take 20% of canvas height
                 const drawWidth = drawHeight * aspectRatio;
                 
-                // Exact center positioning
-                const xPos = (canvasWidth - drawWidth) / 2;
+                // Calculate X position for exact center alignment
+                const xPos = centerX - (drawWidth / 2);
                 
                 ctx.imageSmoothingQuality = 'high';
                 ctx.drawImage(
@@ -238,7 +251,7 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                 const shoesHeight = canvasHeight * 0.15;
                 
                 // Exact center positioning for fallback
-                ctx.fillRect((canvasWidth - shoesWidth) / 2, shoesPositionY, shoesWidth, shoesHeight);
+                ctx.fillRect(centerX - (shoesWidth / 2), shoesPositionY, shoesWidth, shoesHeight);
                 resolve();
               };
               
@@ -248,7 +261,7 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                   ctx.fillStyle = outfitData.shoes;
                   const shoesWidth = canvasWidth * 0.4;
                   const shoesHeight = canvasHeight * 0.15;
-                  ctx.fillRect((canvasWidth - shoesWidth) / 2, shoesPositionY, shoesWidth, shoesHeight);
+                  ctx.fillRect(centerX - (shoesWidth / 2), shoesPositionY, shoesWidth, shoesHeight);
                   resolve();
                 }
               }, 5000);
@@ -262,7 +275,7 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
             const shoesHeight = canvasHeight * 0.15;
             
             // Exact center positioning
-            ctx.fillRect((canvasWidth - shoesWidth) / 2, shoesPositionY, shoesWidth, shoesHeight);
+            ctx.fillRect(centerX - (shoesWidth / 2), shoesPositionY, shoesWidth, shoesHeight);
           }
           
           // Optional: Draw a simple silhouette to better visualize the outfit on a person
@@ -274,28 +287,28 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
             // Head - centered
             ctx.beginPath();
             const headRadius = canvasWidth * 0.1;
-            ctx.arc(canvasWidth / 2, topPositionY - headRadius, headRadius, 0, Math.PI * 2);
+            ctx.arc(centerX, topPositionY - headRadius, headRadius, 0, Math.PI * 2);
             ctx.stroke();
             
             // Torso - centered
             ctx.beginPath();
-            ctx.moveTo(canvasWidth / 2, topPositionY);
-            ctx.lineTo(canvasWidth / 2, bottomPositionY + canvasHeight * 0.1);
+            ctx.moveTo(centerX, topPositionY);
+            ctx.lineTo(centerX, bottomPositionY + canvasHeight * 0.1);
             ctx.stroke();
             
             // Arms - symmetrical from center
             ctx.beginPath();
-            ctx.moveTo(canvasWidth / 2 - canvasWidth * 0.2, topPositionY + canvasHeight * 0.15);
-            ctx.lineTo(canvasWidth / 2, topPositionY + canvasHeight * 0.05);
-            ctx.lineTo(canvasWidth / 2 + canvasWidth * 0.2, topPositionY + canvasHeight * 0.15);
+            ctx.moveTo(centerX - canvasWidth * 0.2, topPositionY + canvasHeight * 0.15);
+            ctx.lineTo(centerX, topPositionY + canvasHeight * 0.05);
+            ctx.lineTo(centerX + canvasWidth * 0.2, topPositionY + canvasHeight * 0.15);
             ctx.stroke();
             
             // Legs - symmetrical from center
             ctx.beginPath();
-            ctx.moveTo(canvasWidth / 2, bottomPositionY + canvasHeight * 0.1);
-            ctx.lineTo(canvasWidth / 2 - canvasWidth * 0.1, shoesPositionY);
-            ctx.moveTo(canvasWidth / 2, bottomPositionY + canvasHeight * 0.1);
-            ctx.lineTo(canvasWidth / 2 + canvasWidth * 0.1, shoesPositionY);
+            ctx.moveTo(centerX, bottomPositionY + canvasHeight * 0.1);
+            ctx.lineTo(centerX - canvasWidth * 0.1, shoesPositionY);
+            ctx.moveTo(centerX, bottomPositionY + canvasHeight * 0.1);
+            ctx.lineTo(centerX + canvasWidth * 0.1, shoesPositionY);
             ctx.stroke();
           }
           
@@ -313,4 +326,3 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
 
   return null; // This component doesn't render anything, it just manipulates the canvas
 };
-
