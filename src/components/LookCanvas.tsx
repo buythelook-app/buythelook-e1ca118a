@@ -49,14 +49,11 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     ctx.fillRect(0, 0, width, height);
 
     // Draw a center line for debugging
-    // Comment out in production
-    /*
     ctx.beginPath();
     ctx.moveTo(width/2, 0);
     ctx.lineTo(width/2, height);
     ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
     ctx.stroke();
-    */
 
     // Sort items in correct rendering order
     const renderOrder = { outerwear: 0, top: 1, bottom: 2, shoes: 3 };
@@ -209,11 +206,21 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                 drawHeight = drawWidth / aspectRatio;
               }
 
-              // Perfect center alignment - calculate X position so the image center aligns with the canvas center
-              const imageCenter = drawWidth / 2;
-              const xPos = position.x - imageCenter; // This ensures the center of the image is at the specified x position
+              // IMPORTANT: This is the critical change for proper centering
+              // We need to calculate the X position so that center of the image
+              // aligns with the center of the canvas
+              const xPos = position.x - (drawWidth / 2);
               
+              // Draw debugging info
               ctx.save();
+              // Draw a vertical line at the center of the item position
+              ctx.beginPath();
+              ctx.moveTo(position.x, position.y - 20);
+              ctx.lineTo(position.x, position.y + drawHeight + 20);
+              ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
+              ctx.stroke();
+              
+              // Draw the image
               ctx.drawImage(
                 offscreenCanvas,
                 xPos,
@@ -221,6 +228,16 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                 drawWidth,
                 drawHeight
               );
+              
+              // Draw outline of the image bounds
+              ctx.strokeStyle = 'rgba(0, 0, 255, 0.3)';
+              ctx.strokeRect(xPos, position.y, drawWidth, drawHeight);
+              
+              // Draw item type label
+              ctx.font = '12px Arial';
+              ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+              ctx.fillText(item.type, xPos + 5, position.y + 15);
+              
               ctx.restore();
             }
             
