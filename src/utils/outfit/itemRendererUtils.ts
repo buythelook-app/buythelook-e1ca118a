@@ -90,15 +90,25 @@ export const renderItemImage = async ({
     console.log(`Image loaded, dimensions: ${img.width}x${img.height}`);
     
     // Calculate dimensions while preserving aspect ratio
-    const { width: drawWidth, height: drawHeight } = calculateDimensions(
+    // Increase the scale factor to make images larger
+    const scaleFactor = 1.2; // Increase image size by 20%
+    const { width: rawWidth, height: rawHeight } = calculateDimensions(
       img.width,
       img.height,
-      maxWidth,
-      maxHeight
+      maxWidth * scaleFactor,
+      maxHeight * scaleFactor
     );
+    
+    // Round dimensions to prevent blurry rendering
+    const drawWidth = Math.round(rawWidth);
+    const drawHeight = Math.round(rawHeight);
     
     // Calculate X position for exact center alignment
     const xPos = centerX - (drawWidth / 2);
+    
+    // Calculate Y position to center vertically within the allocated space
+    // This centers the image in its designated vertical space
+    const yPos = positionY - (maxHeight * 0.1); // Shift up slightly to compensate for visual balance
     
     // Ensure high quality rendering
     ctx.imageSmoothingEnabled = true;
@@ -107,12 +117,12 @@ export const renderItemImage = async ({
     ctx.drawImage(
       img,
       xPos, 
-      positionY, 
+      yPos, 
       drawWidth, 
       drawHeight
     );
     
-    console.log(`Image rendered at (${xPos}, ${positionY}) with dimensions ${drawWidth}x${drawHeight}`);
+    console.log(`Image rendered at (${xPos}, ${yPos}) with dimensions ${drawWidth}x${drawHeight}`);
   } catch (error) {
     console.error('Error rendering image:', error);
     // Fallback to color block if image fails to load
@@ -126,4 +136,3 @@ export const renderItemImage = async ({
     });
   }
 };
-

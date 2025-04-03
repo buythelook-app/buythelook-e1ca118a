@@ -1,3 +1,4 @@
+
 import { useState, useEffect, RefObject } from "react";
 import { setupCanvas } from "@/utils/canvas";
 import { 
@@ -59,10 +60,11 @@ export const useStyleCanvasRenderer = ({
       // Calculate exact center of canvas
       const centerX = width / 2;
       
-      // Define positions for different outfit parts
-      const topPositionY = height * 0.15;
-      const bottomPositionY = height * 0.5;
-      const shoesPositionY = height * 0.75;
+      // Define positions for different outfit parts with improved vertical spacing
+      // These values are adjusted to ensure items are centered in their respective areas
+      const topPositionY = height * 0.18; // Moved down slightly
+      const bottomPositionY = height * 0.45; // Adjusted to be more centered
+      const shoesPositionY = height * 0.72; // Adjusted to be more centered
 
       // No outfit data to render
       if (!outfitData) {
@@ -85,7 +87,7 @@ export const useStyleCanvasRenderer = ({
             centerX,
             positionY: topPositionY,
             maxWidth: width * 0.7,
-            maxHeight: height * 0.3
+            maxHeight: height * 0.25 // Slightly reduced to prevent overlap
           });
           imagePromises.push(topPromise);
         }
@@ -98,7 +100,7 @@ export const useStyleCanvasRenderer = ({
             centerX,
             positionY: bottomPositionY,
             maxWidth: width * 0.5,
-            maxHeight: height * 0.35
+            maxHeight: height * 0.3 // Slightly increased for better visibility
           });
           imagePromises.push(bottomPromise);
         }

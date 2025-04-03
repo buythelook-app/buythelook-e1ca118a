@@ -16,7 +16,7 @@ export const OutfitCanvas = ({
   outfitData, 
   occasion,
   width = 300,
-  height = 500,
+  height = 550, // Increased height to give more vertical space
   className = ""
 }: OutfitCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
