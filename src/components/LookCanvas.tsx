@@ -58,16 +58,17 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     console.log("Rendering canvas with items:", sortedItems);
 
-    // Improved position calculations for better alignment
+    // Improved position calculations with even better centering
     const defaultPositions = {
-      outerwear: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
-      top: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
-      bottom: { x: width * 0.1, y: height * 0.25, width: width * 0.8, height: height * 0.5 },
-      dress: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.9 },
-      shoes: { x: width * 0.25, y: height * 0.6, width: width * 0.5, height: height * 0.3 }, 
-      accessory: { x: width * 0.1, y: height * 0.25, width: width * 0.8, height: height * 0.5 },
-      sunglasses: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
-      cart: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.5 }
+      // Center all items horizontally with equal distribution vertically
+      outerwear: { x: width * 0.5, y: height * 0.15, width: width * 0.7, height: height * 0.35 },
+      top: { x: width * 0.5, y: height * 0.15, width: width * 0.7, height: height * 0.35 },
+      bottom: { x: width * 0.5, y: height * 0.45, width: width * 0.7, height: height * 0.35 },
+      dress: { x: width * 0.5, y: height * 0.3, width: width * 0.7, height: height * 0.6 },
+      shoes: { x: width * 0.5, y: height * 0.85, width: width * 0.5, height: height * 0.2 }, 
+      accessory: { x: width * 0.5, y: height * 0.5, width: width * 0.5, height: height * 0.2 },
+      sunglasses: { x: width * 0.5, y: height * 0.1, width: width * 0.4, height: height * 0.15 },
+      cart: { x: width * 0.5, y: height * 0.5, width: width * 0.7, height: height * 0.35 }
     };
 
     // Check if there are any items to render
@@ -165,7 +166,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               offscreenCanvas.width = img.width;
               offscreenCanvas.height = img.height;
 
-              // Special handling for shoes - more accurate centering
+              // Special handling for different item types
               if (item.type === 'shoes') {
                 // Focus on the center of the shoe image
                 const cropX = img.width * 0.15;
@@ -229,9 +230,10 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                 drawHeight = drawWidth / aspectRatio;
               }
 
-              // Ensure perfect horizontal centering
-              const centerX = position.x + (position.width - drawWidth) / 2;
-              const centerY = position.y + (position.height - drawHeight) / 2;
+              // Use center point positioning for all items
+              // This is the key change - items are positioned from their center point
+              const centerX = position.x - (drawWidth / 2);
+              const centerY = position.y - (drawHeight / 2);
 
               ctx.save();
               ctx.drawImage(
