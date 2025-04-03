@@ -135,15 +135,16 @@ export const useCanvasRenderer = ({
               );
 
               // Calculate X position for exact center alignment
-              const xPos = position.x - (drawWidth / 2);
+              // The position.x is already the center point, no need to subtract half width
+              const xPos = position.x;
               
               // Draw debugging info
-              drawDebugInfo(ctx, xPos, position.y, drawWidth, drawHeight, item.type, position.x);
+              drawDebugInfo(ctx, xPos - (drawWidth / 2), position.y, drawWidth, drawHeight, item.type, position.x);
               
               // Draw the processed image
               ctx.drawImage(
                 processedCanvas,
-                xPos,
+                xPos - (drawWidth / 2),
                 position.y,
                 drawWidth,
                 drawHeight
