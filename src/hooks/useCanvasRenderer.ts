@@ -7,7 +7,8 @@ import {
   getDefaultPositions,
   calculateDimensions,
   drawDebugInfo,
-  drawDebugGrid
+  drawDebugGrid,
+  drawCanvasBounds
 } from "@/utils/canvas";
 import { transformImageUrl } from "@/utils/imageUtils";
 
@@ -62,6 +63,9 @@ export const useCanvasRenderer = ({
     
     // Draw debug grid to visualize positions
     drawDebugGrid(ctx, width, height);
+    
+    // Draw canvas bounds to see exact edges
+    drawCanvasBounds(ctx, width, height);
 
     // Sort items in correct rendering order
     const renderOrder = { outerwear: 0, top: 1, bottom: 2, shoes: 3 };
@@ -137,21 +141,21 @@ export const useCanvasRenderer = ({
                 position.height
               );
 
-              // IMPORTANT: IGNORE position.x entirely and force center alignment
-              // Calculate the exact center of the canvas and position relative to that
-              const canvasCenterX = width / 2;
+              // HARD FORCE THE POSITION TO CENTER
+              // Calculate center and position regardless of any other factors
+              const extreme_x_position = width * 0.75; // Position at 75% of canvas width
               
-              // Calculate drawing position based on canvas center
-              const drawX = Math.round(canvasCenterX - (drawWidth / 2));
+              // Position from extreme rightward point
+              const drawX = Math.round(extreme_x_position - (drawWidth / 2));
               const drawY = Math.round(position.y);
               
-              // Log exact positioning information for debugging
-              console.log(`Drawing ${item.type} at position: x=${drawX}, center=${canvasCenterX}, width=${drawWidth}`);
+              // Log the forced positioning
+              console.log(`FORCE POSITIONING ${item.type}: x=${drawX}, extreme_point=${extreme_x_position}`);
               
-              // Draw debugging info using the canvas center
-              drawDebugInfo(ctx, drawX, drawY, drawWidth, drawHeight, item.type, canvasCenterX);
+              // Draw debugging info
+              drawDebugInfo(ctx, drawX, drawY, drawWidth, drawHeight, item.type, extreme_x_position);
               
-              // Draw the image centered on the canvas
+              // Draw the image at the forced position
               ctx.drawImage(
                 processedCanvas,
                 drawX,

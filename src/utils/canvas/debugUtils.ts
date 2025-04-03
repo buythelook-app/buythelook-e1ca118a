@@ -94,3 +94,26 @@ export const drawDebugGrid = (
   // Restore context state
   ctx.restore();
 };
+
+/**
+ * Draw canvas bounds to debug positioning issues
+ */
+export const drawCanvasBounds = (
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number
+) => {
+  ctx.save();
+  
+  // Draw a border around the canvas edge
+  ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(0, 0, width, height);
+  
+  // Draw text showing canvas dimensions
+  ctx.font = '16px Arial';
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+  ctx.fillText(`Canvas: ${width}x${height}`, 10, 20);
+  
+  ctx.restore();
+};
