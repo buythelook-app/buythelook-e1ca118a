@@ -46,7 +46,7 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
       const canvasWidth = originalWidth;
       const canvasHeight = originalHeight;
       
-      // Improved position calculations for better alignment - centered horizontally
+      // Consistent positions for all outfit types - centered horizontally
       const topPositionY = canvasHeight * 0.05; // Top of the canvas for top item
       const bottomPositionY = canvasHeight * 0.4; // Middle part for bottom item
       const shoesPositionY = canvasHeight * 0.75; // Bottom part for shoes

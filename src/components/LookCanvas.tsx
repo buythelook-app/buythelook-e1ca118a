@@ -58,7 +58,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     console.log("Rendering canvas with items:", sortedItems);
 
-    // Improved position calculations for better alignment and centering
+    // Consistent position calculations for all item types - centered horizontally
     const defaultPositions = {
       outerwear: { x: width * 0.5, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
       top: { x: width * 0.5, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
