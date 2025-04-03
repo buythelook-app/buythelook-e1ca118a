@@ -1,4 +1,6 @@
-import { type CanvasItem, useCanvasRenderer } from "@/hooks/useCanvasRenderer";
+
+import { useCanvasRenderer } from "@/hooks/useCanvasRenderer";
+import { type CanvasItem } from "@/types/canvasTypes";
 
 interface LookCanvasProps {
   items: CanvasItem[];
@@ -35,8 +37,8 @@ export const LookCanvas = ({ items, width = 600, height = 900 }: LookCanvasProps
           maxWidth: '100%',
           width: `${width}px`,
           height: `${height}px`,
-          display: 'block',  // Ensure canvas is displayed as block
-          margin: '0 auto'   // Explicitly center the canvas
+          display: 'block',
+          margin: '0 auto'
         }}
       />
     </div>

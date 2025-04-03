@@ -1,8 +1,9 @@
+
 /**
  * Core utilities for canvas setup and configuration
  */
 
-import { PositionData } from './types';
+import { PositionData } from '@/types/canvasTypes';
 
 /**
  * Configure canvas with device pixel ratio for high-resolution rendering
@@ -41,25 +42,7 @@ export const setupCanvas = (
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, width, height);
 
-  console.log(`Canvas setup: Physical size ${canvas.width}x${canvas.height}, Display size ${width}x${height}, Scale ${scale}`);
-
   return ctx;
-};
-
-/**
- * Draw a debug center line
- */
-export const drawCenterLine = (
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number
-) => {
-  const centerX = width / 2;
-  ctx.beginPath();
-  ctx.moveTo(centerX, 0);
-  ctx.lineTo(centerX, height);
-  ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
-  ctx.stroke();
 };
 
 /**
