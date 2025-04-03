@@ -7,7 +7,7 @@ interface LookCanvasProps {
   height?: number;
 }
 
-export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps) => {
+export const LookCanvas = ({ items, width = 600, height = 900 }: LookCanvasProps) => {
   const { canvasRef, isLoading, error: canvasError } = useCanvasRenderer({
     items,
     width,

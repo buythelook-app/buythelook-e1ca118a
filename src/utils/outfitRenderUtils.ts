@@ -180,7 +180,12 @@ export const renderItemImage = async ({
   maxHeight: number;
 }) => {
   try {
-    const img = await loadImage(item.image![0]);
+    // Apply transformation to ensure best quality
+    const imageUrl = transformImageUrl(item.image![0]);
+    console.log('Loading image from URL:', imageUrl);
+    
+    const img = await loadImage(imageUrl);
+    console.log(`Image loaded, dimensions: ${img.width}x${img.height}`);
     
     // Calculate dimensions while preserving aspect ratio
     const { width: drawWidth, height: drawHeight } = calculateDimensions(
@@ -193,7 +198,10 @@ export const renderItemImage = async ({
     // Calculate X position for exact center alignment
     const xPos = centerX - (drawWidth / 2);
     
+    // Ensure high quality rendering
+    ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
+    
     ctx.drawImage(
       img,
       xPos, 
@@ -201,7 +209,10 @@ export const renderItemImage = async ({
       drawWidth, 
       drawHeight
     );
+    
+    console.log(`Image rendered at (${xPos}, ${positionY}) with dimensions ${drawWidth}x${drawHeight}`);
   } catch (error) {
+    console.error('Error rendering image:', error);
     // Fallback to color block if image fails to load
     renderColorBlock({ 
       ctx, 

@@ -177,7 +177,7 @@ export const FilterOptions = () => {
               <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
                 <canvas 
                   id={`style-canvas-${index}`} 
-                  className="w-full h-80 object-cover"
+                  className="w-full h-[500px] object-cover"
                   width="450"
                   height="600"
                 ></canvas>
@@ -199,7 +199,7 @@ export const FilterOptions = () => {
               <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
                 <canvas 
                   id={`style-canvas-${index}`} 
-                  className="w-full h-80 object-cover"
+                  className="w-full h-[500px] object-cover"
                   width="450"
                   height="600"
                 ></canvas>

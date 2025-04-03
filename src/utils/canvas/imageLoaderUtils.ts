@@ -16,13 +16,14 @@ export const calculateDimensions = (
   let drawWidth = maxWidth;
   let drawHeight = maxHeight;
 
+  // Preserve aspect ratio while fitting within maximum dimensions
   if (drawWidth / drawHeight > aspectRatio) {
     drawWidth = drawHeight * aspectRatio;
   } else {
     drawHeight = drawWidth / aspectRatio;
   }
 
-  return { width: drawWidth, height: drawHeight };
+  return { width: Math.round(drawWidth), height: Math.round(drawHeight) };
 };
 
 /**
@@ -30,23 +31,32 @@ export const calculateDimensions = (
  */
 export const loadImage = (
   imageUrl: string, 
-  timeout = 5000
+  timeout = 8000
 ): Promise<HTMLImageElement> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     
-    // Append a timestamp to bypass cache
-    const timestamp = new Date().getTime();
-    const finalUrl = imageUrl.includes('?') 
-      ? `${imageUrl}&t=${timestamp}` 
-      : `${imageUrl}?t=${timestamp}`;
+    // Enable better image quality
+    if (CSS.supports('image-rendering', 'crisp-edges')) {
+      (img as any).style.imageRendering = 'crisp-edges';
+    } else if (CSS.supports('image-rendering', 'pixelated')) {
+      (img as any).style.imageRendering = 'pixelated';
+    }
+    
+    // Use original URL without cache-busting for better CDN caching
+    // Only append timestamp for local development or debugging
+    const isDev = window.location.hostname === 'localhost';
+    const finalUrl = isDev 
+      ? `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}t=${new Date().getTime()}`
+      : imageUrl;
     
     let isResolved = false;
     
     img.onload = () => {
       if (!isResolved) {
         isResolved = true;
+        console.log(`Image loaded successfully: ${finalUrl}, size: ${img.width}x${img.height}`);
         resolve(img);
       }
     };
@@ -54,6 +64,7 @@ export const loadImage = (
     img.onerror = (e) => {
       if (!isResolved) {
         isResolved = true;
+        console.error(`Failed to load image: ${finalUrl}`, e);
         reject(new Error(`Failed to load image: ${finalUrl}`));
       }
     };
@@ -62,6 +73,7 @@ export const loadImage = (
     setTimeout(() => {
       if (!isResolved) {
         isResolved = true;
+        console.warn(`Image load timed out: ${finalUrl}`);
         reject(new Error(`Image load timed out: ${finalUrl}`));
       }
     }, timeout);

@@ -13,17 +13,27 @@ export const setupCanvas = (
   width: number,
   height: number
 ): CanvasRenderingContext2D | null => {
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: true });
   if (!ctx) {
     console.error("Canvas context could not be created");
     return null;
   }
 
-  // Set up canvas with device pixel ratio
+  // Set up canvas with device pixel ratio for higher quality on high-DPI displays
   const scale = window.devicePixelRatio || 1;
   canvas.width = width * scale;
   canvas.height = height * scale;
+  
+  // Set rendering size in CSS pixels
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  
+  // Scale the context to account for the device pixel ratio
   ctx.scale(scale, scale);
+  
+  // Configure for high quality rendering
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
   // Clear and set background
   ctx.clearRect(0, 0, width, height);

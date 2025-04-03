@@ -17,7 +17,7 @@ export const StyleCanvas = ({
   outfitData, 
   occasion,
   width = 300,
-  height = 400 
+  height = 500 
 }: StyleCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   
