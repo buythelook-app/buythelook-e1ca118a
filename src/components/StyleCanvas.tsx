@@ -47,8 +47,8 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
       const canvasHeight = originalHeight;
       
       // True center-aligned positions for all outfit types
-      const topPositionY = canvasHeight * 0.05; // Top of the canvas for top item
-      const bottomPositionY = canvasHeight * 0.4; // Middle part for bottom item
+      const topPositionY = canvasHeight * 0.15; // Top of the canvas for top item
+      const bottomPositionY = canvasHeight * 0.5; // Middle part for bottom item
       const shoesPositionY = canvasHeight * 0.75; // Bottom part for shoes
       
       // Draw each outfit component based on images in the API response

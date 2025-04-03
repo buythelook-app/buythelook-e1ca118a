@@ -60,14 +60,14 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     // Centrally positioned items - improved for consistent centering
     const defaultPositions = {
-      outerwear: { x: width * 0.5, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
-      top: { x: width * 0.5, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
-      bottom: { x: width * 0.5, y: height * 0.25, width: width * 0.8, height: height * 0.5 },
-      dress: { x: width * 0.5, y: height * 0.02, width: width * 0.8, height: height * 0.9 },
-      shoes: { x: width * 0.5, y: height * 0.6, width: width * 0.5, height: height * 0.3 }, 
-      accessory: { x: width * 0.5, y: height * 0.25, width: width * 0.8, height: height * 0.5 },
-      sunglasses: { x: width * 0.5, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
-      cart: { x: width * 0.5, y: height * 0.02, width: width * 0.8, height: height * 0.5 }
+      outerwear: { x: width * 0.5, y: height * 0.15, width: width * 0.7, height: height * 0.4 },
+      top: { x: width * 0.5, y: height * 0.15, width: width * 0.7, height: height * 0.4 },
+      bottom: { x: width * 0.5, y: height * 0.5, width: width * 0.6, height: height * 0.4 },
+      dress: { x: width * 0.5, y: height * 0.3, width: width * 0.7, height: height * 0.7 },
+      shoes: { x: width * 0.5, y: height * 0.75, width: width * 0.5, height: height * 0.2 }, 
+      accessory: { x: width * 0.5, y: height * 0.4, width: width * 0.4, height: height * 0.4 },
+      sunglasses: { x: width * 0.5, y: height * 0.1, width: width * 0.5, height: height * 0.2 },
+      cart: { x: width * 0.5, y: height * 0.4, width: width * 0.7, height: height * 0.4 }
     };
 
     // Check if there are any items to render
@@ -165,7 +165,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               offscreenCanvas.width = img.width;
               offscreenCanvas.height = img.height;
 
-              // Improved handling for all item types with better centering
+              // Draw the image onto the offscreen canvas
               offscreenCtx.drawImage(img, 0, 0);
               
               // Background removal for all items
@@ -185,7 +185,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               
               offscreenCtx.putImageData(imageData, 0, 0);
 
-              // True aspect ratio preservation for all items
+              // Calculate dimensions while preserving aspect ratio
               const aspectRatio = img.width / img.height;
               let drawWidth = position.width;
               let drawHeight = position.height;
@@ -196,8 +196,8 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                 drawHeight = drawWidth / aspectRatio;
               }
 
-              // Always center on position.x - which is the center point, not the left edge
-              const centerX = position.x - (drawWidth / 2);
+              // Center the image horizontally and vertically
+              const centerX = position.x - drawWidth / 2;
               const centerY = position.y;
 
               ctx.save();
