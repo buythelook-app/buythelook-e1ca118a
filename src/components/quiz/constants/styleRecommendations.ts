@@ -1,6 +1,33 @@
 
 import { StyleRecommendations } from '../types/styleTypes';
 
+/**
+ * Application Description:
+ * 
+ * Fashion Outfit Generator is a personalized styling application that creates AI-powered outfit recommendations
+ * based on users' body structure, mood, and preferred style. The application uses a combination of frontend React
+ * components and backend Supabase services to provide a seamless fashion recommendation experience.
+ * 
+ * Frontend Features:
+ * - Style quiz to collect user preferences and body measurements
+ * - Personalized outfit recommendations with color visualization
+ * - Responsive design for mobile and desktop viewing
+ * - Mood-based filtering for different outfit occasions
+ * - Outfit detail views with style tips and recommendations
+ * - Interactive UI with style canvas visualization
+ * 
+ * Backend Services:
+ * - Supabase database for storing user preferences and style profiles
+ * - AI-powered outfit generation via edge functions
+ * - Color-based item matching algorithm
+ * - User authentication and profile management
+ * - Storage of outfit suggestions and recommendations
+ *
+ * The app helps users discover their personal style and get outfit recommendations that
+ * match their body type, color preferences, and style profile while adapting to
+ * different moods and occasions.
+ */
+
 export const styleRecommendations: Record<string, StyleRecommendations> = {
   Classic: {
     top: { type: "Blouse", color: "white", style: "elegant" },
