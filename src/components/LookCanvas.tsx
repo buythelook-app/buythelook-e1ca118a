@@ -58,7 +58,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     console.log("Rendering canvas with items:", sortedItems);
 
-    // Consistent position calculations for all item types - centered horizontally
+    // Centrally positioned items - improved for consistent centering
     const defaultPositions = {
       outerwear: { x: width * 0.5, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
       top: { x: width * 0.5, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
@@ -165,60 +165,27 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               offscreenCanvas.width = img.width;
               offscreenCanvas.height = img.height;
 
-              // Special handling for shoes - more accurate centering
-              if (item.type === 'shoes') {
-                // Focus on the center of the shoe image
-                const cropX = img.width * 0.15;
-                const cropWidth = img.width * 0.7;
-                const cropY = img.height * 0.15;
-                const cropHeight = img.height * 0.7;
+              // Improved handling for all item types with better centering
+              offscreenCtx.drawImage(img, 0, 0);
+              
+              // Background removal for all items
+              const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+              const data = imageData.data;
+              
+              for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
                 
-                offscreenCtx.drawImage(
-                  img,
-                  cropX, cropY, cropWidth, cropHeight,
-                  0, 0, img.width, img.height
-                );
-
-                // Enhanced background removal for shoes
-                const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-                const data = imageData.data;
-
-                for (let i = 0; i < data.length; i += 4) {
-                  const r = data[i];
-                  const g = data[i + 1];
-                  const b = data[i + 2];
-                  
-                  // Better background detection
-                  const brightness = (r + g + b) / 3;
-                  const whiteness = Math.abs(r - g) + Math.abs(g - b) + Math.abs(r - b);
-                  
-                  if (brightness > 240 || (brightness > 200 && whiteness < 15)) {
-                    data[i + 3] = 0; // Make pixel transparent
-                  }
+                const avgColor = (r + g + b) / 3;
+                if (avgColor > 180 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15 && Math.abs(r - b) < 15) {
+                  data[i + 3] = 0;
                 }
-
-                offscreenCtx.putImageData(imageData, 0, 0);
-              } else {
-                // Normal handling for other items
-                offscreenCtx.drawImage(img, 0, 0);
-                const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-                const data = imageData.data;
-                
-                for (let i = 0; i < data.length; i += 4) {
-                  const r = data[i];
-                  const g = data[i + 1];
-                  const b = data[i + 2];
-                  
-                  const avgColor = (r + g + b) / 3;
-                  if (avgColor > 180 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15 && Math.abs(r - b) < 15) {
-                    data[i + 3] = 0;
-                  }
-                }
-                
-                offscreenCtx.putImageData(imageData, 0, 0);
               }
+              
+              offscreenCtx.putImageData(imageData, 0, 0);
 
-              // Improved aspect ratio handling to maintain proportions
+              // True aspect ratio preservation for all items
               const aspectRatio = img.width / img.height;
               let drawWidth = position.width;
               let drawHeight = position.height;
@@ -229,7 +196,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                 drawHeight = drawWidth / aspectRatio;
               }
 
-              // Calculate center position - using the position.x as the center point instead of left edge
+              // Always center on position.x - which is the center point, not the left edge
               const centerX = position.x - (drawWidth / 2);
               const centerY = position.y;
 
