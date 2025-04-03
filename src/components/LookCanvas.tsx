@@ -58,7 +58,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     console.log("Rendering canvas with items:", sortedItems);
 
-    // Centrally positioned items - improved for consistent centering
+    // Improved centrally positioned items with more precise centering
     const defaultPositions = {
       outerwear: { x: width * 0.5, y: height * 0.15, width: width * 0.7, height: height * 0.4 },
       top: { x: width * 0.5, y: height * 0.15, width: width * 0.7, height: height * 0.4 },
@@ -196,19 +196,25 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                 drawHeight = drawWidth / aspectRatio;
               }
 
-              // Center the image horizontally and vertically
-              const centerX = position.x - drawWidth / 2;
-              const centerY = position.y;
-
+              // Perfect center alignment - ensure exact center positioning
+              const centerX = position.x - (drawWidth / 2);
+              
               ctx.save();
               ctx.drawImage(
                 offscreenCanvas,
                 centerX,
-                centerY,
+                position.y,
                 drawWidth,
                 drawHeight
               );
               ctx.restore();
+              
+              // Debug centerline (uncomment if needed for debugging)
+              // ctx.beginPath();
+              // ctx.moveTo(width/2, 0);
+              // ctx.lineTo(width/2, height);
+              // ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+              // ctx.stroke();
             }
             
             loadedCount++;
@@ -270,7 +276,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       )}
       <canvas
         ref={canvasRef}
-        className="border rounded-lg shadow-lg bg-white"
+        className="border rounded-lg shadow-lg bg-white mx-auto"
         style={{ 
           maxWidth: '100%',
           width: `${width}px`,
@@ -281,3 +287,4 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     </div>
   );
 };
+

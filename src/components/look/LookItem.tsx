@@ -57,11 +57,11 @@ export const LookItem = ({ item }: LookItemProps) => {
 
   return (
     <div className="flex items-center gap-4 bg-netflix-background p-4 rounded-lg group relative hover:bg-netflix-card/80 transition-colors">
-      <div className="w-20 h-20 relative bg-gray-100 rounded-md overflow-hidden">
+      <div className="w-20 h-20 relative bg-gray-100 rounded-md overflow-hidden flex items-center justify-center">
         <img 
           src={imageError ? '/placeholder.svg' : displayImage} 
           alt={item.title}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover object-center"
           onError={() => {
             console.error(`Failed to load image for ${item.title}, using placeholder`);
             setImageError(true);

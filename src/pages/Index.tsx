@@ -1,3 +1,4 @@
+
 import { HeroSection } from "@/components/HeroSection";
 import { Navbar } from "@/components/Navbar";
 import { FilterOptions } from "@/components/filters/FilterOptions";
@@ -219,7 +220,7 @@ export default function Index() {
                         <h3 className="text-xl font-semibold">{look.title}</h3>
                         <span className="text-sm text-netflix-accent">{look.occasion}</span>
                       </div>
-                      <div className="mb-4 bg-white rounded-lg overflow-hidden relative group">
+                      <div className="mb-4 bg-white rounded-lg overflow-hidden relative group flex justify-center">
                         <LookCanvas items={look.items} width={300} height={480} />
                         <button
                           onClick={() => handleShuffleLook(look.occasion)}
