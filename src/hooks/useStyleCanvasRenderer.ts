@@ -1,11 +1,10 @@
-
 import { useState, useEffect, RefObject } from "react";
 import { setupCanvas } from "@/utils/canvas";
 import { 
   drawSilhouette, 
   hasValidImages, 
   renderOutfitItem 
-} from "@/utils/outfitRenderUtils";
+} from "@/utils/outfit";
 
 interface OutfitItem {
   image?: string[];
