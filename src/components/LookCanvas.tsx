@@ -58,16 +58,16 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     console.log("Rendering canvas with items:", sortedItems);
 
-    // Improved position calculations for better alignment and centering
+    // Improved position calculations for better alignment
     const defaultPositions = {
-      outerwear: { x: width * 0.5, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
-      top: { x: width * 0.5, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
-      bottom: { x: width * 0.5, y: height * 0.25, width: width * 0.8, height: height * 0.5 },
-      dress: { x: width * 0.5, y: height * 0.02, width: width * 0.8, height: height * 0.9 },
-      shoes: { x: width * 0.5, y: height * 0.6, width: width * 0.5, height: height * 0.3 }, 
-      accessory: { x: width * 0.5, y: height * 0.25, width: width * 0.8, height: height * 0.5 },
-      sunglasses: { x: width * 0.5, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
-      cart: { x: width * 0.5, y: height * 0.02, width: width * 0.8, height: height * 0.5 }
+      outerwear: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
+      top: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
+      bottom: { x: width * 0.1, y: height * 0.25, width: width * 0.8, height: height * 0.5 },
+      dress: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.9 },
+      shoes: { x: width * 0.25, y: height * 0.6, width: width * 0.5, height: height * 0.3 }, 
+      accessory: { x: width * 0.1, y: height * 0.25, width: width * 0.8, height: height * 0.5 },
+      sunglasses: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.5 },
+      cart: { x: width * 0.1, y: height * 0.02, width: width * 0.8, height: height * 0.5 }
     };
 
     // Check if there are any items to render
@@ -229,9 +229,9 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                 drawHeight = drawWidth / aspectRatio;
               }
 
-              // Calculate center position - using the position.x as the center point instead of left edge
-              const centerX = position.x - (drawWidth / 2);
-              const centerY = position.y;
+              // Ensure perfect horizontal centering
+              const centerX = position.x + (position.width - drawWidth) / 2;
+              const centerY = position.y + (position.height - drawHeight) / 2;
 
               ctx.save();
               ctx.drawImage(
