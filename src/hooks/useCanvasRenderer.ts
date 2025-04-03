@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { 
   setupCanvas, 
@@ -7,7 +6,8 @@ import {
   loadImage, 
   getDefaultPositions,
   calculateDimensions,
-  drawDebugInfo
+  drawDebugInfo,
+  drawDebugGrid
 } from "@/utils/canvas";
 import { transformImageUrl } from "@/utils/imageUtils";
 
@@ -59,6 +59,9 @@ export const useCanvasRenderer = ({
 
     // Draw a center line for debugging
     drawCenterLine(ctx, width, height);
+    
+    // Draw debug grid to visualize positions
+    drawDebugGrid(ctx, width, height);
 
     // Sort items in correct rendering order
     const renderOrder = { outerwear: 0, top: 1, bottom: 2, shoes: 3 };
@@ -134,18 +137,22 @@ export const useCanvasRenderer = ({
                 position.height
               );
 
-              // Calculate X position for exact center alignment
-              // The position.x is already the center point, no need to subtract half width
-              const xPos = position.x;
+              // Apply a significant rightward shift (20% of canvas width)
+              // This directly addresses the left-alignment issue
+              const xOffset = Math.round(width * 0.2); 
+              
+              // Calculate drawing position with the offset
+              const drawX = Math.round(position.x - (drawWidth / 2)) + xOffset;
+              const drawY = Math.round(position.y);
               
               // Draw debugging info
-              drawDebugInfo(ctx, xPos - (drawWidth / 2), position.y, drawWidth, drawHeight, item.type, position.x);
+              drawDebugInfo(ctx, drawX, drawY, drawWidth, drawHeight, item.type, position.x + xOffset);
               
-              // Draw the processed image
+              // Draw the image with the rightward shift
               ctx.drawImage(
                 processedCanvas,
-                xPos - (drawWidth / 2),
-                position.y,
+                drawX,
+                drawY,
                 drawWidth,
                 drawHeight
               );
