@@ -8,7 +8,7 @@ import {
   getDefaultPositions,
   calculateDimensions,
   drawDebugInfo
-} from "@/utils/canvasUtils";
+} from "@/utils/canvas";
 import { transformImageUrl } from "@/utils/imageUtils";
 
 type ItemType = 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' | 'cart';

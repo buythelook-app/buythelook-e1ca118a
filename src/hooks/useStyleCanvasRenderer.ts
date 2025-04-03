@@ -1,6 +1,6 @@
 
 import { useState, useEffect, RefObject } from "react";
-import { setupCanvas } from "@/utils/canvasUtils";
+import { setupCanvas } from "@/utils/canvas";
 import { 
   drawSilhouette, 
   hasValidImages, 

@@ -3,7 +3,7 @@ import {
   setupCanvas,
   loadImage,
   calculateDimensions
-} from "@/utils/canvasUtils";
+} from "@/utils/canvas";
 import { transformImageUrl } from "@/utils/imageUtils";
 
 interface OutfitItem {
