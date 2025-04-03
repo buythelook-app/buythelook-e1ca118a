@@ -1,4 +1,3 @@
-
 import { type CanvasItem, useCanvasRenderer } from "@/hooks/useCanvasRenderer";
 
 interface LookCanvasProps {
@@ -15,7 +14,7 @@ export const LookCanvas = ({ items, width = 600, height = 900 }: LookCanvasProps
   });
 
   return (
-    <div className="relative">
+    <div className="relative text-center w-full">
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
           <div className="h-8 w-8 rounded-full border-2 border-t-transparent border-netflix-accent animate-spin"></div>
@@ -36,7 +35,8 @@ export const LookCanvas = ({ items, width = 600, height = 900 }: LookCanvasProps
           maxWidth: '100%',
           width: `${width}px`,
           height: `${height}px`,
-          display: 'block'  // Ensure canvas is displayed as block
+          display: 'block',  // Ensure canvas is displayed as block
+          margin: '0 auto'   // Explicitly center the canvas
         }}
       />
     </div>

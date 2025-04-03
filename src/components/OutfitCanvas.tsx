@@ -1,4 +1,3 @@
-
 import { useRef } from "react";
 import { useStyleCanvasRenderer } from "@/hooks/useStyleCanvasRenderer";
 
@@ -32,7 +31,7 @@ export const OutfitCanvas = ({
   });
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative text-center w-full ${className}`}>
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
           <div className="h-8 w-8 rounded-full border-2 border-t-transparent border-netflix-accent animate-spin"></div>
@@ -53,7 +52,8 @@ export const OutfitCanvas = ({
           maxWidth: '100%',
           width: `${width}px`,
           height: `${height}px`,
-          display: 'block'
+          display: 'block',
+          margin: '0 auto'
         }}
       />
     </div>

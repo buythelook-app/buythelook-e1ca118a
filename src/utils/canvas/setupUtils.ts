@@ -1,4 +1,3 @@
-
 /**
  * Core utilities for canvas setup and configuration
  */
@@ -21,6 +20,8 @@ export const setupCanvas = (
 
   // Set up canvas with device pixel ratio for higher quality on high-DPI displays
   const scale = window.devicePixelRatio || 1;
+  
+  // Set the canvas dimensions in actual pixels
   canvas.width = width * scale;
   canvas.height = height * scale;
   
@@ -39,6 +40,8 @@ export const setupCanvas = (
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, width, height);
+
+  console.log(`Canvas setup: Physical size ${canvas.width}x${canvas.height}, Display size ${width}x${height}, Scale ${scale}`);
 
   return ctx;
 };

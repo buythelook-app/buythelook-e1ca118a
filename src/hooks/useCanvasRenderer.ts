@@ -137,18 +137,21 @@ export const useCanvasRenderer = ({
                 position.height
               );
 
-              // Apply a significant rightward shift (20% of canvas width)
-              // This directly addresses the left-alignment issue
-              const xOffset = Math.round(width * 0.2); 
+              // IMPORTANT: IGNORE position.x entirely and force center alignment
+              // Calculate the exact center of the canvas and position relative to that
+              const canvasCenterX = width / 2;
               
-              // Calculate drawing position with the offset
-              const drawX = Math.round(position.x - (drawWidth / 2)) + xOffset;
+              // Calculate drawing position based on canvas center
+              const drawX = Math.round(canvasCenterX - (drawWidth / 2));
               const drawY = Math.round(position.y);
               
-              // Draw debugging info
-              drawDebugInfo(ctx, drawX, drawY, drawWidth, drawHeight, item.type, position.x + xOffset);
+              // Log exact positioning information for debugging
+              console.log(`Drawing ${item.type} at position: x=${drawX}, center=${canvasCenterX}, width=${drawWidth}`);
               
-              // Draw the image with the rightward shift
+              // Draw debugging info using the canvas center
+              drawDebugInfo(ctx, drawX, drawY, drawWidth, drawHeight, item.type, canvasCenterX);
+              
+              // Draw the image centered on the canvas
               ctx.drawImage(
                 processedCanvas,
                 drawX,
