@@ -37,8 +37,7 @@ export const setupCanvas = (
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
-  // Clear and set background
-  ctx.clearRect(0, 0, width, height);
+  // Clear canvas with white background
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, width, height);
 
@@ -46,20 +45,20 @@ export const setupCanvas = (
 };
 
 /**
- * Default positions for different item types
+ * Default positions for different item types - adjusted to start from top
  */
 export const getDefaultPositions = (width: number, height: number): Record<string, PositionData> => {
-  // Calculate the exact center of the canvas
+  // Calculate the horizontal center of the canvas
   const centerX = Math.round(width / 2);
   
   return {
-    outerwear: { x: centerX, y: height * 0.15, width: width * 0.8, height: height * 0.4 },
-    top: { x: centerX, y: height * 0.15, width: width * 0.8, height: height * 0.4 },
-    bottom: { x: centerX, y: height * 0.5, width: width * 0.7, height: height * 0.4 },
-    dress: { x: centerX, y: height * 0.3, width: width * 0.8, height: height * 0.7 },
-    shoes: { x: centerX, y: height * 0.75, width: width * 0.6, height: height * 0.2 }, 
-    accessory: { x: centerX, y: height * 0.4, width: width * 0.5, height: height * 0.4 },
-    sunglasses: { x: centerX, y: height * 0.1, width: width * 0.6, height: height * 0.2 },
-    cart: { x: centerX, y: height * 0.4, width: width * 0.8, height: height * 0.4 }
+    outerwear: { x: centerX, y: height * 0.05, width: width * 0.8, height: height * 0.35 },
+    top: { x: centerX, y: height * 0.05, width: width * 0.8, height: height * 0.35 },
+    bottom: { x: centerX, y: height * 0.4, width: width * 0.7, height: height * 0.35 },
+    dress: { x: centerX, y: height * 0.1, width: width * 0.8, height: height * 0.7 },
+    shoes: { x: centerX, y: height * 0.75, width: width * 0.6, height: height * 0.2 },
+    accessory: { x: centerX, y: height * 0.3, width: width * 0.5, height: height * 0.3 },
+    sunglasses: { x: centerX, y: height * 0.05, width: width * 0.6, height: height * 0.15 },
+    cart: { x: centerX, y: height * 0.3, width: width * 0.8, height: height * 0.4 }
   };
 };

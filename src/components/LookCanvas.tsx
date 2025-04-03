@@ -32,7 +32,7 @@ export const LookCanvas = ({ items, width = 600, height = 900 }: LookCanvasProps
       )}
       <canvas
         ref={canvasRef}
-        className="border rounded-lg shadow-lg bg-white mx-auto"
+        className="bg-white border rounded-lg shadow-lg mx-auto"
         style={{ 
           maxWidth: '100%',
           width: `${width}px`,
