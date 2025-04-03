@@ -25,7 +25,7 @@ export const LookSuggestions = () => {
     dashboardItems,
     isLoading,
     error,
-    isRefreshing, // Changed from isRefetching to isRefreshing to match the hook
+    isRefreshing,
     recommendations,
     outfitColors,
     elegance,
@@ -37,6 +37,7 @@ export const LookSuggestions = () => {
     handleColorIntensityChange
   } = useOutfitGenerator();
 
+  // Handle adding items to cart
   const handleAddToCart = (items: Array<any> | any) => {
     const itemsToAdd = Array.isArray(items) ? items : [items];
     const cartItems = itemsToAdd.map(item => ({
@@ -54,6 +55,7 @@ export const LookSuggestions = () => {
     navigate('/cart');
   };
 
+  // Map API returned item types to our canvas item types
   const mapItemType = (type: string): 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' => {
     if (!type) {
       console.warn('Empty type received in mapItemType');
@@ -64,6 +66,7 @@ export const LookSuggestions = () => {
     
     console.log('Mapping type:', type, 'Normalized to:', lowerType);
 
+    // Filter out underwear items
     const underwearTerms = ['underwear', 'lingerie', 'bra', 'panties', 'briefs', 'boxer', 'thong'];
     for (const term of underwearTerms) {
       if (lowerType.includes(term)) {
@@ -72,6 +75,7 @@ export const LookSuggestions = () => {
       }
     }
 
+    // Check for bottom keywords
     const bottomKeywords = ['pants', 'skirt', 'shorts', 'jeans', 'trousers', 'bottom'];
     for (const keyword of bottomKeywords) {
       if (lowerType.includes(keyword)) {
@@ -109,6 +113,7 @@ export const LookSuggestions = () => {
     return mappedType || 'top';
   };
 
+  // Display a message if the user hasn't completed the style quiz
   if (!hasQuizData) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
@@ -138,12 +143,14 @@ export const LookSuggestions = () => {
     );
   }
 
+  // Validate color to make sure it's a valid CSS color
   const validateColor = (color: string): string => {
     const isValidColor = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color) || 
                         CSS.supports('color', color);
     return isValidColor ? color : '#CCCCCC';
   };
 
+  // Map dashboard items to canvas items
   const canvasItems = dashboardItems?.map(item => {
     console.log('Processing item:', item);
     const mappedType = mapItemType(item.type);
@@ -159,7 +166,7 @@ export const LookSuggestions = () => {
     <>
       <HomeButton />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <h1 className="text-3xl font-bold mb-2">Your Curated Look</h1>
+        <h1 className="text-3xl font-bold mb-2">Your Personalized Look</h1>
         {userStylePreference && (
           <p className="text-lg text-netflix-accent mb-6">
             Based on your {userStylePreference} style preference
@@ -174,7 +181,7 @@ export const LookSuggestions = () => {
               <div className="relative w-[300px]">
                 <div className="bg-white rounded-lg shadow-lg overflow-hidden pb-4">
                   <div className="relative">
-                    {isRefreshing ? ( // Changed from isRefetching to isRefreshing
+                    {isRefreshing ? (
                       <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
                         <Loader2 className="h-8 w-8 animate-spin text-netflix-accent" />
                       </div>
@@ -184,7 +191,7 @@ export const LookSuggestions = () => {
                       <Button 
                         onClick={() => handleAddToCart(dashboardItems)}
                         className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
-                        disabled={isRefreshing} // Changed from isRefetching to isRefreshing
+                        disabled={isRefreshing}
                       >
                         <ShoppingCart className="mr-1 h-3 w-3" />
                         Buy the look
@@ -192,7 +199,7 @@ export const LookSuggestions = () => {
                       <Button
                         onClick={handleTryDifferentLook}
                         className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
-                        disabled={isRefreshing} // Changed from isRefetching to isRefreshing
+                        disabled={isRefreshing}
                       >
                         <Shuffle className="mr-1 h-3 w-3" />
                         Try different
@@ -213,7 +220,7 @@ export const LookSuggestions = () => {
                       size="icon"
                       onClick={() => handleAddToCart(item)}
                       className="bg-white/10 hover:bg-netflix-accent/20 hover:text-netflix-accent rounded-full shadow-md"
-                      disabled={isRefreshing} // Changed from isRefetching to isRefreshing
+                      disabled={isRefreshing}
                     >
                       <ShoppingCart className="h-5 w-5" />
                     </Button>
@@ -240,7 +247,7 @@ export const LookSuggestions = () => {
         {recommendations.length > 0 && (
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Styling Tips</CardTitle>
+              <CardTitle>{userStylePreference ? `${userStylePreference} Style Tips` : 'Styling Tips'}</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
@@ -255,7 +262,7 @@ export const LookSuggestions = () => {
         {outfitColors && (
           <Card>
             <CardHeader>
-              <CardTitle>Color Palette</CardTitle>
+              <CardTitle>Your Personal Color Palette</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex gap-4 justify-center">

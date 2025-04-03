@@ -5,6 +5,7 @@
 
 import { validateMood } from "@/services/utils/validationUtils";
 import { mapBodyShape, mapStyle } from "@/services/mappers/styleMappers";
+import { mapStylePreference } from "@/components/quiz/constants/styleRecommendations";
 
 // Cache for API requests to avoid duplications
 const requestCache = new Map();
@@ -133,7 +134,14 @@ export const generateOutfitFromUserPreferences = async () => {
     
     // Get style preference from quiz data
     const preferredStyle = styleAnalysis.analysis.styleProfile || 'classic';
-    const style = mapStyle(preferredStyle);
+    
+    // Use the normalized style mapping for consistency
+    const mappedStyle = mapStylePreference(preferredStyle);
+    const style = mapStyle(mappedStyle);
+    
+    console.log('User style preference from quiz:', preferredStyle);
+    console.log('Mapped to standardized style:', mappedStyle);
+    console.log('Mapped to API parameter:', style);
     
     // Get current mood from localStorage or use a default
     const currentMoodData = localStorage.getItem('current-mood');

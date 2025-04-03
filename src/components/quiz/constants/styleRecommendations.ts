@@ -93,3 +93,35 @@ export const styleRecommendations: Record<string, StyleRecommendations> = {
     outerwear: { type: "Blazer", color: "navy", style: "structured" }
   }
 };
+
+// Mapping function to normalize style names for matching
+export const mapStylePreference = (stylePreference: string): string => {
+  // Normalize style name for consistent matching
+  const normalizedStyle = stylePreference.toLowerCase().trim();
+  
+  // Map common variations to our standard style categories
+  if (normalizedStyle.includes('classic') || normalizedStyle.includes('elegant') || normalizedStyle.includes('sophisticated')) {
+    return 'Classic';
+  } else if (normalizedStyle.includes('minimal') || normalizedStyle.includes('simple') || normalizedStyle.includes('clean')) {
+    return 'Minimalist';
+  } else if (normalizedStyle.includes('modern') || normalizedStyle.includes('contemporary')) {
+    return 'Modern';
+  } else if (normalizedStyle.includes('boho') || normalizedStyle.includes('boo hoo') || normalizedStyle.includes('bohemian')) {
+    return 'Boo Hoo';
+  } else if (normalizedStyle.includes('nordic') || normalizedStyle.includes('scandinavian')) {
+    return 'Nordic';
+  } else if (normalizedStyle.includes('classy') || normalizedStyle.includes('luxe') || normalizedStyle.includes('luxury')) {
+    return 'Classy';
+  } else if (normalizedStyle.includes('work') || normalizedStyle.includes('professional') || normalizedStyle.includes('business')) {
+    return 'Work';
+  }
+  
+  // Default to Classic if no match is found
+  return 'Classic';
+};
+
+// Get recommendations based on user style preferences
+export const getRecommendationsForUserStyle = (userStyle: string): StyleRecommendations => {
+  const mappedStyle = mapStylePreference(userStyle);
+  return styleRecommendations[mappedStyle] || styleRecommendations.Classic;
+};

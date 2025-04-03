@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +10,7 @@ import { storeOutfitColors, storeStyleRecommendations, OutfitColors } from "@/se
 import { validateMood } from "@/services/utils/validationUtils";
 import { findBestColorMatch } from "@/services/fetchers/itemsFetcher";
 import { getFallbackItems } from "@/services/fallbacks/outfitFallbacks";
+import { getRecommendationsForUserStyle } from "@/components/quiz/constants/styleRecommendations";
 
 export const useOutfitGenerator = () => {
   const navigate = useNavigate();
@@ -22,6 +24,7 @@ export const useOutfitGenerator = () => {
 
   const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
 
+  // Load and apply user style preferences from quiz
   useEffect(() => {
     const styleData = localStorage.getItem('styleAnalysis');
     if (styleData) {
@@ -31,6 +34,7 @@ export const useOutfitGenerator = () => {
         setUserStylePreference(styleProfile);
         console.log("Loaded user style preference:", styleProfile);
         
+        // Apply user preferences to style sliders based on their quiz results
         if (styleProfile?.toLowerCase().includes('minimalist') || 
             styleProfile?.toLowerCase().includes('minimal') || 
             styleProfile?.toLowerCase().includes('nordic') || 
@@ -45,6 +49,20 @@ export const useOutfitGenerator = () => {
                   styleProfile?.toLowerCase().includes('elegant')) {
           setElegance(90);
           setColorIntensity(50);
+        }
+        
+        // Pre-load style recommendations based on user profile
+        if (styleProfile) {
+          const userStyleRecs = getRecommendationsForUserStyle(styleProfile);
+          if (userStyleRecs.essentials) {
+            const essentialRecommendations = userStyleRecs.essentials.flatMap(
+              category => [`${category.category.charAt(0).toUpperCase() + category.category.slice(1)} essentials:`, ...category.items.map(item => `- ${item}`)]
+            );
+            
+            // Store these recommendations for initial display
+            storeStyleRecommendations(essentialRecommendations);
+            setRecommendations(essentialRecommendations);
+          }
         }
       } catch (error) {
         console.error("Error parsing style data:", error);
@@ -84,6 +102,7 @@ export const useOutfitGenerator = () => {
     }
   }, [hasQuizData, navigate, toast]);
 
+  // Listen for mood changes in local storage
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'current-mood') {
@@ -95,6 +114,7 @@ export const useOutfitGenerator = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  // Query for outfit suggestions based on user preferences
   const { data: dashboardItems, isLoading, error, refetch } = useQuery({
     queryKey: ['firstOutfitSuggestion', elegance, colorIntensity, userStylePreference],
     queryFn: fetchFirstOutfitSuggestion,
@@ -113,6 +133,7 @@ export const useOutfitGenerator = () => {
     }
   });
 
+  // Generate a new outfit based on the user's preferences
   const handleTryDifferentLook = async () => {
     setIsRefreshing(true);
     console.log("Trying different look - generating new outfit...");
@@ -126,12 +147,20 @@ export const useOutfitGenerator = () => {
       
       const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
       const preferredStyle = styleAnalysis.analysis.styleProfile || 'classic';
+      
+      // Use the standardized style mapping for consistency
+      const mappedStylePreference = getRecommendationsForUserStyle(preferredStyle);
       const style = mapStyle(preferredStyle);
       
       const currentMoodData = localStorage.getItem('current-mood');
       const mood = validateMood(currentMoodData);
       
-      console.log("Generating new outfit with params:", { bodyStructure: bodyShape, style, mood });
+      console.log("Generating new outfit with params:", { 
+        bodyStructure: bodyShape, 
+        style, 
+        mood,
+        userStylePreference: preferredStyle 
+      });
       
       const response = await generateOutfit(bodyShape, style, mood);
       console.log("Outfit API response:", response);
@@ -181,7 +210,7 @@ export const useOutfitGenerator = () => {
       
       toast({
         title: "New Look Generated",
-        description: "Here's a fresh style combination for you!",
+        description: `New outfit synced with your ${preferredStyle} style!`,
       });
     } catch (error) {
       console.error("Error generating outfit:", error);

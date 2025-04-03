@@ -10,6 +10,7 @@ import { getFallbackItems } from "./fallbacks/outfitFallbacks";
 import { validateMood } from "./utils/validationUtils";
 import { findBestColorMatch } from "./fetchers/itemsFetcher";
 import { OutfitColors, storeOutfitColors, storeStyleRecommendations } from "./utils/outfitStorageUtils";
+import { mapStylePreference } from "@/components/quiz/constants/styleRecommendations";
 
 // Cache for outfit suggestions
 const outfitCache = new Map<string, DashboardItem[]>();
@@ -49,11 +50,15 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     
     const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
     const preferredStyle = styleAnalysis.analysis.styleProfile || 'classic';
-    console.log("User's preferred style from quiz:", preferredStyle);
+    
+    // Map the user's preferred style to our standardized categories for better matching
+    const mappedStylePreference = mapStylePreference(preferredStyle);
+    console.log("User's raw preferred style from quiz:", preferredStyle);
+    console.log("Mapped to standardized style category:", mappedStylePreference);
     
     // Get selected event style (if any) or use preferred style from quiz
     const eventStyle = selectedEvent ? getEventStyles() : null;
-    const style = mapStyle(eventStyle || preferredStyle);
+    const style = mapStyle(eventStyle || mappedStylePreference);
     console.log("Selected event:", selectedEvent, "Mapped style for API request:", style);
     
     // Get the current mood selection from localStorage
@@ -72,7 +77,12 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     
     // Store recommendations for display in the UI
     if (outfitSuggestion.recommendations && Array.isArray(outfitSuggestion.recommendations)) {
-      storeStyleRecommendations(outfitSuggestion.recommendations);
+      const enhancedRecommendations = [
+        ...outfitSuggestion.recommendations,
+        `This outfit complements your ${preferredStyle} style preference.`,
+        `Selected colors are optimized for your ${bodyShape}-type body shape.`
+      ];
+      storeStyleRecommendations(enhancedRecommendations);
     }
     
     // Store color palette for display in the UI
