@@ -1,5 +1,6 @@
 
 import { useEffect, useRef } from "react";
+import { setupCanvas, drawCenterLine, loadImage, calculateDimensions } from "@/utils/canvasUtils";
 
 interface StyleCanvasProps {
   id: string;
@@ -9,55 +10,27 @@ interface StyleCanvasProps {
 }
 
 export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvasProps) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const canvas = document.getElementById(id) as HTMLCanvasElement;
     if (!canvas) return;
-
-    const ctx = canvas.getContext('2d', { alpha: true, desynchronized: false });
+    
+    canvasRef.current = canvas;
+    const ctx = setupCanvas(canvas, canvas.width, canvas.height);
     if (!ctx) return;
 
-    // High-resolution canvas with device pixel ratio
-    const scale = window.devicePixelRatio || 1;
-    const originalWidth = canvas.width;
-    const originalHeight = canvas.height;
-    
-    // Set display size (css pixels) and actual size (rendered pixels)
-    canvas.style.width = originalWidth + 'px';
-    canvas.style.height = originalHeight + 'px';
-    canvas.width = Math.floor(originalWidth * scale);
-    canvas.height = Math.floor(originalHeight * scale);
-    
-    // Scale the context to ensure correct drawing operations
-    ctx.scale(scale, scale);
-    
-    // Configure for highest quality rendering
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    
-    // Clear canvas and set a white background
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, originalWidth, originalHeight);
-    
-    // Calculate exact center of canvas
-    const centerX = originalWidth / 2;
-
-    // Draw a centerline for debugging
-    // Comment out in production
-    /*
-    ctx.beginPath();
-    ctx.moveTo(centerX, 0);
-    ctx.lineTo(centerX, originalHeight);
-    ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
-    ctx.stroke();
-    */
+    // Draw a centerline for debugging (comment out in production)
+    // drawCenterLine(ctx, canvas.width, canvas.height);
 
     // If we have outfit data, draw the outfit items to look like a human outfit
     if (outfitData) {
       // Define layout dimensions
-      const canvasWidth = originalWidth;
-      const canvasHeight = originalHeight;
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+      
+      // Calculate exact center of canvas
+      const centerX = canvasWidth / 2;
       
       // True center-aligned positions for all outfit types
       const topPositionY = canvasHeight * 0.15; // Top of the canvas for top item
@@ -72,23 +45,17 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
           
           // Draw top item with perfect centering
           if (outfitData.top && outfitData.top.image && outfitData.top.image.length > 0) {
-            const topPromise = new Promise<void>((resolve) => {
-              const topImg = new Image();
-              topImg.crossOrigin = "anonymous";
-              
-              // Append timestamp to prevent caching
-              const timestamp = new Date().getTime();
-              const imageUrl = outfitData.top.image[0].includes('?') 
-                ? `${outfitData.top.image[0]}&t=${timestamp}` 
-                : `${outfitData.top.image[0]}?t=${timestamp}`;
-              
-              topImg.src = imageUrl;
-              
-              topImg.onload = () => {
+            const topPromise = new Promise<void>(async (resolve) => {
+              try {
+                const topImg = await loadImage(outfitData.top.image[0]);
+                
                 // Calculate dimensions to maintain aspect ratio and center horizontally
-                const aspectRatio = topImg.width / topImg.height;
-                const drawHeight = canvasHeight * 0.3; // Top takes 30% of canvas height
-                const drawWidth = drawHeight * aspectRatio;
+                const { width: drawWidth, height: drawHeight } = calculateDimensions(
+                  topImg.width,
+                  topImg.height,
+                  canvasWidth * 0.7,
+                  canvasHeight * 0.3
+                );
                 
                 // Calculate X position to ensure the center of the image aligns with the center of canvas
                 const xPos = centerX - (drawWidth / 2);
@@ -103,11 +70,7 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                   drawWidth, 
                   drawHeight
                 );
-                
-                resolve();
-              };
-              
-              topImg.onerror = () => {
+              } catch (error) {
                 // Fallback to color block if image fails to load
                 ctx.fillStyle = outfitData.top;
                 const topWidth = canvasWidth * 0.7;
@@ -115,20 +78,8 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                 
                 // Exact center positioning for fallback color block
                 ctx.fillRect(centerX - (topWidth / 2), topPositionY, topWidth, topHeight);
-                resolve();
-              };
-              
-              // Set timeout to prevent hanging
-              setTimeout(() => {
-                if (!topImg.complete) {
-                  console.warn("Top image load timeout");
-                  ctx.fillStyle = outfitData.top;
-                  const topWidth = canvasWidth * 0.7;
-                  const topHeight = canvasHeight * 0.3;
-                  ctx.fillRect(centerX - (topWidth / 2), topPositionY, topWidth, topHeight);
-                  resolve();
-                }
-              }, 5000);
+              }
+              resolve();
             });
             
             imagePromises.push(topPromise);
@@ -144,22 +95,17 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
           
           // Draw bottom item with enhanced centering
           if (outfitData.bottom && outfitData.bottom.image && outfitData.bottom.image.length > 0) {
-            const bottomPromise = new Promise<void>((resolve) => {
-              const bottomImg = new Image();
-              bottomImg.crossOrigin = "anonymous";
-              
-              const timestamp = new Date().getTime();
-              const imageUrl = outfitData.bottom.image[0].includes('?') 
-                ? `${outfitData.bottom.image[0]}&t=${timestamp}` 
-                : `${outfitData.bottom.image[0]}?t=${timestamp}`;
-              
-              bottomImg.src = imageUrl;
-              
-              bottomImg.onload = () => {
+            const bottomPromise = new Promise<void>(async (resolve) => {
+              try {
+                const bottomImg = await loadImage(outfitData.bottom.image[0]);
+                
                 // True aspect ratio preservation
-                const aspectRatio = bottomImg.width / bottomImg.height;
-                const drawHeight = canvasHeight * 0.35; // Bottom takes 35% of canvas height
-                const drawWidth = drawHeight * aspectRatio;
+                const { width: drawWidth, height: drawHeight } = calculateDimensions(
+                  bottomImg.width,
+                  bottomImg.height,
+                  canvasWidth * 0.5,
+                  canvasHeight * 0.35
+                );
                 
                 // Calculate X position for exact center alignment
                 const xPos = centerX - (drawWidth / 2);
@@ -172,11 +118,7 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                   drawWidth, 
                   drawHeight
                 );
-                
-                resolve();
-              };
-              
-              bottomImg.onerror = () => {
+              } catch (error) {
                 // Fallback to color block if image fails to load
                 ctx.fillStyle = outfitData.bottom;
                 const bottomWidth = canvasWidth * 0.5;
@@ -184,19 +126,8 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                 
                 // Exact center positioning for fallback
                 ctx.fillRect(centerX - (bottomWidth / 2), bottomPositionY, bottomWidth, bottomHeight);
-                resolve();
-              };
-              
-              setTimeout(() => {
-                if (!bottomImg.complete) {
-                  console.warn("Bottom image load timeout");
-                  ctx.fillStyle = outfitData.bottom;
-                  const bottomWidth = canvasWidth * 0.5;
-                  const bottomHeight = canvasHeight * 0.35;
-                  ctx.fillRect(centerX - (bottomWidth / 2), bottomPositionY, bottomWidth, bottomHeight);
-                  resolve();
-                }
-              }, 5000);
+              }
+              resolve();
             });
             
             imagePromises.push(bottomPromise);
@@ -212,22 +143,17 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
           
           // Draw shoes with perfect centering
           if (outfitData.shoes && outfitData.shoes.image && outfitData.shoes.image.length > 0) {
-            const shoesPromise = new Promise<void>((resolve) => {
-              const shoesImg = new Image();
-              shoesImg.crossOrigin = "anonymous";
-              
-              const timestamp = new Date().getTime();
-              const imageUrl = outfitData.shoes.image[0].includes('?') 
-                ? `${outfitData.shoes.image[0]}&t=${timestamp}` 
-                : `${outfitData.shoes.image[0]}?t=${timestamp}`;
-              
-              shoesImg.src = imageUrl;
-              
-              shoesImg.onload = () => {
+            const shoesPromise = new Promise<void>(async (resolve) => {
+              try {
+                const shoesImg = await loadImage(outfitData.shoes.image[0]);
+                
                 // True aspect ratio preservation
-                const aspectRatio = shoesImg.width / shoesImg.height;
-                const drawHeight = canvasHeight * 0.2; // Shoes take 20% of canvas height
-                const drawWidth = drawHeight * aspectRatio;
+                const { width: drawWidth, height: drawHeight } = calculateDimensions(
+                  shoesImg.width,
+                  shoesImg.height,
+                  canvasWidth * 0.4,
+                  canvasHeight * 0.2
+                );
                 
                 // Calculate X position for exact center alignment
                 const xPos = centerX - (drawWidth / 2);
@@ -240,11 +166,7 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                   drawWidth, 
                   drawHeight
                 );
-                
-                resolve();
-              };
-              
-              shoesImg.onerror = () => {
+              } catch (error) {
                 // Fallback to color block if image fails to load
                 ctx.fillStyle = outfitData.shoes;
                 const shoesWidth = canvasWidth * 0.4;
@@ -252,19 +174,8 @@ export const StyleCanvas = ({ id, styleType, outfitData, occasion }: StyleCanvas
                 
                 // Exact center positioning for fallback
                 ctx.fillRect(centerX - (shoesWidth / 2), shoesPositionY, shoesWidth, shoesHeight);
-                resolve();
-              };
-              
-              setTimeout(() => {
-                if (!shoesImg.complete) {
-                  console.warn("Shoes image load timeout");
-                  ctx.fillStyle = outfitData.shoes;
-                  const shoesWidth = canvasWidth * 0.4;
-                  const shoesHeight = canvasHeight * 0.15;
-                  ctx.fillRect(centerX - (shoesWidth / 2), shoesPositionY, shoesWidth, shoesHeight);
-                  resolve();
-                }
-              }, 5000);
+              }
+              resolve();
             });
             
             imagePromises.push(shoesPromise);
