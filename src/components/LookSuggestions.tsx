@@ -77,7 +77,12 @@ export const LookSuggestions = () => {
   }));
 
   // Get the occasion from the dashboardItems, if available
-  const currentOccasion = dashboardItems[0]?.occasion || undefined;
+  // The occasion is typically available from the first dashboard item's occasion property
+  // If not available in the item directly, we can check if it's in a metadata field or default to undefined
+  const currentOccasion = dashboardItems[0]?.occasion || 
+                         dashboardItems[0]?.metadata?.occasion || 
+                         dashboardItems[0]?.event || 
+                         undefined;
 
   return (
     <>
