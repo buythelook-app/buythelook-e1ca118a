@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import { 
   setupCanvas, 
@@ -141,11 +142,10 @@ export const useCanvasRenderer = ({
                 position.height
               );
 
-              // Position at 65% of canvas width to compensate for visual layout
-              // This accounts for the canvas appearing to be divided into left/right sections
-              const visualCenterX = width * 0.65; // Adjusted to appear visually centered
+              // Use the true center of the canvas - no adjustment needed
+              const visualCenterX = width / 2; // Use exact center
               
-              // Calculate drawing position from adjusted center point
+              // Calculate drawing position from center point
               const drawX = Math.round(visualCenterX - (drawWidth / 2));
               const drawY = Math.round(position.y);
               

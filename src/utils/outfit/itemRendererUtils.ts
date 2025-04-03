@@ -104,6 +104,7 @@ export const renderItemImage = async ({
     const drawHeight = Math.round(rawHeight);
     
     // Calculate X position for exact center alignment
+    // Make sure we use exact center without any offset
     const xPos = Math.round(centerX - (drawWidth / 2));
     
     // Position the item directly at the specified Y position without offset
