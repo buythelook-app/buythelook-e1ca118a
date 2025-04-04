@@ -55,8 +55,7 @@ export const LookItem = ({
 
   return (
     <div 
-      key={look.id}
-      className="bg-netflix-card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow"
+      className="bg-netflix-card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow max-w-md mx-auto w-full"
     >
       <div className="flex justify-between items-start mb-4">
         <h3 className="text-xl font-semibold">{look.title}</h3>
