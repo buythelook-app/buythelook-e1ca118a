@@ -6,12 +6,9 @@
 import { DashboardItem } from "@/types/lookTypes";
 import { validateMood } from "@/services/utils/validationUtils";
 import { mapBodyShape, mapStyle } from "@/services/mappers/styleMappers";
-import { fetchOutfitSuggestions, FALLBACK_DATA } from "./outfitSuggestionService";
+import { fetchOutfitSuggestions } from "./outfitSuggestionService";
 import { convertOutfitToDashboardItems, generateFallbackItems } from "./dashboardItemsService";
 import { getCachedResponse, setCachedResponse } from './cacheService';
-
-// Avoid logging during initial load
-const DEBUG = false;
 
 /**
  * Fetches dashboard items by type and occasion using the outfit API
@@ -25,18 +22,14 @@ export const fetchItemsByTypeAndOccasion = async (
   
   // Use cached data if available and not forcing refresh
   if (!forceRefresh && getCachedResponse(cacheKey)) {
-    if (DEBUG) console.log(`Using cached ${type} items for ${occasion}`);
     return getCachedResponse(cacheKey) || [];
   }
-  
-  if (DEBUG) console.log(`Fetching ${type} items for ${occasion}`);
   
   try {
     // Get user preferences from localStorage
     const quizData = localStorage.getItem('styleAnalysis');
     
     if (!quizData) {
-      if (DEBUG) console.log('No quiz data found, using default values');
       // Generate fallback items
       const fallbackItems = generateFallbackItems(type, occasion);
       setCachedResponse(cacheKey, fallbackItems);
@@ -45,7 +38,6 @@ export const fetchItemsByTypeAndOccasion = async (
     
     const styleAnalysis = JSON.parse(quizData);
     if (!styleAnalysis?.analysis) {
-      if (DEBUG) console.log('Invalid quiz data, using default values');
       const fallbackItems = generateFallbackItems(type, occasion);
       setCachedResponse(cacheKey, fallbackItems);
       return fallbackItems;
@@ -79,7 +71,6 @@ export const fetchItemsByTypeAndOccasion = async (
     setCachedResponse(cacheKey, items);
     return items;
   } catch (error) {
-    if (DEBUG) console.error(`Error fetching ${type} items for ${occasion}:`, error);
     const fallbackItems = generateFallbackItems(type, occasion);
     return fallbackItems;
   }
@@ -139,13 +130,10 @@ export const fetchItemsForOccasion = async (triggerRefresh = false): Promise<Rec
       
       // Combine all items for this occasion
       result[occasion] = [...topItems, ...bottomItems, ...shoesItems];
-      
-      if (DEBUG) console.log(`Total items for ${occasion}: ${result[occasion].length}`);
     }
     
     return result;
   } catch (error) {
-    if (DEBUG) console.error('Error fetching items for occasions:', error);
     return {
       Work: [],
       Casual: [],

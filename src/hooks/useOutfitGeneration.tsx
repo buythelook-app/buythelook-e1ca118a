@@ -1,14 +1,13 @@
 
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { generateOutfit } from "@/services/api/outfitApi";
+import { generateOutfit } from "@/services/api/outfitGenerationService";
 import { mapBodyShape, mapStyle } from "@/services/mappers/styleMappers";
 import { validateMood } from "@/services/utils/validationUtils";
 import { storeOutfitColors, storeStyleRecommendations, OutfitColors } from "@/services/utils/outfitStorageUtils";
 import { findBestColorMatch } from "@/services/fetchers/itemsFetcher";
 import { getFallbackItems } from "@/services/fallbacks/outfitFallbacks";
 import { getRecommendationsForUserStyle } from "@/components/quiz/constants/styleRecommendations";
-import { DashboardItem } from "@/types/lookTypes";
 
 export const useOutfitGeneration = (refetch: () => Promise<any>) => {
   const { toast } = useToast();
@@ -18,7 +17,6 @@ export const useOutfitGeneration = (refetch: () => Promise<any>) => {
   // Generate a new outfit based on the user's preferences
   const handleTryDifferentLook = async () => {
     setIsRefreshing(true);
-    console.log("Trying different look - generating new outfit...");
     try {
       const quizData = localStorage.getItem('styleAnalysis');
       const styleAnalysis = quizData ? JSON.parse(quizData) : null;
@@ -29,23 +27,12 @@ export const useOutfitGeneration = (refetch: () => Promise<any>) => {
       
       const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
       const preferredStyle = styleAnalysis.analysis.styleProfile || 'classic';
-      
-      // Use the standardized style mapping for consistency
-      const mappedStylePreference = getRecommendationsForUserStyle(preferredStyle);
       const style = mapStyle(preferredStyle);
       
       const currentMoodData = localStorage.getItem('current-mood');
       const mood = validateMood(currentMoodData);
       
-      console.log("Generating new outfit with params:", { 
-        bodyStructure: bodyShape, 
-        style, 
-        mood,
-        userStylePreference: preferredStyle 
-      });
-      
       const response = await generateOutfit(bodyShape, style, mood);
-      console.log("Outfit API response:", response);
       
       if (!response || !response.data || !Array.isArray(response.data) || response.data.length === 0) {
         throw new Error("Invalid API response");

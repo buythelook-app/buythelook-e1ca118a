@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { fetchItemsForOccasion } from "@/services/lookService";
 import { LookItem } from "./LookItem";
-import { generateOutfit } from "@/services/api/outfitApi";
+import { generateOutfit } from "@/services/api/outfitGenerationService";
 import { mapBodyShape, mapStyle } from "@/services/mappers/styleMappers";
 import { validateMood } from "@/services/utils/validationUtils";
 
@@ -54,7 +54,7 @@ export const PersonalizedLooks = ({ userStyle, selectedMood }: PersonalizedLooks
       const currentMoodData = localStorage.getItem('current-mood');
       const mood = validateMood(currentMoodData);
       
-      const response = await generateOutfit(bodyShape, style, mood);
+      await generateOutfit(bodyShape, style, mood);
       
       setCombinations(prev => ({
         ...prev,
