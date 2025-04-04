@@ -4,7 +4,7 @@
  */
 
 import { fetchFirstOutfitSuggestion } from './outfitService';
-import { fetchItemsForOccasion } from './dashboardService';
+import { fetchItemsForOccasion } from './dashboard/dashboardService';
 import { mapDashboardItemToOutfitItem } from './mappers/styleMappers';
 import { findBestColorMatch, getAllItemsFromSupabase } from './fetchers/itemsFetcher';
 
