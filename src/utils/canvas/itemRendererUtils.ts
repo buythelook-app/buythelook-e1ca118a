@@ -85,11 +85,12 @@ export const renderCanvasItems = async ({
           const centerX = width / 2;
           
           // Calculate drawing position from center point
-          const drawX = Math.round(centerX - (drawWidth / 2));
+          const drawX = Math.round(2*(centerX - (drawWidth / 2)));
           const drawY = Math.round(position.y);
           
           // Draw the item at the calculated position
-          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+          //ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+          ctx.drawImage(img, drawX, drawY);
         }
       } catch (itemError) {
         console.error('Error processing item:', itemError);
