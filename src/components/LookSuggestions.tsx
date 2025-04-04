@@ -7,7 +7,7 @@ import { DebugDataViewer } from "./DebugDataViewer";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { type CanvasItem } from "@/types/canvasTypes";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { DashboardItem } from "@/types/lookTypes";
 
 // Import the extracted components
@@ -19,6 +19,7 @@ import { mapItemType } from "./look/OutfitTypeMapper";
 import { QuizPrompt } from "./look/QuizPrompt";
 import { LoadingState } from "./look/LoadingState";
 import { ErrorState } from "./look/ErrorState";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "./ui/carousel";
 
 export const LookSuggestions = () => {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ export const LookSuggestions = () => {
   const { toast } = useToast();
   const [selectedItems, setSelectedItems] = useState<DashboardItem[]>([]);
   const [selectedOccasion, setSelectedOccasion] = useState<string | undefined>(undefined);
+  const [activeOutfitIndex, setActiveOutfitIndex] = useState(0);
   
   const {
     dashboardItems,
@@ -85,6 +87,28 @@ export const LookSuggestions = () => {
     navigate('/cart');
   };
 
+  // Group items by outfit
+  const outfits = useMemo(() => {
+    if (selectedItems.length > 0) {
+      return [selectedItems]; // Selected items are already one outfit
+    }
+    
+    if (!dashboardItems?.length) return [];
+    
+    // Group items by outfit ID or create separate outfits if no grouping info
+    const outfitMap = new Map<string, DashboardItem[]>();
+    
+    dashboardItems.forEach(item => {
+      const outfitId = item.outfitId || item.id; // Use outfitId if available or item id
+      if (!outfitMap.has(outfitId)) {
+        outfitMap.set(outfitId, []);
+      }
+      outfitMap.get(outfitId)?.push(item);
+    });
+    
+    return Array.from(outfitMap.values());
+  }, [dashboardItems, selectedItems]);
+
   // Render states
   if (!hasQuizData) {
     return <QuizPrompt />;
@@ -97,22 +121,21 @@ export const LookSuggestions = () => {
   if (error && !selectedItems.length && !dashboardItems?.length) {
     return <ErrorState />;
   }
-
-  // Use selected items from localStorage if available, otherwise use dashboard items
-  const itemsToDisplay = selectedItems.length > 0 ? selectedItems : dashboardItems;
+  
+  const currentOutfit = outfits[activeOutfitIndex] || [];
 
   // Map dashboard items to canvas items
-  const canvasItems: CanvasItem[] = itemsToDisplay?.map(item => ({
+  const canvasItems: CanvasItem[] = currentOutfit.map(item => ({
     id: item.id,
     image: item.image,
     type: mapItemType(item.type)
-  })) || [];
+  }));
 
   // Get the occasion from the items, if available
   const currentOccasion = selectedOccasion || 
-                         itemsToDisplay?.[0]?.occasion || 
-                         (itemsToDisplay?.[0]?.metadata && itemsToDisplay[0].metadata.occasion) || 
-                         itemsToDisplay?.[0]?.event || 
+                         currentOutfit[0]?.occasion || 
+                         (currentOutfit[0]?.metadata && currentOutfit[0].metadata.occasion) || 
+                         currentOutfit[0]?.event || 
                          undefined;
 
   return (
@@ -135,16 +158,52 @@ export const LookSuggestions = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
-            <OutfitCanvas 
-              canvasItems={canvasItems} 
-              isRefreshing={isRefreshing} 
-              onAddToCart={() => handleAddToCart(itemsToDisplay)}
-              onTryDifferent={handleTryDifferentLook}
-              occasion={currentOccasion}
-            />
+            {outfits.length > 1 ? (
+              <div className="relative mb-8">
+                <Carousel 
+                  className="w-full"
+                  onSelect={(index) => setActiveOutfitIndex(index)}
+                >
+                  <CarouselContent>
+                    {outfits.map((outfitItems, index) => {
+                      const outfitCanvasItems: CanvasItem[] = outfitItems.map(item => ({
+                        id: item.id,
+                        image: item.image,
+                        type: mapItemType(item.type)
+                      }));
+                      
+                      return (
+                        <CarouselItem key={`outfit-${index}`}>
+                          <OutfitCanvas 
+                            canvasItems={outfitCanvasItems} 
+                            isRefreshing={isRefreshing} 
+                            onAddToCart={() => handleAddToCart(outfitItems)}
+                            onTryDifferent={handleTryDifferentLook}
+                            occasion={currentOccasion}
+                          />
+                        </CarouselItem>
+                      );
+                    })}
+                  </CarouselContent>
+                  <CarouselPrevious variant="outline" />
+                  <CarouselNext variant="outline" />
+                </Carousel>
+                <div className="text-center text-sm text-gray-500 mt-2">
+                  Outfit {activeOutfitIndex + 1} of {outfits.length}
+                </div>
+              </div>
+            ) : (
+              <OutfitCanvas 
+                canvasItems={canvasItems} 
+                isRefreshing={isRefreshing} 
+                onAddToCart={() => handleAddToCart(currentOutfit)}
+                onTryDifferent={handleTryDifferentLook}
+                occasion={currentOccasion}
+              />
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              {itemsToDisplay?.map((item) => (
+              {currentOutfit.map((item) => (
                 <ItemCard 
                   key={item.id}
                   id={item.id}
@@ -181,7 +240,7 @@ export const LookSuggestions = () => {
           <div className="bg-gray-50 p-4 rounded-lg">
             <h3 className="text-lg font-semibold mb-2">{currentOccasion || "Look"} Components</h3>
             <ul className="space-y-2">
-              {itemsToDisplay?.map((item) => (
+              {currentOutfit.map((item) => (
                 <li key={item.id} className="flex items-center gap-4 border-b border-gray-100 pb-2">
                   <div className="w-12 h-12 bg-white border rounded-md overflow-hidden flex-shrink-0">
                     <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
