@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { StyleCanvas } from "@/components/StyleCanvas";
 
@@ -17,7 +18,7 @@ export const StyleCanvasContainer = () => {
   }, []);
 
   return (
-    <div style={{ display: 'none', visibility: 'hidden', position: 'absolute', left: '-9999px' }}>
+    <div className="hidden">
       {Array.from({ length: 4 }).map((_, index) => (
         <StyleCanvas key={index} id={`style-canvas-${index}`} styleType={index} />
       ))}
