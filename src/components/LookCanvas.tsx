@@ -1,7 +1,6 @@
 
 import { useCanvasRenderer } from "@/hooks/useCanvasRenderer";
 import { type CanvasItem } from "@/types/canvasTypes";
-import { useState, useRef } from "react";
 
 interface LookCanvasProps {
   items: CanvasItem[];
@@ -26,39 +25,6 @@ export const LookCanvas = ({
     height,
     occasion
   });
-  
-  // Touch swipe handling
-  const touchStartX = useRef<number | null>(null);
-  const touchEndX = useRef<number | null>(null);
-  
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-  
-  const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
-  
-  const handleTouchEnd = () => {
-    if (!touchStartX.current || !touchEndX.current) return;
-    
-    const diffX = touchStartX.current - touchEndX.current;
-    
-    // Minimum swipe distance to trigger action (20px)
-    if (Math.abs(diffX) > 20) {
-      if (diffX > 0 && onSwipeLeft) {
-        // Swiped left
-        onSwipeLeft();
-      } else if (diffX < 0 && onSwipeRight) {
-        // Swiped right
-        onSwipeRight();
-      }
-    }
-    
-    // Reset values
-    touchStartX.current = null;
-    touchEndX.current = null;
-  };
 
   return (
     <div className="relative text-center w-full">
@@ -85,9 +51,6 @@ export const LookCanvas = ({
           display: 'block',
           margin: '0 auto'
         }}
-        onTouchStart={onSwipeLeft || onSwipeRight ? handleTouchStart : undefined}
-        onTouchMove={onSwipeLeft || onSwipeRight ? handleTouchMove : undefined}
-        onTouchEnd={onSwipeLeft || onSwipeRight ? handleTouchEnd : undefined}
       />
     </div>
   );

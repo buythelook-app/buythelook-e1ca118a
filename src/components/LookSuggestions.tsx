@@ -19,6 +19,7 @@ import { QuizPrompt } from "./look/QuizPrompt";
 import { LoadingState } from "./look/LoadingState";
 import { ErrorState } from "./look/ErrorState";
 import { OutfitBreakdown } from "./look/OutfitBreakdown";
+import { OutfitCarousel } from "./look/OutfitCarousel";
 import { DebugDataViewer } from "./DebugDataViewer";
 
 export const LookSuggestions = () => {
@@ -27,6 +28,7 @@ export const LookSuggestions = () => {
   const { toast } = useToast();
   const [selectedItems, setSelectedItems] = useState<DashboardItem[]>([]);
   const [selectedOccasion, setSelectedOccasion] = useState<string | undefined>(undefined);
+  const [currentOutfitIndex, setCurrentOutfitIndex] = useState(0);
   
   const {
     dashboardItems,
@@ -86,6 +88,19 @@ export const LookSuggestions = () => {
     navigate('/cart');
   };
 
+  // Handle navigation between outfits
+  const handleNextOutfit = () => {
+    if (!itemsToDisplay || itemsToDisplay.length === 0) return;
+    setCurrentOutfitIndex((prevIndex) => (prevIndex + 1) % (outfits.length || 1));
+  };
+
+  const handlePrevOutfit = () => {
+    if (!itemsToDisplay || itemsToDisplay.length === 0) return;
+    setCurrentOutfitIndex((prevIndex) => 
+      prevIndex === 0 ? (outfits.length - 1) || 0 : prevIndex - 1
+    );
+  };
+
   // Render states
   if (!hasQuizData) {
     return <QuizPrompt />;
@@ -102,8 +117,49 @@ export const LookSuggestions = () => {
   // Use selected items from localStorage if available, otherwise use dashboard items
   const itemsToDisplay = selectedItems.length > 0 ? selectedItems : dashboardItems;
 
+  // Organize items by type to create complete outfits
+  const itemsByType: Record<string, DashboardItem[]> = {};
+  if (itemsToDisplay && itemsToDisplay.length > 0) {
+    itemsToDisplay.forEach(item => {
+      const type = item.type.toLowerCase();
+      if (!itemsByType[type]) {
+        itemsByType[type] = [];
+      }
+      itemsByType[type].push(item);
+    });
+  }
+
+  // Create outfits by combining items of different types
+  const outfits: DashboardItem[][] = [];
+  const tops = itemsByType['top'] || [];
+  const bottoms = itemsByType['bottom'] || [];
+  const shoes = itemsByType['shoes'] || [];
+
+  // Create outfit combinations
+  const maxItems = Math.max(
+    tops.length || 0, 
+    bottoms.length || 0, 
+    shoes.length || 0
+  );
+
+  for (let i = 0; i < maxItems; i++) {
+    const outfit: DashboardItem[] = [];
+    if (tops[i % tops.length]) outfit.push(tops[i % tops.length]);
+    if (bottoms[i % bottoms.length]) outfit.push(bottoms[i % bottoms.length]);
+    if (shoes[i % shoes.length]) outfit.push(shoes[i % shoes.length]);
+    outfits.push(outfit);
+  }
+
+  // If no outfits were created, use all items as a single outfit
+  if (outfits.length === 0 && itemsToDisplay && itemsToDisplay.length > 0) {
+    outfits.push(itemsToDisplay);
+  }
+
+  // Get the current outfit to display
+  const currentOutfit = outfits.length > 0 ? outfits[currentOutfitIndex % outfits.length] : [];
+
   // Map dashboard items to canvas items with proper type casting
-  const canvasItems: CanvasItem[] = itemsToDisplay?.map(item => ({
+  const canvasItems: CanvasItem[] = currentOutfit?.map(item => ({
     id: item.id,
     image: item.image,
     type: mapItemType(item.type)
@@ -111,9 +167,9 @@ export const LookSuggestions = () => {
 
   // Get the occasion from the items, if available
   const currentOccasion = selectedOccasion || 
-                         itemsToDisplay?.[0]?.occasion || 
-                         (itemsToDisplay?.[0]?.metadata && itemsToDisplay[0].metadata.occasion) || 
-                         itemsToDisplay?.[0]?.event || 
+                         (currentOutfit?.[0]?.occasion) || 
+                         (currentOutfit?.[0]?.metadata && currentOutfit[0].metadata.occasion) || 
+                         (currentOutfit?.[0]?.event) || 
                          undefined;
 
   return (
@@ -136,16 +192,20 @@ export const LookSuggestions = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
-            <OutfitCanvas 
-              canvasItems={canvasItems} 
-              isRefreshing={isRefreshing} 
-              onAddToCart={() => handleAddToCart(itemsToDisplay)}
+            <OutfitCarousel 
+              canvasItems={canvasItems}
+              isRefreshing={isRefreshing}
+              onAddToCart={() => currentOutfit.length > 0 && handleAddToCart(currentOutfit)}
               onTryDifferent={handleTryDifferentLook}
               occasion={currentOccasion}
+              outfitCount={outfits.length}
+              currentIndex={currentOutfitIndex}
+              onPrevious={handlePrevOutfit}
+              onNext={handleNextOutfit}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              {itemsToDisplay?.map((item) => (
+              {currentOutfit?.map((item) => (
                 <ItemCard 
                   key={item.id}
                   id={item.id}
@@ -176,7 +236,7 @@ export const LookSuggestions = () => {
 
         <ColorPalette outfitColors={outfitColors} />
         
-        <OutfitBreakdown items={itemsToDisplay} occasion={currentOccasion} />
+        <OutfitBreakdown items={currentOutfit} occasion={currentOccasion} />
       </div>
     </>
   );
