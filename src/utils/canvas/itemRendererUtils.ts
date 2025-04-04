@@ -1,3 +1,4 @@
+
 import { loadImage, calculateDimensions, getDefaultPositions } from "@/utils/canvas";
 import { transformImageUrl } from "@/utils/imageUtils";
 import { type CanvasItem } from "@/types/canvasTypes";
@@ -13,7 +14,7 @@ export interface RenderCanvasItemsProps {
   height: number;
   onComplete: () => void;
   onError: (message: string) => void;
-  occasion?: string; // Added optional occasion parameter
+  occasion?: string;
 }
 
 export const renderCanvasItems = async ({
@@ -112,11 +113,11 @@ export const renderCanvasItems = async ({
           // Draw the item at the calculated position
           ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
 
-          // Display item position information
+          // Display item position information with more detail
           ctx.font = '10px Arial';
-          ctx.fillStyle = '#333333';
-          ctx.textAlign = 'left';
-          ctx.fillText(`${item.type}: x=${drawX}-${drawX+drawWidth} (center=${Math.round(canvasCenter)})`, 10, drawY + 10);
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+          ctx.fillText(`${item.type}: x=${drawX} to ${drawX+drawWidth}`, 10, drawY + 10);
+          ctx.fillText(`center=${Math.round(drawX + drawWidth/2)}px`, 10, drawY + 22);
           
           // Draw item bounds for debugging
           ctx.strokeStyle = 'rgba(0, 0, 255, 0.5)';

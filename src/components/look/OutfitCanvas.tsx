@@ -9,7 +9,7 @@ interface OutfitCanvasProps {
   isRefreshing: boolean;
   onAddToCart: () => void;
   onTryDifferent: () => void;
-  occasion?: string; // Added optional occasion prop
+  occasion?: string;
 }
 
 export const OutfitCanvas = ({ 

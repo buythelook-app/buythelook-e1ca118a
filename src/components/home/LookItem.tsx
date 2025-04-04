@@ -47,11 +47,10 @@ export const LookItem = ({
   };
 
   const handleViewDetails = () => {
-    localStorage.setItem(`look-${look.id}`, JSON.stringify({
-      ...look,
-      description: `A curated ${look.occasion.toLowerCase()} look that matches your ${userStyle.analysis.styleProfile} style preference.`
-    }));
-    navigate(`/look/${look.id}`);
+    // Store the full item details for the suggestions page
+    localStorage.setItem(`selected-look-items`, JSON.stringify(items));
+    localStorage.setItem(`selected-look-occasion`, occasion);
+    navigate(`/suggestions`);
   };
 
   return (
@@ -63,10 +62,16 @@ export const LookItem = ({
         <h3 className="text-xl font-semibold">{look.title}</h3>
         <span className="text-sm text-netflix-accent">{look.occasion}</span>
       </div>
-      <div className="mb-4 bg-white rounded-lg overflow-hidden relative group flex justify-center">
+      <div 
+        className="mb-4 bg-white rounded-lg overflow-hidden relative group flex justify-center cursor-pointer"
+        onClick={handleViewDetails}
+      >
         <LookCanvas items={look.items} width={300} height={500} occasion={occasion} />
         <button
-          onClick={() => onShuffleLook(look.occasion)}
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent triggering the canvas click
+            onShuffleLook(look.occasion);
+          }}
           className="absolute bottom-4 right-4 bg-netflix-accent text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
           title="Try different combination"
           disabled={isRefreshing}
