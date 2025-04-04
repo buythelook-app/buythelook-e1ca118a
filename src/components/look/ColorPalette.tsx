@@ -1,47 +1,34 @@
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
-export interface OutfitColorsProps {
-  [key: string]: string;
-}
+import { OutfitColors } from "@/services/utils/outfitStorageUtils";
 
 interface ColorPaletteProps {
-  outfitColors: OutfitColorsProps | null;
+  outfitColors: OutfitColors | null;
 }
 
 export const ColorPalette = ({ outfitColors }: ColorPaletteProps) => {
   if (!outfitColors) return null;
-  
-  // Validate color to make sure it's a valid CSS color
-  const validateColor = (color: string): string => {
-    const isValidColor = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color) || 
-                        CSS.supports('color', color);
-    return isValidColor ? color : '#CCCCCC';
-  };
-  
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Your Personal Color Palette</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex gap-4 justify-center">
-          {Object.entries(outfitColors).map(([piece, color]) => (
-            <div key={piece} className="text-center">
-              <div 
-                className="w-16 h-16 rounded-full mb-2" 
-                style={{ backgroundColor: validateColor(color) }}
-              />
-              <p className="text-sm capitalize">{piece}</p>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="mb-8">
+      <h2 className="text-xl font-medium mb-3">Color Palette</h2>
+      <div className="flex gap-2">
+        <ColorSwatch color={outfitColors.top} label="Top" />
+        <ColorSwatch color={outfitColors.bottom} label="Bottom" />
+        <ColorSwatch color={outfitColors.shoes} label="Shoes" />
+        {outfitColors.coat && (
+          <ColorSwatch color={outfitColors.coat} label="Coat" />
+        )}
+      </div>
+    </div>
   );
 };
+
+const ColorSwatch = ({ color, label }: { color: string; label: string }) => (
+  <div className="flex flex-col items-center">
+    <div
+      className="w-12 h-12 rounded-full border border-gray-300"
+      style={{ backgroundColor: color }}
+    />
+    <span className="text-xs mt-1">{label}</span>
+  </div>
+);

@@ -1,13 +1,11 @@
 
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useOutfitGenerator } from "@/hooks/useOutfitGenerator";
 import { useCartStore } from "./Cart";
 import { HomeButton } from "./HomeButton";
-import { StyleRulers } from "./look/StyleRulers";
-import { DebugDataViewer } from "./DebugDataViewer";
-import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { type CanvasItem } from "@/types/canvasTypes";
-import { useState, useEffect } from "react";
 import { DashboardItem } from "@/types/lookTypes";
 
 // Import the extracted components
@@ -15,10 +13,13 @@ import { OutfitCanvas } from "./look/OutfitCanvas";
 import { ItemCard } from "./look/ItemCard";
 import { StyleTips } from "./look/StyleTips";
 import { ColorPalette } from "./look/ColorPalette";
+import { StyleRulers } from "./look/StyleRulers";
 import { mapItemType } from "./look/OutfitTypeMapper";
 import { QuizPrompt } from "./look/QuizPrompt";
 import { LoadingState } from "./look/LoadingState";
 import { ErrorState } from "./look/ErrorState";
+import { OutfitBreakdown } from "./look/OutfitBreakdown";
+import { DebugDataViewer } from "./DebugDataViewer";
 
 export const LookSuggestions = () => {
   const navigate = useNavigate();
@@ -175,29 +176,7 @@ export const LookSuggestions = () => {
 
         <ColorPalette outfitColors={outfitColors} />
         
-        {/* Add a detailed breakdown of all items in the look */}
-        <div className="mt-12 border-t pt-6">
-          <h2 className="text-2xl font-bold mb-4">Complete Look Breakdown</h2>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">{currentOccasion || "Look"} Components</h3>
-            <ul className="space-y-2">
-              {itemsToDisplay?.map((item) => (
-                <li key={item.id} className="flex items-center gap-4 border-b border-gray-100 pb-2">
-                  <div className="w-12 h-12 bg-white border rounded-md overflow-hidden flex-shrink-0">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
-                  </div>
-                  <div className="flex-grow">
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-gray-600">{item.type}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold">{item.price}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+        <OutfitBreakdown items={itemsToDisplay} occasion={currentOccasion} />
       </div>
     </>
   );
