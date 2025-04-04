@@ -1,118 +1,26 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
 import { fetchFirstOutfitSuggestion } from "@/services/lookService";
-import { generateOutfit, generateOutfitFromUserPreferences } from "@/services/api/outfitApi";
-import { useNavigate } from "react-router-dom";
-import { mapBodyShape, mapStyle } from "@/services/mappers/styleMappers";
-import { storeOutfitColors, storeStyleRecommendations, OutfitColors } from "@/services/utils/outfitStorageUtils";
-import { validateMood } from "@/services/utils/validationUtils";
-import { findBestColorMatch } from "@/services/fetchers/itemsFetcher";
-import { getFallbackItems } from "@/services/fallbacks/outfitFallbacks";
-import { getRecommendationsForUserStyle } from "@/components/quiz/constants/styleRecommendations";
+import { storeStyleRecommendations } from "@/services/utils/outfitStorageUtils";
+
+// Import our refactored hooks
+import { useStylePreferences } from "./useStylePreferences";
+import { useOutfitGeneration } from "./useOutfitGeneration";
+import { useQuizValidation } from "./useQuizValidation";
 
 export const useOutfitGenerator = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [recommendations, setRecommendations] = useState<string[]>([]);
-  const [outfitColors, setOutfitColors] = useState<OutfitColors | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [elegance, setElegance] = useState(75);
-  const [colorIntensity, setColorIntensity] = useState(60);
-  const [userStylePreference, setUserStylePreference] = useState<string | null>(null);
-
-  const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
-
-  // Load and apply user style preferences from quiz
-  useEffect(() => {
-    const styleData = localStorage.getItem('styleAnalysis');
-    if (styleData) {
-      try {
-        const parsedData = JSON.parse(styleData);
-        const styleProfile = parsedData?.analysis?.styleProfile || null;
-        setUserStylePreference(styleProfile);
-        console.log("Loaded user style preference:", styleProfile);
-        
-        // Apply user preferences to style sliders based on their quiz results
-        if (styleProfile?.toLowerCase().includes('minimalist') || 
-            styleProfile?.toLowerCase().includes('minimal') || 
-            styleProfile?.toLowerCase().includes('nordic') || 
-            styleProfile?.toLowerCase().includes('modern')) {
-          setElegance(85);
-          setColorIntensity(30);
-        } else if (styleProfile?.toLowerCase().includes('boohoo') || 
-                  styleProfile?.toLowerCase().includes('bohemian')) {
-          setElegance(60);
-          setColorIntensity(80);
-        } else if (styleProfile?.toLowerCase().includes('classic') || 
-                  styleProfile?.toLowerCase().includes('elegant')) {
-          setElegance(90);
-          setColorIntensity(50);
-        }
-        
-        // Pre-load style recommendations based on user profile
-        if (styleProfile) {
-          const userStyleRecs = getRecommendationsForUserStyle(styleProfile);
-          if (userStyleRecs.essentials) {
-            const essentialRecommendations = userStyleRecs.essentials.flatMap(
-              category => [`${category.category.charAt(0).toUpperCase() + category.category.slice(1)} essentials:`, ...category.items.map(item => `- ${item}`)]
-            );
-            
-            // Store these recommendations for initial display
-            storeStyleRecommendations(essentialRecommendations);
-            setRecommendations(essentialRecommendations);
-          }
-        }
-      } catch (error) {
-        console.error("Error parsing style data:", error);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!hasQuizData) {
-      toast({
-        title: "Style Quiz Required",
-        description: "Please complete the style quiz first to get personalized suggestions.",
-        variant: "destructive",
-      });
-      navigate('/quiz');
-      return;
-    }
-
-    const storedRecommendations = localStorage.getItem('style-recommendations');
-    const storedColors = localStorage.getItem('outfit-colors');
-    
-    if (storedRecommendations) {
-      try {
-        setRecommendations(JSON.parse(storedRecommendations));
-      } catch (e) {
-        console.error('Error parsing recommendations:', e);
-      }
-    }
-    
-    if (storedColors) {
-      try {
-        const parsedColors = JSON.parse(storedColors) as OutfitColors;
-        setOutfitColors(parsedColors);
-      } catch (e) {
-        console.error('Error parsing outfit colors:', e);
-      }
-    }
-  }, [hasQuizData, navigate, toast]);
-
-  // Listen for mood changes in local storage
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'current-mood') {
-        refetch();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  const { hasQuizData } = useQuizValidation();
+  
+  const {
+    recommendations,
+    setRecommendations,
+    userStylePreference,
+    elegance, 
+    colorIntensity,
+    handleEleganceChange,
+    handleColorIntensityChange
+  } = useStylePreferences();
 
   // Query for outfit suggestions based on user preferences
   const { data: dashboardItems, isLoading, error, refetch } = useQuery({
@@ -124,113 +32,44 @@ export const useOutfitGenerator = () => {
     enabled: hasQuizData,
     meta: {
       onError: () => {
-        toast({
-          title: "Error",
-          description: "Failed to load outfit suggestions. Please try again.",
-          variant: "destructive",
-        });
+        console.error("Failed to load outfit suggestions");
       }
     }
   });
 
-  // Generate a new outfit based on the user's preferences
-  const handleTryDifferentLook = async () => {
-    setIsRefreshing(true);
-    console.log("Trying different look - generating new outfit...");
-    try {
-      const quizData = localStorage.getItem('styleAnalysis');
-      const styleAnalysis = quizData ? JSON.parse(quizData) : null;
-      
-      if (!styleAnalysis?.analysis) {
-        throw new Error("Style analysis data missing");
+  const {
+    isRefreshing,
+    outfitColors,
+    handleTryDifferentLook,
+    loadOutfitColors
+  } = useOutfitGeneration(refetch);
+
+  // Load stored recommendations and colors
+  useEffect(() => {
+    if (!hasQuizData) return;
+
+    const storedRecommendations = localStorage.getItem('style-recommendations');
+    
+    if (storedRecommendations) {
+      try {
+        setRecommendations(JSON.parse(storedRecommendations));
+      } catch (e) {
+        console.error('Error parsing recommendations:', e);
       }
-      
-      const bodyShape = mapBodyShape(styleAnalysis.analysis.bodyShape || 'H');
-      const preferredStyle = styleAnalysis.analysis.styleProfile || 'classic';
-      
-      // Use the standardized style mapping for consistency
-      const mappedStylePreference = getRecommendationsForUserStyle(preferredStyle);
-      const style = mapStyle(preferredStyle);
-      
-      const currentMoodData = localStorage.getItem('current-mood');
-      const mood = validateMood(currentMoodData);
-      
-      console.log("Generating new outfit with params:", { 
-        bodyStructure: bodyShape, 
-        style, 
-        mood,
-        userStylePreference: preferredStyle 
-      });
-      
-      const response = await generateOutfit(bodyShape, style, mood);
-      console.log("Outfit API response:", response);
-      
-      if (!response || !response.data || !Array.isArray(response.data) || response.data.length === 0) {
-        throw new Error("Invalid API response");
-      }
-      
-      const outfitSuggestion = response.data[0];
-      
-      if (outfitSuggestion.recommendations && Array.isArray(outfitSuggestion.recommendations)) {
-        storeStyleRecommendations(outfitSuggestion.recommendations);
-        setRecommendations(outfitSuggestion.recommendations);
-      }
-      
-      const newOutfitColors: OutfitColors = {
-        top: outfitSuggestion.top,
-        bottom: outfitSuggestion.bottom,
-        shoes: outfitSuggestion.shoes
-      };
-      
-      if (outfitSuggestion.coat) {
-        newOutfitColors.coat = outfitSuggestion.coat;
-      }
-      
-      storeOutfitColors(newOutfitColors);
-      setOutfitColors(newOutfitColors);
-      
-      const topItem = await findBestColorMatch(outfitSuggestion.top, 'top');
-      const bottomItem = await findBestColorMatch(outfitSuggestion.bottom, 'bottom');
-      const shoesItem = await findBestColorMatch(outfitSuggestion.shoes, 'shoes');
-      
-      const items = [
-        topItem || getFallbackItems()[0],
-        bottomItem || getFallbackItems()[1],
-        shoesItem || getFallbackItems()[2]
-      ];
-      
-      if (outfitSuggestion.coat) {
-        const coatItem = await findBestColorMatch(outfitSuggestion.coat, 'outerwear');
-        if (coatItem) {
-          items.push(coatItem);
-        }
-      }
-      
-      await refetch();
-      
-      toast({
-        title: "New Look Generated",
-        description: `New outfit synced with your ${preferredStyle} style!`,
-      });
-    } catch (error) {
-      console.error("Error generating outfit:", error);
-      toast({
-        title: "Error",
-        description: "Failed to generate a new look. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRefreshing(false);
     }
-  };
+    
+    loadOutfitColors();
+  }, [hasQuizData]);
 
-  const handleEleganceChange = (value: number[]) => {
-    setElegance(value[0]);
-  };
+  // Listen for mood changes to trigger refetch
+  useEffect(() => {
+    const handleMoodChange = () => {
+      refetch();
+    };
 
-  const handleColorIntensityChange = (value: number[]) => {
-    setColorIntensity(value[0]);
-  };
+    window.addEventListener('mood-changed', handleMoodChange);
+    return () => window.removeEventListener('mood-changed', handleMoodChange);
+  }, [refetch]);
 
   return {
     dashboardItems,
