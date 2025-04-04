@@ -3,7 +3,7 @@
  * Type definitions for the canvas rendering system
  */
 
-export type ItemType = 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' | 'coat';
+export type ItemType = 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' | 'cart';
 
 export interface CanvasItem {
   id: string;

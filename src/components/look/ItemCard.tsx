@@ -1,7 +1,12 @@
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShoppingCart } from "lucide-react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "@/components/ui/card";
 
 interface ItemCardProps {
   id: string;
@@ -12,32 +17,32 @@ interface ItemCardProps {
   isRefreshing: boolean;
 }
 
-export const ItemCard = ({ 
-  id, 
-  name, 
-  description, 
-  price, 
-  onAddToCart, 
-  isRefreshing 
+export const ItemCard = ({
+  id,
+  name,
+  description,
+  price,
+  onAddToCart,
+  isRefreshing
 }: ItemCardProps) => {
   return (
-    <Card key={id} className="h-full flex flex-col">
-      <CardHeader>
-        <CardTitle>{name}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex-grow">
-        <p className="text-sm text-gray-500">{description}</p>
-        <p className="text-netflix-accent font-bold mt-2">{price}</p>
-      </CardContent>
-      <CardFooter>
-        <Button 
+    <Card key={id} className="overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-lg">{name}</CardTitle>
+        <Button
+          variant="secondary"
+          size="icon"
           onClick={onAddToCart}
-          className="w-full"
+          className="bg-white/10 hover:bg-netflix-accent/20 hover:text-netflix-accent rounded-full shadow-md"
           disabled={isRefreshing}
         >
-          <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
+          <ShoppingCart className="h-5 w-5" />
         </Button>
-      </CardFooter>
+      </CardHeader>
+      <CardContent>
+        <p className="text-gray-600 text-sm mb-2">{description}</p>
+        <p className="text-lg font-medium">{price}</p>
+      </CardContent>
     </Card>
   );
 };

@@ -17,7 +17,6 @@ export const PersonalizedLooks = ({ userStyle, selectedMood }: PersonalizedLooks
   const { toast } = useToast();
   const [combinations, setCombinations] = useState<{ [key: string]: number }>({});
   const [isRefreshing, setIsRefreshing] = useState<{ [key: string]: boolean }>({});
-  const [activeOccasion, setActiveOccasion] = useState<string>("Work");
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
 
   const { data: occasionOutfits, isLoading, refetch } = useQuery({
@@ -95,50 +94,28 @@ export const PersonalizedLooks = ({ userStyle, selectedMood }: PersonalizedLooks
           )}
         </div>
         
-        <div className="mb-6 flex justify-center">
-          <div className="flex gap-3 overflow-x-auto pb-2 justify-center">
-            {occasions.map((occasion) => (
-              <button
-                key={occasion}
-                onClick={() => setActiveOccasion(occasion)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  activeOccasion === occasion
-                    ? "bg-netflix-accent text-white"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-800"
-                }`}
-              >
-                {occasion}
-              </button>
-            ))}
-          </div>
-        </div>
-        
-        {isLoading ? (
-          <div className="text-center py-12">
-            <div className="animate-pulse">Loading your personalized looks...</div>
-          </div>
-        ) : (
-          <div className="relative max-w-xl mx-auto">
-            {occasions.map((occasion, index) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {isLoading ? (
+            <div className="col-span-2 text-center py-12">
+              <div className="animate-pulse">Loading your personalized looks...</div>
+            </div>
+          ) : (
+            occasions.map((occasion, index) => {
               const items = occasionOutfits?.[occasion] || [];
               return (
-                <div 
-                  key={`${occasion}-${index}`} 
-                  className={activeOccasion === occasion ? "block" : "hidden"}
-                >
-                  <LookItem 
-                    occasion={occasion}
-                    items={items}
-                    isRefreshing={!!isRefreshing[occasion]}
-                    userStyle={userStyle}
-                    onShuffleLook={handleShuffleLook}
-                    index={index}
-                  />
-                </div>
+                <LookItem 
+                  key={`${occasion}-${index}`}
+                  occasion={occasion}
+                  items={items}
+                  isRefreshing={!!isRefreshing[occasion]}
+                  userStyle={userStyle}
+                  onShuffleLook={handleShuffleLook}
+                  index={index}
+                />
               );
-            })}
-          </div>
-        )}
+            })
+          )}
+        </div>
       </div>
     </section>
   );

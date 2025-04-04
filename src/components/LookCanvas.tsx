@@ -6,18 +6,14 @@ interface LookCanvasProps {
   items: CanvasItem[];
   width?: number;
   height?: number;
-  occasion?: string;
-  onSwipeLeft?: () => void;
-  onSwipeRight?: () => void;
+  occasion?: string; // Added optional occasion prop
 }
 
 export const LookCanvas = ({ 
   items, 
   width = 600, 
   height = 900,
-  occasion,
-  onSwipeLeft,
-  onSwipeRight
+  occasion 
 }: LookCanvasProps) => {
   const { canvasRef, isLoading, error: canvasError } = useCanvasRenderer({
     items,

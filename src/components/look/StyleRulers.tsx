@@ -1,5 +1,5 @@
 
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "../ui/slider";
 
 interface StyleRulersProps {
   elegance: number;
@@ -15,49 +15,42 @@ export const StyleRulers = ({
   onColorIntensityChange,
 }: StyleRulersProps) => {
   return (
-    <div className="space-y-8 p-4 border rounded-lg mb-8">
-      <div>
-        <h3 className="text-lg font-medium mb-2">Style Preferences</h3>
-        <p className="text-sm text-gray-500 mb-4">
-          Adjust these sliders to fine-tune your style recommendations
-        </p>
-      </div>
-
-      <div className="space-y-6">
-        <div className="space-y-2">
+    <div className="space-y-6 bg-white p-8 rounded-lg shadow-xl border-2 border-gray-100">
+      <h3 className="text-2xl font-semibold mb-6 text-gray-900">Style Analysis</h3>
+      
+      <div className="space-y-8">
+        <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <label className="text-sm font-medium">Elegance Level</label>
-            <span className="text-sm text-netflix-accent">{elegance}%</span>
+            <label className="text-base font-semibold text-gray-800">Elegance</label>
+            <span className="text-base font-medium text-netflix-accent">{elegance}%</span>
           </div>
           <Slider
-            value={[elegance]}
-            min={0}
+            defaultValue={[elegance]}
             max={100}
             step={1}
             onValueChange={onEleganceChange}
-            className="my-4"
+            className="w-full"
           />
-          <div className="flex justify-between text-xs text-gray-500">
+          <div className="flex justify-between text-sm font-medium text-gray-600">
             <span>Casual</span>
             <span>Elegant</span>
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <label className="text-sm font-medium">Color Intensity</label>
-            <span className="text-sm text-netflix-accent">{colorIntensity}%</span>
+            <label className="text-base font-semibold text-gray-800">Color Intensity</label>
+            <span className="text-base font-medium text-netflix-accent">{colorIntensity}%</span>
           </div>
           <Slider
-            value={[colorIntensity]}
-            min={0}
+            defaultValue={[colorIntensity]}
             max={100}
             step={1}
             onValueChange={onColorIntensityChange}
-            className="my-4"
+            className="w-full"
           />
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>Subtle</span>
+          <div className="flex justify-between text-sm font-medium text-gray-600">
+            <span>Muted</span>
             <span>Vibrant</span>
           </div>
         </div>

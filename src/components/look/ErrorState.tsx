@@ -14,9 +14,6 @@ export const ErrorState = ({ message = "Unable to load outfit suggestions" }: Er
       <p className="text-red-500 mb-4">{message}</p>
       <div className="space-x-4">
         <Button onClick={() => navigate('/quiz')}>Retake Style Quiz</Button>
-        <Button onClick={() => window.location.reload()} variant="outline">
-          Refresh Page
-        </Button>
       </div>
     </div>
   );
