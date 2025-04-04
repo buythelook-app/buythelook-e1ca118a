@@ -1,4 +1,3 @@
-
 import { loadImage, calculateDimensions, getDefaultPositions } from "@/utils/canvas";
 import { transformImageUrl } from "@/utils/imageUtils";
 import { type CanvasItem } from "@/types/canvasTypes";
@@ -101,11 +100,8 @@ export const renderCanvasItems = async ({
             position.height
           );
 
-          // Use exact center
-          const centerX = width / 2;
-          
-          // Calculate drawing position from center point
-          const drawX = Math.round(2*(centerX - (drawWidth / 2)));
+          // Calculate drawing position from position object
+          const drawX = Math.round(position.x - (drawWidth / 2));
           const drawY = Math.round(position.y);
           
           // Draw the item at the calculated position
