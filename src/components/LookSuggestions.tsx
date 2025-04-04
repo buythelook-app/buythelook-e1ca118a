@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { type CanvasItem } from "@/types/canvasTypes";
 import { useState, useEffect, useMemo } from "react";
 import { DashboardItem } from "@/types/lookTypes";
+import { type CarouselApi } from "./ui/carousel";
 
 // Import the extracted components
 import { OutfitCanvas } from "./look/OutfitCanvas";
@@ -36,6 +37,7 @@ export const LookSuggestions = () => {
   const [selectedItems, setSelectedItems] = useState<DashboardItem[]>([]);
   const [selectedOccasion, setSelectedOccasion] = useState<string | undefined>(undefined);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [api, setApi] = useState<CarouselApi | null>(null);
   
   const {
     dashboardItems,
@@ -52,6 +54,21 @@ export const LookSuggestions = () => {
     handleEleganceChange,
     handleColorIntensityChange
   } = useOutfitGenerator();
+
+  // Update current slide index when carousel slides change
+  useEffect(() => {
+    if (!api) return;
+    
+    const onSelect = () => {
+      setActiveIndex(api.selectedScrollSnap());
+    };
+    
+    api.on('select', onSelect);
+    
+    return () => {
+      api.off('select', onSelect);
+    };
+  }, [api]);
 
   // Group items into outfits based on similar occasions or types
   const outfits = useMemo(() => {
@@ -137,11 +154,6 @@ export const LookSuggestions = () => {
     navigate('/cart');
   };
 
-  // Handle carousel navigation
-  const handleCarouselChange = (index: number) => {
-    setActiveIndex(index);
-  };
-
   // Render states
   if (!hasQuizData) {
     return <QuizPrompt />;
@@ -198,7 +210,7 @@ export const LookSuggestions = () => {
             {currentOutfits.length > 0 && (
               <Carousel
                 className="w-full relative"
-                onValueChange={handleCarouselChange}
+                setApi={setApi}
               >
                 <div className="absolute top-0 right-0 bg-white bg-opacity-60 px-3 py-1 rounded-bl-md z-10">
                   <span className="text-sm font-medium">
@@ -290,3 +302,4 @@ export const LookSuggestions = () => {
     </>
   );
 };
+
