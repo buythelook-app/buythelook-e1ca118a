@@ -63,7 +63,7 @@ export const LookItem = ({
         <span className="text-sm text-netflix-accent">{look.occasion}</span>
       </div>
       <div 
-        className="mb-4 bg-white rounded-lg overflow-hidden relative group flex justify-center cursor-pointer"
+        className="mb-4 bg-white rounded-lg overflow-hidden relative group cursor-pointer"
         onClick={handleViewDetails}
       >
         <LookCanvas items={look.items} width={300} height={500} occasion={occasion} />
