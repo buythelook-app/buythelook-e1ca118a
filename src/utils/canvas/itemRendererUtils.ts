@@ -101,29 +101,34 @@ export const renderCanvasItems = async ({
           );
 
           // Calculate drawing position from position object
-          const drawX = Math.round(position.x - (drawWidth / 2));
+          // Use the canvas center if position.x is not available
+          const canvasCenter = width / 2;
+          
+          // Force items to be centered on the canvas
+          // This ensures items are always positioned relative to the canvas center
+          const drawX = Math.round(canvasCenter - (drawWidth / 2));
           const drawY = Math.round(position.y);
           
           // Draw the item at the calculated position
           ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
 
-                    // Display item position information
-                    ctx.font = '10px Arial';
-                    ctx.fillStyle = '#333333';
-                    ctx.textAlign = 'left';
-                    ctx.fillText(`${item.type}: x=${drawX}-${drawX+drawWidth} (center=${drawX+(drawWidth/2)})`, 10, drawY + 10);
-                    
-                    // Draw item bounds for debugging
-                    ctx.strokeStyle = 'rgba(0, 0, 255, 0.5)';
-                    ctx.strokeRect(drawX, drawY, drawWidth, drawHeight);
-                    
-                    // Draw vertical line through item center
-                    const itemCenterX = drawX + (drawWidth / 2);
-                    ctx.beginPath();
-                    ctx.moveTo(itemCenterX, drawY - 5);
-                    ctx.lineTo(itemCenterX, drawY + drawHeight + 5);
-                    ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
-                    ctx.stroke();
+          // Display item position information
+          ctx.font = '10px Arial';
+          ctx.fillStyle = '#333333';
+          ctx.textAlign = 'left';
+          ctx.fillText(`${item.type}: x=${drawX}-${drawX+drawWidth} (center=${Math.round(canvasCenter)})`, 10, drawY + 10);
+          
+          // Draw item bounds for debugging
+          ctx.strokeStyle = 'rgba(0, 0, 255, 0.5)';
+          ctx.strokeRect(drawX, drawY, drawWidth, drawHeight);
+          
+          // Draw vertical line through item center
+          const itemCenterX = drawX + (drawWidth / 2);
+          ctx.beginPath();
+          ctx.moveTo(itemCenterX, drawY - 5);
+          ctx.lineTo(itemCenterX, drawY + drawHeight + 5);
+          ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
+          ctx.stroke();
         }
       } catch (itemError) {
         console.error('Error processing item:', itemError);
