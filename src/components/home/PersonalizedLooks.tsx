@@ -7,13 +7,6 @@ import { LookItem } from "./LookItem";
 import { generateOutfit } from "@/services/api/outfitApi";
 import { mapBodyShape, mapStyle } from "@/services/mappers/styleMappers";
 import { validateMood } from "@/services/utils/validationUtils";
-import { 
-  Carousel, 
-  CarouselContent, 
-  CarouselItem, 
-  CarouselPrevious, 
-  CarouselNext 
-} from "@/components/ui/carousel";
 
 interface PersonalizedLooksProps {
   userStyle: any;
@@ -126,27 +119,24 @@ export const PersonalizedLooks = ({ userStyle, selectedMood }: PersonalizedLooks
           </div>
         ) : (
           <div className="relative max-w-xl mx-auto">
-            <Carousel className="w-full">
-              <CarouselContent>
-                {occasions.map((occasion, index) => {
-                  const items = occasionOutfits?.[occasion] || [];
-                  return (
-                    <CarouselItem key={`${occasion}-${index}`} className={activeOccasion === occasion ? "block" : "hidden"}>
-                      <LookItem 
-                        occasion={occasion}
-                        items={items}
-                        isRefreshing={!!isRefreshing[occasion]}
-                        userStyle={userStyle}
-                        onShuffleLook={handleShuffleLook}
-                        index={index}
-                      />
-                    </CarouselItem>
-                  );
-                })}
-              </CarouselContent>
-              <CarouselPrevious className="left-0 lg:-left-12" />
-              <CarouselNext className="right-0 lg:-right-12" />
-            </Carousel>
+            {occasions.map((occasion, index) => {
+              const items = occasionOutfits?.[occasion] || [];
+              return (
+                <div 
+                  key={`${occasion}-${index}`} 
+                  className={activeOccasion === occasion ? "block" : "hidden"}
+                >
+                  <LookItem 
+                    occasion={occasion}
+                    items={items}
+                    isRefreshing={!!isRefreshing[occasion]}
+                    userStyle={userStyle}
+                    onShuffleLook={handleShuffleLook}
+                    index={index}
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
