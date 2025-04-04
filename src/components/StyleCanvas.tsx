@@ -1,4 +1,3 @@
-
 import { useRef, useEffect } from "react";
 import { useStyleCanvasRenderer } from "@/hooks/useStyleCanvasRenderer";
 
@@ -21,14 +20,6 @@ export const StyleCanvas = ({
 }: StyleCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   
-  useEffect(() => {
-    // Ensure the canvas element exists and assign it to our ref
-    const canvas = document.getElementById(id) as HTMLCanvasElement;
-    if (canvas) {
-      canvasRef.current = canvas;
-    }
-  }, [id]);
-  
   // Use our custom hook for canvas rendering
   const { isLoading, error } = useStyleCanvasRenderer({
     canvasRef,
@@ -39,5 +30,14 @@ export const StyleCanvas = ({
     height
   });
 
-  return null; // This component doesn't render anything directly, it manipulates the canvas element with ID
+  // Return an actual canvas element with the ref and id
+  return (
+    <canvas
+      ref={canvasRef}
+      id={id}
+      width={width}
+      height={height}
+      style={{ display: 'none' }}
+    />
+  );
 };
