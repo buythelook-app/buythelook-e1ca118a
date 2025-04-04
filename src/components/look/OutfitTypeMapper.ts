@@ -1,5 +1,7 @@
 
-export function mapItemType(type: string): string {
+import { ItemType } from "@/types/canvasTypes";
+
+export function mapItemType(type: string): ItemType {
   switch (type.toLowerCase()) {
     case 'top':
     case 'shirt':
@@ -19,8 +21,17 @@ export function mapItemType(type: string): string {
     case 'coat':
     case 'jacket':
     case 'outerwear':
-      return 'coat';
+      return 'outerwear';
+    case 'dress':
+      return 'dress';
+    case 'sunglasses':
+      return 'sunglasses';
+    case 'accessory':
+    case 'necklace':
+    case 'bracelet':
+      return 'accessory';
     default:
+      console.warn(`Unknown item type: ${type}, defaulting to accessory`);
       return 'accessory';
   }
 }

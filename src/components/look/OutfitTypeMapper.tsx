@@ -1,5 +1,7 @@
 
-export const mapItemType = (type: string): 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' => {
+import { ItemType } from "@/types/canvasTypes";
+
+export const mapItemType = (type: string): ItemType => {
   if (!type) {
     console.warn('Empty type received in mapItemType');
     return 'top';
@@ -24,30 +26,21 @@ export const mapItemType = (type: string): 'top' | 'bottom' | 'dress' | 'shoes' 
     }
   }
 
-  const typeMap: Record<string, 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear'> = {
-    'shirt': 'top',
-    'blouse': 'top',
-    't-shirt': 'top',
-    'top': 'top',
-    'corset top': 'top',
-    'dress': 'dress',
-    'heel shoe': 'shoes',
-    'shoes': 'shoes',
-    'sneakers': 'shoes',
-    'boots': 'shoes',
-    'slingback shoes': 'shoes',
-    'necklace': 'accessory',
-    'bracelet': 'accessory',
-    'sunglasses': 'sunglasses',
-    'jacket': 'outerwear',
-    'coat': 'outerwear'
-  };
-
-  const mappedType = typeMap[lowerType];
-
-  if (!mappedType) {
-    console.warn(`No exact match found for type: ${lowerType}, defaulting to top`);
+  // Type mapping with proper ItemType return
+  if (lowerType.includes('shirt') || lowerType.includes('blouse') || lowerType.includes('top')) {
+    return 'top';
+  } else if (lowerType.includes('dress')) {
+    return 'dress';
+  } else if (lowerType.includes('shoe') || lowerType.includes('sneaker') || lowerType.includes('boot')) {
+    return 'shoes';
+  } else if (lowerType.includes('sunglasses')) {
+    return 'sunglasses';
+  } else if (lowerType.includes('jacket') || lowerType.includes('coat') || lowerType.includes('outerwear')) {
+    return 'outerwear';
+  } else if (lowerType.includes('necklace') || lowerType.includes('bracelet') || lowerType.includes('jewelry')) {
+    return 'accessory';
   }
 
-  return mappedType || 'top';
+  console.warn(`No exact match found for type: ${lowerType}, defaulting to top`);
+  return 'top';
 };

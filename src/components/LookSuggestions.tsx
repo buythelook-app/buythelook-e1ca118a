@@ -5,7 +5,7 @@ import { useOutfitGenerator } from "@/hooks/useOutfitGenerator";
 import { useCartStore } from "./Cart";
 import { HomeButton } from "./HomeButton";
 import { useToast } from "@/hooks/use-toast";
-import { type CanvasItem } from "@/types/canvasTypes";
+import { type CanvasItem, ItemType } from "@/types/canvasTypes";
 import { DashboardItem } from "@/types/lookTypes";
 
 // Import the extracted components
@@ -102,7 +102,7 @@ export const LookSuggestions = () => {
   // Use selected items from localStorage if available, otherwise use dashboard items
   const itemsToDisplay = selectedItems.length > 0 ? selectedItems : dashboardItems;
 
-  // Map dashboard items to canvas items
+  // Map dashboard items to canvas items with proper type casting
   const canvasItems: CanvasItem[] = itemsToDisplay?.map(item => ({
     id: item.id,
     image: item.image,
