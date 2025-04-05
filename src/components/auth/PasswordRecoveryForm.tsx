@@ -6,13 +6,24 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
+import { Eye, EyeOff } from "lucide-react";
 
 export const PasswordRecoveryForm = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,27 +94,43 @@ export const PasswordRecoveryForm = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
+        <div className="space-y-2 relative">
           <Input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="New password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="bg-black/5 text-white"
+            className="bg-black/5 text-white pr-10"
             autoComplete="new-password"
           />
+          <button 
+            type="button"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white focus:outline-none" 
+            onClick={togglePasswordVisibility}
+            tabIndex={-1}
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 relative">
           <Input
-            type="password"
+            type={showConfirmPassword ? "text" : "password"}
             placeholder="Confirm new password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
-            className="bg-black/5 text-white"
+            className="bg-black/5 text-white pr-10"
             autoComplete="new-password"
           />
+          <button 
+            type="button"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white focus:outline-none" 
+            onClick={toggleConfirmPasswordVisibility}
+            tabIndex={-1}
+          >
+            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
         </div>
         <Button 
           type="submit" 
