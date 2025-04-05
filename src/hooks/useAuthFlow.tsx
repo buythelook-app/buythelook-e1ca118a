@@ -11,6 +11,7 @@ export const useAuthFlow = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isSignIn, setIsSignIn] = useState(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   useEffect(() => {
     console.log("Auth flow init started");
@@ -69,6 +70,10 @@ export const useAuthFlow = () => {
         navigate('/home');
       } else if (event === 'SIGNED_OUT') {
         console.log("User signed out");
+      } else if (event === 'PASSWORD_RECOVERY') {
+        console.log("Password recovery detected");
+        setIsPasswordRecovery(true);
+        setIsSignIn(true);
       }
     });
     
@@ -136,6 +141,15 @@ export const useAuthFlow = () => {
           }
           
           console.log("No session after processing redirect");
+          
+          // Check for password recovery
+          const url = new URL(window.location.href);
+          if (url.hash.includes('type=recovery') || 
+              url.search.includes('type=recovery')) {
+            console.log("Password recovery flow detected");
+            setIsPasswordRecovery(true);
+            setIsSignIn(true);
+          }
         } catch (error: any) {
           console.error("Auth redirect processing error:", error);
           toast({
@@ -181,6 +195,7 @@ export const useAuthFlow = () => {
   return {
     isLoading,
     isSignIn,
+    isPasswordRecovery,
     toggleAuthMode,
   };
 };
