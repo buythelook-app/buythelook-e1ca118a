@@ -10,6 +10,7 @@ interface OutfitCanvasProps {
   onAddToCart: () => void;
   onTryDifferent: () => void;
   occasion?: string;
+  originalItems?: any[]; // Original items data for cart
 }
 
 export const OutfitCanvas = ({ 
@@ -17,7 +18,8 @@ export const OutfitCanvas = ({
   isRefreshing, 
   onAddToCart, 
   onTryDifferent,
-  occasion
+  occasion,
+  originalItems
 }: OutfitCanvasProps) => {
   return (
     <div className="mb-8 flex flex-col items-center">
@@ -29,25 +31,13 @@ export const OutfitCanvas = ({
                 <Loader2 className="h-8 w-8 animate-spin text-netflix-accent" />
               </div>
             ) : null}
-            <LookCanvas items={canvasItems} width={300} height={480} occasion={occasion} />
-            <div className="absolute bottom-0 left-4 right-4 flex justify-between gap-2">
-              <Button 
-                onClick={onAddToCart}
-                className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
-                disabled={isRefreshing}
-              >
-                <ShoppingCart className="mr-1 h-3 w-3" />
-                Buy the look
-              </Button>
-              <Button
-                onClick={onTryDifferent}
-                className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
-                disabled={isRefreshing}
-              >
-                <Shuffle className="mr-1 h-3 w-3" />
-                Try different
-              </Button>
-            </div>
+            <LookCanvas 
+              items={canvasItems} 
+              width={300} 
+              height={480} 
+              occasion={occasion}
+              originalItems={originalItems}
+            />
           </div>
         </div>
       </div>

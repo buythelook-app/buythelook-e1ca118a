@@ -76,6 +76,7 @@ export const OutfitCarousel = ({
               onAddToCart={() => onAddToCart(outfit)}
               onTryDifferent={onTryDifferent}
               occasion={outfit[0]?.occasion || outfit[0]?.event || outfit[0]?.metadata?.occasion}
+              originalItems={outfit}
             />
           </CarouselItem>
         ))}
