@@ -40,7 +40,7 @@ export const MeasurementsStep = ({
   // Convert cm to feet/inches when component mounts or height changes
   useEffect(() => {
     if (height && height !== "prefer_not_to_answer") {
-      const totalInches = Math.round(parseInt(height) / 2.54);
+      const totalInches = Math.round(parseFloat(height) / 2.54);
       const ft = Math.floor(totalInches / 12);
       const inch = totalInches % 12;
       
@@ -57,8 +57,8 @@ export const MeasurementsStep = ({
     setFeet(newFeet);
     setInches(newInches);
     
-    const ft = parseInt(newFeet) || 0;
-    const inch = parseInt(newInches) || 0;
+    const ft = parseFloat(newFeet) || 0;
+    const inch = parseFloat(newInches) || 0;
     const totalInches = (ft * 12) + inch;
     const cm = Math.round(totalInches * 2.54).toString();
     
@@ -111,7 +111,7 @@ export const MeasurementsStep = ({
   // Convert cm to inches for display and input - allowing higher precision
   const cmToInches = (cm: string): string => {
     if (!cm || cm === "prefer_not_to_answer") return "";
-    return (parseInt(cm) / 2.54).toFixed(2);
+    return (parseFloat(cm) / 2.54).toFixed(2);
   };
 
   // Convert inches to cm for storage - preserving all decimal places
