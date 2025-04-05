@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
@@ -248,6 +247,7 @@ export const MeasurementsStep = ({
             value={waist === "prefer_not_to_answer" ? "" : cmToInches(waist)}
             onChange={(e) => {
               const value = e.target.value;
+              // Handle empty input explicitly
               if (value === "") {
                 onWaistChange("");
               } else {
@@ -258,6 +258,7 @@ export const MeasurementsStep = ({
             disabled={waist === "prefer_not_to_answer"}
             step="0.1"
             min="0"
+            inputMode="decimal"
           />
           <div className="mt-1 text-xs text-gray-500">
             {waist && waist !== "prefer_not_to_answer" ? `${waist} cm` : ""}
@@ -281,6 +282,7 @@ export const MeasurementsStep = ({
             value={chest === "prefer_not_to_answer" ? "" : cmToInches(chest)}
             onChange={(e) => {
               const value = e.target.value;
+              // Handle empty input explicitly
               if (value === "") {
                 onChestChange("");
               } else {
@@ -291,6 +293,7 @@ export const MeasurementsStep = ({
             disabled={chest === "prefer_not_to_answer"}
             step="0.1"
             min="0"
+            inputMode="decimal"
           />
           <div className="mt-1 text-xs text-gray-500">
             {chest && chest !== "prefer_not_to_answer" ? `${chest} cm` : ""}
