@@ -2,10 +2,11 @@
 import { useRef } from "react";
 import { useStyleCanvasRenderer } from "@/hooks/useStyleCanvasRenderer";
 import { Button } from "@/components/ui/button";
-import { Eye, ShoppingCart } from "lucide-react";
+import { Eye, ShoppingCart, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "@/components/Cart";
 import { useToast } from "@/hooks/use-toast";
+import { useFavoritesStore } from "@/stores/useFavoritesStore";
 
 interface OutfitCanvasProps {
   styleType?: number;
@@ -28,6 +29,7 @@ export const OutfitCanvas = ({
   const navigate = useNavigate();
   const { addItems } = useCartStore();
   const { toast } = useToast();
+  const { addFavorite } = useFavoritesStore();
   
   // Use our custom hook for canvas rendering
   const { isLoading, error } = useStyleCanvasRenderer({
@@ -40,6 +42,33 @@ export const OutfitCanvas = ({
   });
   
   // Get items from localStorage
+  const handleAddToFavorites = () => {
+    // Get the items from localStorage
+    const storedItems = localStorage.getItem('selected-look-items');
+    if (storedItems) {
+      try {
+        const items = JSON.parse(storedItems);
+        // Create a look object for My List
+        const look = {
+          id: `look-${Date.now()}`,
+          image: outfitData?.top || "",
+          title: `${occasion || 'Style'} Look`,
+          price: "$0.00", // Default price
+          category: occasion || "Look"
+        };
+        
+        addFavorite(look);
+        
+        toast({
+          title: "Added to My List",
+          description: "Look has been added to your favorites",
+        });
+      } catch (e) {
+        console.error('Error adding look to favorites:', e);
+      }
+    }
+  };
+  
   const handleBuyLook = () => {
     // Get the items to add to cart from localStorage
     const storedItems = localStorage.getItem('selected-look-items');
@@ -99,22 +128,30 @@ export const OutfitCanvas = ({
           }}
         />
         
-        {/* Fixed position buttons at the bottom of canvas with improved visibility */}
-        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-30">
+        {/* Fixed position buttons at the bottom of canvas with icons */}
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-50">
+          <Button 
+            onClick={handleAddToFavorites}
+            className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-lg flex-1 h-10 opacity-100 text-white font-bold border border-white"
+            style={{ opacity: 1 }}
+          >
+            <Heart className="w-5 h-5" />
+          </Button>
+          
           <Button 
             onClick={handleBuyLook}
-            className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8 opacity-100"
+            className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-lg flex-1 h-10 opacity-100 text-white font-bold border border-white"
+            style={{ opacity: 1 }}
           >
-            <ShoppingCart className="mr-1 h-3 w-3" />
-            Buy the look
+            <ShoppingCart className="w-5 h-5" />
           </Button>
           
           <Button
             onClick={handleViewLook}
-            className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8 opacity-100"
+            className="bg-[#D946EF] hover:bg-[#C026D3] shadow-lg flex-1 h-10 opacity-100 text-white font-bold border border-white"
+            style={{ opacity: 1 }}
           >
-            <Eye className="mr-1 h-3 w-3" />
-            Watch this look
+            <Eye className="w-5 h-5" />
           </Button>
         </div>
       </div>

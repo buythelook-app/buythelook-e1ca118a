@@ -2,10 +2,11 @@
 import { useCanvasRenderer } from "@/hooks/useCanvasRenderer";
 import { type CanvasItem } from "@/types/canvasTypes";
 import { Button } from "./ui/button";
-import { ShoppingCart, Eye } from "lucide-react";
+import { ShoppingCart, Eye, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "@/components/Cart";
 import { useToast } from "@/hooks/use-toast";
+import { useFavoritesStore } from "@/stores/useFavoritesStore";
 
 interface LookCanvasProps {
   items: CanvasItem[];
@@ -34,6 +35,43 @@ export const LookCanvas = ({
   const navigate = useNavigate();
   const { addItems } = useCartStore();
   const { toast } = useToast();
+  const { addFavorite } = useFavoritesStore();
+
+  const handleAddToFavorites = () => {
+    if (originalItems && originalItems.length > 0) {
+      // Create a look object for My List
+      const look = {
+        id: `look-${Date.now()}`,
+        image: originalItems[0].image || "",
+        title: `${occasion || 'Style'} Look`,
+        price: calculateTotalPrice(),
+        category: occasion || "Look",
+        items: originalItems
+      };
+      
+      addFavorite(look);
+      
+      toast({
+        title: "Added to My List",
+        description: "Look has been added to your favorites",
+      });
+    }
+  };
+
+  const calculateTotalPrice = () => {
+    if (!originalItems) return "$0.00";
+    
+    let total = 0;
+    originalItems.forEach(item => {
+      const priceString = item.price || "0";
+      const priceNumber = parseFloat(priceString.replace(/[^0-9.]/g, ''));
+      if (!isNaN(priceNumber)) {
+        total += priceNumber;
+      }
+    });
+    
+    return `$${total.toFixed(2)}`;
+  };
 
   const handleBuyLook = () => {
     if (originalItems && originalItems.length > 0) {
@@ -98,21 +136,27 @@ export const LookCanvas = ({
             style={{ pointerEvents: 'auto' }}
           >
             <Button 
-              onClick={handleBuyLook}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-lg flex-1 text-xs h-10 opacity-100 text-white font-bold border border-white"
+              onClick={handleAddToFavorites}
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-lg flex-1 h-10 opacity-100 text-white font-bold border border-white"
               style={{ opacity: 1 }}
             >
-              <ShoppingCart className="mr-1 h-4 w-4" />
-              Buy the look
+              <Heart className="w-5 h-5" />
+            </Button>
+            
+            <Button 
+              onClick={handleBuyLook}
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-lg flex-1 h-10 opacity-100 text-white font-bold border border-white"
+              style={{ opacity: 1 }}
+            >
+              <ShoppingCart className="w-5 h-5" />
             </Button>
             
             <Button
               onClick={handleViewDetails}
-              className="bg-[#D946EF] hover:bg-[#C026D3] shadow-lg flex-1 text-xs h-10 opacity-100 text-white font-bold border border-white"
+              className="bg-[#D946EF] hover:bg-[#C026D3] shadow-lg flex-1 h-10 opacity-100 text-white font-bold border border-white"
               style={{ opacity: 1 }}
             >
-              <Eye className="mr-1 h-4 w-4" />
-              Watch this look
+              <Eye className="w-5 h-5" />
             </Button>
           </div>
         )}

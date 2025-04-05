@@ -2,11 +2,12 @@
 import { useNavigate } from "react-router-dom";
 import { StyleCanvas } from "@/components/StyleCanvas";
 import { Card } from "@/components/ui/card";
-import { Eye, ShoppingCart } from "lucide-react";
+import { Eye, ShoppingCart, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useCartStore } from "@/components/Cart";
 import { useToast } from "@/hooks/use-toast";
+import { useFavoritesStore } from "@/stores/useFavoritesStore";
 
 export const StyleCanvasContainer = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export const StyleCanvasContainer = () => {
   const [styleType, setStyleType] = useState<number>(0);
   const { addItems } = useCartStore();
   const { toast } = useToast();
+  const { addFavorite } = useFavoritesStore();
   
   useEffect(() => {
     // Load initial outfit data from localStorage
@@ -26,6 +28,35 @@ export const StyleCanvasContainer = () => {
       }
     }
   }, []);
+
+  const handleAddToFavorites = () => {
+    // Get the items from localStorage
+    const storedItems = localStorage.getItem('selected-look-items') || 
+                        localStorage.getItem('dashboard-items');
+                        
+    if (storedItems) {
+      try {
+        const items = JSON.parse(storedItems);
+        // Create a look object for My List
+        const look = {
+          id: `look-${Date.now()}`,
+          image: outfitData?.top || "",
+          title: "Today's Look For You",
+          price: "$0.00", // Default price
+          category: "Daily Look"
+        };
+        
+        addFavorite(look);
+        
+        toast({
+          title: "Added to My List",
+          description: "Look has been added to your favorites",
+        });
+      } catch (e) {
+        console.error('Error adding look to favorites:', e);
+      }
+    }
+  };
 
   const handleViewLook = () => {
     navigate('/suggestions');
@@ -110,21 +141,29 @@ export const StyleCanvasContainer = () => {
             height={400} 
           />
           
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4">
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-50">
+            <Button 
+              onClick={handleAddToFavorites}
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-lg flex-1 h-10 opacity-100 text-white font-bold border border-white"
+              style={{ opacity: 1 }}
+            >
+              <Heart className="w-5 h-5" />
+            </Button>
+            
             <Button 
               onClick={handleBuyLook}
-              className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8"
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-lg flex-1 h-10 opacity-100 text-white font-bold border border-white"
+              style={{ opacity: 1 }}
             >
-              <ShoppingCart className="mr-1 h-3 w-3" />
-              Buy the look
+              <ShoppingCart className="w-5 h-5" />
             </Button>
             
             <Button
               onClick={handleViewLook}
-              className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8"
+              className="bg-[#D946EF] hover:bg-[#C026D3] shadow-lg flex-1 h-10 opacity-100 text-white font-bold border border-white"
+              style={{ opacity: 1 }}
             >
-              <Eye className="mr-1 h-3 w-3" />
-              Watch this look
+              <Eye className="w-5 h-5" />
             </Button>
           </div>
         </div>

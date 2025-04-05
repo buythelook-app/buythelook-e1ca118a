@@ -1,8 +1,10 @@
-import { Heart, ShoppingCart } from "lucide-react";
+
+import { Heart, ShoppingCart, Eye } from "lucide-react";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useCartStore } from "../Cart";
+import { useNavigate } from "react-router-dom";
 
 interface LookActionsProps {
   id: string;
@@ -17,6 +19,7 @@ export const LookActions = ({ id, image, title, price, category, items = [] }: L
   const { addFavorite, removeFavorite, isFavorite } = useFavoritesStore();
   const { addLook, looks } = useCartStore();
   const isInCart = looks.some(look => look.id === id);
+  const navigate = useNavigate();
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -49,9 +52,31 @@ export const LookActions = ({ id, image, title, price, category, items = [] }: L
     
     toast.success('Look added to cart');
   };
+  
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Store the look items for viewing in suggestions
+    localStorage.setItem('selected-look-items', JSON.stringify(items));
+    localStorage.setItem('selected-look-occasion', category);
+    
+    navigate('/suggestions');
+  };
 
   return (
     <div className="flex gap-2">
+      <Button
+        variant="ghost"
+        size="icon"
+        className={`hover:text-purple-600 transition-colors ${isFavorite(id) ? 'text-purple-600' : ''}`}
+        onClick={handleFavoriteClick}
+      >
+        <Heart 
+          className="h-5 w-5"
+          fill={isFavorite(id) ? "currentColor" : "none"}
+        />
+      </Button>
+      
       <Button
         variant="ghost"
         size="icon"
@@ -63,16 +88,14 @@ export const LookActions = ({ id, image, title, price, category, items = [] }: L
           fill={isInCart ? "currentColor" : "none"}
         />
       </Button>
+      
       <Button
         variant="ghost"
         size="icon" 
         className="hover:text-purple-600 transition-colors"
-        onClick={handleFavoriteClick}
+        onClick={handleViewDetails}
       >
-        <Heart 
-          className="h-5 w-5"
-          fill={isFavorite(id) ? "currentColor" : "none"}
-        />
+        <Eye className="h-5 w-5" />
       </Button>
     </div>
   );

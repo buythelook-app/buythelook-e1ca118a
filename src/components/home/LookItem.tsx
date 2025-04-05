@@ -2,11 +2,12 @@
 import { useNavigate } from "react-router-dom";
 import { LookCanvas } from "@/components/LookCanvas";
 import { Button } from "@/components/ui/button";
-import { Eye, ShoppingCart, Shuffle } from "lucide-react";
+import { Eye, ShoppingCart, Shuffle, Heart } from "lucide-react";
 import { DashboardItem } from "@/types/lookTypes";
 import { useCartStore } from "@/components/Cart";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
+import { useFavoritesStore } from "@/stores/useFavoritesStore";
 
 interface LookItemProps {
   occasion: string;
@@ -28,6 +29,7 @@ export const LookItem = ({
   const navigate = useNavigate();
   const { addItems } = useCartStore();
   const { toast } = useToast();
+  const { addFavorite } = useFavoritesStore();
   const [mounted, setMounted] = useState(false);
   
   useEffect(() => {
@@ -57,6 +59,22 @@ export const LookItem = ({
     price: totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : '$0.00',
     category: userStyle?.analysis?.styleProfile || "Casual",
     occasion: occasion
+  };
+
+  const handleAddToFavorites = () => {
+    // Add the look to favorites
+    addFavorite({
+      id: look.id,
+      title: look.title,
+      price: look.price,
+      image: items[0]?.image || "",
+      category: look.category,
+    });
+    
+    toast({
+      title: "Added to My List",
+      description: "Look has been added to your favorites",
+    });
   };
 
   const handleViewDetails = () => {
@@ -114,21 +132,27 @@ export const LookItem = ({
             style={{ pointerEvents: 'auto' }}
           >
             <Button 
-              onClick={handleBuyLook}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-lg flex-1 text-xs h-10 opacity-100 text-white font-bold border border-white"
+              onClick={handleAddToFavorites}
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-lg flex-1 h-10 opacity-100 text-white font-bold border border-white"
               style={{ opacity: 1 }}
             >
-              <ShoppingCart className="mr-1 h-4 w-4" />
-              Buy the look
+              <Heart className="w-5 h-5" />
+            </Button>
+          
+            <Button 
+              onClick={handleBuyLook}
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-lg flex-1 h-10 opacity-100 text-white font-bold border border-white"
+              style={{ opacity: 1 }}
+            >
+              <ShoppingCart className="w-5 h-5" />
             </Button>
             
             <Button
               onClick={handleViewDetails}
-              className="bg-[#D946EF] hover:bg-[#C026D3] shadow-lg flex-1 text-xs h-10 opacity-100 text-white font-bold border border-white"
+              className="bg-[#D946EF] hover:bg-[#C026D3] shadow-lg flex-1 h-10 opacity-100 text-white font-bold border border-white"
               style={{ opacity: 1 }}
             >
-              <Eye className="mr-1 h-4 w-4" />
-              Watch this look
+              <Eye className="w-5 h-5" />
             </Button>
           </div>
         </div>
