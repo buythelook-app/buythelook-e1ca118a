@@ -11,7 +11,7 @@ import { fetchDashboardItems } from "@/services/lookService";
 import { useQuery } from "@tanstack/react-query";
 import { Shuffle, ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/components/Cart";
-import { toast } from "sonner";
+import { toast as sonnerToast } from "sonner";
 
 interface Look {
   id: string;
@@ -112,7 +112,7 @@ export default function Index() {
       totalPrice: look.price
     });
     
-    toast.success(`${look.title} added to cart`);
+    sonnerToast.success(`${look.title} added to cart`);
   };
 
   if (!userStyle) {
