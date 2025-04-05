@@ -61,7 +61,7 @@ export const LookItem = ({
   const handleBuyLook = () => {
     const cartItems = items.map(item => ({
       id: item.id,
-      title: item.name || "", // Changed from title to name
+      title: item.name || "", 
       price: item.price || "$0.00",
       image: item.image
     }));
@@ -110,7 +110,7 @@ export const LookItem = ({
         
         <button
           onClick={(e) => {
-            e.stopPropagation(); // Prevent triggering other click handlers
+            e.stopPropagation();
             onShuffleLook(look.occasion);
           }}
           className="absolute top-4 right-4 bg-netflix-accent text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"

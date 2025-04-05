@@ -7,7 +7,6 @@ import { MoodFilter } from "@/components/filters/MoodFilter";
 import type { Mood } from "@/components/filters/MoodFilter";
 import { NoStylePrompt } from "@/components/home/NoStylePrompt";
 import { PersonalizedLooks } from "@/components/home/PersonalizedLooks";
-import { StyleCanvasContainer } from "@/components/home/StyleCanvasContainer";
 
 export default function Index() {
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
@@ -38,8 +37,6 @@ export default function Index() {
           <MoodFilter selectedMood={selectedMood} onMoodSelect={handleMoodSelect} />
         </div>
         <FilterOptions />
-        
-        <StyleCanvasContainer />
         
         <PersonalizedLooks 
           userStyle={userStyle} 
