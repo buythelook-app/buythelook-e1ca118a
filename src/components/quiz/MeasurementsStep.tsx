@@ -152,6 +152,7 @@ export const MeasurementsStep = ({
                       onChange={(e) => handleHeightChange(e.target.value, inches)}
                       className="w-full"
                       inputMode="decimal"
+                      max="99"
                     />
                   </div>
                   <div className="flex-1">
@@ -164,6 +165,7 @@ export const MeasurementsStep = ({
                       onChange={(e) => handleHeightChange(feet, e.target.value)}
                       className="w-full"
                       inputMode="decimal"
+                      max="99"
                     />
                   </div>
                 </div>
@@ -200,7 +202,7 @@ export const MeasurementsStep = ({
             <Label htmlFor="weight">Weight (lbs)</Label>
             <Input
               id="weight"
-              type="text"
+              type="number"
               placeholder="Weight in pounds"
               value={weight === "prefer_not_to_answer" ? "" : weight ? Math.round(parseFloat(weight) * 2.2) : ""}
               onChange={(e) => {
@@ -214,6 +216,8 @@ export const MeasurementsStep = ({
               }}
               className="w-full"
               disabled={weight === "prefer_not_to_answer"}
+              max="9999"
+              inputMode="decimal"
             />
             <div className="mt-1 text-xs text-gray-500">
               {weight && weight !== "prefer_not_to_answer" ? `${weight} kg` : ""}
@@ -256,6 +260,7 @@ export const MeasurementsStep = ({
             className="w-full mt-1"
             disabled={waist === "prefer_not_to_answer"}
             inputMode="decimal"
+            max="9999"
           />
           <div className="mt-1 text-xs text-gray-500">
             {waist && waist !== "prefer_not_to_answer" ? `${waist} cm` : ""}
@@ -289,6 +294,7 @@ export const MeasurementsStep = ({
             className="w-full mt-1"
             disabled={chest === "prefer_not_to_answer"}
             inputMode="decimal"
+            max="9999"
           />
           <div className="mt-1 text-xs text-gray-500">
             {chest && chest !== "prefer_not_to_answer" ? `${chest} cm` : ""}
