@@ -1,9 +1,8 @@
-
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Info } from "lucide-react";
+import { Info, Eye, EyeOff } from "lucide-react";
 
 interface MeasurementsStepProps {
   height: string;
@@ -202,10 +201,18 @@ export const MeasurementsStep = ({
             <Label htmlFor="weight">Weight (lbs)</Label>
             <Input
               id="weight"
-              type="number"
+              type="text"
               placeholder="Weight in pounds"
-              value={weight === "prefer_not_to_answer" ? "" : weight ? Math.round(parseInt(weight) * 2.2) : ""}
-              onChange={(e) => onWeightChange(e.target.value ? Math.round(parseInt(e.target.value) / 2.2).toString() : "")}
+              value={weight === "prefer_not_to_answer" ? "" : weight ? Math.round(parseFloat(weight) * 2.2) : ""}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Allow any input including empty string, decimal points, etc.
+                if (value === "") {
+                  onWeightChange("");
+                } else if (!isNaN(parseFloat(value))) {
+                  onWeightChange((parseFloat(value) / 2.2).toString());
+                }
+              }}
               className="w-full"
               disabled={weight === "prefer_not_to_answer"}
             />
