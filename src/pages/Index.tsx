@@ -1,4 +1,3 @@
-
 import { HeroSection } from "@/components/HeroSection";
 import { Navbar } from "@/components/Navbar";
 import { FilterOptions } from "@/components/filters/FilterOptions";
@@ -10,7 +9,9 @@ import { MoodFilter } from "@/components/filters/MoodFilter";
 import { useToast } from "@/hooks/use-toast";
 import { fetchDashboardItems } from "@/services/lookService";
 import { useQuery } from "@tanstack/react-query";
-import { Shuffle } from "lucide-react";
+import { Shuffle, ShoppingCart } from "lucide-react";
+import { useCartStore } from "@/components/Cart";
+import { toast } from "sonner";
 
 interface Look {
   id: string;
@@ -32,6 +33,7 @@ export default function Index() {
   const [userStyle, setUserStyle] = useState<any>(null);
   const [combinations, setCombinations] = useState<{ [key: string]: number }>({});
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
+  const { addLook } = useCartStore();
 
   useEffect(() => {
     console.log("Index page loaded");
@@ -94,6 +96,23 @@ export default function Index() {
       [occasion]: (prev[occasion] || 0) + 1
     }));
     refetch();
+  };
+  
+  const handleAddToCart = (look: Look) => {
+    const lookItems = look.items.map(item => ({
+      ...item,
+      title: `Item from ${look.title}`,
+      price: (parseFloat(look.price.replace('$', '')) / look.items.length).toFixed(2),
+    }));
+    
+    addLook({
+      id: look.id,
+      title: look.title,
+      items: lookItems,
+      totalPrice: look.price
+    });
+    
+    toast.success(`${look.title} added to cart`);
   };
 
   if (!userStyle) {
@@ -172,18 +191,27 @@ export default function Index() {
                       </div>
                       <div className="flex justify-between items-center">
                         <p className="text-netflix-accent font-semibold">{look.price}</p>
-                        <button
-                          onClick={() => {
-                            localStorage.setItem(`look-${look.id}`, JSON.stringify({
-                              ...look,
-                              description: `A curated ${look.occasion.toLowerCase()} look that matches your ${userStyle.analysis.styleProfile} style preference.`
-                            }));
-                            navigate(`/look/${look.id}`);
-                          }}
-                          className="bg-netflix-accent text-white px-4 py-2 rounded-lg hover:bg-netflix-accent/90 transition-colors text-sm"
-                        >
-                          View Details
-                        </button>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleAddToCart(look)}
+                            className="bg-netflix-accent text-white p-2 rounded-lg hover:bg-netflix-accent/90 transition-colors"
+                            title="Add to cart"
+                          >
+                            <ShoppingCart className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              localStorage.setItem(`look-${look.id}`, JSON.stringify({
+                                ...look,
+                                description: `A curated ${look.occasion.toLowerCase()} look that matches your ${userStyle.analysis.styleProfile} style preference.`
+                              }));
+                              navigate(`/look/${look.id}`);
+                            }}
+                            className="bg-netflix-accent text-white px-4 py-2 rounded-lg hover:bg-netflix-accent/90 transition-colors text-sm flex items-center gap-2"
+                          >
+                            View Details
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
