@@ -1,7 +1,8 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "./ui/use-toast";
 
 export const ShippingAddress = ({
@@ -19,8 +20,25 @@ export const ShippingAddress = ({
   });
   const { toast } = useToast();
 
+  // Load saved address from localStorage when component mounts
+  useEffect(() => {
+    const savedAddress = localStorage.getItem("shippingAddress");
+    if (savedAddress) {
+      try {
+        const parsedAddress = JSON.parse(savedAddress);
+        setAddress(parsedAddress);
+      } catch (error) {
+        console.error("Failed to parse saved address:", error);
+      }
+    }
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Save address to localStorage
+    localStorage.setItem("shippingAddress", JSON.stringify(address));
+    
     toast({
       title: "Address Updated",
       description: "Your shipping address has been updated successfully.",
