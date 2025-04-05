@@ -39,7 +39,7 @@ export const StyleCanvasContainer = () => {
         const items = JSON.parse(storedItems);
         const cartItems = items.map((item: any) => ({
           id: item.id,
-          title: item.name || item.title,
+          title: item.name || "",
           price: item.price || "$0.00",
           image: item.image
         }));
@@ -68,7 +68,7 @@ export const StyleCanvasContainer = () => {
           const items = JSON.parse(fallbackItems);
           const cartItems = items.map((item: any) => ({
             id: item.id,
-            title: item.name || item.title,
+            title: item.name || "",
             price: item.price || "$0.00",
             image: item.image
           }));

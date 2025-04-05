@@ -61,7 +61,7 @@ export const LookItem = ({
   const handleBuyLook = () => {
     const cartItems = items.map(item => ({
       id: item.id,
-      title: item.name || item.title || "",
+      title: item.name || "", // Changed from title to name
       price: item.price || "$0.00",
       image: item.image
     }));
@@ -90,7 +90,7 @@ export const LookItem = ({
       >
         <LookCanvas items={look.items} width={300} height={500} occasion={occasion} />
         
-        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 opacity-100 group-hover:opacity-100 transition-opacity">
           <Button 
             onClick={handleBuyLook}
             className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8"
