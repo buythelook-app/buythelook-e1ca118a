@@ -152,8 +152,7 @@ export const MeasurementsStep = ({
                       onChange={(e) => handleHeightChange(e.target.value, inches)}
                       className="w-full"
                       inputMode="decimal"
-                      max="99"
-                      min="1"
+                      min="0"
                     />
                   </div>
                   <div className="flex-1">
@@ -166,7 +165,6 @@ export const MeasurementsStep = ({
                       onChange={(e) => handleHeightChange(feet, e.target.value)}
                       className="w-full"
                       inputMode="decimal"
-                      max="11"
                       min="0"
                     />
                   </div>
@@ -220,7 +218,6 @@ export const MeasurementsStep = ({
               }}
               className="w-full"
               disabled={weight === "prefer_not_to_answer"}
-              max="9999.99"
               inputMode="decimal"
               step="0.1"
             />
@@ -265,8 +262,7 @@ export const MeasurementsStep = ({
             className="w-full mt-1"
             disabled={waist === "prefer_not_to_answer"}
             inputMode="decimal"
-            min="10"
-            max="9999.99"
+            min="0"
             step="0.1"
           />
           <div className="mt-1 text-xs text-gray-500">
@@ -301,8 +297,7 @@ export const MeasurementsStep = ({
             className="w-full mt-1"
             disabled={chest === "prefer_not_to_answer"}
             inputMode="decimal"
-            min="10"
-            max="9999.99"
+            min="0"
             step="0.1"
           />
           <div className="mt-1 text-xs text-gray-500">
@@ -322,4 +317,3 @@ export const MeasurementsStep = ({
     </div>
   );
 };
-
