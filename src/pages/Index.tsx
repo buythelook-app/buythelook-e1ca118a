@@ -8,6 +8,7 @@ import type { Mood } from "@/components/filters/MoodFilter";
 import { NoStylePrompt } from "@/components/home/NoStylePrompt";
 import { PersonalizedLooks } from "@/components/home/PersonalizedLooks";
 import { Toaster } from "@/components/ui/toaster";
+import { toast } from "@/hooks/use-toast";
 
 export default function Index() {
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
@@ -18,11 +19,21 @@ export default function Index() {
     if (styleAnalysis) {
       setUserStyle(JSON.parse(styleAnalysis));
     }
+    
+    // Log to verify the component is mounting properly
+    console.log("Index component mounted, styleAnalysis found:", !!styleAnalysis);
+    
+    // Display a toast when the page loads to verify the toaster is working
+    toast({
+      title: "Welcome to your style dashboard",
+      description: "Explore your personalized looks below",
+    });
   }, []);
 
   const handleMoodSelect = (mood: Mood) => {
     setSelectedMood(mood);
     localStorage.setItem('current-mood', mood);
+    console.log("Mood selected:", mood);
   };
 
   if (!userStyle) {

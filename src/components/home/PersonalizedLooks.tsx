@@ -19,13 +19,23 @@ export const PersonalizedLooks = ({ userStyle, selectedMood }: PersonalizedLooks
   const [isRefreshing, setIsRefreshing] = useState<{ [key: string]: boolean }>({});
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
 
+  // Add console log to trace component rendering
+  useEffect(() => {
+    console.log("PersonalizedLooks component mounted or updated", {
+      userStyle: !!userStyle,
+      selectedMood,
+      occasions
+    });
+  }, [userStyle, selectedMood]);
+
   const { data: occasionOutfits, isLoading, refetch } = useQuery({
     queryKey: ['dashboardItems', selectedMood],
     queryFn: async () => {
-      return await fetchItemsForOccasion(false);
+      console.log("Fetching dashboard items with mood:", selectedMood);
+      return await fetchItemsForOccasion(true); // Force refresh to ensure data loads
     },
     enabled: !!userStyle,
-    staleTime: 300000,
+    staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: false,
   });
 
@@ -34,11 +44,20 @@ export const PersonalizedLooks = ({ userStyle, selectedMood }: PersonalizedLooks
       localStorage.setItem('current-mood', selectedMood);
       refetch();
     }
-  }, [selectedMood, refetch]);
+    
+    // Log the initial outfits data when component mounts
+    if (occasionOutfits) {
+      console.log("Initial outfit data:", occasionOutfits);
+      occasions.forEach(occasion => {
+        console.log(`${occasion} items:`, occasionOutfits[occasion] || []);
+      });
+    }
+  }, [selectedMood, refetch, occasionOutfits, occasions]);
 
   const handleShuffleLook = async (occasion: string) => {
     try {
       setIsRefreshing({ ...isRefreshing, [occasion]: true });
+      console.log(`Shuffling look for ${occasion}`);
       
       const quizData = localStorage.getItem('styleAnalysis');
       const styleAnalysis = quizData ? JSON.parse(quizData) : null;
@@ -79,6 +98,13 @@ export const PersonalizedLooks = ({ userStyle, selectedMood }: PersonalizedLooks
     }
   };
 
+  // Display a message if loading
+  if (isLoading) {
+    console.log("PersonalizedLooks is loading data...");
+  } else {
+    console.log("PersonalizedLooks data loaded:", occasionOutfits);
+  }
+
   return (
     <section className="py-8">
       <div className="container mx-auto px-4">
@@ -98,6 +124,10 @@ export const PersonalizedLooks = ({ userStyle, selectedMood }: PersonalizedLooks
           {isLoading ? (
             <div className="col-span-2 text-center py-12 text-white">
               <div className="animate-pulse">Loading your personalized looks...</div>
+            </div>
+          ) : !occasionOutfits || Object.keys(occasionOutfits).length === 0 ? (
+            <div className="col-span-2 text-center py-12 text-white">
+              <p>No outfit suggestions available. Try choosing a different mood or generate new looks.</p>
             </div>
           ) : (
             occasions.map((occasion, index) => {

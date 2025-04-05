@@ -93,20 +93,25 @@ export const LookCanvas = ({
         />
         
         {showButtons && originalItems && originalItems.length > 0 && (
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-30">
+          <div 
+            className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-50"
+            style={{ pointerEvents: 'auto' }}
+          >
             <Button 
               onClick={handleBuyLook}
-              className="bg-purple-600 hover:bg-purple-700 shadow-md flex-1 text-xs h-8 opacity-100"
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-lg flex-1 text-xs h-10 opacity-100 text-white font-bold border border-white"
+              style={{ opacity: 1 }}
             >
-              <ShoppingCart className="mr-1 h-3 w-3" />
+              <ShoppingCart className="mr-1 h-4 w-4" />
               Buy the look
             </Button>
             
             <Button
               onClick={handleViewDetails}
-              className="bg-purple-600 hover:bg-purple-700 shadow-md flex-1 text-xs h-8 opacity-100"
+              className="bg-[#D946EF] hover:bg-[#C026D3] shadow-lg flex-1 text-xs h-10 opacity-100 text-white font-bold border border-white"
+              style={{ opacity: 1 }}
             >
-              <Eye className="mr-1 h-3 w-3" />
+              <Eye className="mr-1 h-4 w-4" />
               Watch this look
             </Button>
           </div>

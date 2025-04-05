@@ -6,6 +6,7 @@ import { Eye, ShoppingCart, Shuffle } from "lucide-react";
 import { DashboardItem } from "@/types/lookTypes";
 import { useCartStore } from "@/components/Cart";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect, useState } from "react";
 
 interface LookItemProps {
   occasion: string;
@@ -27,6 +28,13 @@ export const LookItem = ({
   const navigate = useNavigate();
   const { addItems } = useCartStore();
   const { toast } = useToast();
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    // Ensure component is mounted before rendering buttons
+    setMounted(true);
+    console.log(`LookItem mounted for occasion: ${occasion}, items count: ${items?.length || 0}`);
+  }, [occasion, items]);
   
   if (!items || items.length === 0) return null;
   
@@ -76,6 +84,8 @@ export const LookItem = ({
     navigate('/cart');
   };
 
+  console.log(`Rendering LookItem: ${look.title}, mounted: ${mounted}`);
+
   return (
     <div 
       key={look.id}
@@ -99,20 +109,25 @@ export const LookItem = ({
           />
           
           {/* Fixed position buttons with improved styling for visibility */}
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-50">
+          <div 
+            className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-50"
+            style={{ pointerEvents: 'auto' }}
+          >
             <Button 
               onClick={handleBuyLook}
-              className="bg-purple-600 hover:bg-purple-700 shadow-md flex-1 text-xs h-8 opacity-100 text-white"
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-lg flex-1 text-xs h-10 opacity-100 text-white font-bold border border-white"
+              style={{ opacity: 1 }}
             >
-              <ShoppingCart className="mr-1 h-3 w-3" />
+              <ShoppingCart className="mr-1 h-4 w-4" />
               Buy the look
             </Button>
             
             <Button
               onClick={handleViewDetails}
-              className="bg-purple-600 hover:bg-purple-700 shadow-md flex-1 text-xs h-8 opacity-100 text-white"
+              className="bg-[#D946EF] hover:bg-[#C026D3] shadow-lg flex-1 text-xs h-10 opacity-100 text-white font-bold border border-white"
+              style={{ opacity: 1 }}
             >
-              <Eye className="mr-1 h-3 w-3" />
+              <Eye className="mr-1 h-4 w-4" />
               Watch this look
             </Button>
           </div>
@@ -123,7 +138,7 @@ export const LookItem = ({
             e.stopPropagation();
             onShuffleLook(look.occasion);
           }}
-          className="absolute top-4 right-4 bg-purple-600 text-white p-2 rounded-full opacity-100 hover:bg-purple-700"
+          className="absolute top-4 right-4 bg-[#8B5CF6] text-white p-2 rounded-full opacity-100 hover:bg-[#7C3AED] shadow-lg"
           title="Try different combination"
           disabled={isRefreshing}
         >

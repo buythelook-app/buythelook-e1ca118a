@@ -115,3 +115,20 @@
   @apply p-3 rounded-md border border-emerald-700 bg-emerald-50 text-emerald-800 shadow-sm;
 }
 
+/* Custom button styles for improved visibility */
+.btn-look-primary {
+  @apply bg-[#8B5CF6] hover:bg-[#7C3AED] text-white;
+}
+
+.btn-look-secondary {
+  @apply bg-[#D946EF] hover:bg-[#C026D3] text-white;
+}
+
+.btn-look {
+  @apply shadow-lg opacity-100 border border-white font-bold;
+}
+
+/* Fix for dropdown and button visibility */
+.look-buttons {
+  @apply z-50 pointer-events-auto;
+}
