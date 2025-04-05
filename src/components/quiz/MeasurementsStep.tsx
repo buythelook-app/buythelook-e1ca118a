@@ -153,6 +153,7 @@ export const MeasurementsStep = ({
                       className="w-full"
                       inputMode="decimal"
                       max="99"
+                      min="1"
                     />
                   </div>
                   <div className="flex-1">
@@ -165,7 +166,8 @@ export const MeasurementsStep = ({
                       onChange={(e) => handleHeightChange(feet, e.target.value)}
                       className="w-full"
                       inputMode="decimal"
-                      max="99"
+                      max="11"
+                      min="0"
                     />
                   </div>
                 </div>
@@ -204,24 +206,27 @@ export const MeasurementsStep = ({
               id="weight"
               type="number"
               placeholder="Weight in pounds"
-              value={weight === "prefer_not_to_answer" ? "" : weight ? (parseFloat(weight) * 2.2).toFixed(2) : ""}
+              value={weight === "prefer_not_to_answer" ? "" : weight ? (parseFloat(weight) * 2.2).toFixed(1) : ""}
               onChange={(e) => {
                 const value = e.target.value;
                 // Allow any input including empty string, decimal points, etc.
                 if (value === "") {
                   onWeightChange("");
                 } else if (!isNaN(parseFloat(value))) {
-                  onWeightChange((parseFloat(value) / 2.2).toFixed(2));
+                  // Ensure the value is at least 10 kg (22 lbs)
+                  const weightInKg = parseFloat(value) / 2.2;
+                  onWeightChange(weightInKg.toFixed(1));
                 }
               }}
               className="w-full"
               disabled={weight === "prefer_not_to_answer"}
+              min="22"  // Minimum 10kg converted to lbs
               max="9999.99"
               inputMode="decimal"
-              step="0.01"
+              step="0.1"
             />
             <div className="mt-1 text-xs text-gray-500">
-              {weight && weight !== "prefer_not_to_answer" ? `${parseFloat(weight).toFixed(2)} kg` : ""}
+              {weight && weight !== "prefer_not_to_answer" ? `${parseFloat(weight).toFixed(1)} kg` : ""}
             </div>
           </div>
           <Button 
@@ -261,8 +266,9 @@ export const MeasurementsStep = ({
             className="w-full mt-1"
             disabled={waist === "prefer_not_to_answer"}
             inputMode="decimal"
+            min="10"
             max="9999.99"
-            step="0.01"
+            step="0.1"
           />
           <div className="mt-1 text-xs text-gray-500">
             {waist && waist !== "prefer_not_to_answer" ? `${waist} cm` : ""}
@@ -296,8 +302,9 @@ export const MeasurementsStep = ({
             className="w-full mt-1"
             disabled={chest === "prefer_not_to_answer"}
             inputMode="decimal"
+            min="10"
             max="9999.99"
-            step="0.01"
+            step="0.1"
           />
           <div className="mt-1 text-xs text-gray-500">
             {chest && chest !== "prefer_not_to_answer" ? `${chest} cm` : ""}
