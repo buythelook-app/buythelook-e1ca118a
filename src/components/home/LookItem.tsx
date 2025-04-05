@@ -31,7 +31,6 @@ export const LookItem = ({
   const [mounted, setMounted] = useState(false);
   
   useEffect(() => {
-    // Ensure component is mounted before rendering buttons
     setMounted(true);
     console.log(`LookItem mounted for occasion: ${occasion}, items count: ${items?.length || 0}`);
   }, [occasion, items]);
@@ -89,7 +88,7 @@ export const LookItem = ({
   return (
     <div 
       key={look.id}
-      className="bg-netflix-card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow"
+      className="bg-netflix-card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow relative"
     >
       <div className="flex justify-between items-start mb-4">
         <h3 className="text-xl font-semibold text-white">{look.title}</h3>
@@ -98,51 +97,47 @@ export const LookItem = ({
       <div 
         className="mb-4 bg-white rounded-lg overflow-hidden relative group"
       >
-        <div className="relative">
-          <LookCanvas 
-            items={look.items} 
-            width={300} 
-            height={500} 
-            occasion={occasion} 
-            originalItems={items}
-            showButtons={false}
-          />
+        {/* Canvas for outfit visualization */}
+        <LookCanvas 
+          items={look.items} 
+          width={300} 
+          height={500} 
+          occasion={occasion} 
+          originalItems={items}
+          showButtons={false}
+        />
           
-          {/* Fixed position buttons with improved styling for visibility */}
-          <div 
-            className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-50"
-            style={{ pointerEvents: 'auto' }}
+        {/* Improved button container with higher visibility */}
+        <div className="look-buttons-container">
+          <Button 
+            onClick={handleBuyLook}
+            className="btn-look-primary flex-1"
           >
-            <Button 
-              onClick={handleBuyLook}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-lg flex-1 text-xs h-10 opacity-100 text-white font-bold border border-white"
-              style={{ opacity: 1 }}
-            >
-              <ShoppingCart className="mr-1 h-4 w-4" />
-              Buy the look
-            </Button>
-            
-            <Button
-              onClick={handleViewDetails}
-              className="bg-[#D946EF] hover:bg-[#C026D3] shadow-lg flex-1 text-xs h-10 opacity-100 text-white font-bold border border-white"
-              style={{ opacity: 1 }}
-            >
-              <Eye className="mr-1 h-4 w-4" />
-              Watch this look
-            </Button>
-          </div>
+            <ShoppingCart className="mr-2 h-5 w-5" />
+            Buy the look
+          </Button>
+          
+          <Button
+            onClick={handleViewDetails}
+            className="btn-look-secondary flex-1"
+          >
+            <Eye className="mr-2 h-5 w-5" />
+            Watch this look
+          </Button>
         </div>
         
+        {/* Shuffle button with improved visibility */}
         <button
           onClick={(e) => {
             e.stopPropagation();
             onShuffleLook(look.occasion);
           }}
-          className="absolute top-4 right-4 bg-[#8B5CF6] text-white p-2 rounded-full opacity-100 hover:bg-[#7C3AED] shadow-lg"
+          className="absolute top-4 right-4 bg-[#8B5CF6] text-white p-3 rounded-full opacity-100 hover:bg-[#7C3AED] shadow-lg border-2 border-white z-50"
           title="Try different combination"
           disabled={isRefreshing}
+          style={{ zIndex: 999 }}
         >
-          <Shuffle className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <Shuffle className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
         </button>
       </div>
       <div className="flex justify-between items-center">

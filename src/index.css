@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -115,20 +114,41 @@
   @apply p-3 rounded-md border border-emerald-700 bg-emerald-50 text-emerald-800 shadow-sm;
 }
 
-/* Custom button styles for improved visibility */
+/* IMPORTANT: High visibility button styles */
 .btn-look-primary {
-  @apply bg-[#8B5CF6] hover:bg-[#7C3AED] text-white;
+  @apply bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold !important;
+  opacity: 1 !important;
+  z-index: 999 !important;
+  pointer-events: auto !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2) !important;
+  border: 2px solid white !important;
 }
 
 .btn-look-secondary {
-  @apply bg-[#D946EF] hover:bg-[#C026D3] text-white;
+  @apply bg-[#D946EF] hover:bg-[#C026D3] text-white font-bold !important;
+  opacity: 1 !important;
+  z-index: 999 !important;
+  pointer-events: auto !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2) !important;
+  border: 2px solid white !important;
 }
 
-.btn-look {
-  @apply shadow-lg opacity-100 border border-white font-bold;
+/* Look button container */
+.look-buttons-container {
+  position: absolute !important;
+  bottom: 10px !important;
+  left: 0 !important;
+  right: 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  z-index: 999 !important;
+  padding: 0 16px !important;
+  pointer-events: auto !important;
 }
 
-/* Fix for dropdown and button visibility */
-.look-buttons {
-  @apply z-50 pointer-events-auto;
+/* Fix for any opacity issues on buttons */
+.look-buttons-container button {
+  opacity: 1 !important;
+  height: 44px !important;
 }

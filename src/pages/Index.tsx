@@ -20,13 +20,14 @@ export default function Index() {
       setUserStyle(JSON.parse(styleAnalysis));
     }
     
-    // Log to verify the component is mounting properly
-    console.log("Index component mounted, styleAnalysis found:", !!styleAnalysis);
-    
-    // Display a toast when the page loads to verify the toaster is working
+    // Display welcome toast when the page loads
     toast({
       title: "Welcome to your style dashboard",
       description: "Explore your personalized looks below",
+    });
+    
+    console.log("Index component mounted", {
+      styleAnalysisFound: !!styleAnalysis
     });
   }, []);
 
@@ -34,6 +35,12 @@ export default function Index() {
     setSelectedMood(mood);
     localStorage.setItem('current-mood', mood);
     console.log("Mood selected:", mood);
+    
+    // Show toast when mood is selected
+    toast({
+      title: "Mood Selected",
+      description: `Showing outfits for ${mood} mood`,
+    });
   };
 
   if (!userStyle) {
