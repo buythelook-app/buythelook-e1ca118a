@@ -1,3 +1,4 @@
+
 import { Heart, ShoppingCart, Eye } from "lucide-react";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
@@ -36,14 +37,21 @@ export const LookActions = ({ id, image, title, price, category, items = [] }: L
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     
-    // Make sure items have proper format with id, image, and other available properties
-    const processedItems = items.map(item => ({
-      id: item.id || `item-${Math.random().toString(36).substring(2, 9)}`,
-      image: item.image,
-      name: item.name || `Item from ${title}`,
-      price: item.price || '',
-      type: item.type || ''
-    }));
+    // Ensure we have properly formatted items
+    let itemsToSave = items;
+    
+    // If no items provided, create a fallback item
+    if (!itemsToSave || itemsToSave.length === 0) {
+      itemsToSave = [{
+        id: `item-${id}`,
+        image: image,
+        name: title,
+        price: price,
+        type: category
+      }];
+    }
+    
+    console.log("Items being saved to favorites:", itemsToSave);
     
     const look = { 
       id, 
@@ -51,10 +59,8 @@ export const LookActions = ({ id, image, title, price, category, items = [] }: L
       title, 
       price, 
       category,
-      items: processedItems
+      items: itemsToSave
     };
-    
-    console.log("Look being added/removed:", look);
     
     if (isFavorite(id)) {
       removeFavorite(id);
@@ -67,12 +73,22 @@ export const LookActions = ({ id, image, title, price, category, items = [] }: L
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const lookItems = items.map(item => ({
-      ...item,
-      title: `Item from ${title}`,
-      price: (parseFloat(price.replace(/[^0-9.]/g, '') || '0') / items.length).toFixed(2),
-      lookId: id
-    }));
+    
+    // Ensure we have lookItems to add
+    const lookItems = items.length > 0 
+      ? items.map(item => ({
+          ...item,
+          title: item.name || `Item from ${title}`,
+          price: item.price || (parseFloat(price.replace(/[^0-9.]/g, '') || '0') / Math.max(items.length, 1)).toFixed(2),
+          lookId: id
+        }))
+      : [{
+          id: `item-${id}`,
+          image,
+          title: `Item from ${title}`,
+          price,
+          lookId: id
+        }];
     
     addLook({
       id,
@@ -87,8 +103,19 @@ export const LookActions = ({ id, image, title, price, category, items = [] }: L
   const handleViewDetails = (e: React.MouseEvent) => {
     e.stopPropagation();
     
+    // Use items array if it exists
+    const itemsToStore = items.length > 0 
+      ? items 
+      : [{
+          id: `item-${id}`,
+          image,
+          name: title,
+          price,
+          type: category
+        }];
+    
     // Store the look items for viewing in suggestions
-    localStorage.setItem('selected-look-items', JSON.stringify(items));
+    localStorage.setItem('selected-look-items', JSON.stringify(itemsToStore));
     localStorage.setItem('selected-look-occasion', category);
     
     navigate('/suggestions');

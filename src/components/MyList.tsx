@@ -38,27 +38,40 @@ export const MyList = () => {
 
         {favorites.length > 0 ? (
           <div className="space-y-8">
-            {favorites.map((look) => (
-              <div key={look.id} className="bg-netflix-card rounded-lg overflow-hidden shadow-lg">
-                <div className="grid md:grid-cols-2 gap-4">
-                  {/* Left side - Look card with smaller canvas */}
-                  <div className="p-4">
-                    <LookCard
-                      key={look.id}
-                      {...look}
-                      items={look.items || []}
-                      isCompact={true}
-                    />
-                  </div>
+            {favorites.map((look) => {
+              // Ensure we have valid items to display
+              const items = look.items && look.items.length > 0 
+                ? look.items 
+                : [{ 
+                    id: look.id, 
+                    name: look.title, 
+                    image: look.image,
+                    price: look.price,
+                    type: look.category
+                  }];
                   
-                  {/* Right side - Look items breakdown */}
-                  <div className="p-4 border-t md:border-t-0 md:border-l border-gray-700">
-                    <h3 className="text-lg font-semibold mb-3">{look.title || look.category} Items</h3>
+              console.log(`Rendering look ${look.id} with items:`, items);
+              
+              return (
+                <div key={look.id} className="bg-netflix-card rounded-lg overflow-hidden shadow-lg">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {/* Left side - Look card with smaller canvas */}
+                    <div className="p-4">
+                      <LookCard
+                        key={look.id}
+                        {...look}
+                        items={items}
+                        isCompact={true}
+                      />
+                    </div>
                     
-                    {look.items && look.items.length > 0 ? (
+                    {/* Right side - Look items breakdown */}
+                    <div className="p-4 border-t md:border-t-0 md:border-l border-gray-700">
+                      <h3 className="text-lg font-semibold mb-3">{look.title || look.category} Items</h3>
+                      
                       <LookBreakdown 
-                        items={look.items.map(item => ({
-                          id: item.id,
+                        items={items.map(item => ({
+                          id: item.id || `item-${Date.now()}-${Math.random()}`,
                           name: item.name || `Item from ${look.title}`,
                           type: item.type || "Item",
                           price: item.price || "",
@@ -67,13 +80,11 @@ export const MyList = () => {
                         }))}
                         occasion={look.category}
                       />
-                    ) : (
-                      <p className="text-netflix-text/60 text-center py-4">No item details available for this look</p>
-                    )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-12">
