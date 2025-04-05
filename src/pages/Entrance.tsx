@@ -12,7 +12,7 @@ export const Entrance = () => {
     if (!isLoading) {
       console.log("Auth check completed, navigating based on state:", isAuthenticated);
       
-      // Increased delay from 1000ms to 3500ms to show splash screen longer
+      // Setting splash screen display time to 2 seconds
       const timer = setTimeout(() => {
         if (isAuthenticated) {
           console.log("User is authenticated, navigating to home");
@@ -21,7 +21,7 @@ export const Entrance = () => {
           console.log("User is not authenticated, navigating to auth");
           navigate("/auth");
         }
-      }, 3500); // Increased from 1 second to 3.5 seconds
+      }, 2000); // Changed to 2 seconds (from 3.5 seconds)
 
       return () => clearTimeout(timer);
     }
