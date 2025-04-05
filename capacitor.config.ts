@@ -1,39 +1,21 @@
 
-import { CapacitorConfig } from '@capacitor/cli'
+import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'app.lovable.bc0cf4d79a354a65b4249d5ecd554d30',
   appName: 'Buy The Look',
   webDir: 'dist',
-  server: {
-    androidScheme: 'https',
-    cleartext: true,
-    hostname: 'localhost'
-  },
+  // Remove the server URL for production builds
+  // server: {
+  //   url: 'https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com?forceHideBadge=true',
+  //   cleartext: true
+  // },
   plugins: {
-    SplashScreen: {
-      launchShowDuration: 3000,
-      launchAutoHide: true,
-      backgroundColor: "#ffffff",
-      androidSplashResourceName: "splash",
-      androidScaleType: "CENTER_CROP",
-      showSpinner: true,
-      androidSpinnerStyle: "large",
-      spinnerColor: "#999999"
-    },
-    App: {
-      webviewNavigationEventHandling: "forwarded", // Changed from "injected" to "forwarded"
-    },
     CapacitorCookies: {
       enabled: true
-    },
-    Browser: {
-      presentationStyle: 'fullscreen' // Changed from 'popover' to 'fullscreen'
     }
   },
   android: {
-    allowMixedContent: true,
-    webContentsDebuggingEnabled: true,
     buildOptions: {
       keystorePath: undefined,
       keystoreAlias: undefined,
@@ -41,10 +23,15 @@ const config: CapacitorConfig = {
       keystoreAliasPassword: undefined
     }
   },
+  // Updated configuration for deep linking
+  server: {
+    androidScheme: "https",
+    hostname: "buythelook"
+  },
+  // Add specific deep linking schemes
   ios: {
-    scheme: "buythelook",
-    limitsNavigationsToAppBoundDomains: true
+    scheme: "buythelook"
   }
-}
+};
 
-export default config
+export default config;

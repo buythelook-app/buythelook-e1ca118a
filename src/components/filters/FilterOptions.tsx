@@ -1,12 +1,10 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "../ui/button";
+import { useToast } from "../ui/use-toast";
 import { EventFilter } from "./EventFilter";
 import { BudgetFilter } from "./BudgetFilter";
-import { StyleVisualization } from "./StyleVisualization";
-import { GenerateOutfitButton } from "./GenerateOutfitButton";
-import { useOutfitSuggestions } from "@/hooks/useOutfitSuggestions";
-import { useToast } from "@/hooks/use-toast";
 
 export const FilterOptions = () => {
   const navigate = useNavigate();
@@ -14,12 +12,6 @@ export const FilterOptions = () => {
   const [isUnlimited, setIsUnlimited] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const { toast } = useToast();
-  
-  const { 
-    isLoading, 
-    outfitSuggestions, 
-    handleGenerateNewLooks 
-  } = useOutfitSuggestions();
 
   const handleBudgetChange = (value: number[]) => {
     if (value[0] >= 1000) {
@@ -65,12 +57,12 @@ export const FilterOptions = () => {
         />
       </div>
 
-      <GenerateOutfitButton 
-        isLoading={isLoading} 
-        onClick={handleGenerateNewLooks} 
-      />
-      
-      <StyleVisualization outfitSuggestions={outfitSuggestions} />
+      <Button 
+        onClick={() => navigate('/suggestions')}
+        className="bg-netflix-accent hover:bg-netflix-accent/80 w-full"
+      >
+        View All Suggestions
+      </Button>
     </div>
   );
 };

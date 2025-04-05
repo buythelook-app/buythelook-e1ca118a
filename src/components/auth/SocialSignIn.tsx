@@ -1,8 +1,11 @@
+
 import { Button } from "@/components/ui/button";
 import { Bot } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
+import { App } from "@capacitor/app";
 
 export const SocialSignIn = () => {
   const { toast } = useToast();
@@ -11,75 +14,88 @@ export const SocialSignIn = () => {
     apple: false,
     ai: false
   });
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Check if running on a native mobile platform
+    setIsMobile(Capacitor.isNativePlatform());
+    
+    // Set up deep link listener for mobile platforms
+    if (Capacitor.isNativePlatform()) {
+      App.addListener('appUrlOpen', (data) => {
+        console.log('Deep link received in SocialSignIn:', data.url);
+      });
+    }
+  }, []);
 
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(prev => ({ ...prev, google: true }));
       
-      // Get the current URL for proper redirect
-      const redirectUrl = window.location.origin + '/auth';
+      // Simplify the redirect URL even further
+      const redirectUrl = isMobile 
+        ? "buythelook://auth" // Use custom scheme for mobile apps
+        : `${window.location.origin}/auth`; // For web
       
-      console.log("Starting Google sign-in with redirect to:", redirectUrl);
+      console.log(`Starting Google sign-in with redirect URL: ${redirectUrl}`);
       
-      // Use browser option to force full page navigation instead of iframe
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          skipBrowserRedirect: false, // Ensure browser handles the redirect
+          // Minimal query params to avoid URL issues
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'select_account',
+          }
         }
       });
-      
+
       if (error) {
-        console.error("Google OAuth error:", error);
+        console.error("Google sign-in error:", error);
         throw error;
       }
       
-      // The browser will be redirected automatically by Supabase
-      console.log("Auth flow initiated successfully");
+      console.log("Google sign-in initiated, redirect URL:", data?.url);
       
+      // For mobile apps, we need to handle the redirect manually
+      if (isMobile && data?.url) {
+        console.log("Opening external URL on mobile:", data.url);
+        toast({
+          title: "Redirecting",
+          description: "Opening Google sign-in...",
+        });
+        
+        // Let the URL load in external browser
+        window.open(data.url, '_blank');
+      }
     } catch (error: any) {
-      console.error("Google sign-in error:", error);
-      
+      console.error("Google sign-in failed:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to sign in with Google",
         variant: "destructive",
       });
-      setIsLoading(prev => ({ ...prev, google: false }));
+    } finally {
+      // Add a delay before resetting loading state
+      setTimeout(() => {
+        setIsLoading(prev => ({ ...prev, google: false }));
+      }, 1000);
     }
   };
 
   const handleAppleSignIn = async () => {
     try {
       setIsLoading(prev => ({ ...prev, apple: true }));
-      
-      // Get the base URL for the current environment
-      const baseUrl = window.location.origin;
-      
-      toast({
-        title: "Apple Sign In",
-        description: "Connecting to Apple...",
-      });
-      
-      // Create the OAuth request with Supabase
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
         options: {
-          redirectTo: baseUrl + '/auth',
+          redirectTo: `${window.location.origin}/auth`
         }
       });
-      
-      // Directly handle the URL - most reliable approach
+
       if (error) throw error;
-      
-      if (data?.url) {
-        // Redirect directly - proven approach
-        window.location.href = data.url;
-      }
     } catch (error: any) {
-      console.error("Apple sign-in error:", error);
-      
       toast({
         title: "Error",
         description: error.message || "Failed to sign in with Apple",

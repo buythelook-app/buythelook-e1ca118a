@@ -29,18 +29,23 @@ export default defineConfig(({ mode }) => ({
     outDir: 'dist',
     rollupOptions: {
       external: [
-        // These are marked as external to prevent them from being bundled
         '@capacitor/app',
         '@capacitor/core',
-        '@capacitor/splash-screen'
-      ],
-      output: {
-        globals: {
-          '@capacitor/app': 'capacitorExports.CapacitorApp',
-          '@capacitor/core': 'capacitorExports.Capacitor',
-          '@capacitor/splash-screen': 'capacitorExports.CapacitorSplashScreen'
-        }
-      }
+        '@capacitor/splash-screen',
+        '@capacitor/status-bar',
+        '@capacitor/haptics',
+        '@capacitor/keyboard',
+        '@capacitor/preferences',
+        '@capacitor/share',
+        '@capacitor/camera',
+        '@capacitor/browser',
+        '@capacitor/network',
+        '@capacitor/push-notifications',
+        '@capacitor/device',
+        '@capacitor/toast',
+        '@capacitor/dialog',
+        '@capacitor/filesystem'
+      ]
     }
   }
 }));

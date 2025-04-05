@@ -9,13 +9,6 @@ interface FavoriteLook {
   title: string;
   price: string;
   category: string;
-  items?: Array<{ 
-    id: string; 
-    image: string; 
-    name?: string;
-    price?: string;
-    type?: string;
-  }>;
 }
 
 interface FavoritesStore {
@@ -41,138 +34,64 @@ export const useFavoritesStore = create<FavoritesStore>()(
     (set, get) => ({
       favorites: [],
       loadFavorites: async () => {
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          
-          // If no user is authenticated, use local storage only
-          if (!user) {
-            console.log('No user authenticated, using local storage only');
-            return;
-          }
-
-          // Fetch the favorite items
-          const { data, error } = await supabase
-            .from('favorites')
-            .select('item_id')
-            .eq('user_id', user.id);
-
-          if (error) {
-            console.error('Error loading favorites:', error);
-            return;
-          }
-
-          if (!data || data.length === 0) {
-            console.log('No favorites found for user');
-            set({ favorites: [] });
-            return;
-          }
-
-          // Extract item IDs
-          const itemIds = data.map(fav => fav.item_id).filter(Boolean);
-          
-          if (itemIds.length === 0) {
-            console.log('No valid item IDs found in favorites');
-            set({ favorites: [] });
-            return;
-          }
-
-          // Now fetch the actual items data
-          const { data: itemsData, error: itemsError } = await supabase
-            .from('items')
-            .select('*')
-            .in('id', itemIds);
-
-          if (itemsError) {
-            console.error('Error loading item details:', itemsError);
-            return;
-          }
-
-          // Convert to favorites format with items array properly populated
-          const favorites = itemsData.map(item => ({
-            id: item.id,
-            image: item.image || '',
-            title: item.name || '',
-            price: item.price || '',
-            category: item.type || '',
-            items: [{
-              id: item.id,
-              image: item.image || '',
-              name: item.name || '',
-              price: item.price || '',
-              type: item.type || ''
-            }]
-          }));
-
-          console.log('Loaded favorites with items:', favorites);
-          set({ favorites });
-        } catch (err) {
-          console.error('Exception in loadFavorites:', err);
-        }
-      },
-      addFavorite: async (look) => {
-        console.log('Adding favorite with items:', look);
         const { data: { user } } = await supabase.auth.getUser();
-        
-        // Make sure items are properly set
-        if (!look.items || look.items.length === 0) {
-          console.warn('No items in look, adding placeholder item');
-          look.items = [{
-            id: look.id,
-            image: look.image,
-            name: look.title,
-            price: look.price,
-            type: look.category
-          }];
-        }
+        if (!user) return;
 
-        // For client-side only storage when user is not authenticated
-        if (!user) {
-          set(state => ({
-            favorites: [...state.favorites.filter(f => f.id !== look.id), look]
-          }));
+        const { data, error } = await supabase
+          .from('favorites')
+          .select('items(*)')
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error loading favorites:', error);
           return;
         }
 
-        try {
-          const { error } = await supabase
-            .from('favorites')
-            .insert({
-              user_id: user.id,
-              item_id: look.id
-            });
+        const favorites = (data as unknown as ItemData[]).map(fav => ({
+          id: fav.items.id,
+          image: fav.items.image || '',
+          title: fav.items.name || '',
+          price: fav.items.price || '',
+          category: fav.items.type || ''
+        }));
 
-          if (error) {
-            console.error('Error adding favorite to Supabase:', error);
-          }
-        } catch (e) {
-          console.error('Failed to add to Supabase favorites:', e);
+        set({ favorites });
+      },
+      addFavorite: async (look) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
+          .from('favorites')
+          .insert({
+            user_id: user.id,
+            item_id: look.id
+          });
+
+        if (error) {
+          console.error('Error adding favorite:', error);
+          return;
         }
 
-        // Always update local state regardless of API success
         set(state => ({
-          favorites: [...state.favorites.filter(f => f.id !== look.id), look]
+          favorites: [...state.favorites, look]
         }));
       },
       removeFavorite: async (id) => {
         const { data: { user } } = await supabase.auth.getUser();
-        
-        if (user) {
-          try {
-            const { error } = await supabase
-              .from('favorites')
-              .delete()
-              .eq('user_id', user.id)
-              .eq('item_id', id);
+        if (!user) return;
 
-            if (error) {
-              console.error('Error removing favorite:', error);
-            }
-          } catch (e) {
-            console.error('Failed to remove from Supabase favorites:', e);
-          }
+        const { error } = await supabase
+          .from('favorites')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('item_id', id);
+
+        if (error) {
+          console.error('Error removing favorite:', error);
+          return;
         }
 
-        // Always update local state regardless of API success
         set(state => ({
           favorites: state.favorites.filter(look => look.id !== id)
         }));

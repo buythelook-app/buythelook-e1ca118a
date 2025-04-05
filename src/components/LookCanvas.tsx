@@ -1,166 +1,198 @@
 
-import { useCanvasRenderer } from "@/hooks/useCanvasRenderer";
-import { type CanvasItem } from "@/types/canvasTypes";
-import { Button } from "./ui/button";
-import { ShoppingCart, Eye, Heart } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useCartStore } from "@/components/Cart";
-import { useToast } from "@/hooks/use-toast";
-import { useFavoritesStore } from "@/stores/useFavoritesStore";
+import { useEffect, useRef } from "react";
 
-interface LookCanvasProps {
-  items: CanvasItem[];
-  width?: number;
-  height?: number;
-  occasion?: string;
-  originalItems?: any[]; // Original items data for cart
-  showButtons?: boolean;
+interface OutfitItem {
+  id: string;
+  image: string;
+  type: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' | 'cart';
+  position?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
 }
 
-export const LookCanvas = ({ 
-  items, 
-  width = 600, 
-  height = 900,
-  occasion,
-  originalItems,
-  showButtons = true
-}: LookCanvasProps) => {
-  const { canvasRef, isLoading, error: canvasError } = useCanvasRenderer({
-    items,
-    width,
-    height,
-    occasion
-  });
-  
-  const navigate = useNavigate();
-  const { addItems } = useCartStore();
-  const { toast } = useToast();
-  const { addFavorite } = useFavoritesStore();
+interface LookCanvasProps {
+  items: OutfitItem[];
+  width?: number;
+  height?: number;
+}
 
-  const handleAddToFavorites = () => {
-    if (originalItems && originalItems.length > 0) {
-      // Create a look object for My List
-      const look = {
-        id: `look-${Date.now()}`,
-        image: originalItems[0].image || "",
-        title: `${occasion || 'Style'} Look`,
-        price: calculateTotalPrice(),
-        category: occasion || "Look",
-        items: originalItems
-      };
-      
-      addFavorite(look);
-      
-      toast({
-        title: "Added to My List",
-        description: "Look has been added to your favorites",
-      });
-    }
-  };
+export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const calculateTotalPrice = () => {
-    if (!originalItems) return "$0.00";
-    
-    let total = 0;
-    originalItems.forEach(item => {
-      const priceString = item.price || "0";
-      const priceNumber = parseFloat(priceString.replace(/[^0-9.]/g, ''));
-      if (!isNaN(priceNumber)) {
-        total += priceNumber;
-      }
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set up canvas with device pixel ratio
+    const scale = window.devicePixelRatio || 1;
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+    ctx.scale(scale, scale);
+
+    // Clear and set background
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    // Sort items in correct rendering order
+    const renderOrder = { outerwear: 0, top: 1, bottom: 2, shoes: 3 };
+    const sortedItems = [...items].sort((a, b) => {
+      const orderA = renderOrder[a.type] ?? 999;
+      const orderB = renderOrder[b.type] ?? 999;
+      return orderA - orderB;
     });
-    
-    return `$${total.toFixed(2)}`;
-  };
 
-  const handleBuyLook = () => {
-    if (originalItems && originalItems.length > 0) {
-      const cartItems = originalItems.map(item => ({
-        id: item.id,
-        title: item.name || "",
-        price: item.price || "$0.00",
-        image: item.image
-      }));
-      
-      addItems(cartItems);
-      
-      toast({
-        title: "Success",
-        description: "Look added to your cart",
-      });
-      
-      navigate('/cart');
-    }
-  };
+    // Define positions with enhanced shoe positioning and cropping
+    const defaultPositions = {
+      outerwear: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
+      top: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
+      bottom: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
+      dress: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.9 },
+      shoes: { x: width * 0.2, y: height * 0.6, width: width * 0.6, height: height * 0.3 }, // Adjusted position and size for shoes
+      accessory: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
+      sunglasses: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
+      cart: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 }
+    };
 
-  const handleViewDetails = () => {
-    if (originalItems && originalItems.length > 0) {
-      // Store the full item details for the suggestions page
-      localStorage.setItem(`selected-look-items`, JSON.stringify(originalItems));
-      localStorage.setItem(`selected-look-occasion`, occasion || '');
-      navigate(`/suggestions`);
-    }
-  };
+    const loadImages = async () => {
+      try {
+        for (const item of sortedItems) {
+          console.log('Loading image for item:', item);
+          
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          
+          const timestamp = new Date().getTime();
+          const imageUrl = item.image.includes('?') 
+            ? `${item.image}&t=${timestamp}` 
+            : `${item.image}?t=${timestamp}`;
+          
+          img.src = imageUrl;
+
+          try {
+            await new Promise((resolve, reject) => {
+              img.onload = () => {
+                console.log('Image loaded successfully:', imageUrl);
+                resolve(null);
+              };
+              img.onerror = (e) => {
+                console.error('Error loading image:', imageUrl, e);
+                reject(e);
+              };
+            });
+
+            const position = item.position || defaultPositions[item.type];
+            if (position) {
+              const offscreenCanvas = document.createElement('canvas');
+              const offscreenCtx = offscreenCanvas.getContext('2d');
+              if (!offscreenCtx) continue;
+
+              offscreenCanvas.width = img.width;
+              offscreenCanvas.height = img.height;
+
+              // Special handling for shoes - more aggressive cropping and background removal
+              if (item.type === 'shoes') {
+                // Crop more aggressively for shoes to focus on the item
+                const cropX = img.width * 0.2;
+                const cropWidth = img.width * 0.6;
+                const cropY = img.height * 0.2;
+                const cropHeight = img.height * 0.6;
+                
+                offscreenCtx.drawImage(
+                  img,
+                  cropX, cropY, cropWidth, cropHeight,
+                  0, 0, img.width, img.height
+                );
+
+                // Enhanced background removal for shoes
+                const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                const data = imageData.data;
+
+                for (let i = 0; i < data.length; i += 4) {
+                  const r = data[i];
+                  const g = data[i + 1];
+                  const b = data[i + 2];
+                  
+                  // More aggressive background removal for shoes
+                  const brightness = (r + g + b) / 3;
+                  const whiteness = Math.abs(r - g) + Math.abs(g - b) + Math.abs(r - b);
+                  
+                  if (brightness > 240 || (brightness > 200 && whiteness < 15)) {
+                    data[i + 3] = 0; // Make pixel transparent
+                  }
+                }
+
+                offscreenCtx.putImageData(imageData, 0, 0);
+              } else {
+                // Normal handling for other items
+                offscreenCtx.drawImage(img, 0, 0);
+                const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                const data = imageData.data;
+                
+                for (let i = 0; i < data.length; i += 4) {
+                  const r = data[i];
+                  const g = data[i + 1];
+                  const b = data[i + 2];
+                  
+                  const avgColor = (r + g + b) / 3;
+                  if (avgColor > 180 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15 && Math.abs(r - b) < 15) {
+                    data[i + 3] = 0;
+                  }
+                }
+                
+                offscreenCtx.putImageData(imageData, 0, 0);
+              }
+
+              const aspectRatio = img.width / img.height;
+              let drawWidth = position.width;
+              let drawHeight = position.height;
+
+              if (drawWidth / drawHeight > aspectRatio) {
+                drawWidth = drawHeight * aspectRatio;
+              } else {
+                drawHeight = drawWidth / aspectRatio;
+              }
+
+              const centerX = position.x + (position.width - drawWidth) / 2;
+              const centerY = position.y + (position.height - drawHeight) / 2;
+
+              ctx.save();
+              ctx.drawImage(
+                offscreenCanvas,
+                centerX,
+                centerY,
+                drawWidth,
+                drawHeight
+              );
+              ctx.restore();
+            }
+          } catch (imgError) {
+            console.error('Error processing image:', imgError);
+          }
+        }
+      } catch (error) {
+        console.error('Error in loadImages:', error);
+      }
+    };
+
+    loadImages();
+  }, [items, width, height]);
 
   return (
-    <div className="relative text-center w-full">
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
-          <div className="h-8 w-8 rounded-full border-2 border-t-transparent border-netflix-accent animate-spin"></div>
-        </div>
-      )}
-      {canvasError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-20">
-          <div className="text-red-500 text-center p-4">
-            <p>{canvasError}</p>
-            <p className="text-sm mt-2">Please try refreshing the page</p>
-          </div>
-        </div>
-      )}
-      <div className="relative">
-        <canvas
-          ref={canvasRef}
-          className="bg-white border rounded-lg shadow-lg mx-auto"
-          style={{ 
-            maxWidth: '100%',
-            width: `${width}px`,
-            height: `${height}px`,
-            display: 'block',
-            margin: '0 auto'
-          }}
-        />
-        
-        {showButtons && originalItems && originalItems.length > 0 && (
-          <div 
-            className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-50"
-            style={{ pointerEvents: 'auto' }}
-          >
-            <Button 
-              onClick={handleAddToFavorites}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-lg flex-1 h-10 opacity-100 text-white font-bold border border-white"
-              style={{ opacity: 1 }}
-            >
-              <Heart className="w-5 h-5" />
-            </Button>
-            
-            <Button 
-              onClick={handleBuyLook}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-lg flex-1 h-10 opacity-100 text-white font-bold border border-white"
-              style={{ opacity: 1 }}
-            >
-              <ShoppingCart className="w-5 h-5" />
-            </Button>
-            
-            <Button
-              onClick={handleViewDetails}
-              className="bg-[#D946EF] hover:bg-[#C026D3] shadow-lg flex-1 h-10 opacity-100 text-white font-bold border border-white"
-              style={{ opacity: 1 }}
-            >
-              <Eye className="w-5 h-5" />
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
+    <canvas
+      ref={canvasRef}
+      className="border rounded-lg shadow-lg bg-white"
+      style={{ 
+        maxWidth: '100%',
+        width: `${width}px`,
+        height: `${height}px`
+      }}
+    />
   );
 };

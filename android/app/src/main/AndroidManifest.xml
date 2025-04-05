@@ -1,4 +1,3 @@
-
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
@@ -7,8 +6,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme"
-        android:usesCleartextTraffic="true">
+        android:theme="@style/AppTheme">
 
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"
@@ -23,24 +21,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Main deep link intent filter -->
-            <intent-filter android:autoVerify="true">
+            <!-- Custom scheme for auth redirects -->
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                
-                <!-- App-specific scheme (buythelook://) -->
-                <data android:scheme="buythelook" />
+                <data android:scheme="buythelook" android:host="auth" />
             </intent-filter>
 
             <!-- HTTPS scheme for Supabase OAuth -->
-            <intent-filter android:autoVerify="true">
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" 
-                      android:host="aqkeprwxxsryropnhfvm.supabase.co" 
-                      android:pathPrefix="/auth/v1/callback" />
+                <data android:scheme="https" android:host="aqkeprwxxsryropnhfvm.supabase.co" />
             </intent-filter>
 
             <!-- Additional intent filter for Google sign-in specific redirects -->
@@ -48,8 +42,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" 
-                      android:host="accounts.google.com" />
+                <data android:scheme="https" android:host="accounts.google.com" />
             </intent-filter>
 
         </activity>
@@ -67,5 +60,4 @@
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 </manifest>

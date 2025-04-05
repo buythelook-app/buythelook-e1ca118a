@@ -1,53 +1,22 @@
-
-import { useEffect, useState } from "react";
-import { transformImageUrl } from "@/utils/imageUtils";
+import { AspectRatio } from "../ui/aspect-ratio";
 
 interface LookImageProps {
   image: string;
   title: string;
-  height?: number;
 }
 
-export const LookImage = ({ image, title, height = 400 }: LookImageProps) => {
-  const [displayImage, setDisplayImage] = useState<string>('/placeholder.svg');
-  
-  useEffect(() => {
-    try {
-      // Special handling for URLs that need transformation
-      if (image.startsWith('canvas-') || !image || image.includes('supabase')) {
-        console.log(`[LookImage] Using placeholder for unrecognized URL pattern: ${image}`);
-        setDisplayImage('/placeholder.svg');
-      } else {
-        const transformedUrl = transformImageUrl(image);
-        console.log(`[LookImage] Transformed URL for ${title}: ${transformedUrl} (original: ${image})`);
-        setDisplayImage(transformedUrl);
-      }
-    } catch (error) {
-      console.error(`[LookImage] Error processing image for ${title}:`, error);
-      setDisplayImage('/placeholder.svg');
-    }
-  }, [image, title]);
-
-  // Log when image is loaded successfully
-  const handleImageLoad = () => {
-    console.log(`[LookImage] Image loaded successfully: ${displayImage}`);
-  };
-
+export const LookImage = ({ image, title }: LookImageProps) => {
   return (
-    <div 
-      className="bg-gray-100 overflow-hidden relative"
-      style={{ height: `${height}px` }}
-    >
+    <AspectRatio ratio={3/4} className="relative overflow-hidden">
       <img 
-        src={displayImage} 
+        src={image} 
         alt={title}
-        className="w-full h-full object-cover object-center"
-        onLoad={handleImageLoad}
-        onError={() => {
-          console.error(`[LookImage] Error loading image for ${title}, falling back to placeholder`);
-          setDisplayImage('/placeholder.svg');
+        className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-300"
+        onError={(e) => {
+          console.error(`Error loading image: ${image}`);
+          e.currentTarget.src = 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158';
         }}
       />
-    </div>
+    </AspectRatio>
   );
 };

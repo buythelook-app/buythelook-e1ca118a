@@ -1,142 +1,87 @@
-
-import { useOutfitGenerator } from "@/hooks/useOutfitGenerator";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { fetchFirstOutfitSuggestion } from "@/services/lookService";
+import { Button } from "./ui/button";
+import { Loader2, ShoppingCart, Shuffle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { LookCanvas } from "./LookCanvas";
 import { useCartStore } from "./Cart";
 import { HomeButton } from "./HomeButton";
 import { StyleRulers } from "./look/StyleRulers";
-import { DebugDataViewer } from "./DebugDataViewer";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { type CanvasItem } from "@/types/canvasTypes";
-import { useState, useEffect, useMemo } from "react";
-import { DashboardItem } from "@/types/lookTypes";
-import { type CarouselApi } from "./ui/carousel";
-
-// Import the extracted components
-import { OutfitCanvas } from "./look/OutfitCanvas";
-import { ItemCard } from "./look/ItemCard";
-import { StyleTips } from "./look/StyleTips";
-import { ColorPalette } from "./look/ColorPalette";
-import { mapItemType } from "./look/OutfitTypeMapper";
-import { QuizPrompt } from "./look/QuizPrompt";
-import { LoadingState } from "./look/LoadingState";
-import { ErrorState } from "./look/ErrorState";
-
-// Import carousel components
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+interface OutfitItem {
+  id: string;
+  image: string;
+  name: string;
+  price: string;
+  type: string;
+  description: string;
+}
+
+interface OutfitColors {
+  top: string;
+  bottom: string;
+  shoes: string;
+  [key: string]: string;
+}
 
 export const LookSuggestions = () => {
   const navigate = useNavigate();
-  const { addItems } = useCartStore();
   const { toast } = useToast();
-  const [selectedItems, setSelectedItems] = useState<DashboardItem[]>([]);
-  const [selectedOccasion, setSelectedOccasion] = useState<string | undefined>(undefined);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [api, setApi] = useState<CarouselApi | null>(null);
-  
-  const {
-    dashboardItems,
-    isLoading,
-    error,
-    isRefreshing,
-    recommendations,
-    outfitColors,
-    elegance,
-    colorIntensity,
-    userStylePreference,
-    hasQuizData,
-    handleTryDifferentLook,
-    handleEleganceChange,
-    handleColorIntensityChange
-  } = useOutfitGenerator();
+  const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [outfitColors, setOutfitColors] = useState<OutfitColors | null>(null);
+  const { addItems } = useCartStore();
+  const [isRefetching, setIsRefetching] = useState(false);
+  const [elegance, setElegance] = useState(75);
+  const [colorIntensity, setColorIntensity] = useState(60);
+  const [userStylePreference, setUserStylePreference] = useState<string | null>(null);
 
-  // Update current slide index when carousel slides change
+  const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
+
   useEffect(() => {
-    if (!api) return;
-    
-    const onSelect = () => {
-      setActiveIndex(api.selectedScrollSnap());
-    };
-    
-    api.on('select', onSelect);
-    
-    return () => {
-      api.off('select', onSelect);
-    };
-  }, [api]);
-
-  // Group items into outfits based on similar occasions or types
-  const outfits = useMemo(() => {
-    if (!dashboardItems || dashboardItems.length === 0) {
-      return [];
-    }
-
-    // Group items by occasion or some other identifier
-    const groupedOutfits: DashboardItem[][] = [];
-    let currentOutfit: DashboardItem[] = [];
-
-    // Group items by shared properties like occasion or event
-    dashboardItems.forEach((item, index) => {
-      if (index === 0) {
-        currentOutfit.push(item);
-      } else {
-        const prevItem = dashboardItems[index - 1];
-        // Check if item shares the same occasion or event as previous item
-        const sameOccasion = 
-          (item.occasion && prevItem.occasion && item.occasion === prevItem.occasion) ||
-          (item.event && prevItem.event && item.event === prevItem.event) ||
-          (item.metadata?.occasion && prevItem.metadata?.occasion && 
-           item.metadata.occasion === prevItem.metadata.occasion);
-        
-        if (sameOccasion) {
-          currentOutfit.push(item);
-        } else {
-          if (currentOutfit.length > 0) {
-            groupedOutfits.push([...currentOutfit]);
-          }
-          currentOutfit = [item];
-        }
-      }
-    });
-
-    // Add the last outfit if not empty
-    if (currentOutfit.length > 0) {
-      groupedOutfits.push(currentOutfit);
-    }
-
-    return groupedOutfits;
-  }, [dashboardItems]);
-
-  // Load selected look items from localStorage
-  useEffect(() => {
-    const storedItems = localStorage.getItem('selected-look-items');
-    const storedOccasion = localStorage.getItem('selected-look-occasion');
-    
-    if (storedItems) {
+    const styleData = localStorage.getItem('styleAnalysis');
+    if (styleData) {
       try {
-        setSelectedItems(JSON.parse(storedItems));
-      } catch (e) {
-        console.error('Error parsing selected items:', e);
+        const parsedData = JSON.parse(styleData);
+        const styleProfile = parsedData?.analysis?.styleProfile || null;
+        setUserStylePreference(styleProfile);
+        console.log("Loaded user style preference:", styleProfile);
+        
+        if (styleProfile === 'Minimalist') {
+          setElegance(85);
+          setColorIntensity(30);
+        }
+      } catch (error) {
+        console.error("Error parsing style data:", error);
       }
     }
-    
-    if (storedOccasion) {
-      setSelectedOccasion(storedOccasion);
-    }
-    
-    // Clear after using to prevent stale data on refreshes
-    return () => {
-      localStorage.removeItem('selected-look-items');
-      localStorage.removeItem('selected-look-occasion');
-    };
   }, []);
 
-  // Handle adding items to cart
+  const { data: dashboardItems, isLoading, error, refetch } = useQuery({
+    queryKey: ['firstOutfitSuggestion'],
+    queryFn: fetchFirstOutfitSuggestion,
+    retry: 2,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+    enabled: hasQuizData,
+    meta: {
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to load outfit suggestions. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  });
+
   const handleAddToCart = (items: Array<any> | any) => {
     const itemsToAdd = Array.isArray(items) ? items : [items];
     const cartItems = itemsToAdd.map(item => ({
@@ -154,106 +99,244 @@ export const LookSuggestions = () => {
     navigate('/cart');
   };
 
-  // Render states
+  const mapItemType = (type: string): 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' => {
+    if (!type) {
+      console.warn('Empty type received in mapItemType');
+      return 'top';
+    }
+
+    const lowerType = type.toLowerCase().trim().replace(/\s+/g, ' ');
+    
+    console.log('Mapping type:', type, 'Normalized to:', lowerType);
+
+    const underwearTerms = ['underwear', 'lingerie', 'bra', 'panties', 'briefs', 'boxer', 'thong'];
+    for (const term of underwearTerms) {
+      if (lowerType.includes(term)) {
+        console.log(`Detected underwear term: ${term} in type: ${lowerType}, skipping`);
+        return 'top';
+      }
+    }
+
+    const bottomKeywords = ['pants', 'skirt', 'shorts', 'jeans', 'trousers', 'bottom'];
+    for (const keyword of bottomKeywords) {
+      if (lowerType.includes(keyword)) {
+        console.log(`Found bottom keyword: ${keyword} in type: ${lowerType}`);
+        return 'bottom';
+      }
+    }
+
+    const typeMap: Record<string, 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear'> = {
+      'shirt': 'top',
+      'blouse': 'top',
+      't-shirt': 'top',
+      'top': 'top',
+      'corset top': 'top',
+      'dress': 'dress',
+      'heel shoe': 'shoes',
+      'shoes': 'shoes',
+      'sneakers': 'shoes',
+      'boots': 'shoes',
+      'slingback shoes': 'shoes',
+      'necklace': 'accessory',
+      'bracelet': 'accessory',
+      'sunglasses': 'sunglasses',
+      'jacket': 'outerwear',
+      'coat': 'outerwear'
+    };
+
+    const mappedType = typeMap[lowerType];
+    console.log(`Type map result for ${lowerType}:`, mappedType);
+
+    if (!mappedType) {
+      console.warn(`No exact match found for type: ${lowerType}, defaulting to top`);
+    }
+
+    return mappedType || 'top';
+  };
+
+  const handleEleganceChange = (value: number[]) => {
+    setElegance(value[0]);
+  };
+
+  const handleColorIntensityChange = (value: number[]) => {
+    setColorIntensity(value[0]);
+  };
+
+  useEffect(() => {
+    if (!hasQuizData) {
+      toast({
+        title: "Style Quiz Required",
+        description: "Please complete the style quiz first to get personalized suggestions.",
+        variant: "destructive",
+      });
+      navigate('/quiz');
+      return;
+    }
+
+    const storedRecommendations = localStorage.getItem('style-recommendations');
+    const storedColors = localStorage.getItem('outfit-colors');
+    
+    if (storedRecommendations) {
+      try {
+        setRecommendations(JSON.parse(storedRecommendations));
+      } catch (e) {
+        console.error('Error parsing recommendations:', e);
+      }
+    }
+    
+    if (storedColors) {
+      try {
+        const parsedColors = JSON.parse(storedColors) as OutfitColors;
+        setOutfitColors(parsedColors);
+      } catch (e) {
+        console.error('Error parsing outfit colors:', e);
+      }
+    }
+  }, [hasQuizData, navigate, toast]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'current-mood') {
+        refetch();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [refetch]);
+
+  const handleTryDifferentLook = async () => {
+    setIsRefetching(true);
+    try {
+      await refetch();
+      toast({
+        title: "New Look Generated",
+        description: "Here's a fresh style combination for you!",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate a new look. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefetching(false);
+    }
+  };
+
   if (!hasQuizData) {
-    return <QuizPrompt />;
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <h2 className="text-2xl font-bold mb-4">Style Quiz Required</h2>
+        <p className="text-gray-600 mb-8">Please complete the style quiz to get personalized outfit suggestions.</p>
+        <Button onClick={() => navigate('/quiz')}>Take Style Quiz</Button>
+      </div>
+    );
   }
 
-  if (isLoading && !selectedItems.length) {
-    return <LoadingState />;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
-  if (error && !selectedItems.length && !outfits.length) {
-    return <ErrorState />;
+  if (error || !dashboardItems?.length) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <p className="text-red-500 mb-4">Unable to load outfit suggestions</p>
+        <div className="space-x-4">
+          <Button onClick={() => refetch()} variant="outline">Try Again</Button>
+          <Button onClick={() => navigate('/quiz')}>Retake Style Quiz</Button>
+        </div>
+      </div>
+    );
   }
 
-  // Use selected items from localStorage if available, otherwise use dashboard items
-  const currentOutfits = selectedItems.length > 0 ? [selectedItems] : outfits;
+  const validateColor = (color: string): string => {
+    const isValidColor = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color) || 
+                        CSS.supports('color', color);
+    return isValidColor ? color : '#CCCCCC';
+  };
 
-  // Get the current outfit based on active index
-  const currentOutfit = currentOutfits[activeIndex] || [];
-
-  // Map dashboard items to canvas items
-  const canvasItems: CanvasItem[] = currentOutfit?.map(item => ({
-    id: item.id,
-    image: item.image,
-    type: mapItemType(item.type)
-  })) || [];
-
-  // Get the occasion from the items, if available
-  const currentOccasion = selectedOccasion || 
-                         currentOutfit?.[0]?.occasion || 
-                         (currentOutfit?.[0]?.metadata && currentOutfit[0].metadata.occasion) || 
-                         currentOutfit?.[0]?.event || 
-                         undefined;
+  const canvasItems = dashboardItems?.map(item => {
+    console.log('Processing item:', item);
+    const mappedType = mapItemType(item.type);
+    console.log(`Final mapping: ${item.type} -> ${mappedType}`);
+    return {
+      id: item.id,
+      image: item.image,
+      type: mappedType
+    };
+  });
 
   return (
     <>
       <HomeButton />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <h1 className="text-3xl font-bold mb-2">Your Personalized Look</h1>
-        {currentOccasion && (
-          <p className="text-lg text-netflix-accent mb-6">
-            {currentOccasion} Outfit
-          </p>
-        )}
+        <h1 className="text-3xl font-bold mb-2">Your Curated Look</h1>
         {userStylePreference && (
-          <p className="text-lg mb-6">
+          <p className="text-lg text-netflix-accent mb-6">
             Based on your {userStylePreference} style preference
           </p>
         )}
         
-        <DebugDataViewer />
-        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
-            {currentOutfits.length > 0 && (
-              <Carousel
-                className="w-full relative"
-                setApi={setApi}
-              >
-                <div className="absolute top-0 right-0 bg-white bg-opacity-60 px-3 py-1 rounded-bl-md z-10">
-                  <span className="text-sm font-medium">
-                    {activeIndex + 1} / {currentOutfits.length}
-                  </span>
+            <div className="mb-8 flex flex-col items-center">
+              <div className="relative w-[300px]">
+                <div className="bg-white rounded-lg shadow-lg overflow-hidden pb-4">
+                  <div className="relative">
+                    {isRefetching ? (
+                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-netflix-accent" />
+                      </div>
+                    ) : null}
+                    <LookCanvas items={canvasItems} width={300} height={480} />
+                    <div className="absolute bottom-0 left-4 right-4 flex justify-between gap-2">
+                      <Button 
+                        onClick={() => handleAddToCart(dashboardItems)}
+                        className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
+                        disabled={isRefetching}
+                      >
+                        <ShoppingCart className="mr-1 h-3 w-3" />
+                        Buy the look
+                      </Button>
+                      <Button
+                        onClick={handleTryDifferentLook}
+                        className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
+                        disabled={isRefetching}
+                      >
+                        <Shuffle className="mr-1 h-3 w-3" />
+                        Try different
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                <CarouselContent>
-                  {currentOutfits.map((outfit, index) => (
-                    <CarouselItem key={index} className="flex flex-col items-center">
-                      <OutfitCanvas 
-                        canvasItems={outfit.map(item => ({
-                          id: item.id,
-                          image: item.image,
-                          type: mapItemType(item.type)
-                        }))}
-                        isRefreshing={isRefreshing} 
-                        onAddToCart={() => handleAddToCart(outfit)}
-                        onTryDifferent={handleTryDifferentLook}
-                        occasion={outfit[0]?.occasion || outfit[0]?.event || outfit[0]?.metadata?.occasion}
-                      />
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                {currentOutfits.length > 1 && (
-                  <>
-                    <CarouselPrevious className="left-0" />
-                    <CarouselNext className="right-0" />
-                  </>
-                )}
-              </Carousel>
-            )}
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              {currentOutfit?.map((item) => (
-                <ItemCard 
-                  key={item.id}
-                  id={item.id}
-                  name={item.name}
-                  description={item.description}
-                  price={item.price}
-                  onAddToCart={() => handleAddToCart(item)}
-                  isRefreshing={isRefreshing}
-                />
+              {dashboardItems.map((item) => (
+                <Card key={item.id} className="overflow-hidden">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-lg">{item.name}</CardTitle>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      onClick={() => handleAddToCart(item)}
+                      className="bg-white/10 hover:bg-netflix-accent/20 hover:text-netflix-accent rounded-full shadow-md"
+                      disabled={isRefetching}
+                    >
+                      <ShoppingCart className="h-5 w-5" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 text-sm mb-2">{item.description}</p>
+                    <p className="text-lg font-medium">{item.price}</p>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </div>
@@ -268,38 +351,42 @@ export const LookSuggestions = () => {
           </div>
         </div>
 
-        <StyleTips 
-          recommendations={recommendations} 
-          stylePreference={userStylePreference} 
-        />
+        {recommendations.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Styling Tips</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2">
+                {recommendations.map((recommendation, index) => (
+                  <li key={index} className="text-gray-700">{recommendation}</li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
 
-        <ColorPalette outfitColors={outfitColors} />
-        
-        {/* Add a detailed breakdown of all items in the look */}
-        <div className="mt-12 border-t pt-6">
-          <h2 className="text-2xl font-bold mb-4">Complete Look Breakdown</h2>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">{currentOccasion || "Look"} Components</h3>
-            <ul className="space-y-2">
-              {currentOutfit?.map((item) => (
-                <li key={item.id} className="flex items-center gap-4 border-b border-gray-100 pb-2">
-                  <div className="w-12 h-12 bg-white border rounded-md overflow-hidden flex-shrink-0">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
+        {outfitColors && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Color Palette</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4 justify-center">
+                {Object.entries(outfitColors).map(([piece, color]) => (
+                  <div key={piece} className="text-center">
+                    <div 
+                      className="w-16 h-16 rounded-full mb-2" 
+                      style={{ backgroundColor: validateColor(color) }}
+                    />
+                    <p className="text-sm capitalize">{piece}</p>
                   </div>
-                  <div className="flex-grow">
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-gray-600">{item.type}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold">{item.price}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </>
   );
 };
-

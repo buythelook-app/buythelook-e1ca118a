@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { generateOutfitFromUserPreferences } from "@/services/api/outfitApi";
+import { Capacitor } from "@capacitor/core";
+import { App } from "@capacitor/app";
 
 export const useAuthFlow = () => {
   const navigate = useNavigate();
@@ -14,13 +16,45 @@ export const useAuthFlow = () => {
     console.log("Auth flow init started");
     let isMounted = true;
     
-    // Set up global deep link listener
-    console.log("Setting up global deep link listener");
-    if (!window.Capacitor?.isNativePlatform?.()) {
-      console.log("Not running on native platform, skipping app URL listener");
+    // Set up deep link handler for native platforms
+    if (Capacitor.isNativePlatform()) {
+      App.addListener('appUrlOpen', async (data) => {
+        console.log('Deep link received in useAuthFlow:', data.url);
+        
+        if (data.url.includes('auth') && isMounted) {
+          setIsLoading(true);
+          
+          try {
+            // After deep link is received, verify session
+            const { data: sessionData, error } = await supabase.auth.getSession();
+            
+            if (error) throw error;
+            
+            if (sessionData.session) {
+              console.log("Session found after deep link:", sessionData.session.user?.id);
+              toast({
+                title: "Success",
+                description: "You have been signed in successfully.",
+              });
+              navigate('/home');
+            } else {
+              console.log("No session after deep link");
+              setIsLoading(false);
+            }
+          } catch (error: any) {
+            console.error("Deep link auth error:", error);
+            toast({
+              title: "Error",
+              description: error.message || "Authentication failed",
+              variant: "destructive",
+            });
+            setIsLoading(false);
+          }
+        }
+      });
     }
 
-    // Enhanced auth state change listener
+    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event, session ? "session exists" : "no session");
       
@@ -28,111 +62,115 @@ export const useAuthFlow = () => {
       
       if (event === 'SIGNED_IN' && session) {
         console.log("User signed in successfully:", session.user?.id);
-        
-        // Generate outfit based on user preferences when they log in
-        // BUT ONLY if they've completed the quiz
-        setTimeout(async () => {
-          try {
-            // Check if user has completed the quiz
-            const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
-            
-            if (hasQuizData) {
-              console.log("Quiz data found, generating outfit suggestions");
-              await generateOutfitFromUserPreferences();
-              console.log("Generated outfit suggestions after login");
-            } else {
-              console.log("No quiz data found, skipping outfit generation");
-            }
-          } catch (error) {
-            console.error("Error generating outfit after login:", error);
-          }
-        }, 0);
-        
         toast({
           title: "Success",
           description: "You have been signed in successfully.",
         });
         navigate('/home');
+      } else if (event === 'SIGNED_OUT') {
+        console.log("User signed out");
       }
     });
     
-    // Check for existing session and auth parameters in URL
-    const checkAuthState = async () => {
+    const checkSession = async () => {
       if (!isMounted) return;
       
       try {
-        // Process URL parameters if present (for browser-based auth redirects)
-        const hasAuthParams = window.location.hash || 
-                            window.location.search.includes('code=') || 
-                            window.location.search.includes('token=');
-        
-        if (hasAuthParams) {
-          console.log("Auth parameters detected in URL");
-          setIsLoading(true);
-          
-          try {
-            // Let Supabase process the URL parameters
-            const { data, error } = await supabase.auth.getSession();
-            
-            if (error) throw error;
-            
-            if (data.session) {
-              console.log("Session established after redirect");
-              navigate('/home');
-              return;
-            }
-            
-            console.log("No session after processing URL parameters, waiting for auth state change");
-            // Keep loading while we wait for the auth state change event
-            setTimeout(() => {
-              if (isMounted) {
-                setIsLoading(false);
-              }
-            }, 2000);
-          } catch (error) {
-            console.error("Error processing auth params:", error);
-            setIsLoading(false);
-            toast({
-              title: "Authentication Error",
-              description: error.message || "Failed to process authentication",
-              variant: "destructive",
-            });
-          }
-          
-          return;
-        }
-        
-        // Check if user is already logged in
-        console.log("Checking for existing session");
+        console.log("Checking current session");
         const { data, error } = await supabase.auth.getSession();
         
         if (error) throw error;
         
         if (data.session) {
-          console.log("Active session found, navigating to home");
+          console.log("Active session found", data.session.user?.id);
+          toast({
+            title: "Success",
+            description: "You are signed in.",
+          });
           navigate('/home');
           return;
         }
         
         console.log("No active session found");
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Auth check error:", error);
-        setIsLoading(false);
-        toast({
-          title: "Error",
-          description: "Failed to check authentication status",
-          variant: "destructive",
-        });
+      } catch (error: any) {
+        console.error("Session check error:", error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     
-    // Run initial auth check
-    checkAuthState();
+    const handleDeepLink = async () => {
+      const isMobileNative = Capacitor.isNativePlatform();
+      console.log("Platform check:", isMobileNative ? "mobile native" : "browser");
+      
+      // Check if we have auth params in URL
+      const hasAuthParams = window.location.hash || 
+                           window.location.search.includes('code=') || 
+                           window.location.search.includes('token=') ||
+                           window.location.search.includes('type=') ||
+                           window.location.search.includes('access_token=');
+      
+      if (hasAuthParams) {
+        console.log("Auth params detected in URL:", window.location.href);
+        if (!isMounted) return false;
+        
+        setIsLoading(true);
+        
+        try {
+          console.log("Processing OAuth redirect");
+          // Try to exchange the auth code for a session
+          const { data, error } = await supabase.auth.getSession();
+          
+          if (error) throw error;
+          
+          if (data.session) {
+            console.log("Authentication successful from redirect, user:", data.session.user?.id);
+            toast({
+              title: "Success",
+              description: "Authentication successful.",
+            });
+            navigate('/home');
+            return true;
+          }
+          
+          console.log("No session after processing redirect");
+        } catch (error: any) {
+          console.error("Auth redirect processing error:", error);
+          toast({
+            title: "Error",
+            description: error.message || "Authentication failed",
+            variant: "destructive",
+          });
+        } finally {
+          if (isMounted) {
+            setIsLoading(false);
+          }
+        }
+      }
+      
+      return false;
+    };
+    
+    // Initialize authentication flow
+    const init = async () => {
+      const handled = await handleDeepLink();
+      if (!handled) {
+        await checkSession();
+      }
+    };
+    
+    init();
     
     return () => {
       isMounted = false;
       subscription.unsubscribe();
+      
+      // Clean up app listener if on native platform
+      if (Capacitor.isNativePlatform()) {
+        App.removeAllListeners();
+      }
     };
   }, [navigate, toast]);
 
