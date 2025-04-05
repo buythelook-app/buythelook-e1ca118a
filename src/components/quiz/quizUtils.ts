@@ -61,6 +61,15 @@ export const analyzeStyleWithAI = async (formData: QuizFormData): Promise<StyleA
     // Try to get authenticated user
     const { data: { user } } = await supabase.auth.getUser();
 
+    // Ensure weight is in kg for database storage and analysis
+    let weightInKg = formData.weight;
+    if (weightInKg && weightInKg !== "prefer_not_to_answer" && !isNaN(parseInt(weightInKg))) {
+      // If weight is stored in pounds, convert to kg for database
+      if (parseInt(weightInKg) > 500) {  // Rough heuristic to detect if weight is in pounds
+        weightInKg = Math.round(parseInt(weightInKg) / 2.2).toString();
+      }
+    }
+
     // If user is authenticated, save to Supabase
     if (user) {
       const { error: upsertError } = await supabase
@@ -69,7 +78,7 @@ export const analyzeStyleWithAI = async (formData: QuizFormData): Promise<StyleA
           user_id: user.id,
           gender: formData.gender,
           height: formData.height,
-          weight: formData.weight,
+          weight: weightInKg,
           waist: formData.waist,
           chest: formData.chest,
           body_shape: formData.bodyShape,
@@ -88,7 +97,7 @@ export const analyzeStyleWithAI = async (formData: QuizFormData): Promise<StyleA
     // Proceed with style analysis regardless of authentication status
     const measurements = {
       height: parseFloat(formData.height) || 0,
-      weight: parseFloat(formData.weight) || 0,
+      weight: weightInKg ? parseFloat(weightInKg) : 0,
       waist: parseFloat(formData.waist) || 0,
       chest: parseFloat(formData.chest) || 0,
     };
@@ -147,4 +156,3 @@ export const loadStoredQuizData = async (): Promise<QuizFormData | null> => {
     return null;
   }
 };
-

@@ -86,8 +86,16 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     try {
-      console.log("Submitting form data:", formData);
-      const styleAnalysis = await analyzeStyleWithAI(formData);
+      // Convert weight from lbs to kg for analysis
+      const dataToAnalyze = { ...formData };
+      
+      // If weight is a number (not "prefer_not_to_answer"), convert it
+      if (dataToAnalyze.weight && dataToAnalyze.weight !== "prefer_not_to_answer") {
+        dataToAnalyze.weight = Math.round(parseInt(dataToAnalyze.weight) / 2.2).toString();
+      }
+      
+      console.log("Submitting form data:", dataToAnalyze);
+      const styleAnalysis = await analyzeStyleWithAI(dataToAnalyze);
       
       toast({
         title: "Analysis complete!",
@@ -122,3 +130,4 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
     </QuizContext.Provider>
   );
 };
+
