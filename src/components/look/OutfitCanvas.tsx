@@ -63,7 +63,7 @@ export const OutfitCanvas = ({
                 originalItems={originalItems}
               />
               
-              {/* Always visible buttons on the canvas */}
+              {/* Always visible buttons at the bottom of canvas */}
               <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4">
                 <Button 
                   onClick={handleBuyLook}

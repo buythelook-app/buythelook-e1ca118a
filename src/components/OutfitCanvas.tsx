@@ -86,35 +86,37 @@ export const OutfitCanvas = ({
           </div>
         </div>
       )}
-      <canvas
-        ref={canvasRef}
-        className="border rounded-lg shadow-lg bg-white mx-auto"
-        style={{ 
-          maxWidth: '100%',
-          width: `${width}px`,
-          height: `${height}px`,
-          display: 'block',
-          margin: '0 auto'
-        }}
-      />
-      
-      {/* Always visible buttons on the canvas */}
-      <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4">
-        <Button 
-          onClick={handleBuyLook}
-          className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8"
-        >
-          <ShoppingCart className="mr-1 h-3 w-3" />
-          Buy the look
-        </Button>
+      <div className="relative">
+        <canvas
+          ref={canvasRef}
+          className="border rounded-lg shadow-lg bg-white mx-auto"
+          style={{ 
+            maxWidth: '100%',
+            width: `${width}px`,
+            height: `${height}px`,
+            display: 'block',
+            margin: '0 auto'
+          }}
+        />
         
-        <Button
-          onClick={handleViewLook}
-          className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8"
-        >
-          <Eye className="mr-1 h-3 w-3" />
-          Watch this look
-        </Button>
+        {/* Always visible buttons at the bottom of canvas */}
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4">
+          <Button 
+            onClick={handleBuyLook}
+            className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8"
+          >
+            <ShoppingCart className="mr-1 h-3 w-3" />
+            Buy the look
+          </Button>
+          
+          <Button
+            onClick={handleViewLook}
+            className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8"
+          >
+            <Eye className="mr-1 h-3 w-3" />
+            Watch this look
+          </Button>
+        </div>
       </div>
     </div>
   );
