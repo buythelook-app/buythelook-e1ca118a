@@ -42,6 +42,7 @@ export const LookSuggestions = () => {
   const [elegance, setElegance] = useState(75);
   const [colorIntensity, setColorIntensity] = useState(60);
   const [userStylePreference, setUserStylePreference] = useState<string | null>(null);
+  const [forceRefresh, setForceRefresh] = useState(false);
 
   const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
 
@@ -65,8 +66,8 @@ export const LookSuggestions = () => {
   }, []);
 
   const { data: dashboardItems, isLoading, error, refetch } = useQuery({
-    queryKey: ['firstOutfitSuggestion'],
-    queryFn: fetchFirstOutfitSuggestion,
+    queryKey: ['firstOutfitSuggestion', forceRefresh],
+    queryFn: () => fetchFirstOutfitSuggestion(forceRefresh),
     retry: 2,
     staleTime: 0,
     refetchOnWindowFocus: false,
@@ -81,6 +82,12 @@ export const LookSuggestions = () => {
       }
     }
   });
+
+  useEffect(() => {
+    if (forceRefresh) {
+      setForceRefresh(false);
+    }
+  }, [dashboardItems, forceRefresh]);
 
   const handleAddToCart = (items: Array<any> | any) => {
     const itemsToAdd = Array.isArray(items) ? items : [items];
@@ -208,6 +215,7 @@ export const LookSuggestions = () => {
   const handleTryDifferentLook = async () => {
     setIsRefetching(true);
     try {
+      setForceRefresh(true);
       await refetch();
       toast({
         title: "New Look Generated",

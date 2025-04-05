@@ -1,3 +1,4 @@
+
 import { QuizFormData } from '../types';
 import { StyleAnalysis } from '../types/styleTypes';
 import { colorPalettes } from '../constants/colorPalettes';
@@ -28,6 +29,7 @@ export const analyzeStyleWithAI = (formData: QuizFormData): StyleAnalysis => {
       analysis: {
         styleProfile: finalStyle,
         colorPalette: selectedPalette,
+        bodyShape: formData.bodyShape || 'H', // Include body shape for outfit generation
         fitRecommendations: {
           top: formData.chest ? (parseInt(formData.chest) > 100 ? "relaxed" : "regular") : "regular",
           bottom: formData.waist ? (parseInt(formData.waist) > 90 ? "comfort" : "fitted") : "regular",

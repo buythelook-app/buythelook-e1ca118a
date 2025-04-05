@@ -71,6 +71,17 @@ const validateMood = (mood: string | null): string => {
   return mood.toLowerCase();
 };
 
+// Add a helper function to clear the outfit cache for a specific key
+export const clearOutfitCache = (bodyStructure: string, style: string, mood: string) => {
+  const cacheKey = `${bodyStructure}:${style}:${mood}`;
+  if (requestCache.has(cacheKey)) {
+    requestCache.delete(cacheKey);
+    console.log('Cleared cache for:', cacheKey);
+    return true;
+  }
+  return false;
+};
+
 // Implement request caching for API calls
 const requestCache = new Map();
 
@@ -254,7 +265,7 @@ const getItemIdentifier = (item: any): string => {
 };
 
 // Function to get only the first outfit suggestion
-export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => {
+export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false): Promise<DashboardItem[]> => {
   try {
     const quizData = localStorage.getItem('styleAnalysis');
     const currentMood = localStorage.getItem('current-mood');
@@ -271,6 +282,12 @@ export const fetchFirstOutfitSuggestion = async (): Promise<DashboardItem[]> => 
     const mood = validateMood(currentMood);
 
     console.log("Using user's preferred style from quiz:", preferredStyle);
+
+    // If forceRefresh is true, clear the cache for this request
+    if (forceRefresh) {
+      clearOutfitCache(bodyShape, style, mood);
+      console.log("Forcing refresh of outfit suggestions");
+    }
 
     const response = await generateOutfit(bodyShape, style, mood);
     const items: DashboardItem[] = [];

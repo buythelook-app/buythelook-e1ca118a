@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import type { Mood } from "@/components/filters/MoodFilter";
 import { MoodFilter } from "@/components/filters/MoodFilter";
 import { useToast } from "@/hooks/use-toast";
-import { fetchDashboardItems } from "@/services/lookService";
+import { fetchDashboardItems, clearOutfitCache } from "@/services/lookService";
 import { useQuery } from "@tanstack/react-query";
 import { Shuffle, ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/components/Cart";
@@ -32,6 +32,7 @@ export default function Index() {
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [userStyle, setUserStyle] = useState<any>(null);
   const [combinations, setCombinations] = useState<{ [key: string]: number }>({});
+  const [forceRefresh, setForceRefresh] = useState(false);
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
   const { addLook } = useCartStore();
 
@@ -47,7 +48,7 @@ export default function Index() {
   }, []);
 
   const { data: occasionOutfits, isLoading, refetch } = useQuery({
-    queryKey: ['dashboardItems', selectedMood],
+    queryKey: ['dashboardItems', selectedMood, forceRefresh],
     queryFn: fetchDashboardItems,
     enabled: !!userStyle,
     staleTime: 0,
@@ -59,6 +60,12 @@ export default function Index() {
       refetch();
     }
   }, [selectedMood, refetch]);
+
+  useEffect(() => {
+    if (forceRefresh) {
+      setForceRefresh(false);
+    }
+  }, [occasionOutfits, forceRefresh]);
 
   const createLookFromItems = (items: any[] = [], occasion: string, index: number): Look | null => {
     if (!items || items.length === 0) return null;
@@ -91,10 +98,22 @@ export default function Index() {
   };
 
   const handleShuffleLook = (occasion: string) => {
+    const styleAnalysis = localStorage.getItem('styleAnalysis');
+    if (styleAnalysis) {
+      const parsed = JSON.parse(styleAnalysis);
+      const bodyShape = parsed?.analysis?.bodyShape || 'H';
+      const style = parsed?.analysis?.styleProfile || 'classic';
+      const mood = localStorage.getItem('current-mood') || 'energized';
+      
+      clearOutfitCache(bodyShape, style, mood);
+    }
+    
     setCombinations(prev => ({
       ...prev,
       [occasion]: (prev[occasion] || 0) + 1
     }));
+    
+    setForceRefresh(true);
     refetch();
   };
   
