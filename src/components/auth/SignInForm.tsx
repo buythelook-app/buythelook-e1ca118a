@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -116,7 +115,7 @@ export const SignInForm = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="bg-black/5"
+            className="bg-black/5 text-white"
           />
         </div>
         <div className="space-y-2">
@@ -126,7 +125,7 @@ export const SignInForm = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="bg-black/5"
+            className="bg-black/5 text-white"
           />
         </div>
         <Button 

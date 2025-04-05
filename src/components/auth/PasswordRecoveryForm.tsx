@@ -90,7 +90,7 @@ export const PasswordRecoveryForm = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="bg-black/5"
+            className="bg-black/5 text-white"
             autoComplete="new-password"
           />
         </div>
@@ -101,7 +101,7 @@ export const PasswordRecoveryForm = () => {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
-            className="bg-black/5"
+            className="bg-black/5 text-white"
             autoComplete="new-password"
           />
         </div>

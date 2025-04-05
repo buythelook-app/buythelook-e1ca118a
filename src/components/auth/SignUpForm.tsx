@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,7 +75,7 @@ export const SignUpForm = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="bg-black/5"
+            className="bg-black/5 text-white"
           />
         </div>
         <div className="space-y-2">
@@ -86,7 +85,7 @@ export const SignUpForm = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="bg-black/5"
+            className="bg-black/5 text-white"
           />
         </div>
         <div className="space-y-2">
@@ -96,7 +95,7 @@ export const SignUpForm = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="bg-black/5"
+            className="bg-black/5 text-white"
           />
         </div>
         <Button 
