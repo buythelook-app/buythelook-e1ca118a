@@ -96,7 +96,7 @@ export const LookCanvas = ({
           <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-30">
             <Button 
               onClick={handleBuyLook}
-              className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8 opacity-100"
+              className="bg-purple-600 hover:bg-purple-700 shadow-md flex-1 text-xs h-8 opacity-100"
             >
               <ShoppingCart className="mr-1 h-3 w-3" />
               Buy the look
@@ -104,7 +104,7 @@ export const LookCanvas = ({
             
             <Button
               onClick={handleViewDetails}
-              className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8 opacity-100"
+              className="bg-purple-600 hover:bg-purple-700 shadow-md flex-1 text-xs h-8 opacity-100"
             >
               <Eye className="mr-1 h-3 w-3" />
               Watch this look

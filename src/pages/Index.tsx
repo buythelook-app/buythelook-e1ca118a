@@ -7,6 +7,7 @@ import { MoodFilter } from "@/components/filters/MoodFilter";
 import type { Mood } from "@/components/filters/MoodFilter";
 import { NoStylePrompt } from "@/components/home/NoStylePrompt";
 import { PersonalizedLooks } from "@/components/home/PersonalizedLooks";
+import { Toaster } from "@/components/ui/toaster";
 
 export default function Index() {
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
@@ -43,6 +44,7 @@ export default function Index() {
           selectedMood={selectedMood} 
         />
       </main>
+      <Toaster />
     </div>
   );
 }

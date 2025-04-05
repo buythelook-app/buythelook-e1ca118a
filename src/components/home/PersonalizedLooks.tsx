@@ -83,7 +83,7 @@ export const PersonalizedLooks = ({ userStyle, selectedMood }: PersonalizedLooks
     <section className="py-8">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-          <h2 className="text-3xl font-display font-semibold relative">
+          <h2 className="text-3xl font-display font-semibold relative text-white">
             Personalized Looks
             <span className="absolute -bottom-2 left-0 w-24 h-1 bg-netflix-accent rounded-full"></span>
           </h2>
@@ -96,15 +96,18 @@ export const PersonalizedLooks = ({ userStyle, selectedMood }: PersonalizedLooks
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {isLoading ? (
-            <div className="col-span-2 text-center py-12">
+            <div className="col-span-2 text-center py-12 text-white">
               <div className="animate-pulse">Loading your personalized looks...</div>
             </div>
           ) : (
             occasions.map((occasion, index) => {
               const items = occasionOutfits?.[occasion] || [];
+              
+              console.log(`Rendering ${occasion} items:`, items);
+              
               return (
                 <LookItem 
-                  key={`${occasion}-${index}`}
+                  key={`${occasion}-${combinations[occasion] || 0}-${index}`}
                   occasion={occasion}
                   items={items}
                   isRefreshing={!!isRefreshing[occasion]}

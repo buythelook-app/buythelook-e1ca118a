@@ -82,7 +82,7 @@ export const LookItem = ({
       className="bg-netflix-card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow"
     >
       <div className="flex justify-between items-start mb-4">
-        <h3 className="text-xl font-semibold">{look.title}</h3>
+        <h3 className="text-xl font-semibold text-white">{look.title}</h3>
         <span className="text-sm text-netflix-accent">{look.occasion}</span>
       </div>
       <div 
@@ -99,10 +99,10 @@ export const LookItem = ({
           />
           
           {/* Fixed position buttons with improved styling for visibility */}
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-30">
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-50">
             <Button 
               onClick={handleBuyLook}
-              className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8 opacity-100"
+              className="bg-purple-600 hover:bg-purple-700 shadow-md flex-1 text-xs h-8 opacity-100 text-white"
             >
               <ShoppingCart className="mr-1 h-3 w-3" />
               Buy the look
@@ -110,7 +110,7 @@ export const LookItem = ({
             
             <Button
               onClick={handleViewDetails}
-              className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8 opacity-100"
+              className="bg-purple-600 hover:bg-purple-700 shadow-md flex-1 text-xs h-8 opacity-100 text-white"
             >
               <Eye className="mr-1 h-3 w-3" />
               Watch this look
@@ -123,7 +123,7 @@ export const LookItem = ({
             e.stopPropagation();
             onShuffleLook(look.occasion);
           }}
-          className="absolute top-4 right-4 bg-netflix-accent text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute top-4 right-4 bg-purple-600 text-white p-2 rounded-full opacity-100 hover:bg-purple-700"
           title="Try different combination"
           disabled={isRefreshing}
         >
