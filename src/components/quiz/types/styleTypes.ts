@@ -1,3 +1,4 @@
+
 export interface ColorPalette {
   primary: string;
   secondary: string;
@@ -31,6 +32,7 @@ export interface StyleAnalysis {
     styleProfile: string;
     colorPalette: ColorPalette;
     fitRecommendations: FitRecommendations;
+    bodyShape?: string; // Added bodyShape as an optional property
   };
   recommendations: StyleRecommendations;
 }

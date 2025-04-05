@@ -1,3 +1,4 @@
+
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 import { EventType, EVENT_TO_STYLES } from "@/components/filters/eventTypes";
 
@@ -35,7 +36,8 @@ const mapStyle = (style: string): "classic" | "romantic" | "minimalist" | "casua
     Modern: "minimalist",
     "Boo Hoo": "boohoo",
     Nordic: "minimalist",
-    Sporty: "sporty"
+    Sporty: "sporty",
+    Casual: "casual"
   };
   
   console.log("Mapping style:", style, "to:", styleMap[style] || "casual");
@@ -62,7 +64,7 @@ const validateMood = (mood: string | null): string => {
     "mystery", "quiet", "elegant", "energized", 
     "flowing", "optimist", "calm", "romantic", 
     "unique", "sweet", "childish", "passionate", 
-    "powerful"
+    "powerful", "casual", "relaxed"
   ];
   
   if (!mood || !validMoods.includes(mood.toLowerCase())) {
@@ -202,7 +204,6 @@ const isMinimalistStyleItem = (item: any): boolean => {
   
   const itemName = (item.product_name || '').toLowerCase();
   const itemDesc = (item.description || '').toLowerCase();
-  const itemType = (item.type || '').toLowerCase();
   
   const hasNatural = hasNaturalColor(item);
   
@@ -219,6 +220,25 @@ const isMinimalistStyleItem = (item: any): boolean => {
   );
   
   return (hasNatural || hasMinimalistTerm) && !hasNonMinimalistPattern;
+};
+
+// Helper function to check if an item matches casual style
+const isCasualStyleItem = (item: any): boolean => {
+  if (!item) return false;
+  
+  const itemName = (item.product_name || '').toLowerCase();
+  const itemDesc = (item.description || '').toLowerCase();
+  const itemType = (item.type || '').toLowerCase();
+  
+  const casualTerms = ['casual', 'comfortable', 'relaxed', 'everyday', 'leisure', 
+                      'weekend', 'jeans', 'denim', 't-shirt', 'tee', 'hoodie', 
+                      'sneaker', 'cotton', 'sweatshirt', 'lounge', 'sweater'];
+  
+  return casualTerms.some(term => 
+    itemName.includes(term) || 
+    itemDesc.includes(term) || 
+    itemType.includes(term)
+  );
 };
 
 // Helper function to convert API item to DashboardItem
@@ -239,6 +259,16 @@ const convertToDashboardItem = (item: any, type: string, userStyle: string = '')
     if (!isMinimalistStyleItem(item)) {
       console.log('Item does not match minimalist style criteria:', item.product_name);
       if (Math.random() > 0.3) {
+        return null;
+      }
+    }
+  }
+  
+  // For Casual style, prioritize casual items
+  if (userStyle === 'Casual') {
+    if (!isCasualStyleItem(item)) {
+      console.log('Item does not match casual style criteria:', item.product_name);
+      if (Math.random() > 0.5) { // Higher threshold to include non-casual items
         return null;
       }
     }
@@ -313,6 +343,25 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
         }
       }
       
+      // For Casual style, find the outfit with the most casual items
+      if (preferredStyle === 'Casual') {
+        for (const outfit of response.data) {
+          const topIsCasual = outfit.top ? isCasualStyleItem(outfit.top) : false;
+          const bottomIsCasual = outfit.bottom ? isCasualStyleItem(outfit.bottom) : false;
+          const shoesIsCasual = outfit.shoes ? isCasualStyleItem(outfit.shoes) : false;
+          
+          const currentMatchCount = (topIsCasual ? 1 : 0) + (bottomIsCasual ? 1 : 0) + (shoesIsCasual ? 1 : 0);
+          const bestMatchCount = 
+            (bestMatch.top ? (isCasualStyleItem(bestMatch.top) ? 1 : 0) : 0) + 
+            (bestMatch.bottom ? (isCasualStyleItem(bestMatch.bottom) ? 1 : 0) : 0) + 
+            (bestMatch.shoes ? (isCasualStyleItem(bestMatch.shoes) ? 1 : 0) : 0);
+          
+          if (currentMatchCount > bestMatchCount) {
+            bestMatch = outfit;
+          }
+        }
+      }
+      
       const top = convertToDashboardItem(bestMatch.top, 'top', preferredStyle);
       const bottom = convertToDashboardItem(bestMatch.bottom, 'bottom', preferredStyle);
       const shoes = convertToDashboardItem(bestMatch.shoes, 'shoes', preferredStyle);
@@ -354,9 +403,9 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     const occasionStyles = {
       'Work': [baseStyle, 'classic', 'minimalist'],
-      'Casual': [baseStyle, 'casual', 'sporty'],
+      'Casual': ['casual', 'sporty', baseStyle],  // Prioritize casual style for casual occasion
       'Evening': [baseStyle, 'romantic', 'classic'],
-      'Weekend': [baseStyle, 'boohoo', 'casual']
+      'Weekend': ['casual', 'boohoo', baseStyle]  // Prioritize casual style for weekend occasion
     };
     
     console.log("Using base style for outfit generation:", baseStyle);
@@ -366,15 +415,32 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
     for (let i = 0; i < occasions.length; i++) {
       const occasion = occasions[i];
       
-      const styleOptions = [baseStyle, ...(occasionStyles[occasion as keyof typeof occasionStyles] || [])];
+      const styleOptions = occasionStyles[occasion as keyof typeof occasionStyles] || [baseStyle];
       
       const uniqueStyles = Array.from(new Set(styleOptions));
       
-      const selectedStyle = uniqueStyles[0];
+      // Adjust style based on occasion
+      let selectedStyle = uniqueStyles[0];
+      
+      // For Casual occasion, always prioritize casual style
+      if (occasion === 'Casual') {
+        selectedStyle = 'casual';
+      }
+      // For Weekend, prioritize more relaxed styles
+      else if (occasion === 'Weekend') {
+        selectedStyle = userPreferredStyle === 'Casual' ? 'casual' : 
+                       (userPreferredStyle === 'Sporty' ? 'sporty' : 
+                       (userPreferredStyle === 'Boo Hoo' ? 'boohoo' : baseStyle));
+      }
       
       console.log(`Generating outfit for ${occasion} with style: ${selectedStyle}`);
       
-      outfitPromises.push(generateOutfit(bodyShape, selectedStyle, mood));
+      let occasionMood = mood;
+      if (occasion === 'Casual' || occasion === 'Weekend') {
+        occasionMood = ['relaxed', 'casual', 'optimist', 'energized'][Math.floor(Math.random() * 4)];
+      }
+      
+      outfitPromises.push(generateOutfit(bodyShape, selectedStyle, occasionMood));
     }
     
     const responses = await Promise.all(outfitPromises);
@@ -389,14 +455,31 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
       if (Array.isArray(response.data) && response.data.length > 0) {
         let outfitFound = false;
         
-        for (const outfit of response.data) {
+        // For casual occasions, prioritize true casual outfits
+        let sortedOutfits = [...response.data];
+        if (occasion === 'Casual' || occasion === 'Weekend') {
+          sortedOutfits.sort((a, b) => {
+            const aCasualScore = (isCasualStyleItem(a.top) ? 1 : 0) + 
+                               (isCasualStyleItem(a.bottom) ? 1 : 0) + 
+                               (isCasualStyleItem(a.shoes) ? 1 : 0);
+            const bCasualScore = (isCasualStyleItem(b.top) ? 1 : 0) + 
+                               (isCasualStyleItem(b.bottom) ? 1 : 0) + 
+                               (isCasualStyleItem(b.shoes) ? 1 : 0);
+            return bCasualScore - aCasualScore; // Sort in descending order of casual score
+          });
+        }
+        
+        for (const outfit of sortedOutfits) {
           const outfitItems: DashboardItem[] = [];
           const outfitItemIds: string[] = [];
+          
+          // Process outfit items based on occasion
+          let topItem = null, bottomItem = null, shoesItem = null;
           
           if (outfit.top) {
             const topId = getItemIdentifier(outfit.top);
             if (!usedItemIds.has(topId)) {
-              const topItem = convertToDashboardItem(outfit.top, 'top');
+              topItem = convertToDashboardItem(outfit.top, 'top', occasion === 'Casual' ? 'Casual' : userPreferredStyle);
               if (topItem) {
                 outfitItems.push(topItem);
                 outfitItemIds.push(topId);
@@ -407,7 +490,7 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
           if (outfit.bottom) {
             const bottomId = getItemIdentifier(outfit.bottom);
             if (!usedItemIds.has(bottomId)) {
-              const bottomItem = convertToDashboardItem(outfit.bottom, 'bottom');
+              bottomItem = convertToDashboardItem(outfit.bottom, 'bottom', occasion === 'Casual' ? 'Casual' : userPreferredStyle);
               if (bottomItem) {
                 outfitItems.push(bottomItem);
                 outfitItemIds.push(bottomId);
@@ -418,7 +501,7 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
           if (outfit.shoes) {
             const shoesId = getItemIdentifier(outfit.shoes);
             if (!usedItemIds.has(shoesId)) {
-              const shoesItem = convertToDashboardItem(outfit.shoes, 'shoes');
+              shoesItem = convertToDashboardItem(outfit.shoes, 'shoes', occasion === 'Casual' ? 'Casual' : userPreferredStyle);
               if (shoesItem) {
                 outfitItems.push(shoesItem);
                 outfitItemIds.push(shoesId);
@@ -434,14 +517,14 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
           }
         }
         
-        if (!outfitFound && response.data[0]) {
-          const outfit = response.data[0];
+        if (!outfitFound && sortedOutfits[0]) {
+          const outfit = sortedOutfits[0];
           const partialOutfit: DashboardItem[] = [];
           
           if (outfit.top) {
             const topId = getItemIdentifier(outfit.top);
             if (!usedItemIds.has(topId)) {
-              const topItem = convertToDashboardItem(outfit.top, 'top');
+              const topItem = convertToDashboardItem(outfit.top, 'top', occasion === 'Casual' ? 'Casual' : userPreferredStyle);
               if (topItem) {
                 partialOutfit.push(topItem);
                 usedItemIds.add(topId);
@@ -452,7 +535,7 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
           if (outfit.bottom) {
             const bottomId = getItemIdentifier(outfit.bottom);
             if (!usedItemIds.has(bottomId)) {
-              const bottomItem = convertToDashboardItem(outfit.bottom, 'bottom');
+              const bottomItem = convertToDashboardItem(outfit.bottom, 'bottom', occasion === 'Casual' ? 'Casual' : userPreferredStyle);
               if (bottomItem) {
                 partialOutfit.push(bottomItem);
                 usedItemIds.add(bottomId);
@@ -463,7 +546,7 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
           if (outfit.shoes) {
             const shoesId = getItemIdentifier(outfit.shoes);
             if (!usedItemIds.has(shoesId)) {
-              const shoesItem = convertToDashboardItem(outfit.shoes, 'shoes');
+              const shoesItem = convertToDashboardItem(outfit.shoes, 'shoes', occasion === 'Casual' ? 'Casual' : userPreferredStyle);
               if (shoesItem) {
                 partialOutfit.push(shoesItem);
                 usedItemIds.add(shoesId);
