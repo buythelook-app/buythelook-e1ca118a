@@ -19,25 +19,20 @@ export const PersonalizedLooks = ({ userStyle, selectedMood }: PersonalizedLooks
   const [isRefreshing, setIsRefreshing] = useState<{ [key: string]: boolean }>({});
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
 
+  // Add console log to trace component rendering
   useEffect(() => {
     console.log("PersonalizedLooks component mounted or updated", {
       userStyle: !!userStyle,
       selectedMood,
       occasions
     });
-    
-    // Send a toast to confirm component is loaded
-    toast({
-      title: "Looks Ready",
-      description: "Your personalized outfit suggestions are ready to view",
-    });
-  }, [userStyle, selectedMood, toast, occasions]);
+  }, [userStyle, selectedMood]);
 
   const { data: occasionOutfits, isLoading, refetch } = useQuery({
-    queryKey: ['dashboardItems', selectedMood, Date.now()], // Force refresh on each render
+    queryKey: ['dashboardItems', selectedMood],
     queryFn: async () => {
       console.log("Fetching dashboard items with mood:", selectedMood);
-      return await fetchItemsForOccasion(true); // Force refresh
+      return await fetchItemsForOccasion(true); // Force refresh to ensure data loads
     },
     enabled: !!userStyle,
     staleTime: 0, // Always fetch fresh data
@@ -45,19 +40,16 @@ export const PersonalizedLooks = ({ userStyle, selectedMood }: PersonalizedLooks
   });
 
   useEffect(() => {
-    // Always refresh data when component mounts
-    refetch();
-    
     if (selectedMood) {
       localStorage.setItem('current-mood', selectedMood);
+      refetch();
     }
     
-    // Log outfit data for debugging
+    // Log the initial outfits data when component mounts
     if (occasionOutfits) {
-      console.log("Current outfit data:", occasionOutfits);
+      console.log("Initial outfit data:", occasionOutfits);
       occasions.forEach(occasion => {
-        const items = occasionOutfits[occasion] || [];
-        console.log(`${occasion} items:`, items, "length:", items.length);
+        console.log(`${occasion} items:`, occasionOutfits[occasion] || []);
       });
     }
   }, [selectedMood, refetch, occasionOutfits, occasions]);
@@ -105,6 +97,13 @@ export const PersonalizedLooks = ({ userStyle, selectedMood }: PersonalizedLooks
       setIsRefreshing({ ...isRefreshing, [occasion]: false });
     }
   };
+
+  // Display a message if loading
+  if (isLoading) {
+    console.log("PersonalizedLooks is loading data...");
+  } else {
+    console.log("PersonalizedLooks data loaded:", occasionOutfits);
+  }
 
   return (
     <section className="py-8">
