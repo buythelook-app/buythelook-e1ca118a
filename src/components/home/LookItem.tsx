@@ -88,20 +88,21 @@ export const LookItem = ({
       <div 
         className="mb-4 bg-white rounded-lg overflow-hidden relative group"
       >
-        <div className="relative pb-16">
+        <div className="relative">
           <LookCanvas 
             items={look.items} 
             width={300} 
             height={500} 
             occasion={occasion} 
             originalItems={items}
+            showButtons={false}
           />
           
-          {/* Fixed position buttons at the bottom of canvas */}
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-20">
+          {/* Fixed position buttons with improved styling for visibility */}
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-30">
             <Button 
               onClick={handleBuyLook}
-              className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8"
+              className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8 opacity-100"
             >
               <ShoppingCart className="mr-1 h-3 w-3" />
               Buy the look
@@ -109,7 +110,7 @@ export const LookItem = ({
             
             <Button
               onClick={handleViewDetails}
-              className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8"
+              className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8 opacity-100"
             >
               <Eye className="mr-1 h-3 w-3" />
               Watch this look

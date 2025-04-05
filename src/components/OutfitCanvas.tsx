@@ -86,7 +86,7 @@ export const OutfitCanvas = ({
           </div>
         </div>
       )}
-      <div className="relative pb-16">
+      <div className="relative">
         <canvas
           ref={canvasRef}
           className="border rounded-lg shadow-lg bg-white mx-auto"
@@ -99,11 +99,11 @@ export const OutfitCanvas = ({
           }}
         />
         
-        {/* Fixed position buttons at the bottom of canvas */}
-        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-20">
+        {/* Fixed position buttons at the bottom of canvas with improved visibility */}
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-30">
           <Button 
             onClick={handleBuyLook}
-            className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8"
+            className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8 opacity-100"
           >
             <ShoppingCart className="mr-1 h-3 w-3" />
             Buy the look
@@ -111,7 +111,7 @@ export const OutfitCanvas = ({
           
           <Button
             onClick={handleViewLook}
-            className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8"
+            className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8 opacity-100"
           >
             <Eye className="mr-1 h-3 w-3" />
             Watch this look
