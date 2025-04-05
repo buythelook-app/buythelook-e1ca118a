@@ -40,26 +40,38 @@ export const MyList = () => {
           <div className="space-y-8">
             {favorites.map((look) => (
               <div key={look.id} className="bg-netflix-card rounded-lg overflow-hidden shadow-lg">
-                <LookCard
-                  key={look.id}
-                  {...look}
-                  items={look.items}
-                />
-                {look.items && look.items.length > 0 && (
-                  <div className="p-4 border-t border-gray-700">
-                    <LookBreakdown 
-                      items={look.items.map(item => ({
-                        id: item.id,
-                        name: `Item from ${look.title}`,
-                        type: "Item",
-                        price: "",
-                        image: item.image,
-                        description: `Part of ${look.title} look` // Add the required description field
-                      }))} 
-                      occasion={look.category}
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* Left side - Look card with smaller canvas */}
+                  <div className="p-4">
+                    <LookCard
+                      key={look.id}
+                      {...look}
+                      items={look.items}
+                      isCompact={true} // Use compact mode for My List page
                     />
                   </div>
-                )}
+                  
+                  {/* Right side - Look items breakdown */}
+                  <div className="p-4 border-t md:border-t-0 md:border-l border-gray-700">
+                    <h3 className="text-lg font-semibold mb-3">{look.category || 'Look'} Items</h3>
+                    
+                    {look.items && look.items.length > 0 ? (
+                      <LookBreakdown 
+                        items={look.items.map(item => ({
+                          id: item.id,
+                          name: `Item from ${look.title}`,
+                          type: "Item",
+                          price: "",
+                          image: item.image,
+                          description: `Part of ${look.title} look` // Add the required description field
+                        }))}
+                        occasion={look.category}
+                      />
+                    ) : (
+                      <p className="text-netflix-text/60 text-center py-4">No item details available for this look</p>
+                    )}
+                  </div>
+                </div>
               </div>
             ))}
           </div>

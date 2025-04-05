@@ -1,73 +1,53 @@
 
-import { AspectRatio } from "../ui/aspect-ratio";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { transformImageUrl } from "@/utils/imageUtils";
 
 interface LookImageProps {
   image: string;
   title: string;
-  type?: string;
+  height?: number;
 }
 
-export const LookImage = ({ image, title, type = 'default' }: LookImageProps) => {
-  const [imageError, setImageError] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
+export const LookImage = ({ image, title, height = 400 }: LookImageProps) => {
   const [displayImage, setDisplayImage] = useState<string>('/placeholder.svg');
   
   useEffect(() => {
-    // Reset states when image prop changes
-    setImageError(false);
-    setImageLoaded(false);
-    
-    // Always use placeholder to avoid Supabase storage URLs
-    if (!image || image.includes('supabase') || image.includes('storage/v1/object/public/items')) {
-      console.log(`[LookImage] Using placeholder for ${title} to avoid Supabase storage URL`);
-      setImageError(true);
-      setDisplayImage('/placeholder.svg');
-      return;
-    }
-    
     try {
-      const transformed = transformImageUrl(image);
-      console.log(`[LookImage] Transformed URL for ${title}: ${transformed} (original: ${image})`);
-      setDisplayImage(transformed);
+      // Special handling for URLs that need transformation
+      if (image.startsWith('canvas-') || !image || image.includes('supabase')) {
+        console.log(`[LookImage] Using placeholder for unrecognized URL pattern: ${image}`);
+        setDisplayImage('/placeholder.svg');
+      } else {
+        const transformedUrl = transformImageUrl(image);
+        console.log(`[LookImage] Transformed URL for ${title}: ${transformedUrl} (original: ${image})`);
+        setDisplayImage(transformedUrl);
+      }
     } catch (error) {
-      console.error(`[LookImage] Error transforming URL: ${error}`);
-      setImageError(true);
+      console.error(`[LookImage] Error processing image for ${title}:`, error);
       setDisplayImage('/placeholder.svg');
     }
   }, [image, title]);
 
+  // Log when image is loaded successfully
+  const handleImageLoad = () => {
+    console.log(`[LookImage] Image loaded successfully: ${displayImage}`);
+  };
+
   return (
-    <AspectRatio ratio={3/4} className="relative overflow-hidden bg-gray-100 flex items-center justify-center">
-      {!imageLoaded && !imageError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-          <div className="h-8 w-8 rounded-full border-2 border-t-transparent border-netflix-accent animate-spin"></div>
-        </div>
-      )}
-      
+    <div 
+      className="bg-gray-100 overflow-hidden relative"
+      style={{ height: `${height}px` }}
+    >
       <img 
-        src={imageError ? '/placeholder.svg' : displayImage} 
+        src={displayImage} 
         alt={title}
-        className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-        onLoad={() => {
-          console.log('[LookImage] Image loaded successfully:', displayImage);
-          setImageLoaded(true);
-        }}
+        className="w-full h-full object-cover object-center"
+        onLoad={handleImageLoad}
         onError={() => {
-          console.error('[LookImage] Error loading image:', displayImage);
-          setImageError(true);
-          setImageLoaded(true);
+          console.error(`[LookImage] Error loading image for ${title}, falling back to placeholder`);
           setDisplayImage('/placeholder.svg');
         }}
       />
-      
-      {imageError && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-200 p-4 text-center">
-          <span className="text-sm text-gray-500">Image not available</span>
-          <span className="text-xs text-gray-400 mt-1">{type}</span>
-        </div>
-      )}
-    </AspectRatio>
+    </div>
   );
 };

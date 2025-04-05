@@ -1,3 +1,4 @@
+
 import { LookImage } from "./look/LookImage";
 import { LookActions } from "./look/LookActions";
 
@@ -11,12 +12,25 @@ interface LookCardProps {
     id: string;
     image: string;
   }>;
+  isCompact?: boolean;
 }
 
-export const LookCard = ({ id, image, title, price, category, items = [] }: LookCardProps) => {
+export const LookCard = ({ 
+  id, 
+  image, 
+  title, 
+  price, 
+  category, 
+  items = [],
+  isCompact = false 
+}: LookCardProps) => {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden h-full">
-      <LookImage image={image} title={title} />
+      <LookImage 
+        image={image} 
+        title={title} 
+        height={isCompact ? 300 : 400} // Use smaller height when compact
+      />
       <div className="p-4">
         <div className="flex justify-between items-start">
           <div>
