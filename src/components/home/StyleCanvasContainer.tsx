@@ -2,8 +2,8 @@
 import { useNavigate } from "react-router-dom";
 import { StyleCanvas } from "@/components/StyleCanvas";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Eye, ShoppingCart } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useCartStore } from "@/components/Cart";
 import { useToast } from "@/hooks/use-toast";

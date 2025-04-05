@@ -3,7 +3,7 @@ import { useRef, useEffect } from "react";
 import { useStyleCanvasRenderer } from "@/hooks/useStyleCanvasRenderer";
 
 interface StyleCanvasProps {
-  id?: string; // Make id optional by adding the ? symbol
+  id?: string; 
   styleType: number;
   outfitData?: any;
   occasion?: string;
