@@ -88,7 +88,7 @@ export const LookItem = ({
       <div 
         className="mb-4 bg-white rounded-lg overflow-hidden relative group"
       >
-        <div className="relative">
+        <div className="relative pb-16">
           <LookCanvas 
             items={look.items} 
             width={300} 
@@ -97,8 +97,8 @@ export const LookItem = ({
             originalItems={items}
           />
           
-          {/* Always visible buttons on the canvas */}
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4">
+          {/* Fixed position buttons at the bottom of canvas */}
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-20">
             <Button 
               onClick={handleBuyLook}
               className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8"
