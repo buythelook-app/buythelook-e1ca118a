@@ -7,13 +7,18 @@ import { useCartStore } from "../Cart";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 
+interface LookItem {
+  id: string;
+  image: string;
+}
+
 interface LookActionsProps {
   id: string;
   image: string;
   title: string;
   price: string;
   category: string;
-  items?: Array<{ id: string; image: string; }>;
+  items?: LookItem[];
 }
 
 export const LookActions = ({ id, image, title, price, category, items = [] }: LookActionsProps) => {
@@ -23,18 +28,25 @@ export const LookActions = ({ id, image, title, price, category, items = [] }: L
   const navigate = useNavigate();
   
   useEffect(() => {
-    console.log(`LookActions mounted for ${id}, isFavorite: ${isFavorite(id)}`);
-  }, [id, isFavorite]);
+    console.log(`LookActions mounted for ${id}, isFavorite: ${isFavorite(id)}, items:`, items);
+  }, [id, isFavorite, items]);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    // Make sure items have proper format with id and image
+    const processedItems = items.map(item => ({
+      id: item.id || `item-${Math.random().toString(36).substring(2, 9)}`,
+      image: item.image
+    }));
+    
     const look = { 
       id, 
       image, 
       title, 
       price, 
       category,
-      items: items.length > 0 ? items : undefined
+      items: processedItems.length > 0 ? processedItems : undefined
     };
     
     console.log("Look being added/removed:", look);

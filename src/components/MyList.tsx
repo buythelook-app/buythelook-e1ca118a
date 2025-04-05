@@ -6,6 +6,7 @@ import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { LookCard } from "./LookCard";
 import { HomeButton } from "./HomeButton";
 import { useEffect } from "react";
+import { LookBreakdown } from "./look/LookBreakdown";
 
 export const MyList = () => {
   const navigate = useNavigate();
@@ -35,21 +36,37 @@ export const MyList = () => {
           <h1 className="text-2xl font-semibold">My List</h1>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {favorites.length > 0 ? (
-            favorites.map((look) => (
-              <LookCard
-                key={look.id}
-                {...look}
-                items={look.items}
-              />
-            ))
-          ) : (
-            <div className="text-center py-12 col-span-full">
-              <p className="text-netflix-text/60">No favorites yet</p>
-            </div>
-          )}
-        </div>
+        {favorites.length > 0 ? (
+          <div className="space-y-8">
+            {favorites.map((look) => (
+              <div key={look.id} className="bg-netflix-card rounded-lg overflow-hidden shadow-lg">
+                <LookCard
+                  key={look.id}
+                  {...look}
+                  items={look.items}
+                />
+                {look.items && look.items.length > 0 && (
+                  <div className="p-4 border-t border-gray-700">
+                    <LookBreakdown 
+                      items={look.items.map(item => ({
+                        id: item.id,
+                        name: `Item from ${look.title}`,
+                        type: "Item",
+                        price: "",
+                        image: item.image
+                      }))} 
+                      occasion={look.category}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-netflix-text/60">No favorites yet</p>
+          </div>
+        )}
       </div>
       <HomeButton />
     </div>
