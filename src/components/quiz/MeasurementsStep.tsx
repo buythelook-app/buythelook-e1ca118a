@@ -121,6 +121,14 @@ export const MeasurementsStep = ({
     );
   };
 
+  // Calculate kg from pounds
+  const calculateKg = (pounds: string): string => {
+    if (!pounds || pounds === "prefer_not_to_answer" || isNaN(parseFloat(pounds))) {
+      return "";
+    }
+    return (parseFloat(pounds) / 2.2).toFixed(1);
+  };
+
   if (step === 2) {
     return (
       <div className="flex-1 flex flex-col">
@@ -203,6 +211,11 @@ export const MeasurementsStep = ({
               inputMode="numeric"
               min="0"
             />
+            {weight && weight !== "prefer_not_to_answer" && (
+              <p className="text-sm text-gray-500 mt-2">
+                {calculateKg(weight)} kg
+              </p>
+            )}
           </div>
           <Button 
             type="button" 
@@ -290,3 +303,4 @@ export const MeasurementsStep = ({
     </div>
   );
 };
+
