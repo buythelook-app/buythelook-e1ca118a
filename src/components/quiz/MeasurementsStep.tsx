@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Info, Eye, EyeOff } from "lucide-react";
+import { Info } from "lucide-react";
 
 interface MeasurementsStepProps {
   height: string;
@@ -108,18 +108,6 @@ export const MeasurementsStep = ({
     }
   };
 
-  // Convert cm to inches for display and input - now using whole numbers
-  const cmToInches = (cm: string): string => {
-    if (!cm || cm === "prefer_not_to_answer") return "";
-    return Math.round(parseFloat(cm) / 2.54).toString();
-  };
-
-  // Convert inches to cm for storage - using whole numbers
-  const inchesToCm = (inches: string): string => {
-    if (!inches) return "";
-    return Math.round(parseFloat(inches) * 2.54).toString();
-  };
-
   const RemarkMessage = ({ show }: { show: boolean }) => {
     if (!show) return null;
     
@@ -152,6 +140,7 @@ export const MeasurementsStep = ({
                       onChange={(e) => handleHeightChange(e.target.value, inches)}
                       className="w-full"
                       inputMode="numeric"
+                      min="0"
                     />
                   </div>
                   <div className="flex-1">
@@ -164,6 +153,7 @@ export const MeasurementsStep = ({
                       onChange={(e) => handleHeightChange(feet, e.target.value)}
                       className="w-full"
                       inputMode="numeric"
+                      min="0"
                     />
                   </div>
                 </div>
@@ -202,26 +192,17 @@ export const MeasurementsStep = ({
               id="weight"
               type="number"
               placeholder="Weight in pounds"
-              value={weight === "prefer_not_to_answer" ? "" : weight ? 
-                Math.round(parseFloat(weight) * 2.2).toString() : ""}
+              value={weight === "prefer_not_to_answer" ? "" : weight}
               onChange={(e) => {
                 const value = e.target.value;
                 // Allow any input including empty string
-                if (value === "") {
-                  onWeightChange("");
-                } else {
-                  // Store the weight value directly without first converting to kg
-                  // This prevents loss of precision for small values
-                  onWeightChange(value);
-                }
+                onWeightChange(value === "" ? "" : value);
               }}
               className="w-full"
               disabled={weight === "prefer_not_to_answer"}
               inputMode="numeric"
+              min="0"
             />
-            <div className="mt-1 text-xs text-gray-500">
-              {weight && weight !== "prefer_not_to_answer" ? `${Math.round(parseInt(weight) / 2.2)} kg` : ""}
-            </div>
           </div>
           <Button 
             type="button" 
@@ -261,10 +242,8 @@ export const MeasurementsStep = ({
             className="w-full mt-1"
             disabled={waist === "prefer_not_to_answer"}
             inputMode="numeric"
+            min="0"
           />
-          <div className="mt-1 text-xs text-gray-500">
-            {waist && waist !== "prefer_not_to_answer" ? `${waist} cm` : ""}
-          </div>
           <Button 
             type="button" 
             variant="outline" 
@@ -295,10 +274,8 @@ export const MeasurementsStep = ({
             className="w-full mt-1"
             disabled={chest === "prefer_not_to_answer"}
             inputMode="numeric"
+            min="0"
           />
-          <div className="mt-1 text-xs text-gray-500">
-            {chest && chest !== "prefer_not_to_answer" ? `${chest} cm` : ""}
-          </div>
           <Button 
             type="button" 
             variant="outline" 
@@ -313,4 +290,3 @@ export const MeasurementsStep = ({
     </div>
   );
 };
-

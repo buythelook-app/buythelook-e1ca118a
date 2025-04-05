@@ -61,13 +61,11 @@ export const analyzeStyleWithAI = async (formData: QuizFormData): Promise<StyleA
     // Try to get authenticated user
     const { data: { user } } = await supabase.auth.getUser();
 
-    // Ensure weight is in kg for database storage and analysis
+    // Convert weight to kg for analysis if it's a number
     let weightInKg = formData.weight;
     if (weightInKg && weightInKg !== "prefer_not_to_answer" && !isNaN(parseInt(weightInKg))) {
-      // If weight is stored in pounds, convert to kg for database
-      if (parseInt(weightInKg) > 500) {  // Rough heuristic to detect if weight is in pounds
-        weightInKg = Math.round(parseInt(weightInKg) / 2.2).toString();
-      }
+      // Convert pounds to kg
+      weightInKg = Math.round(parseInt(weightInKg) / 2.2).toString();
     }
 
     // If user is authenticated, save to Supabase

@@ -35,17 +35,20 @@ const QuizSummary = () => {
           )}
           {formData.weight && (
             <div>
-              <strong>Weight:</strong> {formData.weight} kg
+              <strong>Weight:</strong> {formData.weight !== "prefer_not_to_answer" ? 
+                `${formData.weight} lbs` : "Prefer not to answer"}
             </div>
           )}
           {formData.waist && (
             <div>
-              <strong>Waist:</strong> {formData.waist} cm
+              <strong>Waist:</strong> {formData.waist === "prefer_not_to_answer" ? 
+                "Prefer not to answer" : `${Math.round(parseInt(formData.waist) / 2.54)} inches`}
             </div>
           )}
           {formData.chest && (
             <div>
-              <strong>Chest:</strong> {formData.chest} cm
+              <strong>Chest:</strong> {formData.chest === "prefer_not_to_answer" ? 
+                "Prefer not to answer" : `${Math.round(parseInt(formData.chest) / 2.54)} inches`}
             </div>
           )}
           {formData.bodyShape && (
