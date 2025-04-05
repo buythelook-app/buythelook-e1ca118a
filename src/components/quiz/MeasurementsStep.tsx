@@ -1,3 +1,4 @@
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
@@ -245,10 +246,18 @@ export const MeasurementsStep = ({
             type="number"
             placeholder="Waist in inches"
             value={waist === "prefer_not_to_answer" ? "" : cmToInches(waist)}
-            onChange={(e) => onWaistChange(inchesToCm(e.target.value))}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "") {
+                onWaistChange("");
+              } else {
+                onWaistChange(inchesToCm(value));
+              }
+            }}
             className="w-full mt-1"
             disabled={waist === "prefer_not_to_answer"}
             step="0.1"
+            min="0"
           />
           <div className="mt-1 text-xs text-gray-500">
             {waist && waist !== "prefer_not_to_answer" ? `${waist} cm` : ""}
@@ -270,10 +279,18 @@ export const MeasurementsStep = ({
             type="number"
             placeholder="Chest in inches"
             value={chest === "prefer_not_to_answer" ? "" : cmToInches(chest)}
-            onChange={(e) => onChestChange(inchesToCm(e.target.value))}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "") {
+                onChestChange("");
+              } else {
+                onChestChange(inchesToCm(value));
+              }
+            }}
             className="w-full mt-1"
             disabled={chest === "prefer_not_to_answer"}
             step="0.1"
+            min="0"
           />
           <div className="mt-1 text-xs text-gray-500">
             {chest && chest !== "prefer_not_to_answer" ? `${chest} cm` : ""}
