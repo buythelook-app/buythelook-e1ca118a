@@ -204,8 +204,8 @@ export const MeasurementsStep = ({
               id="weight"
               type="number"
               placeholder="Weight in pounds"
-              value={weight === "prefer_not_to_answer" ? "" : Math.round(parseInt(weight || "0") * 2.2)}
-              onChange={(e) => onWeightChange(Math.round(parseInt(e.target.value || "0") / 2.2).toString())}
+              value={weight === "prefer_not_to_answer" ? "" : weight ? Math.round(parseInt(weight) * 2.2) : ""}
+              onChange={(e) => onWeightChange(e.target.value ? Math.round(parseInt(e.target.value) / 2.2).toString() : "")}
               className="w-full"
               disabled={weight === "prefer_not_to_answer"}
             />
