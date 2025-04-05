@@ -108,13 +108,13 @@ export const MeasurementsStep = ({
     }
   };
 
-  // Convert cm to inches for display and input - allowing higher precision
+  // Convert cm to inches for display and input - now using whole numbers
   const cmToInches = (cm: string): string => {
     if (!cm || cm === "prefer_not_to_answer") return "";
-    return (parseFloat(cm) / 2.54).toFixed(2);
+    return Math.round(parseFloat(cm) / 2.54).toString();
   };
 
-  // Convert inches to cm for storage - preserving all decimal places
+  // Convert inches to cm for storage - using whole numbers
   const inchesToCm = (inches: string): string => {
     if (!inches) return "";
     return Math.round(parseFloat(inches) * 2.54).toString();
@@ -151,7 +151,7 @@ export const MeasurementsStep = ({
                       value={feet}
                       onChange={(e) => handleHeightChange(e.target.value, inches)}
                       className="w-full"
-                      inputMode="decimal"
+                      inputMode="numeric"
                       min="0"
                     />
                   </div>
@@ -164,7 +164,7 @@ export const MeasurementsStep = ({
                       value={inches}
                       onChange={(e) => handleHeightChange(feet, e.target.value)}
                       className="w-full"
-                      inputMode="decimal"
+                      inputMode="numeric"
                       min="0"
                     />
                   </div>
@@ -204,25 +204,25 @@ export const MeasurementsStep = ({
               id="weight"
               type="number"
               placeholder="Weight in pounds"
-              value={weight === "prefer_not_to_answer" ? "" : weight ? (parseFloat(weight) * 2.2).toFixed(1) : ""}
+              value={weight === "prefer_not_to_answer" ? "" : weight ? Math.round(parseFloat(weight) * 2.2).toString() : ""}
               onChange={(e) => {
                 const value = e.target.value;
                 // Allow any input including empty string, decimal points, etc.
                 if (value === "") {
                   onWeightChange("");
                 } else if (!isNaN(parseFloat(value))) {
-                  // No minimum restriction
-                  const weightInKg = parseFloat(value) / 2.2;
-                  onWeightChange(weightInKg.toFixed(1));
+                  // Convert to kg and store as whole number
+                  const weightInKg = Math.round(parseFloat(value) / 2.2);
+                  onWeightChange(weightInKg.toString());
                 }
               }}
               className="w-full"
               disabled={weight === "prefer_not_to_answer"}
-              inputMode="decimal"
-              step="0.1"
+              inputMode="numeric"
+              step="1"
             />
             <div className="mt-1 text-xs text-gray-500">
-              {weight && weight !== "prefer_not_to_answer" ? `${parseFloat(weight).toFixed(1)} kg` : ""}
+              {weight && weight !== "prefer_not_to_answer" ? `${weight} kg` : ""}
             </div>
           </div>
           <Button 
@@ -249,21 +249,22 @@ export const MeasurementsStep = ({
             id="waist"
             type="number"
             placeholder="Waist in inches"
-            value={waist === "prefer_not_to_answer" ? "" : cmToInches(waist)}
+            value={waist === "prefer_not_to_answer" ? "" : Math.round(parseFloat(waist) / 2.54).toString()}
             onChange={(e) => {
               const value = e.target.value;
               // Handle empty input explicitly
               if (value === "") {
                 onWaistChange("");
               } else {
-                onWaistChange(inchesToCm(value));
+                // Convert to cm as whole number
+                onWaistChange(Math.round(parseFloat(value) * 2.54).toString());
               }
             }}
             className="w-full mt-1"
             disabled={waist === "prefer_not_to_answer"}
-            inputMode="decimal"
+            inputMode="numeric"
             min="0"
-            step="0.1"
+            step="1"
           />
           <div className="mt-1 text-xs text-gray-500">
             {waist && waist !== "prefer_not_to_answer" ? `${waist} cm` : ""}
@@ -284,21 +285,22 @@ export const MeasurementsStep = ({
             id="chest"
             type="number"
             placeholder="Chest in inches"
-            value={chest === "prefer_not_to_answer" ? "" : cmToInches(chest)}
+            value={chest === "prefer_not_to_answer" ? "" : Math.round(parseFloat(chest) / 2.54).toString()}
             onChange={(e) => {
               const value = e.target.value;
               // Handle empty input explicitly
               if (value === "") {
                 onChestChange("");
               } else {
-                onChestChange(inchesToCm(value));
+                // Convert to cm as whole number
+                onChestChange(Math.round(parseFloat(value) * 2.54).toString());
               }
             }}
             className="w-full mt-1"
             disabled={chest === "prefer_not_to_answer"}
-            inputMode="decimal"
+            inputMode="numeric"
             min="0"
-            step="0.1"
+            step="1"
           />
           <div className="mt-1 text-xs text-gray-500">
             {chest && chest !== "prefer_not_to_answer" ? `${chest} cm` : ""}
