@@ -213,14 +213,13 @@ export const MeasurementsStep = ({
                 if (value === "") {
                   onWeightChange("");
                 } else if (!isNaN(parseFloat(value))) {
-                  // Ensure the value is at least 10 kg (22 lbs)
+                  // No minimum restriction
                   const weightInKg = parseFloat(value) / 2.2;
                   onWeightChange(weightInKg.toFixed(1));
                 }
               }}
               className="w-full"
               disabled={weight === "prefer_not_to_answer"}
-              min="22"  // Minimum 10kg converted to lbs
               max="9999.99"
               inputMode="decimal"
               step="0.1"
@@ -323,3 +322,4 @@ export const MeasurementsStep = ({
     </div>
   );
 };
+
