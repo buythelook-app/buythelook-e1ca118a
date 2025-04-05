@@ -1,4 +1,3 @@
-
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { create } from 'zustand';
@@ -45,7 +44,6 @@ interface CartStore {
   removeItem: (itemId: string) => Promise<void>;
   removeItemFromLook: (lookId: string, itemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
-  loadCart: () => Promise<void>;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -151,7 +149,11 @@ export const useCartStore = create<CartStore>()(
         }
 
         set(state => ({
-          items: state.items.filter(item => item.id !== itemId)
+          items: state.items.filter(item => item.id !== itemId),
+          looks: state.looks.map(look => ({
+            ...look,
+            items: look.items.filter(item => item.id !== itemId)
+          })).filter(look => look.items.length > 0)
         }));
       },
       removeItemFromLook: async (lookId, itemId) => {
@@ -248,7 +250,7 @@ export const Cart = () => {
             <div className="space-y-8">
               {looks.map((look) => (
                 <LookCartItem
-                  key={look.id}
+                  key={`look-${look.id}`}
                   {...look}
                   onRemoveLook={handleRemoveLook}
                   onRemoveItem={handleRemoveItemFromLook}
@@ -260,7 +262,7 @@ export const Cart = () => {
                   <h3 className="text-xl font-semibold">Individual Items</h3>
                   {items.map((item) => (
                     <CartItem
-                      key={item.id}
+                      key={`item-${item.id}`}
                       {...item}
                       onRemove={handleRemoveItem}
                     />
