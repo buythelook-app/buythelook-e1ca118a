@@ -108,13 +108,13 @@ export const MeasurementsStep = ({
     }
   };
 
-  // Convert cm to inches for display and input
+  // Convert cm to inches for display and input - allowing higher precision
   const cmToInches = (cm: string): string => {
     if (!cm || cm === "prefer_not_to_answer") return "";
-    return (parseInt(cm) / 2.54).toFixed(1);
+    return (parseInt(cm) / 2.54).toFixed(2);
   };
 
-  // Convert inches to cm for storage
+  // Convert inches to cm for storage - preserving all decimal places
   const inchesToCm = (inches: string): string => {
     if (!inches) return "";
     return Math.round(parseFloat(inches) * 2.54).toString();
@@ -204,23 +204,24 @@ export const MeasurementsStep = ({
               id="weight"
               type="number"
               placeholder="Weight in pounds"
-              value={weight === "prefer_not_to_answer" ? "" : weight ? Math.round(parseFloat(weight) * 2.2) : ""}
+              value={weight === "prefer_not_to_answer" ? "" : weight ? (parseFloat(weight) * 2.2).toFixed(2) : ""}
               onChange={(e) => {
                 const value = e.target.value;
                 // Allow any input including empty string, decimal points, etc.
                 if (value === "") {
                   onWeightChange("");
                 } else if (!isNaN(parseFloat(value))) {
-                  onWeightChange((parseFloat(value) / 2.2).toString());
+                  onWeightChange((parseFloat(value) / 2.2).toFixed(2));
                 }
               }}
               className="w-full"
               disabled={weight === "prefer_not_to_answer"}
-              max="9999"
+              max="9999.99"
               inputMode="decimal"
+              step="0.01"
             />
             <div className="mt-1 text-xs text-gray-500">
-              {weight && weight !== "prefer_not_to_answer" ? `${weight} kg` : ""}
+              {weight && weight !== "prefer_not_to_answer" ? `${parseFloat(weight).toFixed(2)} kg` : ""}
             </div>
           </div>
           <Button 
@@ -260,7 +261,8 @@ export const MeasurementsStep = ({
             className="w-full mt-1"
             disabled={waist === "prefer_not_to_answer"}
             inputMode="decimal"
-            max="9999"
+            max="9999.99"
+            step="0.01"
           />
           <div className="mt-1 text-xs text-gray-500">
             {waist && waist !== "prefer_not_to_answer" ? `${waist} cm` : ""}
@@ -294,7 +296,8 @@ export const MeasurementsStep = ({
             className="w-full mt-1"
             disabled={chest === "prefer_not_to_answer"}
             inputMode="decimal"
-            max="9999"
+            max="9999.99"
+            step="0.01"
           />
           <div className="mt-1 text-xs text-gray-500">
             {chest && chest !== "prefer_not_to_answer" ? `${chest} cm` : ""}
