@@ -53,7 +53,8 @@ export const MyList = () => {
                         name: `Item from ${look.title}`,
                         type: "Item",
                         price: "",
-                        image: item.image
+                        image: item.image,
+                        description: `Part of ${look.title} look` // Add the required description field
                       }))} 
                       occasion={look.category}
                     />
