@@ -1,33 +1,52 @@
 
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { DashboardItem } from "@/types/lookTypes";
+import { useCartStore } from "@/components/Cart";
+import { toast } from "sonner";
 
 export const useCartManagement = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const { addItem, addLook } = useCartStore();
 
-  // Handle adding items to cart
-  const handleAddToCart = (items: Array<any> | any) => {
-    const itemsToAdd = Array.isArray(items) ? items : [items];
-    const cartItems = itemsToAdd.map(item => ({
+  const handleAddToCart = (item: any, lookId?: string) => {
+    addItem({
       id: item.id,
-      title: item.name,
-      price: item.price,
-      image: item.image
-    }));
-    
-    toast({
-      title: "Success",
-      description: Array.isArray(items) ? "All items added to cart" : "Item added to cart",
+      title: item.name || item.title || "Fashion Item",
+      price: item.price || "$49.99",
+      image: item.image || "/placeholder.svg",
+      lookId
     });
-    navigate('/cart');
+
+    toast.success(`${item.name || item.title || "Item"} added to cart`);
+  };
+
+  const handleAddLookToCart = (look: any) => {
+    // Ensure we have lookItems to add
+    const lookItems = look.items && look.items.length > 0 
+      ? look.items.map((item: any) => ({
+          id: item.id,
+          title: item.name || `Item from ${look.title}`,
+          price: item.price || "$49.99",
+          image: item.image || "/placeholder.svg",
+          lookId: look.id
+        }))
+      : [{
+          id: `item-${look.id}`,
+          title: look.title || "Look Item",
+          price: look.price || "$49.99",
+          image: look.image || "/placeholder.svg",
+          lookId: look.id
+        }];
     
-    // Return the cart items to be used by the cart store
-    return cartItems;
+    addLook({
+      id: look.id,
+      title: look.title || "Fashion Look",
+      items: lookItems,
+      totalPrice: look.price || "$49.99"
+    });
+    
+    toast.success('Look added to cart');
   };
 
   return {
-    handleAddToCart
+    handleAddToCart,
+    handleAddLookToCart
   };
 };
