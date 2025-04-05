@@ -1,3 +1,4 @@
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
@@ -150,8 +151,7 @@ export const MeasurementsStep = ({
                       value={feet}
                       onChange={(e) => handleHeightChange(e.target.value, inches)}
                       className="w-full"
-                      min="0"
-                      max="8"
+                      inputMode="decimal"
                     />
                   </div>
                   <div className="flex-1">
@@ -163,8 +163,7 @@ export const MeasurementsStep = ({
                       value={inches}
                       onChange={(e) => handleHeightChange(feet, e.target.value)}
                       className="w-full"
-                      min="0"
-                      max="11"
+                      inputMode="decimal"
                     />
                   </div>
                 </div>
@@ -256,8 +255,6 @@ export const MeasurementsStep = ({
             }}
             className="w-full mt-1"
             disabled={waist === "prefer_not_to_answer"}
-            step="0.1"
-            min="0"
             inputMode="decimal"
           />
           <div className="mt-1 text-xs text-gray-500">
@@ -291,8 +288,6 @@ export const MeasurementsStep = ({
             }}
             className="w-full mt-1"
             disabled={chest === "prefer_not_to_answer"}
-            step="0.1"
-            min="0"
             inputMode="decimal"
           />
           <div className="mt-1 text-xs text-gray-500">
