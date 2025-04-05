@@ -88,13 +88,34 @@ export const LookItem = ({
       <div 
         className="mb-4 bg-white rounded-lg overflow-hidden relative group"
       >
-        <LookCanvas 
-          items={look.items} 
-          width={300} 
-          height={500} 
-          occasion={occasion} 
-          originalItems={items}
-        />
+        <div className="relative">
+          <LookCanvas 
+            items={look.items} 
+            width={300} 
+            height={500} 
+            occasion={occasion} 
+            originalItems={items}
+          />
+          
+          {/* Always visible buttons on the canvas */}
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4">
+            <Button 
+              onClick={handleBuyLook}
+              className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8"
+            >
+              <ShoppingCart className="mr-1 h-3 w-3" />
+              Buy the look
+            </Button>
+            
+            <Button
+              onClick={handleViewDetails}
+              className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8"
+            >
+              <Eye className="mr-1 h-3 w-3" />
+              Watch this look
+            </Button>
+          </div>
+        </div>
         
         <button
           onClick={(e) => {

@@ -12,6 +12,9 @@ import {
   CarouselPrevious,
   type CarouselApi
 } from "@/components/ui/carousel";
+import { useNavigate } from "react-router-dom";
+import { useCartStore } from "@/components/Cart";
+import { useToast } from "@/hooks/use-toast";
 
 interface OutfitCarouselProps {
   outfits: DashboardItem[][];
@@ -33,6 +36,9 @@ export const OutfitCarousel = ({
   occasion
 }: OutfitCarouselProps) => {
   const [api, setApi] = useState<CarouselApi | null>(null);
+  const navigate = useNavigate();
+  const { addItems } = useCartStore();
+  const { toast } = useToast();
 
   // Update current slide index when carousel slides change
   useEffect(() => {
@@ -52,6 +58,25 @@ export const OutfitCarousel = ({
   if (outfits.length === 0) {
     return null;
   }
+
+  // Handle adding all items from an outfit to cart
+  const handleAddToCart = (outfit: DashboardItem[]) => {
+    const cartItems = outfit.map(item => ({
+      id: item.id,
+      title: item.name || "", 
+      price: item.price || "$0.00",
+      image: item.image
+    }));
+    
+    addItems(cartItems);
+    
+    toast({
+      title: "Success",
+      description: `Look added to your cart`,
+    });
+    
+    navigate('/cart');
+  };
 
   return (
     <Carousel
@@ -73,7 +98,7 @@ export const OutfitCarousel = ({
                 type: mapItemType(item.type)
               }))}
               isRefreshing={isRefreshing} 
-              onAddToCart={() => onAddToCart(outfit)}
+              onAddToCart={() => handleAddToCart(outfit)}
               onTryDifferent={onTryDifferent}
               occasion={outfit[0]?.occasion || outfit[0]?.event || outfit[0]?.metadata?.occasion}
               originalItems={outfit}
