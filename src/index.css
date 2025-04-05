@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -114,41 +115,45 @@
   @apply p-3 rounded-md border border-emerald-700 bg-emerald-50 text-emerald-800 shadow-sm;
 }
 
-/* IMPORTANT: High visibility button styles */
-.btn-look-primary {
-  @apply bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold !important;
+/* Forceful button visibility styles */
+.always-visible-button {
   opacity: 1 !important;
-  z-index: 999 !important;
+  z-index: 1000 !important;
   pointer-events: auto !important;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
   border: 2px solid white !important;
+  transform: translateZ(0) !important;
+  position: relative !important;
+  height: 44px !important;
 }
 
-.btn-look-secondary {
-  @apply bg-[#D946EF] hover:bg-[#C026D3] text-white font-bold !important;
-  opacity: 1 !important;
-  z-index: 999 !important;
-  pointer-events: auto !important;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2) !important;
-  border: 2px solid white !important;
+/* Primary button styling */
+.btn-primary-visible {
+  @apply bg-purple-600 hover:bg-purple-700 text-white font-bold always-visible-button;
 }
 
-/* Look button container */
-.look-buttons-container {
+/* Secondary button styling */
+.btn-secondary-visible {
+  @apply bg-pink-600 hover:bg-pink-700 text-white font-bold always-visible-button;
+}
+
+/* Fixed button container for look cards */
+.fixed-button-container {
   position: absolute !important;
-  bottom: 10px !important;
-  left: 0 !important;
-  right: 0 !important;
+  bottom: 16px !important;
+  left: 16px !important;
+  right: 16px !important;
   display: flex !important;
   justify-content: center !important;
   gap: 8px !important;
-  z-index: 999 !important;
-  padding: 0 16px !important;
+  z-index: 1000 !important;
   pointer-events: auto !important;
+  transform: translateZ(0) !important;
 }
 
-/* Fix for any opacity issues on buttons */
-.look-buttons-container button {
-  opacity: 1 !important;
-  height: 44px !important;
+/* Fix for canvas position */
+canvas.outfit-canvas {
+  position: relative !important;
+  z-index: 1 !important;
+  display: block !important;
 }

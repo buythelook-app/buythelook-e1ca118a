@@ -96,6 +96,7 @@ export const LookItem = ({
       </div>
       <div 
         className="mb-4 bg-white rounded-lg overflow-hidden relative group"
+        style={{ minHeight: "500px" }}
       >
         {/* Canvas for outfit visualization */}
         <LookCanvas 
@@ -106,12 +107,12 @@ export const LookItem = ({
           originalItems={items}
           showButtons={false}
         />
-          
-        {/* Improved button container with higher visibility */}
-        <div className="look-buttons-container">
+            
+        {/* Buttons container with maximum visibility */}
+        <div className="fixed-button-container">
           <Button 
             onClick={handleBuyLook}
-            className="btn-look-primary flex-1"
+            className="btn-primary-visible flex-1"
           >
             <ShoppingCart className="mr-2 h-5 w-5" />
             Buy the look
@@ -119,7 +120,7 @@ export const LookItem = ({
           
           <Button
             onClick={handleViewDetails}
-            className="btn-look-secondary flex-1"
+            className="btn-secondary-visible flex-1"
           >
             <Eye className="mr-2 h-5 w-5" />
             Watch this look
@@ -132,10 +133,13 @@ export const LookItem = ({
             e.stopPropagation();
             onShuffleLook(look.occasion);
           }}
-          className="absolute top-4 right-4 bg-[#8B5CF6] text-white p-3 rounded-full opacity-100 hover:bg-[#7C3AED] shadow-lg border-2 border-white z-50"
+          className="absolute top-4 right-4 bg-purple-600 text-white p-3 rounded-full hover:bg-purple-700 shadow-lg border-2 border-white"
+          style={{ 
+            zIndex: 999,
+            opacity: 1
+          }}
           title="Try different combination"
           disabled={isRefreshing}
-          style={{ zIndex: 999 }}
         >
           <Shuffle className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
         </button>

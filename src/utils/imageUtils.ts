@@ -3,8 +3,6 @@
  * Utility functions for handling image URLs and transformations.
  */
 
-import { getImageUrl as getSupabaseImageUrl } from "@/lib/supabase";
-
 // Block all Supabase storage items paths
 const BLOCKED_STORAGE_PREFIX = 'https://aqkeprwxxsryropnhfvm.supabase.co/storage/v1/object/public/items';
 
@@ -23,7 +21,7 @@ const isBlockedUrl = (url: string): boolean => {
   if (!url) return true;
   
   // Block all URLs from Supabase storage items path
-  if (url.startsWith(BLOCKED_STORAGE_PREFIX)) {
+  if (url.includes(BLOCKED_STORAGE_PREFIX)) {
     console.log('Blocking URL from Supabase storage items path:', url);
     return true;
   }
@@ -33,25 +31,21 @@ const isBlockedUrl = (url: string): boolean => {
 };
 
 /**
- * Transform image URL for display, prioritizing Supabase storage
+ * Transform image URL for display, fixing issues with placeholder images
  */
 export const transformImageUrl = (url: string): string => {
   // Return placeholder for empty URLs
   if (!url || url.trim() === '') {
-    console.log('Empty URL, using placeholder');
     return '/placeholder.svg';
   }
   
   // Check if URL is blocked
   if (isBlockedUrl(url)) {
-    console.log('Blocked URL detected, using placeholder:', url);
     return '/placeholder.svg';
   }
   
-  // If it's a Supabase storage path, don't convert it - use placeholder instead
+  // If it's a Supabase storage path, use placeholder
   if (url.startsWith('public/') || url.startsWith('items/')) {
-    // We're blocking all Supabase storage items, so return placeholder
-    console.log('Supabase storage path detected, using placeholder instead:', url);
     return '/placeholder.svg';
   }
   
@@ -62,9 +56,8 @@ export const transformImageUrl = (url: string): string => {
   
   // If it's already a full URL but not from blocked storage
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    // Block all URLs from Supabase storage items path
+    // Block all URLs from blocked storage
     if (isBlockedUrl(url)) {
-      console.log('Blocked full URL detected, using placeholder:', url);
       return '/placeholder.svg';
     }
     
@@ -73,12 +66,10 @@ export const transformImageUrl = (url: string): string => {
   }
   
   // For any other case, use placeholder to be safe
-  console.log('Using placeholder for unrecognized URL pattern:', url);
   return '/placeholder.svg';
 };
 
 // Get default images by item type
 export const getDefaultImageByType = (type: string): string => {
-  // Always return placeholder for any type to avoid problematic URLs
   return '/placeholder.svg';
 };

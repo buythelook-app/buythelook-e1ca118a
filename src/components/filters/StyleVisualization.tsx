@@ -1,66 +1,90 @@
 
-import { useEffect } from "react";
-import { StyleCanvas } from "../StyleCanvas";
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface StyleVisualizationProps {
   outfitSuggestions: any[];
 }
 
-export const StyleVisualization = ({ outfitSuggestions }: StyleVisualizationProps) => {
-  useEffect(() => {
-    outfitSuggestions.forEach((_, index) => {
-      const canvas = document.getElementById(`style-canvas-${index}`) as HTMLCanvasElement;
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.fillStyle = "#FFFFFF";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-      }
-    });
-  }, [outfitSuggestions]);
+export const StyleVisualization = ({ outfitSuggestions = [] }: StyleVisualizationProps) => {
+  if (!outfitSuggestions || outfitSuggestions.length === 0) {
+    return (
+      <div className="mt-8">
+        <h3 className="text-xl font-display font-semibold mb-4 text-white">Style Visualization</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="bg-netflix-card border-netflix-accent/20 h-64 flex items-center justify-center text-netflix-text">
+            <CardContent className="p-6 text-center">
+              <p>Generate outfit ideas to see color combinations here</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-netflix-card border-netflix-accent/20 h-64 flex items-center justify-center text-netflix-text">
+            <CardContent className="p-6 text-center">
+              <p>Generate outfit ideas to see color combinations here</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Only display up to 2 outfit suggestions
+  const displaySuggestions = outfitSuggestions.slice(0, 2);
 
   return (
     <div className="mt-8">
-      <h3 className="text-lg font-semibold mb-4">Style Visualization</h3>
-      <div className="grid grid-cols-2 gap-4">
-        {outfitSuggestions.length > 0 ? (
-          outfitSuggestions.map((outfit, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
-              <canvas 
-                id={`style-canvas-${index}`} 
-                className="w-full h-[500px] object-cover"
-                width="450"
-                height="600"
-              ></canvas>
-              <StyleCanvas 
-                id={`style-canvas-${index}`} 
-                styleType={index} 
-                outfitData={outfit}
-                occasion={outfit.occasion}
-              />
-              <div className="p-3 text-center">
-                <p className="text-sm font-medium">
-                  {outfit.occasion ? outfit.occasion.charAt(0).toUpperCase() + outfit.occasion.slice(1) : `Style Option ${index + 1}`}
+      <h3 className="text-xl font-display font-semibold mb-4 text-white">Style Visualization</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {displaySuggestions.map((suggestion, index) => (
+          <Card key={index} className="bg-netflix-card border-netflix-accent/20">
+            <CardContent className="p-6">
+              <div className="flex flex-col space-y-4">
+                {/* Color palette */}
+                <div className="flex justify-center space-x-2">
+                  {suggestion.top && (
+                    <div 
+                      className="w-8 h-8 rounded-full"
+                      style={{ backgroundColor: suggestion.top }}
+                      title="Top"
+                    />
+                  )}
+                  {suggestion.bottom && (
+                    <div 
+                      className="w-8 h-8 rounded-full"
+                      style={{ backgroundColor: suggestion.bottom }}
+                      title="Bottom"
+                    />
+                  )}
+                  {suggestion.shoes && (
+                    <div 
+                      className="w-8 h-8 rounded-full"
+                      style={{ backgroundColor: suggestion.shoes }}
+                      title="Shoes"
+                    />
+                  )}
+                  {suggestion.coat && (
+                    <div 
+                      className="w-8 h-8 rounded-full"
+                      style={{ backgroundColor: suggestion.coat }}
+                      title="Coat"
+                    />
+                  )}
+                </div>
+                
+                {/* Description */}
+                <p className="text-netflix-text text-sm">
+                  {suggestion.description || "A stylish outfit combination."}
                 </p>
+                
+                {/* Occasion */}
+                {suggestion.occasion && (
+                  <div className="inline-block bg-netflix-accent/20 text-netflix-accent text-xs px-2 py-1 rounded">
+                    {suggestion.occasion}
+                  </div>
+                )}
               </div>
-            </div>
-          ))
-        ) : (
-          Array.from({ length: 2 }).map((_, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
-              <canvas 
-                id={`style-canvas-${index}`} 
-                className="w-full h-[500px] object-cover"
-                width="450"
-                height="600"
-              ></canvas>
-              <div className="p-3 text-center">
-                <p className="text-sm font-medium">Loading styles...</p>
-              </div>
-            </div>
-          ))
-        )}
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );

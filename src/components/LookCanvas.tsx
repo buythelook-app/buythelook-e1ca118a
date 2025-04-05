@@ -6,6 +6,7 @@ import { ShoppingCart, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "@/components/Cart";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 interface LookCanvasProps {
   items: CanvasItem[];
@@ -34,6 +35,18 @@ export const LookCanvas = ({
   const navigate = useNavigate();
   const { addItems } = useCartStore();
   const { toast } = useToast();
+
+  // Log rendering information for debugging
+  useEffect(() => {
+    console.log("LookCanvas rendering with:", {
+      itemsCount: items?.length || 0,
+      showButtons,
+      hasOriginalItems: !!originalItems && originalItems.length > 0,
+      width,
+      height,
+      occasion
+    });
+  }, [items, showButtons, originalItems, width, height, occasion]);
 
   const handleBuyLook = () => {
     if (originalItems && originalItems.length > 0) {
@@ -68,7 +81,7 @@ export const LookCanvas = ({
     <div className="relative text-center w-full">
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
-          <div className="h-8 w-8 rounded-full border-2 border-t-transparent border-netflix-accent animate-spin"></div>
+          <div className="h-8 w-8 rounded-full border-2 border-t-transparent border-purple-600 animate-spin"></div>
         </div>
       )}
       {canvasError && (
@@ -82,7 +95,7 @@ export const LookCanvas = ({
       <div className="relative">
         <canvas
           ref={canvasRef}
-          className="bg-white border rounded-lg shadow-lg mx-auto"
+          className="bg-white border rounded-lg shadow-lg mx-auto outfit-canvas"
           style={{ 
             maxWidth: '100%',
             width: `${width}px`,
@@ -93,14 +106,10 @@ export const LookCanvas = ({
         />
         
         {showButtons && originalItems && originalItems.length > 0 && (
-          <div 
-            className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 z-50"
-            style={{ pointerEvents: 'auto' }}
-          >
+          <div className="fixed-button-container">
             <Button 
               onClick={handleBuyLook}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-lg flex-1 text-xs h-10 opacity-100 text-white font-bold border border-white"
-              style={{ opacity: 1 }}
+              className="btn-primary-visible flex-1"
             >
               <ShoppingCart className="mr-1 h-4 w-4" />
               Buy the look
@@ -108,8 +117,7 @@ export const LookCanvas = ({
             
             <Button
               onClick={handleViewDetails}
-              className="bg-[#D946EF] hover:bg-[#C026D3] shadow-lg flex-1 text-xs h-10 opacity-100 text-white font-bold border border-white"
-              style={{ opacity: 1 }}
+              className="btn-secondary-visible flex-1"
             >
               <Eye className="mr-1 h-4 w-4" />
               Watch this look
