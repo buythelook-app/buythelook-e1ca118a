@@ -49,5 +49,13 @@ export const styleRecommendations: Record<string, StyleRecommendations> = {
     accessory: { type: "Simple Necklace", color: "gold", style: "delicate" },
     sunglasses: { type: "Rectangular", color: "tortoise", style: "frameless" },
     outerwear: { type: "Unstructured Coat", color: "oatmeal", style: "clean-lined" }
+  },
+  Casual: {
+    top: { type: "T-shirt", color: "light blue", style: "relaxed" },
+    bottom: { type: "Jeans", color: "medium blue", style: "straight" },
+    shoes: { type: "Sneakers", color: "white", style: "comfortable" },
+    accessory: { type: "Canvas Belt", color: "navy", style: "casual" },
+    sunglasses: { type: "Wayfarer", color: "black", style: "classic" },
+    outerwear: { type: "Denim Jacket", color: "blue", style: "relaxed" }
   }
 };
