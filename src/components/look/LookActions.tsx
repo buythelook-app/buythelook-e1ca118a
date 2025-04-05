@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useCartStore } from "../Cart";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 interface LookActionsProps {
   id: string;
@@ -20,10 +21,23 @@ export const LookActions = ({ id, image, title, price, category, items = [] }: L
   const { addLook, looks } = useCartStore();
   const isInCart = looks.some(look => look.id === id);
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    console.log(`LookActions mounted for ${id}, isFavorite: ${isFavorite(id)}`);
+  }, [id, isFavorite]);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const look = { id, image, title, price, category };
+    const look = { 
+      id, 
+      image, 
+      title, 
+      price, 
+      category,
+      items: items.length > 0 ? items : undefined
+    };
+    
+    console.log("Look being added/removed:", look);
     
     if (isFavorite(id)) {
       removeFavorite(id);
@@ -39,7 +53,7 @@ export const LookActions = ({ id, image, title, price, category, items = [] }: L
     const lookItems = items.map(item => ({
       ...item,
       title: `Item from ${title}`,
-      price: (parseFloat(price) / items.length).toFixed(2),
+      price: (parseFloat(price.replace(/[^0-9.]/g, '') || '0') / items.length).toFixed(2),
       lookId: id
     }));
     

@@ -9,6 +9,7 @@ interface FavoriteLook {
   title: string;
   price: string;
   category: string;
+  items?: Array<{ id: string; image: string; }>;
 }
 
 interface FavoritesStore {
@@ -58,40 +59,57 @@ export const useFavoritesStore = create<FavoritesStore>()(
         set({ favorites });
       },
       addFavorite: async (look) => {
+        console.log('Adding favorite:', look);
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { error } = await supabase
-          .from('favorites')
-          .insert({
-            user_id: user.id,
-            item_id: look.id
-          });
-
-        if (error) {
-          console.error('Error adding favorite:', error);
+        
+        // For client-side only storage when user is not authenticated
+        if (!user) {
+          set(state => ({
+            favorites: [...state.favorites.filter(f => f.id !== look.id), look]
+          }));
           return;
         }
 
+        try {
+          const { error } = await supabase
+            .from('favorites')
+            .insert({
+              user_id: user.id,
+              item_id: look.id
+            });
+
+          if (error) {
+            console.error('Error adding favorite to Supabase:', error);
+          }
+        } catch (e) {
+          console.error('Failed to add to Supabase favorites:', e);
+        }
+
+        // Always update local state regardless of API success
         set(state => ({
-          favorites: [...state.favorites, look]
+          favorites: [...state.favorites.filter(f => f.id !== look.id), look]
         }));
       },
       removeFavorite: async (id) => {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        
+        if (user) {
+          try {
+            const { error } = await supabase
+              .from('favorites')
+              .delete()
+              .eq('user_id', user.id)
+              .eq('item_id', id);
 
-        const { error } = await supabase
-          .from('favorites')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('item_id', id);
-
-        if (error) {
-          console.error('Error removing favorite:', error);
-          return;
+            if (error) {
+              console.error('Error removing favorite:', error);
+            }
+          } catch (e) {
+            console.error('Failed to remove from Supabase favorites:', e);
+          }
         }
 
+        // Always update local state regardless of API success
         set(state => ({
           favorites: state.favorites.filter(look => look.id !== id)
         }));
