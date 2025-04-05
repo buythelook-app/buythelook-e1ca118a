@@ -46,7 +46,7 @@ export const MyList = () => {
                     <LookCard
                       key={look.id}
                       {...look}
-                      items={look.items}
+                      items={look.items || []}
                       isCompact={true} // Use compact mode for My List page
                     />
                   </div>
@@ -59,9 +59,9 @@ export const MyList = () => {
                       <LookBreakdown 
                         items={look.items.map(item => ({
                           id: item.id,
-                          name: `Item from ${look.title}`,
-                          type: "Item",
-                          price: "",
+                          name: item.name || `Item from ${look.title}`,
+                          type: item.type || "Item",
+                          price: item.price || "",
                           image: item.image,
                           description: `Part of ${look.title} look` // Add the required description field
                         }))}

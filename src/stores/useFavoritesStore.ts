@@ -9,7 +9,13 @@ interface FavoriteLook {
   title: string;
   price: string;
   category: string;
-  items?: Array<{ id: string; image: string; }>;
+  items?: Array<{ 
+    id: string; 
+    image: string; 
+    name?: string;
+    price?: string;
+    type?: string;
+  }>;
 }
 
 interface FavoritesStore {
@@ -59,7 +65,7 @@ export const useFavoritesStore = create<FavoritesStore>()(
         set({ favorites });
       },
       addFavorite: async (look) => {
-        console.log('Adding favorite:', look);
+        console.log('Adding favorite with items:', look);
         const { data: { user } } = await supabase.auth.getUser();
         
         // For client-side only storage when user is not authenticated

@@ -1,3 +1,4 @@
+
 import { Heart, ShoppingCart, Eye } from "lucide-react";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
@@ -9,6 +10,9 @@ import { useEffect } from "react";
 interface LookItem {
   id: string;
   image: string;
+  name?: string;
+  price?: string;
+  type?: string;
 }
 
 interface LookActionsProps {
@@ -33,10 +37,13 @@ export const LookActions = ({ id, image, title, price, category, items = [] }: L
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     
-    // Make sure items have proper format with id and image
+    // Make sure items have proper format with id, image, and other available properties
     const processedItems = items.map(item => ({
       id: item.id || `item-${Math.random().toString(36).substring(2, 9)}`,
-      image: item.image
+      image: item.image,
+      name: item.name || `Item from ${title}`,
+      price: item.price || '',
+      type: item.type || ''
     }));
     
     const look = { 
