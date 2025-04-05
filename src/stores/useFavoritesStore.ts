@@ -41,69 +41,90 @@ export const useFavoritesStore = create<FavoritesStore>()(
     (set, get) => ({
       favorites: [],
       loadFavorites: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          // If no user is authenticated, use local storage only
+          if (!user) {
+            console.log('No user authenticated, using local storage only');
+            return;
+          }
 
-        // First, fetch the favorite items
-        const { data, error } = await supabase
-          .from('favorites')
-          .select('item_id')
-          .eq('user_id', user.id);
+          // Fetch the favorite items
+          const { data, error } = await supabase
+            .from('favorites')
+            .select('item_id')
+            .eq('user_id', user.id);
 
-        if (error) {
-          console.error('Error loading favorites:', error);
-          return;
-        }
+          if (error) {
+            console.error('Error loading favorites:', error);
+            return;
+          }
 
-        if (!data || data.length === 0) {
-          console.log('No favorites found for user');
-          set({ favorites: [] });
-          return;
-        }
+          if (!data || data.length === 0) {
+            console.log('No favorites found for user');
+            set({ favorites: [] });
+            return;
+          }
 
-        // Extract item IDs
-        const itemIds = data.map(fav => fav.item_id).filter(Boolean);
-        
-        if (itemIds.length === 0) {
-          console.log('No valid item IDs found in favorites');
-          set({ favorites: [] });
-          return;
-        }
+          // Extract item IDs
+          const itemIds = data.map(fav => fav.item_id).filter(Boolean);
+          
+          if (itemIds.length === 0) {
+            console.log('No valid item IDs found in favorites');
+            set({ favorites: [] });
+            return;
+          }
 
-        // Now fetch the actual items data
-        const { data: itemsData, error: itemsError } = await supabase
-          .from('items')
-          .select('*')
-          .in('id', itemIds);
+          // Now fetch the actual items data
+          const { data: itemsData, error: itemsError } = await supabase
+            .from('items')
+            .select('*')
+            .in('id', itemIds);
 
-        if (itemsError) {
-          console.error('Error loading item details:', itemsError);
-          return;
-        }
+          if (itemsError) {
+            console.error('Error loading item details:', itemsError);
+            return;
+          }
 
-        // Convert to favorites format
-        const favorites = itemsData.map(item => ({
-          id: item.id,
-          image: item.image || '',
-          title: item.name || '',
-          price: item.price || '',
-          category: item.type || '',
-          items: [{
+          // Convert to favorites format with items array properly populated
+          const favorites = itemsData.map(item => ({
             id: item.id,
             image: item.image || '',
-            name: item.name || '',
+            title: item.name || '',
             price: item.price || '',
-            type: item.type || ''
-          }]
-        }));
+            category: item.type || '',
+            items: [{
+              id: item.id,
+              image: item.image || '',
+              name: item.name || '',
+              price: item.price || '',
+              type: item.type || ''
+            }]
+          }));
 
-        console.log('Loaded favorites with items:', favorites);
-        set({ favorites });
+          console.log('Loaded favorites with items:', favorites);
+          set({ favorites });
+        } catch (err) {
+          console.error('Exception in loadFavorites:', err);
+        }
       },
       addFavorite: async (look) => {
         console.log('Adding favorite with items:', look);
         const { data: { user } } = await supabase.auth.getUser();
         
+        // Make sure items are properly set
+        if (!look.items || look.items.length === 0) {
+          console.warn('No items in look, adding placeholder item');
+          look.items = [{
+            id: look.id,
+            image: look.image,
+            name: look.title,
+            price: look.price,
+            type: look.category
+          }];
+        }
+
         // For client-side only storage when user is not authenticated
         if (!user) {
           set(state => ({

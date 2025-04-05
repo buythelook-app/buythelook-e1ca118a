@@ -47,13 +47,13 @@ export const MyList = () => {
                       key={look.id}
                       {...look}
                       items={look.items || []}
-                      isCompact={true} // Use compact mode for My List page
+                      isCompact={true}
                     />
                   </div>
                   
                   {/* Right side - Look items breakdown */}
                   <div className="p-4 border-t md:border-t-0 md:border-l border-gray-700">
-                    <h3 className="text-lg font-semibold mb-3">{look.category || 'Look'} Items</h3>
+                    <h3 className="text-lg font-semibold mb-3">{look.title || look.category} Items</h3>
                     
                     {look.items && look.items.length > 0 ? (
                       <LookBreakdown 
@@ -63,7 +63,7 @@ export const MyList = () => {
                           type: item.type || "Item",
                           price: item.price || "",
                           image: item.image,
-                          description: `Part of ${look.title} look` // Add the required description field
+                          description: item.name || `Part of ${look.title} look`
                         }))}
                         occasion={look.category}
                       />

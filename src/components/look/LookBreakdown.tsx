@@ -13,8 +13,10 @@ interface LookBreakdownProps {
 export const LookBreakdown = ({ items, occasion }: LookBreakdownProps) => {
   const { addItem } = useCartStore();
   
+  console.log("LookBreakdown items:", items);
+  
   if (!items || items.length === 0) {
-    return null;
+    return <div className="p-4 text-center">No items found for this look</div>;
   }
 
   const handleAddToCart = (item: DashboardItem) => {

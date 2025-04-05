@@ -1,4 +1,3 @@
-
 import { Heart, ShoppingCart, Eye } from "lucide-react";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
@@ -52,7 +51,7 @@ export const LookActions = ({ id, image, title, price, category, items = [] }: L
       title, 
       price, 
       category,
-      items: processedItems.length > 0 ? processedItems : undefined
+      items: processedItems
     };
     
     console.log("Look being added/removed:", look);
