@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -42,20 +43,20 @@ export const StyleGuide = () => {
 
   return (
     <div>
-    <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
+    <div className="min-h-screen bg-netflix-background text-white p-6">
       <div className="container max-w-2xl mx-auto">
         <Button 
           variant="ghost" 
           onClick={() => navigate(-1)}
-          className="mb-6"
+          className="mb-6 text-white"
         >
           ← Back
         </Button>
 
         <Tabs defaultValue="quiz" className="space-y-6">
           <TabsList className="grid grid-cols-2 bg-netflix-card">
-            <TabsTrigger value="quiz">Quiz Results</TabsTrigger>
-            <TabsTrigger value="preferences">Style Preferences</TabsTrigger>
+            <TabsTrigger value="quiz" className="text-white data-[state=active]:bg-netflix-accent data-[state=active]:text-white">Quiz Results</TabsTrigger>
+            <TabsTrigger value="preferences" className="text-white data-[state=active]:bg-netflix-accent data-[state=active]:text-white">Style Preferences</TabsTrigger>
           </TabsList>
 
           <TabsContent value="quiz">
@@ -66,30 +67,30 @@ export const StyleGuide = () => {
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 rounded-lg bg-netflix-background">
-                    <h3 className="font-medium mb-2">Basic Info</h3>
-                    <p className="text-sm">Gender: {quizResults.gender}</p>
-                    <p className="text-sm">Height: {quizResults.height} cm</p>
-                    <p className="text-sm">Weight: {quizResults.weight} kg</p>
+                    <h3 className="font-medium mb-2 text-white">Basic Info</h3>
+                    <p className="text-sm text-gray-300">Gender: {quizResults.gender}</p>
+                    <p className="text-sm text-gray-300">Height: {quizResults.height} cm</p>
+                    <p className="text-sm text-gray-300">Weight: {quizResults.weight} kg</p>
                   </div>
                   <div className="p-4 rounded-lg bg-netflix-background">
-                    <h3 className="font-medium mb-2">Measurements</h3>
-                    <p className="text-sm">Waist: {quizResults.measurements.waist} cm</p>
-                    <p className="text-sm">Chest: {quizResults.measurements.chest} cm</p>
+                    <h3 className="font-medium mb-2 text-white">Measurements</h3>
+                    <p className="text-sm text-gray-300">Waist: {quizResults.measurements.waist} cm</p>
+                    <p className="text-sm text-gray-300">Chest: {quizResults.measurements.chest} cm</p>
                   </div>
                 </div>
 
                 <div className="p-4 rounded-lg bg-netflix-background">
-                  <h3 className="font-medium mb-2">Body Shape</h3>
-                  <p className="text-sm capitalize">{quizResults.bodyShape}</p>
+                  <h3 className="font-medium mb-2 text-white">Body Shape</h3>
+                  <p className="text-sm capitalize text-gray-300">{quizResults.bodyShape}</p>
                 </div>
 
                 <div className="p-4 rounded-lg bg-netflix-background">
-                  <h3 className="font-medium mb-2">Color Preferences</h3>
+                  <h3 className="font-medium mb-2 text-white">Color Preferences</h3>
                   <div className="flex flex-wrap gap-2">
                     {quizResults.colorPreferences.map((color) => (
                       <span 
                         key={color}
-                        className="px-3 py-1 rounded-full bg-netflix-accent/20 text-sm capitalize"
+                        className="px-3 py-1 rounded-full bg-netflix-accent/20 text-sm capitalize text-white"
                       >
                         {color}
                       </span>
@@ -99,7 +100,7 @@ export const StyleGuide = () => {
 
                 <Button 
                   onClick={() => navigate('/quiz')} 
-                  className="w-full bg-netflix-accent hover:bg-netflix-accent/90"
+                  className="w-full bg-netflix-accent hover:bg-netflix-accent/90 text-white"
                 >
                   Retake Style Quiz
                 </Button>
@@ -112,7 +113,7 @@ export const StyleGuide = () => {
               <CardContent className="p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="bg-netflix-card p-4 rounded-lg space-y-4">
-                    <h2 className="font-medium">Your Sizes</h2>
+                    <h2 className="font-medium text-white">Your Sizes</h2>
                     <div className="space-y-2">
                       <Input
                         placeholder="Top Size"
@@ -121,7 +122,7 @@ export const StyleGuide = () => {
                           ...preferences,
                           sizes: { ...preferences.sizes, top: e.target.value }
                         })}
-                        className="bg-netflix-background"
+                        className="bg-netflix-background text-white"
                       />
                       <Input
                         placeholder="Bottom Size"
@@ -130,7 +131,7 @@ export const StyleGuide = () => {
                           ...preferences,
                           sizes: { ...preferences.sizes, bottom: e.target.value }
                         })}
-                        className="bg-netflix-background"
+                        className="bg-netflix-background text-white"
                       />
                       <Input
                         placeholder="Shoe Size"
@@ -139,13 +140,13 @@ export const StyleGuide = () => {
                           ...preferences,
                           sizes: { ...preferences.sizes, shoes: e.target.value }
                         })}
-                        className="bg-netflix-background"
+                        className="bg-netflix-background text-white"
                       />
                     </div>
                   </div>
 
                   <div className="bg-netflix-card p-4 rounded-lg space-y-4">
-                    <h2 className="font-medium">Preferred Stores</h2>
+                    <h2 className="font-medium text-white">Preferred Stores</h2>
                     <div className="grid grid-cols-2 gap-2">
                       {["Zara", "H&M", "Uniqlo", "Nike"].map((store) => (
                         <Button
@@ -158,7 +159,7 @@ export const StyleGuide = () => {
                               : [...preferences.stores, store];
                             setPreferences({ ...preferences, stores: newStores });
                           }}
-                          className="w-full"
+                          className={`w-full ${preferences.stores.includes(store) ? "text-white" : "text-gray-300"}`}
                         >
                           {store}
                         </Button>
@@ -166,7 +167,7 @@ export const StyleGuide = () => {
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full">
+                  <Button type="submit" className="w-full text-white">
                     Save Preferences
                   </Button>
                 </form>
