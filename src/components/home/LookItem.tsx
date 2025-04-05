@@ -1,8 +1,11 @@
 
 import { useNavigate } from "react-router-dom";
 import { LookCanvas } from "@/components/LookCanvas";
-import { Shuffle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Eye, ShoppingCart, Shuffle } from "lucide-react";
 import { DashboardItem } from "@/types/lookTypes";
+import { useCartStore } from "@/components/Cart";
+import { useToast } from "@/hooks/use-toast";
 
 interface LookItemProps {
   occasion: string;
@@ -22,6 +25,8 @@ export const LookItem = ({
   index
 }: LookItemProps) => {
   const navigate = useNavigate();
+  const { addItems } = useCartStore();
+  const { toast } = useToast();
   
   if (!items || items.length === 0) return null;
   
@@ -53,6 +58,24 @@ export const LookItem = ({
     navigate(`/suggestions`);
   };
 
+  const handleBuyLook = () => {
+    const cartItems = items.map(item => ({
+      id: item.id,
+      title: item.name || item.title || "",
+      price: item.price || "$0.00",
+      image: item.image
+    }));
+    
+    addItems(cartItems);
+    
+    toast({
+      title: "Success",
+      description: `${occasion} look added to your cart`,
+    });
+    
+    navigate('/cart');
+  };
+
   return (
     <div 
       key={look.id}
@@ -63,16 +86,34 @@ export const LookItem = ({
         <span className="text-sm text-netflix-accent">{look.occasion}</span>
       </div>
       <div 
-        className="mb-4 bg-white rounded-lg overflow-hidden relative group cursor-pointer"
-        onClick={handleViewDetails}
+        className="mb-4 bg-white rounded-lg overflow-hidden relative group"
       >
         <LookCanvas items={look.items} width={300} height={500} occasion={occasion} />
+        
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button 
+            onClick={handleBuyLook}
+            className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8"
+          >
+            <ShoppingCart className="mr-1 h-3 w-3" />
+            Buy the look
+          </Button>
+          
+          <Button
+            onClick={handleViewDetails}
+            className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-md flex-1 text-xs h-8"
+          >
+            <Eye className="mr-1 h-3 w-3" />
+            Watch this look
+          </Button>
+        </div>
+        
         <button
           onClick={(e) => {
-            e.stopPropagation(); // Prevent triggering the canvas click
+            e.stopPropagation(); // Prevent triggering other click handlers
             onShuffleLook(look.occasion);
           }}
-          className="absolute bottom-4 right-4 bg-netflix-accent text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute top-4 right-4 bg-netflix-accent text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
           title="Try different combination"
           disabled={isRefreshing}
         >
@@ -81,12 +122,6 @@ export const LookItem = ({
       </div>
       <div className="flex justify-between items-center">
         <p className="text-netflix-accent font-semibold">{look.price}</p>
-        <button
-          onClick={handleViewDetails}
-          className="bg-netflix-accent text-white px-4 py-2 rounded-lg hover:bg-netflix-accent/90 transition-colors text-sm"
-        >
-          View Details
-        </button>
       </div>
     </div>
   );
