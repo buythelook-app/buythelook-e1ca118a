@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { fetchFirstOutfitSuggestion } from "@/services/lookService";
 import { Button } from "./ui/button";
 import { Loader2, ShoppingCart, Shuffle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -9,6 +8,8 @@ import { LookCanvas } from "./LookCanvas";
 import { useCartStore } from "./Cart";
 import { HomeButton } from "./HomeButton";
 import { StyleRulers } from "./look/StyleRulers";
+import { fetchFirstOutfitSuggestion } from "@/services/lookService";
+import { useOutfitGeneration } from "@/hooks/useOutfitGeneration";
 import {
   Card,
   CardContent,
@@ -42,8 +43,8 @@ export const LookSuggestions = () => {
   const [elegance, setElegance] = useState(75);
   const [colorIntensity, setColorIntensity] = useState(60);
   const [userStylePreference, setUserStylePreference] = useState<string | null>(null);
-  const [forceRefresh, setForceRefresh] = useState(false);
-
+  const { isGenerating, generateOutfit } = useOutfitGeneration();
+  
   const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
 
   useEffect(() => {
@@ -66,28 +67,24 @@ export const LookSuggestions = () => {
   }, []);
 
   const { data: dashboardItems, isLoading, error, refetch } = useQuery({
-    queryKey: ['firstOutfitSuggestion', forceRefresh],
-    queryFn: () => fetchFirstOutfitSuggestion(forceRefresh),
+    queryKey: ['firstOutfitSuggestion'],
+    queryFn: () => fetchFirstOutfitSuggestion(false),
     retry: 2,
     staleTime: 0,
     refetchOnWindowFocus: false,
     enabled: hasQuizData,
     meta: {
-      onError: () => {
-        toast({
-          title: "Error",
-          description: "Failed to load outfit suggestions. Please try again.",
-          variant: "destructive",
-        });
+      onSettled: (data, error) => {
+        if (error) {
+          toast({
+            title: "Error",
+            description: "Failed to load outfit suggestions. Please try again.",
+            variant: "destructive",
+          });
+        }
       }
     }
   });
-
-  useEffect(() => {
-    if (forceRefresh) {
-      setForceRefresh(false);
-    }
-  }, [dashboardItems, forceRefresh]);
 
   const handleAddToCart = (items: Array<any> | any) => {
     const itemsToAdd = Array.isArray(items) ? items : [items];
@@ -215,18 +212,15 @@ export const LookSuggestions = () => {
   const handleTryDifferentLook = async () => {
     setIsRefetching(true);
     try {
-      setForceRefresh(true);
-      await refetch();
-      toast({
-        title: "New Look Generated",
-        description: "Here's a fresh style combination for you!",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to generate a new look. Please try again.",
-        variant: "destructive",
-      });
+      const result = await generateOutfit(true);
+      
+      if (result.success) {
+        await refetch();
+        toast({
+          title: "New Look Generated",
+          description: "Here's a fresh style combination for you!",
+        });
+      }
     } finally {
       setIsRefetching(false);
     }
@@ -296,7 +290,7 @@ export const LookSuggestions = () => {
               <div className="relative w-[300px]">
                 <div className="bg-white rounded-lg shadow-lg overflow-hidden pb-4">
                   <div className="relative">
-                    {isRefetching ? (
+                    {(isRefetching || isGenerating) ? (
                       <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
                         <Loader2 className="h-8 w-8 animate-spin text-netflix-accent" />
                       </div>
@@ -306,7 +300,7 @@ export const LookSuggestions = () => {
                       <Button 
                         onClick={() => handleAddToCart(dashboardItems)}
                         className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
-                        disabled={isRefetching}
+                        disabled={isRefetching || isGenerating}
                       >
                         <ShoppingCart className="mr-1 h-3 w-3" />
                         Buy the look
@@ -314,7 +308,7 @@ export const LookSuggestions = () => {
                       <Button
                         onClick={handleTryDifferentLook}
                         className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
-                        disabled={isRefetching}
+                        disabled={isRefetching || isGenerating}
                       >
                         <Shuffle className="mr-1 h-3 w-3" />
                         Try different
@@ -335,7 +329,7 @@ export const LookSuggestions = () => {
                       size="icon"
                       onClick={() => handleAddToCart(item)}
                       className="bg-white/10 hover:bg-netflix-accent/20 hover:text-netflix-accent rounded-full shadow-md"
-                      disabled={isRefetching}
+                      disabled={isRefetching || isGenerating}
                     >
                       <ShoppingCart className="h-5 w-5" />
                     </Button>
