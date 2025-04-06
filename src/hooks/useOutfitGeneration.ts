@@ -20,6 +20,10 @@ interface StyleRecommendation {
 const shownItemIds = new Set<string>();
 const usedShoeIds = new Set<string>();
 
+// Track API attempt counts to avoid infinite loops
+let attemptCounter = 0;
+const MAX_ATTEMPTS = 5;
+
 export function useOutfitGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
@@ -28,6 +32,18 @@ export function useOutfitGeneration() {
     setIsGenerating(true);
     
     try {
+      // Reset attempt counter if this is a user-initiated refresh
+      if (forceRefresh) {
+        attemptCounter = 0;
+      }
+      
+      // Safety check to prevent infinite loops
+      if (attemptCounter >= MAX_ATTEMPTS) {
+        throw new Error('Maximum generation attempts reached');
+      }
+      
+      attemptCounter++;
+      
       // Get user style data
       const styleData = localStorage.getItem('styleAnalysis');
       if (!styleData) {
@@ -47,8 +63,9 @@ export function useOutfitGeneration() {
       // Fetch a new outfit suggestion
       const outfitItems = await fetchFirstOutfitSuggestion(forceRefresh);
       
+      console.log("Outfit items received:", outfitItems);
+      
       // Check if this is the same outfit we've shown before
-      const outfitSignature = outfitItems.map(item => item.id).join('-');
       const hasDuplicates = outfitItems.some(item => shownItemIds.has(item.id));
       
       // Check specifically for duplicate shoes
@@ -60,16 +77,13 @@ export function useOutfitGeneration() {
         console.log('Found duplicate items in outfit, regenerating...', 
                     hasDuplicates ? 'Duplicate items' : 'Duplicate shoes');
         
-        // If this is already a refresh attempt, don't get stuck in a loop
-        if (forceRefresh) {
-          // Try with a different mood to get different results
-          const moods = ['elegant', 'energized', 'casual', 'relaxed', 'unique'];
-          const currentMood = localStorage.getItem('current-mood') || 'energized';
-          const nextMoodIndex = moods.indexOf(currentMood) + 1;
-          const newMood = moods[nextMoodIndex % moods.length];
-          localStorage.setItem('current-mood', newMood);
-          console.log(`Trying with different mood: ${newMood}`);
-        }
+        // Try with a different mood to get different results
+        const moods = ['elegant', 'energized', 'casual', 'relaxed', 'unique'];
+        const currentMood = localStorage.getItem('current-mood') || 'energized';
+        const nextMoodIndex = moods.indexOf(currentMood) + 1;
+        const newMood = moods[nextMoodIndex % moods.length];
+        localStorage.setItem('current-mood', newMood);
+        console.log(`Trying with different mood: ${newMood}`);
         
         return generateOutfit(true);
       }
@@ -79,6 +93,8 @@ export function useOutfitGeneration() {
       const hasTop = itemTypes.includes('top');
       const hasBottom = itemTypes.includes('bottom');
       const hasShoes = itemTypes.includes('shoes');
+      
+      console.log(`Outfit completeness check: top=${hasTop}, bottom=${hasBottom}, shoes=${hasShoes}`);
       
       if (!hasTop || !hasBottom || !hasShoes) {
         console.warn(`Incomplete outfit generated: top=${hasTop}, bottom=${hasBottom}, shoes=${hasShoes}`);
@@ -128,6 +144,9 @@ export function useOutfitGeneration() {
         }
       }
       
+      // Reset the attempt counter since we successfully generated an outfit
+      attemptCounter = 0;
+      
       return {
         success: true,
         items: outfitItems
@@ -145,6 +164,8 @@ export function useOutfitGeneration() {
       };
     } finally {
       setIsGenerating(false);
+      // Reset the attempt counter after the operation completes
+      attemptCounter = 0;
     }
   };
   

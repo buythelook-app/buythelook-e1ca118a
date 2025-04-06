@@ -1,4 +1,3 @@
-
 import { DashboardItem, OutfitItem } from "@/types/lookTypes";
 import { EventType, EVENT_TO_STYLES } from "@/components/filters/eventTypes";
 
@@ -250,25 +249,31 @@ const convertToDashboardItem = (item: any, type: string, userStyle: string = '')
     return null;
   }
   
+  // Be less strict with filtering for minimalist style
   if (userStyle === 'Minimalist') {
     if (type === 'top' && !hasNaturalColor(item)) {
       console.log('Item does not have natural colors for minimalist style:', item.product_name);
-      return null;
+      // Be more lenient - only filter out some items
+      if (Math.random() > 0.7) {
+        return null;
+      }
     }
     
     if (!isMinimalistStyleItem(item)) {
       console.log('Item does not match minimalist style criteria:', item.product_name);
-      if (Math.random() > 0.3) {
+      // Be more lenient - only filter out some items
+      if (Math.random() > 0.6) {
         return null;
       }
     }
   }
   
-  // For Casual style, prioritize casual items
+  // For Casual style, prioritize casual items but be more lenient
   if (userStyle === 'Casual') {
     if (!isCasualStyleItem(item)) {
       console.log('Item does not match casual style criteria:', item.product_name);
-      if (Math.random() > 0.5) { // Higher threshold to include non-casual items
+      // Be more lenient - only filter out some items
+      if (Math.random() > 0.7) {
         return null;
       }
     }
@@ -323,52 +328,73 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
     const items: DashboardItem[] = [];
 
     if (Array.isArray(response.data) && response.data.length > 0) {
-      let bestMatch = response.data[0];
-      
-      if (preferredStyle === 'Minimalist') {
-        for (const outfit of response.data) {
-          const topIsMinimalist = outfit.top ? isMinimalistStyleItem(outfit.top) : false;
-          const bottomIsMinimalist = outfit.bottom ? isMinimalistStyleItem(outfit.bottom) : false;
-          const shoesIsMinimalist = outfit.shoes ? isMinimalistStyleItem(outfit.shoes) : false;
+      // Try multiple outfits until we find one with all required items
+      for (const outfit of response.data) {
+        const topItem = convertToDashboardItem(outfit.top, 'top', preferredStyle);
+        const bottomItem = convertToDashboardItem(outfit.bottom, 'bottom', preferredStyle);
+        const shoesItem = convertToDashboardItem(outfit.shoes, 'shoes', preferredStyle);
+        
+        // If we have all three required items, use this outfit
+        if (topItem && bottomItem && shoesItem) {
+          items.push(topItem, bottomItem, shoesItem);
           
-          const currentMatchCount = (topIsMinimalist ? 1 : 0) + (bottomIsMinimalist ? 1 : 0) + (shoesIsMinimalist ? 1 : 0);
-          const bestMatchCount = 
-            (bestMatch.top ? (isMinimalistStyleItem(bestMatch.top) ? 1 : 0) : 0) + 
-            (bestMatch.bottom ? (isMinimalistStyleItem(bestMatch.bottom) ? 1 : 0) : 0) + 
-            (bestMatch.shoes ? (isMinimalistStyleItem(bestMatch.shoes) ? 1 : 0) : 0);
-          
-          if (currentMatchCount > bestMatchCount) {
-            bestMatch = outfit;
+          // Store the outfit data for later use (recommendations, colors)
+          try {
+            const outfitData = {
+              colors: {
+                top: outfit.top?.color || '#FFFFFF',
+                bottom: outfit.bottom?.color || '#000000',
+                shoes: outfit.shoes?.color || '#CCCCCC'
+              },
+              recommendations: outfit.recommendations || [],
+              description: outfit.description || ''
+            };
+            
+            localStorage.setItem('last-outfit-data', JSON.stringify(outfitData));
+          } catch (e) {
+            console.error('Error storing outfit data:', e);
           }
+          
+          break;
         }
       }
       
-      // For Casual style, find the outfit with the most casual items
-      if (preferredStyle === 'Casual') {
+      // If we couldn't find a complete outfit, try to create one from different outfits
+      if (items.length < 3) {
+        console.log("Couldn't find a complete outfit, combining items from different outfits");
+        
+        let topFound = false, bottomFound = false, shoesFound = false;
+        
         for (const outfit of response.data) {
-          const topIsCasual = outfit.top ? isCasualStyleItem(outfit.top) : false;
-          const bottomIsCasual = outfit.bottom ? isCasualStyleItem(outfit.bottom) : false;
-          const shoesIsCasual = outfit.shoes ? isCasualStyleItem(outfit.shoes) : false;
+          if (!topFound) {
+            const topItem = convertToDashboardItem(outfit.top, 'top', preferredStyle);
+            if (topItem) {
+              items.push(topItem);
+              topFound = true;
+            }
+          }
           
-          const currentMatchCount = (topIsCasual ? 1 : 0) + (bottomIsCasual ? 1 : 0) + (shoesIsCasual ? 1 : 0);
-          const bestMatchCount = 
-            (bestMatch.top ? (isCasualStyleItem(bestMatch.top) ? 1 : 0) : 0) + 
-            (bestMatch.bottom ? (isCasualStyleItem(bestMatch.bottom) ? 1 : 0) : 0) + 
-            (bestMatch.shoes ? (isCasualStyleItem(bestMatch.shoes) ? 1 : 0) : 0);
+          if (!bottomFound) {
+            const bottomItem = convertToDashboardItem(outfit.bottom, 'bottom', preferredStyle);
+            if (bottomItem) {
+              items.push(bottomItem);
+              bottomFound = true;
+            }
+          }
           
-          if (currentMatchCount > bestMatchCount) {
-            bestMatch = outfit;
+          if (!shoesFound) {
+            const shoesItem = convertToDashboardItem(outfit.shoes, 'shoes', preferredStyle);
+            if (shoesItem) {
+              items.push(shoesItem);
+              shoesFound = true;
+            }
+          }
+          
+          if (topFound && bottomFound && shoesFound) {
+            break;
           }
         }
       }
-      
-      const top = convertToDashboardItem(bestMatch.top, 'top', preferredStyle);
-      const bottom = convertToDashboardItem(bestMatch.bottom, 'bottom', preferredStyle);
-      const shoes = convertToDashboardItem(bestMatch.shoes, 'shoes', preferredStyle);
-
-      if (top) items.push(top);
-      if (bottom) items.push(bottom);
-      if (shoes) items.push(shoes);
     }
 
     console.log('First outfit items:', items);
