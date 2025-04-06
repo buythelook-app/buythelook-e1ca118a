@@ -1,8 +1,8 @@
 
-import { QuizFormData } from './types';
-import { StyleAnalysis } from './types/styleTypes';
-import { colorPalettes } from './constants/colorPalettes';
-import { styleRecommendations } from './constants/styleRecommendations';
+import { QuizFormData } from '../types';
+import { StyleAnalysis } from '../types/styleTypes';
+import { colorPalettes } from '../constants/colorPalettes';
+import { styleRecommendations } from '../constants/styleRecommendations';
 import { supabase } from '@/lib/supabase';
 
 export const loadQuizData = (): QuizFormData => {
