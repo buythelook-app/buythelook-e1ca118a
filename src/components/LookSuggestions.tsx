@@ -226,6 +226,30 @@ export const LookSuggestions = () => {
     }
   };
 
+  const validateColor = (color: string): string => {
+    const isValidColor = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color) || 
+                        CSS.supports('color', color);
+    return isValidColor ? color : '#CCCCCC';
+  };
+
+  const canvasItems = dashboardItems?.map(item => {
+    console.log('Processing item:', item);
+    const mappedType = mapItemType(item.type);
+    console.log(`Final mapping: ${item.type} -> ${mappedType}`);
+    return {
+      id: item.id,
+      image: item.image,
+      type: mappedType
+    };
+  });
+
+  const hasAllRequiredItems = () => {
+    if (!canvasItems) return false;
+    
+    const types = canvasItems.map(item => item.type);
+    return types.includes('top') && types.includes('bottom') && types.includes('shoes');
+  };
+
   if (!hasQuizData) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
@@ -256,23 +280,6 @@ export const LookSuggestions = () => {
     );
   }
 
-  const validateColor = (color: string): string => {
-    const isValidColor = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color) || 
-                        CSS.supports('color', color);
-    return isValidColor ? color : '#CCCCCC';
-  };
-
-  const canvasItems = dashboardItems?.map(item => {
-    console.log('Processing item:', item);
-    const mappedType = mapItemType(item.type);
-    console.log(`Final mapping: ${item.type} -> ${mappedType}`);
-    return {
-      id: item.id,
-      image: item.image,
-      type: mappedType
-    };
-  });
-
   return (
     <>
       <HomeButton />
@@ -300,7 +307,7 @@ export const LookSuggestions = () => {
                       <Button 
                         onClick={() => handleAddToCart(dashboardItems)}
                         className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
-                        disabled={isRefetching || isGenerating}
+                        disabled={isRefetching || isGenerating || !hasAllRequiredItems()}
                       >
                         <ShoppingCart className="mr-1 h-3 w-3" />
                         Buy the look
