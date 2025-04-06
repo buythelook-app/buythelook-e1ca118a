@@ -4,6 +4,7 @@ import { Button } from "../ui/button";
 import { toast } from "sonner";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useCartStore } from "../Cart";
+import { clearGlobalItemTrackers } from "@/services/lookService";
 
 interface LookActionsProps {
   id: string;
@@ -57,6 +58,9 @@ export const LookActions = ({ id, image, title, price, category, items = [] }: L
       items: lookItems,
       totalPrice: price
     });
+    
+    // Reset global item trackers when adding to cart to allow fresh suggestions
+    clearGlobalItemTrackers();
     
     toast.success('Look added to cart');
   };

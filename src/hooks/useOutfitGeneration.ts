@@ -17,9 +17,14 @@ interface StyleRecommendation {
   recommendations: string[];
 }
 
-// Keep track of previously shown items to avoid repetition
-const shownItemIds = new Set<string>();
-const usedShoeIds = new Set<string>();
+// Global cache to track shown items and prevent repetition
+const globalItemTracker = {
+  shownItems: new Map<string, number>(), // id -> times shown
+  shownTops: new Set<string>(),
+  shownBottoms: new Set<string>(),
+  shownShoes: new Set<string>(),
+  maxRepetitions: 2 // Allow an item to appear this many times max
+};
 
 // Track API attempt counts to avoid infinite loops
 let attemptCounter = 0;
@@ -66,20 +71,30 @@ export function useOutfitGeneration() {
       
       console.log("Outfit items received:", outfitItems);
       
-      // Check if this is the same outfit we've shown before
-      const hasDuplicates = outfitItems.some(item => shownItemIds.has(item.id));
+      // Check repetition of items
+      const hasTooManyRepeats = outfitItems.some(item => {
+        const timesShown = globalItemTracker.shownItems.get(item.id) || 0;
+        return timesShown >= globalItemTracker.maxRepetitions;
+      });
       
-      // Check specifically for duplicate shoes
+      // Check for repeats by type
+      const top = outfitItems.find(item => item.type === 'top');
+      const bottom = outfitItems.find(item => item.type === 'bottom');
       const shoes = outfitItems.find(item => item.type === 'shoes');
-      const hasDuplicateShoes = shoes && usedShoeIds.has(shoes.id);
       
-      // If we've shown this outfit before or it has the same shoes, try once more
-      if (hasDuplicates || hasDuplicateShoes) {
-        console.log('Found duplicate items in outfit, regenerating...', 
-                    hasDuplicates ? 'Duplicate items' : 'Duplicate shoes');
+      const hasRepeatedTypes = (
+        (top && globalItemTracker.shownTops.has(top.id)) ||
+        (bottom && globalItemTracker.shownBottoms.has(bottom.id)) ||
+        (shoes && globalItemTracker.shownShoes.has(shoes.id))
+      );
+      
+      // If we've shown these items too many times, try again
+      if (hasTooManyRepeats || hasRepeatedTypes) {
+        console.log('Found too many repeated items in outfit, regenerating...', 
+                    hasTooManyRepeats ? 'Items shown too many times' : 'Type repetition');
         
         // Try with a different mood to get different results
-        const moods = ['elegant', 'energized', 'casual', 'relaxed', 'unique'];
+        const moods = ['elegant', 'energized', 'casual', 'relaxed', 'unique', 'powerful', 'mysterious'];
         const currentMood = localStorage.getItem('current-mood') || 'energized';
         const nextMoodIndex = moods.indexOf(currentMood) + 1;
         const newMood = moods[nextMoodIndex % moods.length];
@@ -104,28 +119,47 @@ export function useOutfitGeneration() {
         return generateOutfit(true);
       }
       
-      // Add items to the shown items set
+      // Add items to the trackers
       outfitItems.forEach(item => {
-        shownItemIds.add(item.id);
-        if (item.type === 'shoes') {
-          usedShoeIds.add(item.id);
+        // Track by ID
+        const timesShown = globalItemTracker.shownItems.get(item.id) || 0;
+        globalItemTracker.shownItems.set(item.id, timesShown + 1);
+        
+        // Track by type
+        if (item.type === 'top') {
+          globalItemTracker.shownTops.add(item.id);
+        } else if (item.type === 'bottom') {
+          globalItemTracker.shownBottoms.add(item.id);
+        } else if (item.type === 'shoes') {
+          globalItemTracker.shownShoes.add(item.id);
         }
       });
       
-      // Limit the size of our tracking sets to prevent memory issues
-      if (shownItemIds.size > 50) {
-        const itemsArray = Array.from(shownItemIds);
+      // Clean up trackers if they get too large
+      if (globalItemTracker.shownItems.size > 50) {
+        // Remove least recently shown items
+        const entries = Array.from(globalItemTracker.shownItems.entries());
+        entries.sort((a, b) => a[1] - b[1]);
         for (let i = 0; i < 10; i++) {
-          shownItemIds.delete(itemsArray[i]);
+          if (i < entries.length) {
+            globalItemTracker.shownItems.delete(entries[i][0]);
+          }
         }
       }
       
-      if (usedShoeIds.size > 20) {
-        const shoesArray = Array.from(usedShoeIds);
-        for (let i = 0; i < 5; i++) {
-          usedShoeIds.delete(shoesArray[i]);
+      // Limit the type tracking sets
+      const cleanupTrackingSet = (set: Set<string>, maxSize: number) => {
+        if (set.size > maxSize) {
+          const items = Array.from(set);
+          for (let i = 0; i < Math.min(5, items.length); i++) {
+            set.delete(items[i]);
+          }
         }
-      }
+      };
+      
+      cleanupTrackingSet(globalItemTracker.shownTops, 20);
+      cleanupTrackingSet(globalItemTracker.shownBottoms, 20);
+      cleanupTrackingSet(globalItemTracker.shownShoes, 20);
       
       // Store any recommendations in localStorage if they exist
       const outfitData = localStorage.getItem('last-outfit-data');

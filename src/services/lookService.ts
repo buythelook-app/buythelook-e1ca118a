@@ -4,6 +4,14 @@ import { EventType, EVENT_TO_STYLES } from "@/components/filters/eventTypes";
 const API_URL = 'https://mwsblnposuyhrgzrtoyo.supabase.co/functions/v1/generate-outfit';
 const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13c2JsbnBvc3V5aHJnenJ0b3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4OTUyOTYsImV4cCI6MjA1MzQ3MTI5Nn0.gyU3tLyZ_1yY82BKkii8EyeaGzFn9muZR6G6ELJocQk';
 
+// Global tracking of used items to prevent repetition across multiple requests
+const globalUsedItemIds = new Set<string>();
+const globalUsedTopIds = new Set<string>();
+const globalUsedBottomIds = new Set<string>();
+const globalUsedShoeIds = new Set<string>();
+// Limit the max number of tracked items to prevent memory issues
+const MAX_TRACKED_ITEMS = 100;
+
 // Helper function to map body shapes to API expected format
 const mapBodyShape = (shape: string): "X" | "V" | "H" | "O" | "A" => {
   const shapeMap: { [key: string]: "X" | "V" | "H" | "O" | "A" } = {
@@ -63,7 +71,7 @@ const validateMood = (mood: string | null): string => {
     "mystery", "quiet", "elegant", "energized", 
     "flowing", "optimist", "calm", "romantic", 
     "unique", "sweet", "childish", "passionate", 
-    "powerful", "casual", "relaxed"
+    "powerful", "casual", "relaxed", "mysterious"
   ];
   
   if (!mood || !validMoods.includes(mood.toLowerCase())) {
@@ -81,6 +89,16 @@ export const clearOutfitCache = (bodyStructure: string, style: string, mood: str
     return true;
   }
   return false;
+};
+
+// Clear global item trackers to allow for completely fresh outfits
+export const clearGlobalItemTrackers = () => {
+  globalUsedItemIds.clear();
+  globalUsedTopIds.clear();
+  globalUsedBottomIds.clear();
+  globalUsedShoeIds.clear();
+  console.log('Cleared global item trackers for fresh outfit generation');
+  return true;
 };
 
 // Implement request caching for API calls
@@ -240,12 +258,44 @@ const isCasualStyleItem = (item: any): boolean => {
   );
 };
 
+// Generate a reliable unique ID for items when product_id isn't available
+const generateItemId = (item: any): string => {
+  if (item?.product_id) return String(item.product_id);
+  
+  if (item?.image && typeof item.image === 'string') {
+    return `img-${item.image.split('/').pop()?.substring(0, 16) || Math.random().toString(36).substring(2, 10)}`;
+  }
+  
+  if (item?.product_name) {
+    return `name-${item.product_name.substring(0, 10).replace(/\s/g, '')}-${Math.random().toString(36).substring(2, 6)}`;
+  }
+  
+  return `item-${Math.random().toString(36).substring(2, 15)}`;
+};
+
 // Helper function to convert API item to DashboardItem
 const convertToDashboardItem = (item: any, type: string, userStyle: string = ''): DashboardItem | null => {
   if (!item) return null;
   
   if (isUnderwear(item)) {
     console.log('Filtering out underwear item:', item.product_name);
+    return null;
+  }
+  
+  // Check if this item has been used too often
+  const itemId = generateItemId(item);
+  
+  // Check for repetition by type
+  if (type === 'top' && globalUsedTopIds.has(itemId)) {
+    console.log('Item already used as top, filtering:', item.product_name);
+    return null;
+  }
+  if (type === 'bottom' && globalUsedBottomIds.has(itemId)) {
+    console.log('Item already used as bottom, filtering:', item.product_name);
+    return null;
+  }
+  if (type === 'shoes' && globalUsedShoeIds.has(itemId)) {
+    console.log('Item already used as shoes, filtering:', item.product_name);
     return null;
   }
   
@@ -282,21 +332,30 @@ const convertToDashboardItem = (item: any, type: string, userStyle: string = '')
   const imageUrl = extractImageUrl(item);
   if (!imageUrl) return null;
 
+  // Track this item globally to prevent repetition across requests
+  globalUsedItemIds.add(itemId);
+  if (type === 'top') globalUsedTopIds.add(itemId);
+  if (type === 'bottom') globalUsedBottomIds.add(itemId);
+  if (type === 'shoes') globalUsedShoeIds.add(itemId);
+  
+  // Clean up trackers if they get too big
+  if (globalUsedItemIds.size > MAX_TRACKED_ITEMS) {
+    const itemsArray = Array.from(globalUsedItemIds);
+    for (let i = 0; i < 20; i++) {
+      if (i < itemsArray.length) {
+        globalUsedItemIds.delete(itemsArray[i]);
+      }
+    }
+  }
+
   return {
-    id: String(item.product_id || Math.random()),
+    id: itemId,
     name: item.product_name || `${type.charAt(0).toUpperCase() + type.slice(1)} Item`,
     description: item.description || '',
     image: imageUrl,
     price: item.price ? `$${Number(item.price).toFixed(2)}` : '$49.99',
     type: type
   };
-};
-
-// Track used items across all occasions to prevent duplicates
-const getItemIdentifier = (item: any): string => {
-  if (item.product_id?.toString()) return item.product_id.toString();
-  if (item.image?.toString()) return item.image.toString();
-  return Math.random().toString();
 };
 
 // Function to get only the first outfit suggestion
@@ -329,6 +388,9 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
 
     if (Array.isArray(response.data) && response.data.length > 0) {
       // Try multiple outfits until we find one with all required items
+      // and with items we haven't shown before
+      let outfitFound = false;
+      
       for (const outfit of response.data) {
         const topItem = convertToDashboardItem(outfit.top, 'top', preferredStyle);
         const bottomItem = convertToDashboardItem(outfit.bottom, 'bottom', preferredStyle);
@@ -355,17 +417,25 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
             console.error('Error storing outfit data:', e);
           }
           
+          outfitFound = true;
           break;
         }
       }
       
       // If we couldn't find a complete outfit, try to create one from different outfits
-      if (items.length < 3) {
+      if (!outfitFound) {
         console.log("Couldn't find a complete outfit, combining items from different outfits");
         
         let topFound = false, bottomFound = false, shoesFound = false;
         
-        for (const outfit of response.data) {
+        // Shuffle the outfits to get more variety
+        const shuffledOutfits = [...response.data];
+        for (let i = shuffledOutfits.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffledOutfits[i], shuffledOutfits[j]] = [shuffledOutfits[j], shuffledOutfits[i]];
+        }
+        
+        for (const outfit of shuffledOutfits) {
           if (!topFound) {
             const topItem = convertToDashboardItem(outfit.top, 'top', preferredStyle);
             if (topItem) {
@@ -503,8 +573,8 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
           let topItem = null, bottomItem = null, shoesItem = null;
           
           if (outfit.top) {
-            const topId = getItemIdentifier(outfit.top);
-            if (!usedItemIds.has(topId)) {
+            const topId = generateItemId(outfit.top);
+            if (!usedItemIds.has(topId) && !globalUsedTopIds.has(topId)) {
               topItem = convertToDashboardItem(outfit.top, 'top', occasion === 'Casual' ? 'Casual' : userPreferredStyle);
               if (topItem) {
                 outfitItems.push(topItem);
@@ -514,8 +584,8 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
           }
           
           if (outfit.bottom) {
-            const bottomId = getItemIdentifier(outfit.bottom);
-            if (!usedItemIds.has(bottomId)) {
+            const bottomId = generateItemId(outfit.bottom);
+            if (!usedItemIds.has(bottomId) && !globalUsedBottomIds.has(bottomId)) {
               bottomItem = convertToDashboardItem(outfit.bottom, 'bottom', occasion === 'Casual' ? 'Casual' : userPreferredStyle);
               if (bottomItem) {
                 outfitItems.push(bottomItem);
@@ -525,8 +595,8 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
           }
           
           if (outfit.shoes) {
-            const shoesId = getItemIdentifier(outfit.shoes);
-            if (!usedItemIds.has(shoesId)) {
+            const shoesId = generateItemId(outfit.shoes);
+            if (!usedItemIds.has(shoesId) && !globalUsedShoeIds.has(shoesId)) {
               shoesItem = convertToDashboardItem(outfit.shoes, 'shoes', occasion === 'Casual' ? 'Casual' : userPreferredStyle);
               if (shoesItem) {
                 outfitItems.push(shoesItem);
@@ -548,7 +618,7 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
           const partialOutfit: DashboardItem[] = [];
           
           if (outfit.top) {
-            const topId = getItemIdentifier(outfit.top);
+            const topId = generateItemId(outfit.top);
             if (!usedItemIds.has(topId)) {
               const topItem = convertToDashboardItem(outfit.top, 'top', occasion === 'Casual' ? 'Casual' : userPreferredStyle);
               if (topItem) {
@@ -559,7 +629,7 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
           }
           
           if (outfit.bottom) {
-            const bottomId = getItemIdentifier(outfit.bottom);
+            const bottomId = generateItemId(outfit.bottom);
             if (!usedItemIds.has(bottomId)) {
               const bottomItem = convertToDashboardItem(outfit.bottom, 'bottom', occasion === 'Casual' ? 'Casual' : userPreferredStyle);
               if (bottomItem) {
@@ -570,7 +640,7 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
           }
           
           if (outfit.shoes) {
-            const shoesId = getItemIdentifier(outfit.shoes);
+            const shoesId = generateItemId(outfit.shoes);
             if (!usedItemIds.has(shoesId)) {
               const shoesItem = convertToDashboardItem(outfit.shoes, 'shoes', occasion === 'Casual' ? 'Casual' : userPreferredStyle);
               if (shoesItem) {
