@@ -86,14 +86,30 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
       ...acc,
       [item.id]: selectedSizes[item.id] || "M"
     }), {});
+    
+    // Update the size selections
     setSelectedSizes(allSizes);
 
+    // Create the look items with sizes
     const lookItems = look.items.map(item => ({
-      ...item,
-      lookId: look.id,
-      size: allSizes[item.id]
+      id: item.id,
+      title: item.title,
+      price: item.price,
+      image: item.image,
+      size: allSizes[item.id],
+      type: item.type || 'unknown'
     }));
     
+    // Make sure we have the essential item types (top, bottom, shoes)
+    const hasTop = lookItems.some(item => item.type === 'top');
+    const hasBottom = lookItems.some(item => item.type === 'bottom');
+    const hasShoes = lookItems.some(item => item.type === 'shoes');
+    
+    if (!hasTop || !hasBottom || !hasShoes) {
+      toast.warning(`This look is missing ${!hasTop ? 'a top' : ''}${!hasBottom ? (!hasTop ? ' and ' : '') + 'a bottom' : ''}${!hasShoes ? (!hasTop && !hasBottom ? ' and ' : !hasTop || !hasBottom ? ' and ' : '') + 'shoes' : ''}`);
+    }
+    
+    // Add the look to the cart
     addLook({
       id: look.id,
       title: look.title,

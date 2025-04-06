@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
@@ -149,7 +150,11 @@ export function useOutfitGeneration() {
       
       return {
         success: true,
-        items: outfitItems
+        items: outfitItems.map(item => ({
+          ...item,
+          // Ensure each item has a type property for proper look assembly
+          type: item.type || 'unknown'
+        }))
       };
     } catch (error) {
       console.error('Error generating outfit:', error);
