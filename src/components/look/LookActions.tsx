@@ -1,3 +1,4 @@
+
 import { Heart, ShoppingCart } from "lucide-react";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
@@ -10,7 +11,13 @@ interface LookActionsProps {
   title: string;
   price: string;
   category: string;
-  items?: Array<{ id: string; image: string; }>;
+  items?: Array<{ 
+    id: string; 
+    image: string;
+    title?: string;
+    price?: string;
+    type?: string;
+  }>;
 }
 
 export const LookActions = ({ id, image, title, price, category, items = [] }: LookActionsProps) => {
@@ -33,11 +40,15 @@ export const LookActions = ({ id, image, title, price, category, items = [] }: L
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    // Make sure all items have the necessary properties
     const lookItems = items.map(item => ({
-      ...item,
-      title: `Item from ${title}`,
-      price: (parseFloat(price) / items.length).toFixed(2),
-      lookId: id
+      id: item.id,
+      image: item.image,
+      title: item.title || `Item from ${title}`,
+      price: item.price || (parseFloat(price) / items.length).toFixed(2),
+      size: "M", // Default size
+      type: item.type || 'unknown'
     }));
     
     addLook({

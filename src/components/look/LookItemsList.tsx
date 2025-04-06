@@ -71,7 +71,9 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
         title: item.title,
         price: item.price,
         image: item.image,
-        size: selectedSizes[item.id]
+        size: selectedSizes[item.id],
+        // Make sure we include the type
+        type: item.type || 'unknown'
       }));
     
     addItems(selectedItemsData);

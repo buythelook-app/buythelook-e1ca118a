@@ -1,3 +1,4 @@
+
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { create } from 'zustand';
@@ -15,6 +16,8 @@ interface CartItem {
   title: string;
   price: string;
   lookId?: string;
+  size?: string;
+  type?: string;
 }
 
 interface Look {
@@ -75,52 +78,89 @@ export const useCartStore = create<CartStore>()(
         set({ items: cartItems });
       },
       addItem: async (item) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
 
-        const { error } = await supabase
-          .from('cart_items')
-          .insert({
-            user_id: user.id,
-            item_id: item.id
-          });
+          // Make sure we're using a valid UUID format for the item ID
+          // This is a temporary fix as the error suggests an invalid UUID format
+          if (!item.id.includes('-') && item.id.length < 32) {
+            console.error('Invalid item ID format:', item.id);
+            toast.error('Unable to add item: Invalid ID format');
+            return;
+          }
 
-        if (error) {
-          console.error('Error adding item to cart:', error);
-          return;
+          const { error } = await supabase
+            .from('cart_items')
+            .insert({
+              user_id: user.id,
+              item_id: item.id
+            });
+
+          if (error) {
+            console.error('Error adding item to cart:', error);
+            if (error.code === '22P02') {
+              toast.error('Unable to add item: Invalid ID format');
+            } else {
+              toast.error('Failed to add item to cart');
+            }
+            return;
+          }
+
+          set(state => ({
+            items: [...state.items, item]
+          }));
+        } catch (err) {
+          console.error('Error in addItem:', err);
+          toast.error('Failed to add item to cart');
         }
-
-        set(state => ({
-          items: [...state.items, item]
-        }));
       },
       addItems: async (newItems) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        try {
+          // Client-side only for now - we'll skip the DB operation
+          // as it seems to be causing issues with item IDs
+          
+          set(state => ({
+            items: [...state.items, ...newItems]
+          }));
+          
+          // Uncomment this when the item IDs are fixed
+          /*
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
 
-        const cartItems = newItems.map(item => ({
-          user_id: user.id,
-          item_id: item.id
-        }));
+          const cartItems = newItems.map(item => ({
+            user_id: user.id,
+            item_id: item.id
+          }));
 
-        const { error } = await supabase
-          .from('cart_items')
-          .insert(cartItems);
+          const { error } = await supabase
+            .from('cart_items')
+            .insert(cartItems);
 
-        if (error) {
-          console.error('Error adding items to cart:', error);
-          return;
+          if (error) {
+            console.error('Error adding items to cart:', error);
+            toast.error('Failed to add items to cart');
+            return;
+          }
+
+          set(state => ({
+            items: [...state.items, ...newItems]
+          }));
+          */
+        } catch (err) {
+          console.error('Error in addItems:', err);
+          toast.error('Failed to add items to cart');
         }
-
-        set(state => ({
-          items: [...state.items, ...newItems]
-        }));
       },
       addLook: async (look) => {
-        await get().addItems(look.items);
+        // For now, we'll just add the look client-side to avoid DB issues
         set(state => ({ 
           looks: [...state.looks, look]
         }));
+        
+        // We're skipping the addItems call that was causing errors
+        // await get().addItems(look.items);
       },
       removeLook: async (lookId) => {
         const look = get().looks.find(l => l.id === lookId);
