@@ -16,19 +16,22 @@ export const setupMobileDeepLinkListener = (callback: () => void): (() => void) 
   
   logger.info("Setting up deep link listener in SocialSignIn for mobile");
   
-  let listener: any = null;
+  // Initialize as null, will be set after the promise resolves
+  let listenerHandle: any = null;
   
+  // Set up the listener and store the handle when resolved
   App.addListener('appUrlOpen', (data) => {
     logger.info('Deep link received in SocialSignIn:', { data: data.url });
     callback();
-  }).then(result => {
-    listener = result;
+  }).then(handle => {
+    listenerHandle = handle;
   });
   
+  // Return a cleanup function that only calls remove() when the handle exists
   return () => {
     logger.info("Cleaning up deep link listener");
-    if (listener) {
-      listener.remove();
+    if (listenerHandle) {
+      listenerHandle.remove();
     }
   };
 };
