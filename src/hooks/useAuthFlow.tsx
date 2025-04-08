@@ -16,15 +16,20 @@ export const useAuthFlow = () => {
   useEffect(() => {
     console.log("Auth flow init started");
     let isMounted = true;
+    let deepLinkListener: any = null;
     
     // Set up deep link handler for native platforms
     const setupDeepLinks = () => {
       if (Capacitor.isNativePlatform()) {
-        App.addListener('appUrlOpen', async (data) => {
+        deepLinkListener = App.addListener('appUrlOpen', async (data) => {
           console.log('Deep link received in useAuthFlow:', data.url);
           
           if (data.url.includes('auth') && isMounted) {
             setIsLoading(true);
+            toast({
+              title: "Processing",
+              description: "Completing authentication...",
+            });
             
             try {
               // Process any auth params in the URL if present
@@ -36,8 +41,8 @@ export const useAuthFlow = () => {
                 
                 console.log("Processing auth params from deep link URL");
                 
-                // Handle auth response manually if needed
-                await supabase.auth.refreshSession();
+                // Wait a bit to ensure auth state is updated
+                await new Promise((resolve) => setTimeout(resolve, 1000));
               }
               
               // Verify session status
@@ -54,7 +59,20 @@ export const useAuthFlow = () => {
                 navigate('/home');
               } else {
                 console.log("No session after deep link");
-                setIsLoading(false);
+                // Try refreshing the session
+                const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+                
+                if (!refreshError && refreshData.session) {
+                  console.log("Session refreshed successfully");
+                  toast({
+                    title: "Success",
+                    description: "You have been signed in successfully.",
+                  });
+                  navigate('/home');
+                } else {
+                  console.log("Failed to refresh session:", refreshError);
+                  setIsLoading(false);
+                }
               }
             } catch (error: any) {
               console.error("Deep link auth error:", error);
@@ -144,6 +162,9 @@ export const useAuthFlow = () => {
         try {
           console.log("Processing OAuth redirect");
           
+          // Wait briefly to ensure auth state is ready
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          
           // Try to exchange the auth code for a session
           const { error: sessionError } = await supabase.auth.refreshSession();
           if (sessionError) {
@@ -216,8 +237,8 @@ export const useAuthFlow = () => {
       subscription.unsubscribe();
       
       // Clean up app listener if on native platform
-      if (Capacitor.isNativePlatform()) {
-        App.removeAllListeners();
+      if (deepLinkListener) {
+        deepLinkListener.remove();
       }
     };
   }, [navigate, toast]);

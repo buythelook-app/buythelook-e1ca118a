@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 
 export const SocialSignIn = () => {
   const { toast } = useToast();
@@ -23,8 +24,16 @@ export const SocialSignIn = () => {
     if (Capacitor.isNativePlatform()) {
       App.addListener('appUrlOpen', (data) => {
         console.log('Deep link received in SocialSignIn:', data.url);
+        // We'll handle the auth in useAuthFlow.tsx
       });
     }
+
+    return () => {
+      if (Capacitor.isNativePlatform()) {
+        // Clean up listener when component unmounts
+        App.removeAllListeners();
+      }
+    };
   }, []);
 
   const handleGoogleSignIn = async () => {
@@ -43,9 +52,10 @@ export const SocialSignIn = () => {
       // For native mobile, use app scheme
       if (isMobile) {
         redirectUrl = "buythelook://auth";
+        console.log(`Using mobile redirect URL: ${redirectUrl}`);
+      } else {
+        console.log(`Using web redirect URL: ${redirectUrl}`);
       }
-      
-      console.log(`Starting Google sign-in with redirect URL: ${redirectUrl}`);
       
       toast({
         title: "Redirecting",
@@ -72,16 +82,13 @@ export const SocialSignIn = () => {
       console.log("Google sign-in initiated:", data);
       
       if (data?.url) {
-        // On web browsers, use window.location for a full page redirect instead of opening in a new tab
         if (!isMobile) {
+          // On web browsers, redirect in the current window
           window.location.href = data.url;
         } else {
-          // On mobile native, we need to open the URL in the system browser
+          // On mobile native, we need to use the Browser plugin instead of window.open
           console.log("Opening authentication URL on mobile:", data.url);
-          // Use a slight delay to ensure the toast is visible before redirect
-          setTimeout(() => {
-            window.open(data.url, '_system');
-          }, 300);
+          await Browser.open({ url: data.url });
         }
       }
     } catch (error: any) {
@@ -91,12 +98,7 @@ export const SocialSignIn = () => {
         description: error.message || "Failed to sign in with Google",
         variant: "destructive",
       });
-    } finally {
-      // Leave loading state on until redirect occurs or error is shown
-      // It will be reset when the page reloads after authentication
-      setTimeout(() => {
-        setIsLoading(prev => ({ ...prev, google: false }));
-      }, 5000); // Set a maximum timeout just in case
+      setIsLoading(prev => ({ ...prev, google: false }));
     }
   };
 
