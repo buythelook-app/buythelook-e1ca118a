@@ -25,6 +25,8 @@ export const SocialSignIn = () => {
     if (Capacitor.isNativePlatform()) {
       App.addListener('appUrlOpen', (data) => {
         console.log('Deep link received in SocialSignIn:', data.url);
+        // Reset loading state when we receive the deep link
+        setIsLoading(prev => ({ ...prev, google: false, apple: false }));
         // We'll handle the auth in useAuthFlow.tsx
       });
     }
@@ -98,6 +100,21 @@ export const SocialSignIn = () => {
               description: "When prompted, select the app to complete sign-in",
             });
           }, 1000);
+          
+          // Set a timeout to reset the loading state if the deep link doesn't trigger
+          setTimeout(() => {
+            setIsLoading(prev => {
+              if (prev.google) {
+                toast({
+                  title: "Authentication timeout",
+                  description: "Please try again or check if the app is installed correctly",
+                  variant: "destructive",
+                });
+                return { ...prev, google: false };
+              }
+              return prev;
+            });
+          }, 30000); // 30 seconds timeout
         }
       }
     } catch (error: any) {

@@ -12,17 +12,19 @@ export const useAuthFlow = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSignIn, setIsSignIn] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     console.log("Auth flow init started");
     let isMounted = true;
     let deepLinkListener: any = null;
     let retryCount = 0;
-    const maxRetries = 3;
+    const maxRetries = 5;
     
     // Set up deep link handler for native platforms
     const setupDeepLinks = () => {
       if (Capacitor.isNativePlatform()) {
+        console.log("Setting up deep link listener for mobile");
         deepLinkListener = App.addListener('appUrlOpen', async (data) => {
           console.log('Deep link received in useAuthFlow:', data.url);
           
@@ -42,6 +44,8 @@ export const useAuthFlow = () => {
                 const hash = url.hash ? new URLSearchParams(url.hash.substring(1)) : null;
                 
                 console.log("Processing auth params from deep link URL");
+                console.log("URL params:", Array.from(params.entries()));
+                if (hash) console.log("Hash params:", Array.from(hash.entries()));
               }
               
               // Wait to ensure auth state is updated
@@ -49,19 +53,33 @@ export const useAuthFlow = () => {
               
               // Verify session status
               let sessionData = await supabase.auth.getSession();
+              console.log("Initial session check:", sessionData.data.session ? "Found session" : "No session found");
               
               // Retry session check if no session found
-              if (!sessionData.data.session && retryCount < maxRetries) {
-                toast({
-                  title: "Verifying",
-                  description: `Checking authentication status (${retryCount + 1}/${maxRetries})...`,
-                });
-                
-                // Wait and try again
-                await new Promise((resolve) => setTimeout(resolve, 2000));
-                sessionData = await supabase.auth.getSession();
-                retryCount++;
-              }
+              let currentRetry = 0;
+              const checkSessionWithRetry = async () => {
+                if (!sessionData.data.session && currentRetry < maxRetries) {
+                  toast({
+                    title: "Verifying",
+                    description: `Checking authentication status (${currentRetry + 1}/${maxRetries})...`,
+                  });
+                  
+                  // Wait and try again
+                  await new Promise((resolve) => setTimeout(resolve, 2000));
+                  sessionData = await supabase.auth.getSession();
+                  console.log(`Retry ${currentRetry + 1}: ${sessionData.data.session ? "Found session" : "No session found"}`);
+                  currentRetry++;
+                  
+                  if (!sessionData.data.session && currentRetry < maxRetries) {
+                    return checkSessionWithRetry();
+                  } else {
+                    return sessionData;
+                  }
+                }
+                return sessionData;
+              };
+              
+              sessionData = await checkSessionWithRetry();
               
               if (sessionData.data.session) {
                 console.log("Session found after deep link:", sessionData.data.session.user?.id);
@@ -71,8 +89,8 @@ export const useAuthFlow = () => {
                 });
                 navigate('/home');
               } else {
-                console.log("No session after deep link");
-                // Try refreshing the session
+                console.log("No session after deep link and retries");
+                // Try refreshing the session once more
                 const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
                 
                 if (!refreshError && refreshData.session) {
@@ -84,6 +102,7 @@ export const useAuthFlow = () => {
                   navigate('/home');
                 } else {
                   console.log("Failed to refresh session:", refreshError);
+                  setAuthError("Authentication failed. Please try again.");
                   toast({
                     title: "Authentication Failed",
                     description: "Please try signing in again.",
@@ -94,6 +113,7 @@ export const useAuthFlow = () => {
               }
             } catch (error: any) {
               console.error("Deep link auth error:", error);
+              setAuthError(error.message || "Authentication failed");
               toast({
                 title: "Error",
                 description: error.message || "Authentication failed",
@@ -103,6 +123,8 @@ export const useAuthFlow = () => {
             }
           }
         });
+        
+        console.log("Deep link listener set up successfully");
       }
     };
     
@@ -116,6 +138,7 @@ export const useAuthFlow = () => {
       
       if (event === 'SIGNED_IN' && session) {
         console.log("User signed in successfully:", session.user?.id);
+        setAuthError(null);
         toast({
           title: "Success",
           description: "You have been signed in successfully.",
@@ -141,7 +164,10 @@ export const useAuthFlow = () => {
         console.log("Checking current session");
         const { data, error } = await supabase.auth.getSession();
         
-        if (error) throw error;
+        if (error) {
+          console.error("Session check error:", error);
+          throw error;
+        }
         
         if (data.session) {
           console.log("Active session found", data.session.user?.id);
@@ -152,6 +178,7 @@ export const useAuthFlow = () => {
         console.log("No active session found");
       } catch (error: any) {
         console.error("Session check error:", error);
+        setAuthError(error.message);
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -181,7 +208,7 @@ export const useAuthFlow = () => {
           console.log("Processing OAuth redirect");
           
           // Wait briefly to ensure auth state is ready
-          await new Promise((resolve) => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 1000));
           
           // Try to exchange the auth code for a session
           const { error: sessionError } = await supabase.auth.refreshSession();
@@ -191,10 +218,15 @@ export const useAuthFlow = () => {
           
           const { data, error } = await supabase.auth.getSession();
           
-          if (error) throw error;
+          if (error) {
+            console.error("Error getting session:", error);
+            setAuthError(error.message);
+            throw error;
+          }
           
           if (data.session) {
             console.log("Authentication successful from redirect, user:", data.session.user?.id);
+            setAuthError(null);
             toast({
               title: "Success",
               description: "Authentication successful.",
@@ -217,6 +249,7 @@ export const useAuthFlow = () => {
           // Check for error in the URL
           if (url.search.includes('error=') || url.hash.includes('error=')) {
             console.error("Auth error in URL:", url.toString());
+            setAuthError("Authentication error in URL");
             toast({
               title: "Authentication Error",
               description: "There was a problem with the authentication process. Please try again.",
@@ -225,6 +258,7 @@ export const useAuthFlow = () => {
           }
         } catch (error: any) {
           console.error("Auth redirect processing error:", error);
+          setAuthError(error.message || "Authentication failed");
           toast({
             title: "Error",
             description: error.message || "Authentication failed",
@@ -263,6 +297,7 @@ export const useAuthFlow = () => {
 
   const toggleAuthMode = () => {
     setIsSignIn(!isSignIn);
+    setAuthError(null);
   };
 
   return {
@@ -270,5 +305,6 @@ export const useAuthFlow = () => {
     isSignIn,
     isPasswordRecovery,
     toggleAuthMode,
+    authError,
   };
 };
