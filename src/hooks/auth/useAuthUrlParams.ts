@@ -29,64 +29,80 @@ export const useAuthUrlParams = ({
     
     if (hasAuthParams) {
       console.log("Auth params detected in URL:", window.location.href);
+      console.log("URL Hash:", window.location.hash);
+      console.log("URL Search:", window.location.search);
       
       setIsLoading(true);
       
       try {
         console.log("Processing OAuth redirect");
         
+        // Check for error parameter in URL first
+        const url = new URL(window.location.href);
+        const urlError = url.searchParams.get('error') || 
+                        (url.hash && new URLSearchParams(url.hash.substring(1)).get('error'));
+                        
+        if (urlError) {
+          console.error("Auth error detected in URL:", urlError);
+          const errorDescription = url.searchParams.get('error_description') || 
+                                  (url.hash && new URLSearchParams(url.hash.substring(1)).get('error_description')) || 
+                                  "Authentication failed";
+          throw new Error(errorDescription);
+        }
+        
         // Wait briefly to ensure auth state is ready
         await new Promise((resolve) => setTimeout(resolve, 1000));
         
         // Try to exchange the auth code for a session
-        const { error: sessionError } = await supabase.auth.refreshSession();
-        if (sessionError) {
-          console.error("Error refreshing session:", sessionError);
-          // Don't throw, continue trying to get session
+        try {
+          const { error: sessionError } = await supabase.auth.refreshSession();
+          if (sessionError) {
+            console.error("Error refreshing session:", JSON.stringify(sessionError, null, 2));
+            // Don't throw, continue trying to get session
+          }
+        } catch (refreshError) {
+          console.error("Exception during session refresh:", refreshError);
+          // Continue with flow, don't exit
         }
         
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Error getting session:", error);
-          setAuthError(error.message);
-          throw error;
+        try {
+          const { data, error } = await supabase.auth.getSession();
+          
+          if (error) {
+            console.error("Error getting session:", JSON.stringify(error, null, 2));
+            throw error;
+          }
+          
+          if (data.session) {
+            console.log("Authentication successful from redirect:", data.session.user?.id);
+            console.log("User email:", data.session.user?.email);
+            console.log("Auth provider:", data.session.user?.app_metadata?.provider);
+            setAuthError(null);
+            toast({
+              title: "Success",
+              description: "Authentication successful.",
+            });
+            navigate('/home');
+            return true;
+          } else {
+            console.log("No session after processing redirect");
+          }
+        } catch (sessionError) {
+          console.error("Failed to get session:", sessionError);
+          throw new Error("Failed to verify authentication status");
         }
-        
-        if (data.session) {
-          console.log("Authentication successful from redirect, user:", data.session.user?.id);
-          setAuthError(null);
-          toast({
-            title: "Success",
-            description: "Authentication successful.",
-          });
-          navigate('/home');
-          return true;
-        }
-        
-        console.log("No session after processing redirect");
         
         // Check for password recovery
-        const url = new URL(window.location.href);
         if (url.hash.includes('type=recovery') || 
             url.search.includes('type=recovery')) {
           console.log("Password recovery flow detected");
           setIsPasswordRecovery(true);
           setIsSignIn(true);
-        }
-        
-        // Check for error in the URL
-        if (url.search.includes('error=') || url.hash.includes('error=')) {
-          console.error("Auth error in URL:", url.toString());
-          setAuthError("Authentication error in URL");
-          toast({
-            title: "Authentication Error",
-            description: "There was a problem with the authentication process. Please try again.",
-            variant: "destructive",
-          });
+          return true;
         }
       } catch (error: any) {
         console.error("Auth redirect processing error:", error);
+        console.error("Error details:", JSON.stringify(error, null, 2));
         setAuthError(error.message || "Authentication failed");
         toast({
           title: "Error",
@@ -96,6 +112,8 @@ export const useAuthUrlParams = ({
       } finally {
         setIsLoading(false);
       }
+    } else {
+      console.log("No auth parameters found in URL");
     }
     
     return false;

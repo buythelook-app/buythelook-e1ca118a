@@ -17,8 +17,18 @@ export const useAuthState = () => {
 
   // Set up auth state change listener
   useEffect(() => {
+    console.log("Setting up auth state change listener");
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event, session ? "session exists" : "no session");
+      console.log("Auth event details:", { event, userId: session?.user?.id });
+      
+      if (session?.user) {
+        console.log("User metadata:", JSON.stringify({
+          provider: session.user.app_metadata?.provider,
+          email: session.user.email,
+        }));
+      }
       
       if (event === 'SIGNED_IN' && session) {
         console.log("User signed in successfully:", session.user?.id);
@@ -30,6 +40,11 @@ export const useAuthState = () => {
         navigate('/home');
       } else if (event === 'SIGNED_OUT') {
         console.log("User signed out");
+        setState(prev => ({ 
+          ...prev, 
+          authError: null,
+          isLoading: false 
+        }));
       } else if (event === 'PASSWORD_RECOVERY') {
         console.log("Password recovery detected");
         setState(prev => ({ 
@@ -45,28 +60,34 @@ export const useAuthState = () => {
     });
     
     return () => {
+      console.log("Cleaning up auth state change listener");
       subscription.unsubscribe();
     };
   }, [navigate, toast]);
 
   // Convenience functions to update state
   const setIsLoading = (isLoading: boolean) => {
+    console.log(`Setting isLoading to ${isLoading}`);
     setState(prev => ({ ...prev, isLoading }));
   };
 
   const setIsSignIn = (isSignIn: boolean) => {
+    console.log(`Setting isSignIn to ${isSignIn}`);
     setState(prev => ({ ...prev, isSignIn }));
   };
 
   const setIsPasswordRecovery = (isPasswordRecovery: boolean) => {
+    console.log(`Setting isPasswordRecovery to ${isPasswordRecovery}`);
     setState(prev => ({ ...prev, isPasswordRecovery }));
   };
 
   const setAuthError = (authError: string | null) => {
+    console.log(`Setting authError to ${authError}`);
     setState(prev => ({ ...prev, authError }));
   };
 
   const toggleAuthMode = () => {
+    console.log(`Toggling auth mode from ${state.isSignIn ? 'sign in' : 'sign up'} to ${!state.isSignIn ? 'sign in' : 'sign up'}`);
     setState(prev => ({
       ...prev,
       isSignIn: !prev.isSignIn,

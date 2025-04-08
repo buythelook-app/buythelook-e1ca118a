@@ -31,6 +31,7 @@ export const useAuthDeepLinks = ({
       console.log("Setting up deep link listener for mobile");
       deepLinkListener = App.addListener('appUrlOpen', async (data) => {
         console.log('Deep link received in useAuthFlow:', data.url);
+        console.log('Deep link full details:', JSON.stringify(data, null, 2));
         
         if (data.url.includes('auth')) {
           setIsLoading(true);
@@ -50,6 +51,15 @@ export const useAuthDeepLinks = ({
               console.log("Processing auth params from deep link URL");
               console.log("URL params:", Array.from(params.entries()));
               if (hash) console.log("Hash params:", Array.from(hash.entries()));
+              
+              // Check for error in URL parameters
+              const urlError = params.get('error') || (hash && hash.get('error'));
+              if (urlError) {
+                const errorDesc = params.get('error_description') || 
+                                 (hash && hash.get('error_description')) || 
+                                 "Authentication error";
+                throw new Error(errorDesc);
+              }
             }
             
             // Wait to ensure auth state is updated
@@ -80,17 +90,28 @@ export const useAuthDeepLinks = ({
                     
                     if (code) {
                       console.log("Attempting to exchange auth code manually");
+                      console.log("Auth code:", code);
                       await supabase.auth.refreshSession();
                     }
                   }
                 } catch (e) {
                   console.error("Error during manual code exchange:", e);
+                  console.error("Error details:", JSON.stringify(e, null, 2));
                 }
                 
                 // Wait and try again
                 await new Promise((resolve) => setTimeout(resolve, 2000));
-                sessionData = await supabase.auth.getSession();
+                try {
+                  sessionData = await supabase.auth.getSession();
+                } catch (sessionError) {
+                  console.error("Error getting session during retry:", sessionError);
+                }
+                
                 console.log(`Retry ${currentRetry + 1}: ${sessionData.data.session ? "Found session" : "No session found"}`);
+                if (sessionData.data.session) {
+                  console.log("Session user details:", JSON.stringify(sessionData.data.session.user, null, 2));
+                }
+                
                 currentRetry++;
                 
                 if (!sessionData.data.session && currentRetry < maxRetries) {
@@ -133,12 +154,15 @@ export const useAuthDeepLinks = ({
                 }
               } catch (providerError: any) {
                 console.error("Provider sign-in error:", providerError);
+                console.error("Error details:", JSON.stringify(providerError, null, 2));
               }
               
               setIsLoading(false);
             }
           } catch (error: any) {
             console.error("Deep link auth error:", error);
+            console.error("Error stack:", error.stack);
+            console.error("Error details:", JSON.stringify(error, null, 2));
             setAuthError(error.message || "Authentication failed");
             toast({
               title: "Error",
