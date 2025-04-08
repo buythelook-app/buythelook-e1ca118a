@@ -1,3 +1,4 @@
+
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
@@ -23,7 +24,7 @@ const config: CapacitorConfig = {
     hostname: "buythelook",
     cleartext: true
   },
-  // Add specific deep linking schemes
+  // Updated scheme definition
   ios: {
     scheme: "buythelook"
   }

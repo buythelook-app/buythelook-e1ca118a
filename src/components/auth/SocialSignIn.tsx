@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Bot } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -32,25 +31,23 @@ export const SocialSignIn = () => {
     try {
       setIsLoading(prev => ({ ...prev, google: true }));
       
-      // For web version, use the current origin without query params
+      // Define proper redirect URLs for different platforms
       const redirectUrl = isMobile 
-        ? "buythelook://auth" // Use custom scheme for mobile apps
-        : `${window.location.origin}/auth`; // For web
+        ? 'buythelook://auth' // No trailing slash for consistency
+        : `${window.location.origin}/auth`;
       
       console.log(`Starting Google sign-in with redirect URL: ${redirectUrl}`);
       
+      // Improved Google sign-in configuration
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          // Using minimal options to avoid URL encoding issues
           queryParams: {
-            // These are standard parameters for Google OAuth
             access_type: 'offline',
             prompt: 'select_account',
           },
-          // Skip URL encoding of the state parameter
-          skipBrowserRedirect: false
+          skipBrowserRedirect: isMobile // Skip browser redirect on mobile
         }
       });
 
@@ -59,18 +56,18 @@ export const SocialSignIn = () => {
         throw error;
       }
       
-      console.log("Google sign-in initiated, redirect URL:", data?.url);
+      console.log("Google sign-in initiated:", data);
       
-      // For mobile apps, we need to handle the redirect manually
+      // For mobile apps, handle the redirect manually
       if (isMobile && data?.url) {
-        console.log("Opening external URL on mobile:", data.url);
+        console.log("Opening authentication URL on mobile:", data.url);
         toast({
           title: "Redirecting",
           description: "Opening Google sign-in...",
         });
         
-        // Let the URL load in external browser
-        window.open(data.url, '_blank');
+        // Use window.location instead of window.open for more consistent behavior on mobile
+        window.location.href = data.url;
       }
     } catch (error: any) {
       console.error("Google sign-in failed:", error);
@@ -80,7 +77,7 @@ export const SocialSignIn = () => {
         variant: "destructive",
       });
     } finally {
-      // Add a delay before resetting loading state
+      // Reset loading state after a short delay
       setTimeout(() => {
         setIsLoading(prev => ({ ...prev, google: false }));
       }, 1000);
