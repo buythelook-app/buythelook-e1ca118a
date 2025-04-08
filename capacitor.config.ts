@@ -18,15 +18,24 @@ const config: CapacitorConfig = {
       keystoreAliasPassword: undefined
     }
   },
-  // Updated configuration for deep linking
+  // Server configuration for deep linking
   server: {
     androidScheme: "https",
     hostname: "buythelook",
     cleartext: true
   },
-  // Updated scheme definition
+  // iOS and Android scheme configuration
   ios: {
     scheme: "buythelook"
+  },
+  android: {
+    scheme: "buythelook",
+    buildOptions: {
+      keystorePath: undefined,
+      keystoreAlias: undefined,
+      keystorePassword: undefined,
+      keystoreAliasPassword: undefined
+    }
   }
 };
 

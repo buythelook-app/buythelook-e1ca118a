@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Bot } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -31,14 +32,13 @@ export const SocialSignIn = () => {
     try {
       setIsLoading(prev => ({ ...prev, google: true }));
       
-      // Define proper redirect URLs for different platforms
-      const redirectUrl = isMobile 
-        ? 'buythelook://auth' // No trailing slash for consistency
-        : `${window.location.origin}/auth`;
+      // For mobile and web, always use the web URL as redirectTo
+      // Google requires a valid domain for redirectTo
+      const redirectUrl = `${window.location.origin}/auth`;
       
       console.log(`Starting Google sign-in with redirect URL: ${redirectUrl}`);
       
-      // Improved Google sign-in configuration
+      // Standard Google OAuth configuration
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -47,7 +47,9 @@ export const SocialSignIn = () => {
             access_type: 'offline',
             prompt: 'select_account',
           },
-          skipBrowserRedirect: isMobile // Skip browser redirect on mobile
+          // Never skip browser redirect regardless of platform
+          // We'll handle the redirect on our Auth page
+          skipBrowserRedirect: false
         }
       });
 
@@ -58,16 +60,16 @@ export const SocialSignIn = () => {
       
       console.log("Google sign-in initiated:", data);
       
-      // For mobile apps, handle the redirect manually
+      // On mobile native, we need to open the URL in the system browser
       if (isMobile && data?.url) {
         console.log("Opening authentication URL on mobile:", data.url);
         toast({
           title: "Redirecting",
-          description: "Opening Google sign-in...",
+          description: "Opening Google sign-in in browser...",
         });
         
-        // Use window.location instead of window.open for more consistent behavior on mobile
-        window.location.href = data.url;
+        // Open the URL in the system browser which will redirect back to our app
+        window.open(data.url, '_system');
       }
     } catch (error: any) {
       console.error("Google sign-in failed:", error);

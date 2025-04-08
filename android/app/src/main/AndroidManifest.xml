@@ -1,3 +1,4 @@
+
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
@@ -34,7 +35,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="aqkeprwxxsryropnhfvm.supabase.co" />
+                <data android:scheme="https" android:host="aqkeprwxxsryropnhfvm.supabase.co" android:pathPrefix="/auth/v1/callback" />
             </intent-filter>
 
             <!-- Additional intent filter for Google sign-in specific redirects -->

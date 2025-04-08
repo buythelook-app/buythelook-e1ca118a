@@ -18,42 +18,59 @@ export const useAuthFlow = () => {
     let isMounted = true;
     
     // Set up deep link handler for native platforms
-    if (Capacitor.isNativePlatform()) {
-      App.addListener('appUrlOpen', async (data) => {
-        console.log('Deep link received in useAuthFlow:', data.url);
-        
-        if (data.url.includes('auth') && isMounted) {
-          setIsLoading(true);
+    const setupDeepLinks = () => {
+      if (Capacitor.isNativePlatform()) {
+        App.addListener('appUrlOpen', async (data) => {
+          console.log('Deep link received in useAuthFlow:', data.url);
           
-          try {
-            // After deep link is received, verify session
-            const { data: sessionData, error } = await supabase.auth.getSession();
+          if (data.url.includes('auth') && isMounted) {
+            setIsLoading(true);
             
-            if (error) throw error;
-            
-            if (sessionData.session) {
-              console.log("Session found after deep link:", sessionData.session.user?.id);
+            try {
+              // Process any auth params in the URL if present
+              if (data.url.includes('code=') || data.url.includes('token=')) {
+                // Extract the URL parameters
+                const url = new URL(data.url);
+                const params = new URLSearchParams(url.search);
+                const hash = url.hash ? new URLSearchParams(url.hash.substring(1)) : null;
+                
+                console.log("Processing auth params from deep link URL");
+                
+                // Handle auth response manually if needed
+                await supabase.auth.refreshSession();
+              }
+              
+              // Verify session status
+              const { data: sessionData, error } = await supabase.auth.getSession();
+              
+              if (error) throw error;
+              
+              if (sessionData.session) {
+                console.log("Session found after deep link:", sessionData.session.user?.id);
+                toast({
+                  title: "Success",
+                  description: "You have been signed in successfully.",
+                });
+                navigate('/home');
+              } else {
+                console.log("No session after deep link");
+                setIsLoading(false);
+              }
+            } catch (error: any) {
+              console.error("Deep link auth error:", error);
               toast({
-                title: "Success",
-                description: "You have been signed in successfully.",
+                title: "Error",
+                description: error.message || "Authentication failed",
+                variant: "destructive",
               });
-              navigate('/home');
-            } else {
-              console.log("No session after deep link");
               setIsLoading(false);
             }
-          } catch (error: any) {
-            console.error("Deep link auth error:", error);
-            toast({
-              title: "Error",
-              description: error.message || "Authentication failed",
-              variant: "destructive",
-            });
-            setIsLoading(false);
           }
-        }
-      });
-    }
+        });
+      }
+    };
+    
+    setupDeepLinks();
 
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -130,7 +147,9 @@ export const useAuthFlow = () => {
         
         try {
           console.log("Processing OAuth redirect");
+          
           // Try to exchange the auth code for a session
+          await supabase.auth.refreshSession();
           const { data, error } = await supabase.auth.getSession();
           
           if (error) throw error;
