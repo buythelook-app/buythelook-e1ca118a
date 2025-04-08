@@ -5,6 +5,7 @@ import { useAuthState } from "./auth/useAuthState";
 import { useAuthDeepLinks } from "./auth/useAuthDeepLinks";
 import { useAuthUrlParams } from "./auth/useAuthUrlParams";
 import { useAuthSession } from "./auth/useAuthSession";
+import logger from "@/lib/logger";
 
 export const useAuthFlow = () => {
   const {
@@ -34,17 +35,28 @@ export const useAuthFlow = () => {
   });
 
   useEffect(() => {
-    console.log("Auth flow init started");
+    logger.info("Auth flow init started");
     let isMounted = true;
     
     // Initialize authentication flow
     const init = async () => {
       const isMobileNative = Capacitor.isNativePlatform();
-      console.log("Platform check:", isMobileNative ? "mobile native" : "browser");
+      logger.info("Platform check:", isMobileNative ? "mobile native" : "browser");
       
-      const handled = await handleDeepLink();
-      if (!handled && isMounted) {
-        await checkSession();
+      try {
+        // First check for deep link or URL parameters
+        const handled = await handleDeepLink();
+        
+        // Then check for existing session if not already handled
+        if (!handled && isMounted) {
+          await checkSession();
+        }
+      } catch (error) {
+        logger.error("Auth flow init error:", { data: error });
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     

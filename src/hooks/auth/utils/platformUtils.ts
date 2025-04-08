@@ -11,19 +11,23 @@ export const detectMobilePlatform = (): boolean => {
 
 export const setupMobileDeepLinkListener = (callback: () => void): (() => void) => {
   if (!Capacitor.isNativePlatform()) {
+    logger.info("Not a mobile platform, skipping deep link listener setup");
     return () => {}; // No cleanup needed for web
   }
   
-  logger.info("Setting up deep link listener in SocialSignIn for mobile");
+  logger.info("Setting up deep link listener for mobile");
   
-  // Initialize as null, will be set after the promise resolves
   let listenerHandle: any = null;
   
-  // Set up the listener and store the handle when resolved
-  App.addListener('appUrlOpen', (data) => {
-    logger.info('Deep link received in SocialSignIn:', { data: data.url });
+  // Set up the listener and store the handle when it's created
+  const listenerPromise = App.addListener('appUrlOpen', (data) => {
+    logger.info('Deep link received:', { data: data.url });
     callback();
-  }).then(handle => {
+  });
+  
+  // Store the handle when the Promise resolves
+  listenerPromise.then(handle => {
+    logger.info("Deep link listener successfully created");
     listenerHandle = handle;
   });
   

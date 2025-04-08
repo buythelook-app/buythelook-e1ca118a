@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Browser } from "@capacitor/browser";
 import { useToast } from "@/hooks/use-toast";
@@ -27,7 +26,6 @@ export const useGoogleAuth = ({
       // Generate a unique ID for this auth attempt
       const attemptId = `auth_${Date.now()}`;
       setAuthAttemptId(attemptId);
-      
       setProviderLoading(true);
       
       // Get the current hostname for redirects
@@ -47,21 +45,13 @@ export const useGoogleAuth = ({
         logger.info(`Using web redirect URL: ${redirectUrl}`);
       }
       
-      toast({
-        title: "Starting authentication",
-        description: "Connecting to Google. When prompted, select 'Buy The Look' to return to the app.",
-      });
-      
-      logger.info("Starting Google authentication flow...");
-      
-      // Standard Google OAuth configuration
+      // Start Google OAuth flow
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
           queryParams: {
-            access_type: 'offline',
-            prompt: 'select_account',
+            prompt: 'select_account'
           }
         }
       });
@@ -77,41 +67,19 @@ export const useGoogleAuth = ({
       logger.info("Google sign-in initiated:", { data });
       
       if (data?.url) {
-        logger.info("Auth URL received:", { data: data.url });
-        
         if (!isMobile) {
-          // On web browsers, redirect in the current window
-          logger.info("Redirecting browser to:", { data: data.url });
+          // On web browsers, open in a new tab
           window.location.href = data.url;
         } else {
-          // On mobile native, we need to use the Browser plugin instead of window.open
-          logger.info("Opening authentication URL on mobile:", { data: data.url });
+          // On mobile native, use the Browser plugin
           await Browser.open({ url: data.url });
-          
-          // Add additional instruction toast after a short delay
-          setTimeout(() => {
-            toast({
-              title: "Important",
-              description: "When prompted, select 'Buy The Look' app to complete sign-in",
-            });
-          }, 3000);
           
           // Set a timeout to reset the loading state if the deep link doesn't trigger
           setTimeout(() => {
-            const currentAuthAttemptId = attemptId;
-            if (currentAuthAttemptId === attemptId) {
-              logger.info("Authentication flow timeout - resetting state after 45 seconds");
-              resetLoadingState();
-              toast({
-                title: "Authentication timeout",
-                description: "Please try again or check if the app is installed correctly",
-                variant: "destructive",
-              });
-            }
-          }, 45000); // 45 seconds timeout
+            resetLoadingState();
+          }, 45000);
         }
       } else {
-        logger.error("No authentication URL received from Supabase");
         throw new Error("Failed to start Google authentication");
       }
     } catch (error: any) {
@@ -124,8 +92,7 @@ export const useGoogleAuth = ({
         description: error.message || "Failed to sign in with Google",
         variant: "destructive",
       });
-      setProviderLoading(false);
-      setAuthAttemptId(null);
+      resetLoadingState();
     }
   };
 
