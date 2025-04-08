@@ -1,4 +1,3 @@
-
 apply plugin: 'com.android.application'
 
 android {
@@ -19,6 +18,22 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            applicationVariants.all { variant ->
+                variant.outputs.all { output ->
+                    def formattedDate = new Date().format('yyyyMMdd')
+                    // Get the version from the project's version.properties file
+                    def versionPropsFile = file("${project.projectDir}/../../version.properties")
+                    def versionProps = new Properties()
+                    if (versionPropsFile.exists()) {
+                        versionPropsFile.withInputStream { stream -> versionProps.load(stream) }
+                    }
+                    def appVersion = versionProps.getProperty('version', '0.0.2')
+                    
+                    outputFileName = "Buy-The-Look-Beta-${appVersion}-${formattedDate}.apk"
+                }
+            }
         }
     }
 
