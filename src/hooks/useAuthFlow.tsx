@@ -17,6 +17,8 @@ export const useAuthFlow = () => {
     console.log("Auth flow init started");
     let isMounted = true;
     let deepLinkListener: any = null;
+    let retryCount = 0;
+    const maxRetries = 3;
     
     // Set up deep link handler for native platforms
     const setupDeepLinks = () => {
@@ -40,18 +42,29 @@ export const useAuthFlow = () => {
                 const hash = url.hash ? new URLSearchParams(url.hash.substring(1)) : null;
                 
                 console.log("Processing auth params from deep link URL");
-                
-                // Wait a bit to ensure auth state is updated
-                await new Promise((resolve) => setTimeout(resolve, 1000));
               }
               
+              // Wait to ensure auth state is updated
+              await new Promise((resolve) => setTimeout(resolve, 2000));
+              
               // Verify session status
-              const { data: sessionData, error } = await supabase.auth.getSession();
+              let sessionData = await supabase.auth.getSession();
               
-              if (error) throw error;
+              // Retry session check if no session found
+              if (!sessionData.data.session && retryCount < maxRetries) {
+                toast({
+                  title: "Verifying",
+                  description: `Checking authentication status (${retryCount + 1}/${maxRetries})...`,
+                });
+                
+                // Wait and try again
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                sessionData = await supabase.auth.getSession();
+                retryCount++;
+              }
               
-              if (sessionData.session) {
-                console.log("Session found after deep link:", sessionData.session.user?.id);
+              if (sessionData.data.session) {
+                console.log("Session found after deep link:", sessionData.data.session.user?.id);
                 toast({
                   title: "Success",
                   description: "You have been signed in successfully.",
@@ -71,6 +84,11 @@ export const useAuthFlow = () => {
                   navigate('/home');
                 } else {
                   console.log("Failed to refresh session:", refreshError);
+                  toast({
+                    title: "Authentication Failed",
+                    description: "Please try signing in again.",
+                    variant: "destructive",
+                  });
                   setIsLoading(false);
                 }
               }

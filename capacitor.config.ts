@@ -30,7 +30,23 @@ const config: CapacitorConfig = {
       keystoreAlias: undefined,
       keystorePassword: undefined,
       keystoreAliasPassword: undefined
-    }
+    },
+    intentFilters: [
+      {
+        action: "VIEW",
+        category: ["DEFAULT", "BROWSABLE"],
+        data: { scheme: "buythelook", host: "auth" }
+      },
+      {
+        action: "VIEW",
+        category: ["DEFAULT", "BROWSABLE"],
+        data: { 
+          scheme: "https", 
+          host: "aqkeprwxxsryropnhfvm.supabase.co", 
+          pathPrefix: "/auth/v1/callback"
+        }
+      }
+    ]
   }
 };
 

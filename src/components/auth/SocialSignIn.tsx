@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Bot } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -59,7 +60,7 @@ export const SocialSignIn = () => {
       
       toast({
         title: "Redirecting",
-        description: "Opening Google sign-in...",
+        description: "Opening Google sign-in. When prompted, select 'Buy The Look' to return to the app.",
       });
       
       // Standard Google OAuth configuration
@@ -89,6 +90,14 @@ export const SocialSignIn = () => {
           // On mobile native, we need to use the Browser plugin instead of window.open
           console.log("Opening authentication URL on mobile:", data.url);
           await Browser.open({ url: data.url });
+          
+          // Add additional instruction toast after a short delay
+          setTimeout(() => {
+            toast({
+              title: "Select 'Buy The Look'",
+              description: "When prompted, select the app to complete sign-in",
+            });
+          }, 1000);
         }
       }
     } catch (error: any) {
