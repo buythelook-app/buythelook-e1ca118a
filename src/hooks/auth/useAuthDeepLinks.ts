@@ -5,6 +5,7 @@ import { App } from "@capacitor/app";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
+import logger from "@/lib/logger";
 
 interface UseAuthDeepLinksProps {
   setIsLoading: (isLoading: boolean) => void;
@@ -23,15 +24,22 @@ export const useAuthDeepLinks = ({
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log("Setting up deep link listener for auth");
+    logger.info("Setting up deep link listener for auth");
     let deepLinkListener: any = null;
     
     // Set up deep link handler for native platforms
     if (Capacitor.isNativePlatform()) {
-      console.log("Setting up deep link listener for mobile");
+      logger.info("Setting up deep link listener for mobile", { 
+        data: { platform: Capacitor.getPlatform() } 
+      });
+      
       deepLinkListener = App.addListener('appUrlOpen', async (data) => {
-        console.log('Deep link received in useAuthFlow:', data.url);
-        console.log('Deep link full details:', JSON.stringify(data, null, 2));
+        logger.info('Deep link received in useAuthFlow:', { 
+          data: {
+            url: data.url,
+            timestamp: new Date().toISOString()
+          }
+        });
         
         if (data.url.includes('auth')) {
           setIsLoading(true);
@@ -48,9 +56,14 @@ export const useAuthDeepLinks = ({
               const params = new URLSearchParams(url.search);
               const hash = url.hash ? new URLSearchParams(url.hash.substring(1)) : null;
               
-              console.log("Processing auth params from deep link URL");
-              console.log("URL params:", Array.from(params.entries()));
-              if (hash) console.log("Hash params:", Array.from(hash.entries()));
+              logger.info("Processing auth params from deep link URL", {
+                data: {
+                  urlParams: Object.fromEntries(params.entries()),
+                  hashParams: hash ? Object.fromEntries(hash.entries()) : null,
+                  hasCodeParam: params.has('code'),
+                  hasTokenParam: params.has('token')
+                }
+              });
               
               // Check for error in URL parameters
               const urlError = params.get('error') || (hash && hash.get('error'));
@@ -58,23 +71,42 @@ export const useAuthDeepLinks = ({
                 const errorDesc = params.get('error_description') || 
                                  (hash && hash.get('error_description')) || 
                                  "Authentication error";
+                
+                logger.error("Error found in deep link URL", {
+                  data: {
+                    error: urlError,
+                    description: errorDesc
+                  }
+                });
+                
                 throw new Error(errorDesc);
               }
             }
             
             // Wait to ensure auth state is updated
+            logger.info("Waiting for auth state to update", {
+              data: { waitTimeMs: 2000 }
+            });
             await new Promise((resolve) => setTimeout(resolve, 2000));
             
             // Verify session status
             const maxRetries = 10;
             let sessionData = await supabase.auth.getSession();
-            console.log("Initial session check:", sessionData.data.session ? "Found session" : "No session found");
+            logger.info("Initial session check:", { 
+              data: {
+                hasSession: !!sessionData.data.session,
+                userId: sessionData.data.session?.user?.id,
+                timestamp: new Date().toISOString()
+              }
+            });
             
             // Retry session check if no session found
             let currentRetry = 0;
             const checkSessionWithRetry = async () => {
               if (!sessionData.data.session && currentRetry < maxRetries) {
-                console.log(`Retry attempt ${currentRetry + 1}/${maxRetries}`);
+                logger.info(`Retry attempt ${currentRetry + 1}/${maxRetries}`, {
+                  data: { timestamp: new Date().toISOString() }
+                });
                 
                 toast({
                   title: "Verifying",
@@ -89,27 +121,51 @@ export const useAuthDeepLinks = ({
                     const code = params.get('code');
                     
                     if (code) {
-                      console.log("Attempting to exchange auth code manually");
-                      console.log("Auth code:", code);
-                      await supabase.auth.refreshSession();
+                      logger.info("Attempting to exchange auth code manually", {
+                        data: { 
+                          codeLength: code.length,
+                          codePrefix: code.substring(0, 8) + '...'
+                        }
+                      });
+                      
+                      const result = await supabase.auth.refreshSession();
+                      logger.info("Manual code exchange result", {
+                        data: {
+                          success: !result.error,
+                          hasSession: !!result.data.session,
+                          error: result.error?.message
+                        }
+                      });
                     }
                   }
-                } catch (e) {
-                  console.error("Error during manual code exchange:", e);
-                  console.error("Error details:", JSON.stringify(e, null, 2));
+                } catch (e: any) {
+                  logger.error("Error during manual code exchange:", {
+                    data: {
+                      message: e.message,
+                      stack: e.stack,
+                      object: JSON.stringify(e)
+                    }
+                  });
                 }
                 
                 // Wait and try again
                 await new Promise((resolve) => setTimeout(resolve, 2000));
                 try {
                   sessionData = await supabase.auth.getSession();
-                } catch (sessionError) {
-                  console.error("Error getting session during retry:", sessionError);
-                }
-                
-                console.log(`Retry ${currentRetry + 1}: ${sessionData.data.session ? "Found session" : "No session found"}`);
-                if (sessionData.data.session) {
-                  console.log("Session user details:", JSON.stringify(sessionData.data.session.user, null, 2));
+                  logger.info("Session check after retry:", {
+                    data: {
+                      hasSession: !!sessionData.data.session,
+                      userId: sessionData.data.session?.user?.id,
+                      attempt: currentRetry + 1
+                    }
+                  });
+                } catch (sessionError: any) {
+                  logger.error("Error getting session during retry:", {
+                    data: {
+                      message: sessionError.message,
+                      attempt: currentRetry + 1
+                    }
+                  });
                 }
                 
                 currentRetry++;
@@ -126,18 +182,34 @@ export const useAuthDeepLinks = ({
             sessionData = await checkSessionWithRetry();
             
             if (sessionData.data.session) {
-              console.log("Session found after deep link:", sessionData.data.session.user?.id);
+              logger.info("Session found after deep link:", {
+                data: {
+                  userId: sessionData.data.session.user?.id,
+                  provider: sessionData.data.session.user?.app_metadata?.provider,
+                  expiresAt: new Date(sessionData.data.session.expires_at! * 1000).toISOString()
+                }
+              });
+              
               toast({
                 title: "Success",
                 description: "You have been signed in successfully.",
               });
               navigate('/home');
             } else {
-              console.log("No session after deep link and retries");
+              logger.error("No session after deep link and retries", {
+                data: { maxRetries }
+              });
               
               // Try a direct sign in with the provider
               try {
                 if (data.url.includes('google')) {
+                  logger.error("Google authentication incomplete", {
+                    data: { 
+                      url: data.url,
+                      platform: Capacitor.getPlatform()
+                    }
+                  });
+                  
                   setAuthError("Authentication process was interrupted. Please try signing in again.");
                   toast({
                     title: "Authentication Incomplete",
@@ -153,16 +225,25 @@ export const useAuthDeepLinks = ({
                   });
                 }
               } catch (providerError: any) {
-                console.error("Provider sign-in error:", providerError);
-                console.error("Error details:", JSON.stringify(providerError, null, 2));
+                logger.error("Provider sign-in error:", {
+                  data: {
+                    message: providerError.message,
+                    stack: providerError.stack
+                  }
+                });
               }
               
               setIsLoading(false);
             }
           } catch (error: any) {
-            console.error("Deep link auth error:", error);
-            console.error("Error stack:", error.stack);
-            console.error("Error details:", JSON.stringify(error, null, 2));
+            logger.error("Deep link auth error:", {
+              data: {
+                message: error.message,
+                stack: error.stack,
+                object: JSON.stringify(error)
+              }
+            });
+            
             setAuthError(error.message || "Authentication failed");
             toast({
               title: "Error",
@@ -174,12 +255,13 @@ export const useAuthDeepLinks = ({
         }
       });
       
-      console.log("Deep link listener set up successfully");
+      logger.info("Deep link listener set up successfully");
     }
 
     return () => {
       // Clean up app listener if on native platform
       if (deepLinkListener) {
+        logger.info("Cleaning up deep link listener");
         deepLinkListener.remove();
       }
     };

@@ -21,7 +21,7 @@ export const useGoogleAuth = ({
 
   const handleGoogleSignIn = async () => {
     try {
-      logger.info("Google sign-in started");
+      logger.info("Google sign-in started", { data: { timestamp: new Date().toISOString() } });
       
       // Generate a unique ID for this auth attempt
       const attemptId = `auth_${Date.now()}`;
@@ -33,6 +33,14 @@ export const useGoogleAuth = ({
       const protocol = window.location.protocol;
       const port = window.location.port ? `:${window.location.port}` : '';
       const baseUrl = `${protocol}//${hostname}${port}`;
+
+      logger.info("Auth attempt details", { 
+        data: { 
+          attemptId, 
+          baseUrl,
+          isMobile 
+        }
+      });
       
       // Set the redirect URL based on platform
       let redirectUrl = `${baseUrl}/auth`;
@@ -40,12 +48,20 @@ export const useGoogleAuth = ({
       // For native mobile, use app scheme
       if (isMobile) {
         redirectUrl = "buythelook://auth";
-        logger.info(`Using mobile redirect URL: ${redirectUrl}`);
+        logger.info(`Using mobile redirect URL`, { data: { redirectUrl } });
       } else {
-        logger.info(`Using web redirect URL: ${redirectUrl}`);
+        logger.info(`Using web redirect URL`, { data: { redirectUrl } });
       }
       
       // Start Google OAuth flow
+      logger.info("Starting OAuth flow with Supabase", { 
+        data: { 
+          provider: 'google', 
+          redirectUrl,
+          hasQueryParams: true
+        } 
+      });
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -59,33 +75,57 @@ export const useGoogleAuth = ({
       if (error) {
         logger.error("Google sign-in error:", { 
           context: "Google authentication",
-          data: error
+          data: {
+            errorMessage: error.message,
+            errorCode: error.status,
+            errorName: error.name,
+            stack: error.stack
+          }
         });
         throw error;
       }
       
-      logger.info("Google sign-in initiated:", { data });
+      logger.info("Google sign-in initiated:", { 
+        data: { 
+          hasUrl: !!data?.url,
+          urlStart: data?.url ? data.url.substring(0, 50) + '...' : null,
+        } 
+      });
       
       if (data?.url) {
         if (!isMobile) {
           // On web browsers, open in a new tab
+          logger.info("Opening auth URL in browser", { data: { isMobile: false } });
           window.location.href = data.url;
         } else {
           // On mobile native, use the Browser plugin
+          logger.info("Opening auth URL with Capacitor Browser", { data: { isMobile: true } });
           await Browser.open({ url: data.url });
           
           // Set a timeout to reset the loading state if the deep link doesn't trigger
+          logger.info("Setting authentication timeout", { data: { timeoutMs: 45000 } });
           setTimeout(() => {
+            logger.info("Authentication timeout triggered", { data: { attemptId } });
             resetLoadingState();
           }, 45000);
         }
       } else {
+        logger.error("Failed to start Google authentication", { 
+          data: { 
+            reason: "No URL returned from Supabase",
+            authData: JSON.stringify(data)
+          }
+        });
         throw new Error("Failed to start Google authentication");
       }
     } catch (error: any) {
       logger.error("Google sign-in failed:", { 
         context: "Google authentication",
-        data: error
+        data: {
+          errorMessage: error.message,
+          errorObject: JSON.stringify(error),
+          stack: error.stack
+        }
       });
       toast({
         title: "Error",

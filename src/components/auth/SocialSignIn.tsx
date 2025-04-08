@@ -17,17 +17,32 @@ export const SocialSignIn = () => {
   const { isLoading } = authState;
 
   const onGoogleClick = () => {
-    logger.info("Google button clicked in SocialSignIn");
+    logger.info("Google button clicked in SocialSignIn", {
+      data: {
+        timestamp: new Date().toISOString(),
+        currentLoadingState: isLoading
+      }
+    });
     handleGoogleSignIn();
   };
 
   const onAppleClick = () => {
-    logger.info("Apple button clicked in SocialSignIn");
+    logger.info("Apple button clicked in SocialSignIn", {
+      data: {
+        timestamp: new Date().toISOString(),
+        currentLoadingState: isLoading
+      }
+    });
     handleAppleSignIn();
   };
 
   const onAIClick = () => {
-    logger.info("AI button clicked in SocialSignIn");
+    logger.info("AI button clicked in SocialSignIn", {
+      data: {
+        timestamp: new Date().toISOString(),
+        currentLoadingState: isLoading
+      }
+    });
     handleAISignIn();
   };
 
