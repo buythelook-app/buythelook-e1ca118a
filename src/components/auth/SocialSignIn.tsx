@@ -16,6 +16,7 @@ export const SocialSignIn = () => {
     ai: false
   });
   const [isMobile, setIsMobile] = useState(false);
+  const [authAttemptId, setAuthAttemptId] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if running on a native mobile platform
@@ -27,7 +28,8 @@ export const SocialSignIn = () => {
         console.log('Deep link received in SocialSignIn:', data.url);
         // Reset loading state when we receive the deep link
         setIsLoading(prev => ({ ...prev, google: false, apple: false }));
-        // We'll handle the auth in useAuthFlow.tsx
+        // Clear the auth attempt ID
+        setAuthAttemptId(null);
       });
     }
 
@@ -39,8 +41,39 @@ export const SocialSignIn = () => {
     };
   }, []);
 
+  // This effect will automatically reset loading state if stuck for too long
+  useEffect(() => {
+    if (isLoading.google || isLoading.apple) {
+      const timeoutId = setTimeout(() => {
+        if (isLoading.google || isLoading.apple) {
+          console.log("Authentication timeout - resetting loading state");
+          setIsLoading(prev => ({ 
+            ...prev, 
+            google: false, 
+            apple: false 
+          }));
+          
+          toast({
+            title: "Authentication timeout",
+            description: "The authentication process took too long. Please try again.",
+            variant: "destructive",
+          });
+        }
+      }, 60000); // 1 minute timeout
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isLoading, toast]);
+
   const handleGoogleSignIn = async () => {
     try {
+      // If already loading, prevent multiple attempts
+      if (isLoading.google) return;
+      
+      // Generate a unique ID for this auth attempt
+      const attemptId = `auth_${Date.now()}`;
+      setAuthAttemptId(attemptId);
+      
       setIsLoading(prev => ({ ...prev, google: true }));
       
       // Get the current hostname for redirects
@@ -61,9 +94,11 @@ export const SocialSignIn = () => {
       }
       
       toast({
-        title: "Redirecting",
-        description: "Opening Google sign-in. When prompted, select 'Buy The Look' to return to the app.",
+        title: "Starting authentication",
+        description: "Connecting to Google. When prompted, select 'Buy The Look' to return to the app.",
       });
+      
+      console.log("Starting Google authentication flow...");
       
       // Standard Google OAuth configuration
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -95,26 +130,27 @@ export const SocialSignIn = () => {
           
           // Add additional instruction toast after a short delay
           setTimeout(() => {
-            toast({
-              title: "Select 'Buy The Look'",
-              description: "When prompted, select the app to complete sign-in",
-            });
-          }, 1000);
+            if (isLoading.google) {
+              toast({
+                title: "Important",
+                description: "When prompted, select 'Buy The Look' app to complete sign-in",
+              });
+            }
+          }, 3000);
           
           // Set a timeout to reset the loading state if the deep link doesn't trigger
           setTimeout(() => {
-            setIsLoading(prev => {
-              if (prev.google) {
-                toast({
-                  title: "Authentication timeout",
-                  description: "Please try again or check if the app is installed correctly",
-                  variant: "destructive",
-                });
-                return { ...prev, google: false };
-              }
-              return prev;
-            });
-          }, 30000); // 30 seconds timeout
+            // Only reset if this is still the current auth attempt
+            if (authAttemptId === attemptId && isLoading.google) {
+              console.log("Authentication flow timeout - resetting state");
+              setIsLoading(prev => ({ ...prev, google: false }));
+              toast({
+                title: "Authentication timeout",
+                description: "Please try again or check if the app is installed correctly",
+                variant: "destructive",
+              });
+            }
+          }, 45000); // 45 seconds timeout
         }
       }
     } catch (error: any) {
@@ -125,6 +161,7 @@ export const SocialSignIn = () => {
         variant: "destructive",
       });
       setIsLoading(prev => ({ ...prev, google: false }));
+      setAuthAttemptId(null);
     }
   };
 

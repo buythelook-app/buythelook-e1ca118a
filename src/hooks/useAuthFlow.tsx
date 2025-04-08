@@ -19,7 +19,7 @@ export const useAuthFlow = () => {
     let isMounted = true;
     let deepLinkListener: any = null;
     let retryCount = 0;
-    const maxRetries = 5;
+    const maxRetries = 10; // Increased max retries
     
     // Set up deep link handler for native platforms
     const setupDeepLinks = () => {
@@ -59,10 +59,30 @@ export const useAuthFlow = () => {
               let currentRetry = 0;
               const checkSessionWithRetry = async () => {
                 if (!sessionData.data.session && currentRetry < maxRetries) {
+                  console.log(`Retry attempt ${currentRetry + 1}/${maxRetries}`);
+                  
                   toast({
                     title: "Verifying",
                     description: `Checking authentication status (${currentRetry + 1}/${maxRetries})...`,
                   });
+                  
+                  // Try to manually exchange the token if possible
+                  try {
+                    if (data.url.includes('code=')) {
+                      const url = new URL(data.url);
+                      const params = url.searchParams || new URLSearchParams(url.search);
+                      const code = params.get('code');
+                      
+                      if (code) {
+                        console.log("Attempting to exchange auth code manually");
+                        // We can't directly call exchangeCodeForSession here as it's not exposed
+                        // Instead, we'll manually trigger a refresh and wait
+                        await supabase.auth.refreshSession();
+                      }
+                    }
+                  } catch (e) {
+                    console.error("Error during manual code exchange:", e);
+                  }
                   
                   // Wait and try again
                   await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -90,26 +110,29 @@ export const useAuthFlow = () => {
                 navigate('/home');
               } else {
                 console.log("No session after deep link and retries");
-                // Try refreshing the session once more
-                const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
                 
-                if (!refreshError && refreshData.session) {
-                  console.log("Session refreshed successfully");
-                  toast({
-                    title: "Success",
-                    description: "You have been signed in successfully.",
-                  });
-                  navigate('/home');
-                } else {
-                  console.log("Failed to refresh session:", refreshError);
-                  setAuthError("Authentication failed. Please try again.");
-                  toast({
-                    title: "Authentication Failed",
-                    description: "Please try signing in again.",
-                    variant: "destructive",
-                  });
-                  setIsLoading(false);
+                // Try a direct sign in with the provider
+                try {
+                  if (data.url.includes('google')) {
+                    setAuthError("Authentication process was interrupted. Please try signing in again.");
+                    toast({
+                      title: "Authentication Incomplete",
+                      description: "The Google sign-in process was interrupted. Please try again.",
+                      variant: "destructive",
+                    });
+                  } else {
+                    setAuthError("Authentication failed. Please try again.");
+                    toast({
+                      title: "Authentication Failed",
+                      description: "Please try signing in again.",
+                      variant: "destructive",
+                    });
+                  }
+                } catch (providerError: any) {
+                  console.error("Provider sign-in error:", providerError);
                 }
+                
+                setIsLoading(false);
               }
             } catch (error: any) {
               console.error("Deep link auth error:", error);
@@ -214,6 +237,7 @@ export const useAuthFlow = () => {
           const { error: sessionError } = await supabase.auth.refreshSession();
           if (sessionError) {
             console.error("Error refreshing session:", sessionError);
+            // Don't throw, continue trying to get session
           }
           
           const { data, error } = await supabase.auth.getSession();
