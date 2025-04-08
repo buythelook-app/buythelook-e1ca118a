@@ -16,13 +16,19 @@ export const setupMobileDeepLinkListener = (callback: () => void): (() => void) 
   
   logger.info("Setting up deep link listener in SocialSignIn for mobile");
   
-  const listener = App.addListener('appUrlOpen', (data) => {
+  let listener: any = null;
+  
+  App.addListener('appUrlOpen', (data) => {
     logger.info('Deep link received in SocialSignIn:', { data: data.url });
     callback();
+  }).then(result => {
+    listener = result;
   });
   
   return () => {
     logger.info("Cleaning up deep link listener");
-    listener.remove();
+    if (listener) {
+      listener.remove();
+    }
   };
 };
