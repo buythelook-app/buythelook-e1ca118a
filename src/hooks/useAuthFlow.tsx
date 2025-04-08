@@ -41,7 +41,9 @@ export const useAuthFlow = () => {
     // Initialize authentication flow
     const init = async () => {
       const isMobileNative = Capacitor.isNativePlatform();
-      logger.info("Platform check:", isMobileNative ? "mobile native" : "browser");
+      logger.info("Platform check:", { 
+        data: isMobileNative ? "mobile native" : "browser" 
+      });
       
       try {
         // First check for deep link or URL parameters
