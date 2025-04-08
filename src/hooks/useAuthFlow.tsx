@@ -109,10 +109,6 @@ export const useAuthFlow = () => {
         
         if (data.session) {
           console.log("Active session found", data.session.user?.id);
-          toast({
-            title: "Success",
-            description: "You are signed in.",
-          });
           navigate('/home');
           return;
         }
@@ -149,7 +145,11 @@ export const useAuthFlow = () => {
           console.log("Processing OAuth redirect");
           
           // Try to exchange the auth code for a session
-          await supabase.auth.refreshSession();
+          const { error: sessionError } = await supabase.auth.refreshSession();
+          if (sessionError) {
+            console.error("Error refreshing session:", sessionError);
+          }
+          
           const { data, error } = await supabase.auth.getSession();
           
           if (error) throw error;

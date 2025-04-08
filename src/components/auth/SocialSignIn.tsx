@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Bot } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -32,11 +31,26 @@ export const SocialSignIn = () => {
     try {
       setIsLoading(prev => ({ ...prev, google: true }));
       
-      // For mobile and web, always use the web URL as redirectTo
-      // Google requires a valid domain for redirectTo
-      const redirectUrl = `${window.location.origin}/auth`;
+      // Get the current hostname for redirects
+      const hostname = window.location.hostname;
+      const protocol = window.location.protocol;
+      const port = window.location.port ? `:${window.location.port}` : '';
+      const baseUrl = `${protocol}//${hostname}${port}`;
+      
+      // Set the redirect URL based on platform
+      let redirectUrl = `${baseUrl}/auth`;
+      
+      // For native mobile, use app scheme
+      if (isMobile) {
+        redirectUrl = "buythelook://auth";
+      }
       
       console.log(`Starting Google sign-in with redirect URL: ${redirectUrl}`);
+      
+      toast({
+        title: "Redirecting",
+        description: "Opening Google sign-in...",
+      });
       
       // Standard Google OAuth configuration
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -46,10 +60,7 @@ export const SocialSignIn = () => {
           queryParams: {
             access_type: 'offline',
             prompt: 'select_account',
-          },
-          // Never skip browser redirect regardless of platform
-          // We'll handle the redirect on our Auth page
-          skipBrowserRedirect: false
+          }
         }
       });
 
@@ -60,16 +71,18 @@ export const SocialSignIn = () => {
       
       console.log("Google sign-in initiated:", data);
       
-      // On mobile native, we need to open the URL in the system browser
-      if (isMobile && data?.url) {
-        console.log("Opening authentication URL on mobile:", data.url);
-        toast({
-          title: "Redirecting",
-          description: "Opening Google sign-in in browser...",
-        });
-        
-        // Open the URL in the system browser which will redirect back to our app
-        window.open(data.url, '_system');
+      if (data?.url) {
+        // On web browsers, use window.location for a full page redirect instead of opening in a new tab
+        if (!isMobile) {
+          window.location.href = data.url;
+        } else {
+          // On mobile native, we need to open the URL in the system browser
+          console.log("Opening authentication URL on mobile:", data.url);
+          // Use a slight delay to ensure the toast is visible before redirect
+          setTimeout(() => {
+            window.open(data.url, '_system');
+          }, 300);
+        }
       }
     } catch (error: any) {
       console.error("Google sign-in failed:", error);
@@ -79,10 +92,11 @@ export const SocialSignIn = () => {
         variant: "destructive",
       });
     } finally {
-      // Reset loading state after a short delay
+      // Leave loading state on until redirect occurs or error is shown
+      // It will be reset when the page reloads after authentication
       setTimeout(() => {
         setIsLoading(prev => ({ ...prev, google: false }));
-      }, 1000);
+      }, 5000); // Set a maximum timeout just in case
     }
   };
 

@@ -10,19 +10,11 @@ const config: CapacitorConfig = {
       enabled: true
     }
   },
-  android: {
-    buildOptions: {
-      keystorePath: undefined,
-      keystoreAlias: undefined,
-      keystorePassword: undefined,
-      keystoreAliasPassword: undefined
-    }
-  },
-  // Server configuration for deep linking
   server: {
     androidScheme: "https",
     hostname: "buythelook",
-    cleartext: true
+    cleartext: true,
+    url: "https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com?forceHideBadge=true"
   },
   // iOS and Android scheme configuration
   ios: {

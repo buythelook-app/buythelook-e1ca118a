@@ -38,7 +38,7 @@
                 <data android:scheme="https" android:host="aqkeprwxxsryropnhfvm.supabase.co" android:pathPrefix="/auth/v1/callback" />
             </intent-filter>
 
-            <!-- Additional intent filter for Google sign-in specific redirects -->
+            <!-- General Google sign-in intent filter -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
