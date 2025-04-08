@@ -32,7 +32,7 @@ export const SocialSignIn = () => {
     try {
       setIsLoading(prev => ({ ...prev, google: true }));
       
-      // Simplify the redirect URL even further
+      // For web version, use the current origin without query params
       const redirectUrl = isMobile 
         ? "buythelook://auth" // Use custom scheme for mobile apps
         : `${window.location.origin}/auth`; // For web
@@ -43,11 +43,14 @@ export const SocialSignIn = () => {
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          // Minimal query params to avoid URL issues
+          // Using minimal options to avoid URL encoding issues
           queryParams: {
+            // These are standard parameters for Google OAuth
             access_type: 'offline',
             prompt: 'select_account',
-          }
+          },
+          // Skip URL encoding of the state parameter
+          skipBrowserRedirect: false
         }
       });
 

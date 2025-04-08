@@ -74,6 +74,10 @@ export const useAuthFlow = () => {
         console.log("Password recovery detected");
         setIsPasswordRecovery(true);
         setIsSignIn(true);
+      } else if (event === 'USER_UPDATED') {
+        console.log("User updated");
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log("Token refreshed");
       }
     });
     
@@ -115,6 +119,7 @@ export const useAuthFlow = () => {
                            window.location.search.includes('code=') || 
                            window.location.search.includes('token=') ||
                            window.location.search.includes('type=') ||
+                           window.location.search.includes('error=') ||
                            window.location.search.includes('access_token=');
       
       if (hasAuthParams) {
@@ -149,6 +154,16 @@ export const useAuthFlow = () => {
             console.log("Password recovery flow detected");
             setIsPasswordRecovery(true);
             setIsSignIn(true);
+          }
+          
+          // Check for error in the URL
+          if (url.search.includes('error=') || url.hash.includes('error=')) {
+            console.error("Auth error in URL:", url.toString());
+            toast({
+              title: "Authentication Error",
+              description: "There was a problem with the authentication process. Please try again.",
+              variant: "destructive",
+            });
           }
         } catch (error: any) {
           console.error("Auth redirect processing error:", error);
