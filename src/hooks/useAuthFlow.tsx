@@ -52,7 +52,7 @@ export const useAuthFlow = () => {
         data: {
           platform,
           isMobile: isMobileNative ? "mobile native" : "browser",
-          capacitorVersion: Capacitor.VERSION
+          capacitorInfo: Capacitor.getPlatform() // Removed VERSION reference
         }
       });
       
