@@ -3,7 +3,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'app.lovable.bc0cf4d79a354a65b4249d5ecd554d30',
-  appName: 'Buy The Look Beta 0.0.3',
+  appName: 'Buy The Look Beta 0.0.5',
   webDir: 'dist',
   plugins: {
     CapacitorCookies: {
