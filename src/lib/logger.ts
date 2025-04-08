@@ -20,7 +20,7 @@ const LOG_LEVEL_VALUES: Record<LogLevel, number> = {
 };
 
 // Current log level - can be changed at runtime
-let currentLogLevel = DEFAULT_LOG_LEVEL;
+let currentLogLevel: LogLevel = DEFAULT_LOG_LEVEL;
 
 // Set the current log level
 export const setLogLevel = (level: LogLevel) => {
