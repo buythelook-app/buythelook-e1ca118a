@@ -22,12 +22,7 @@ export const useGoogleAuth = ({
 
   const handleGoogleSignIn = async () => {
     try {
-      // If already loading, prevent multiple attempts
-      const isLoading = true;
-      if (isLoading) {
-        logger.info("Google auth already in progress, preventing multiple attempts");
-        return;
-      }
+      logger.info("Google sign-in started");
       
       // Generate a unique ID for this auth attempt
       const attemptId = `auth_${Date.now()}`;
@@ -60,77 +55,64 @@ export const useGoogleAuth = ({
       logger.info("Starting Google authentication flow...");
       
       // Standard Google OAuth configuration
-      try {
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: redirectUrl,
-            queryParams: {
-              access_type: 'offline',
-              prompt: 'select_account',
-            }
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'select_account',
           }
-        });
+        }
+      });
 
-        if (error) {
-          logger.error("Google sign-in error:", { 
-            context: "Google authentication",
-            data: error
-          });
-          throw error;
-        }
-        
-        logger.info("Google sign-in initiated:", { data });
-        
-        if (data?.url) {
-          logger.info("Auth URL received:", { data: data.url });
-          
-          if (!isMobile) {
-            // On web browsers, redirect in the current window
-            logger.info("Redirecting browser to:", { data: data.url });
-            window.location.href = data.url;
-          } else {
-            // On mobile native, we need to use the Browser plugin instead of window.open
-            logger.info("Opening authentication URL on mobile:", { data: data.url });
-            await Browser.open({ url: data.url });
-            
-            // Add additional instruction toast after a short delay
-            setTimeout(() => {
-              const isStillLoading = true; // This would be checked from state in real component
-              if (isStillLoading) {
-                toast({
-                  title: "Important",
-                  description: "When prompted, select 'Buy The Look' app to complete sign-in",
-                });
-              }
-            }, 3000);
-            
-            // Set a timeout to reset the loading state if the deep link doesn't trigger
-            setTimeout(() => {
-              // Only reset if this is still the current auth attempt
-              const currentAuthAttemptId = attemptId; // This would be from state
-              const isStillLoading = true; // This would be checked from state
-              if (currentAuthAttemptId === attemptId && isStillLoading) {
-                logger.info("Authentication flow timeout - resetting state after 45 seconds");
-                setProviderLoading(false);
-                toast({
-                  title: "Authentication timeout",
-                  description: "Please try again or check if the app is installed correctly",
-                  variant: "destructive",
-                });
-              }
-            }, 45000); // 45 seconds timeout
-          }
-        } else {
-          logger.error("No authentication URL received from Supabase");
-          throw new Error("Failed to start Google authentication");
-        }
-      } catch (supabaseError) {
-        logger.error("Supabase OAuth error:", { 
+      if (error) {
+        logger.error("Google sign-in error:", { 
           context: "Google authentication",
-          data: supabaseError
+          data: error
         });
-        throw supabaseError;
+        throw error;
+      }
+      
+      logger.info("Google sign-in initiated:", { data });
+      
+      if (data?.url) {
+        logger.info("Auth URL received:", { data: data.url });
+        
+        if (!isMobile) {
+          // On web browsers, redirect in the current window
+          logger.info("Redirecting browser to:", { data: data.url });
+          window.location.href = data.url;
+        } else {
+          // On mobile native, we need to use the Browser plugin instead of window.open
+          logger.info("Opening authentication URL on mobile:", { data: data.url });
+          await Browser.open({ url: data.url });
+          
+          // Add additional instruction toast after a short delay
+          setTimeout(() => {
+            toast({
+              title: "Important",
+              description: "When prompted, select 'Buy The Look' app to complete sign-in",
+            });
+          }, 3000);
+          
+          // Set a timeout to reset the loading state if the deep link doesn't trigger
+          setTimeout(() => {
+            const currentAuthAttemptId = attemptId;
+            if (currentAuthAttemptId === attemptId) {
+              logger.info("Authentication flow timeout - resetting state after 45 seconds");
+              resetLoadingState();
+              toast({
+                title: "Authentication timeout",
+                description: "Please try again or check if the app is installed correctly",
+                variant: "destructive",
+              });
+            }
+          }, 45000); // 45 seconds timeout
+        }
+      } else {
+        logger.error("No authentication URL received from Supabase");
+        throw new Error("Failed to start Google authentication");
       }
     } catch (error: any) {
       logger.error("Google sign-in failed:", { 

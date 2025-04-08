@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { App } from "@capacitor/app";
 import { useToast } from "@/hooks/use-toast";
 import { useGoogleAuth } from "./providers/useGoogleAuth";
 import { useAppleAuth } from "./providers/useAppleAuth";
@@ -74,7 +73,8 @@ export const useSocialAuth = () => {
       isLoading: {
         ...prev.isLoading,
         google: false, 
-        apple: false 
+        apple: false,
+        ai: false
       },
       authAttemptId: null
     }));
