@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -79,7 +78,7 @@ export const Landing = () => {
               className="mb-6"
             >
               <img
-                src="/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png"
+                src="/lovable-uploads/97187c5b-b4bd-4ead-a4bf-644148da8924.png"
                 alt="Buy the Look Logo"
                 className="w-64 mx-auto drop-shadow-2xl"
               />
