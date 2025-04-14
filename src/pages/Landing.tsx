@@ -1,7 +1,8 @@
+
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles, UserCircle, Gift } from "lucide-react";
 
 export const Landing = () => {
   const navigate = useNavigate();
