@@ -22,6 +22,7 @@ import { AboutApp } from "@/components/AboutApp";
 import { OurRules } from "@/components/OurRules";
 import { MyList } from "@/components/MyList";
 import { PasswordRecovery } from "@/pages/PasswordRecovery";
+import Landing from "@/pages/Landing";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +45,7 @@ function App() {
             <Route path="/" element={<Navigate to="/entrance" replace />} />
             <Route path="/entrance" element={<Entrance />} />
             <Route path="/home" element={<Index />} />
+            <Route path="/landing" element={<Landing />} />
             <Route path="/quiz" element={<StyleQuiz />} />
             <Route path="/suggestions" element={<LookSuggestions />} />
             <Route path="/look/:id" element={<LookDetail />} />
