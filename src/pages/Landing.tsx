@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -59,6 +60,11 @@ export const Landing = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
+      {/* Page Identifier - Makes it clear this is the Landing page */}
+      <div className="fixed top-4 right-4 bg-purple-600 text-white px-3 py-1 rounded-full text-sm z-50">
+        Landing Page
+      </div>
+      
       {/* Hero Section */}
       <section className="relative h-screen flex items-center">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1445205170230-053b83016050')] bg-cover bg-center">

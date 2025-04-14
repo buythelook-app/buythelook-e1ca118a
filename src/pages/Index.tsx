@@ -1,3 +1,4 @@
+
 import { HeroSection } from "@/components/HeroSection";
 import { Navbar } from "@/components/Navbar";
 import { FilterOptions } from "@/components/filters/FilterOptions";
@@ -156,6 +157,11 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-netflix-background">
+      {/* Page Identifier - Makes it clear this is the Home page */}
+      <div className="fixed top-4 right-4 bg-netflix-accent text-white px-3 py-1 rounded-full text-sm z-50">
+        Home Page
+      </div>
+      
       <Navbar />
       <HeroSection />
       <main className="container mx-auto px-4 py-8">

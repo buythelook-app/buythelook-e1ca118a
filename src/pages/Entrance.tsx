@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -5,9 +6,9 @@ export const Entrance = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Automatically navigate to auth page after 3 seconds
+    // Automatically navigate to landing page after 3 seconds
     const timer = setTimeout(() => {
-      navigate("/auth");
+      navigate("/landing");
     }, 3000);
 
     return () => clearTimeout(timer);
