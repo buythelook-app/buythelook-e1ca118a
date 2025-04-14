@@ -153,8 +153,8 @@ export const Landing = () => {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-white">
+      {/* Features Section - Increased top padding to separate from the hero section */}
+      <section className="py-32 bg-white">
         <div className="container mx-auto px-4">
           <motion.div 
             className="text-center mb-16"
