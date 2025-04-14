@@ -163,7 +163,6 @@ export const Landing = () => {
             transition={{ duration: 0.5 }}
           >
             <h2 className="text-4xl font-display font-bold mb-4 text-gray-900">How It Works</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Our AI combines your body structure, mood, and preferred style to create perfect outfit suggestions.</p>
           </motion.div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
