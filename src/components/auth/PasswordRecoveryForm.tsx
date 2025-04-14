@@ -16,6 +16,19 @@ export const PasswordRecoveryForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+useEffect(() => {
+  const hash = window.location.hash;
+  const access_token = new URLSearchParams(hash.substring(1)).get('access_token');
+  const refresh_token = new URLSearchParams(hash.substring(1)).get('refresh_token');
+
+  if (access_token && refresh_token) {
+    supabase.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
+      if (error) {
+        console.error('Error setting session:', error.message);
+      }
+    });
+  }
+}, []);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
