@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -67,7 +66,7 @@ export const Landing = () => {
         </div>
         <div className="container mx-auto px-4 z-10">
           <motion.div 
-            className="max-w-3xl mx-auto text-center text-white -mt-16" // Adjusted top margin to move content up
+            className="max-w-3xl mx-auto text-center text-white -mt-32" // Increased negative margin to move content further up
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
