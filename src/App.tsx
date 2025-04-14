@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +22,7 @@ import { OurRules } from "@/components/OurRules";
 import { MyList } from "@/components/MyList";
 import { PasswordRecovery } from "@/pages/PasswordRecovery";
 import Landing from "@/pages/Landing";
+import { DeveloperNav } from "@/components/DeveloperNav";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,12 +35,15 @@ const queryClient = new QueryClient({
 
 function App() {
   console.log("App component rendering");
+  const isDevelopment = import.meta.env.DEV;
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <HashRouter>
+          {isDevelopment && <DeveloperNav />}
           <Routes>
             <Route path="/" element={<Navigate to="/entrance" replace />} />
             <Route path="/entrance" element={<Entrance />} />
