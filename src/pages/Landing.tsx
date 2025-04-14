@@ -147,7 +147,7 @@ export const Landing = () => {
         </div>
       </section>
 
-      {/* Features Section - Making sure the background is solid white for visibility */}
+      {/* Features Section */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <motion.div 
