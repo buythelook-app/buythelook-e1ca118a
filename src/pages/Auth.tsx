@@ -4,20 +4,19 @@ import { AuthLoader } from "@/components/auth/AuthLoader";
 import { AnimatedBackground } from "@/components/auth/AnimatedBackground";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { useAuthFlow } from "@/hooks/useAuthFlow";
-import { PasswordRecoveryForm } from "@/components/auth/PasswordRecoveryForm";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import ErrorBoundary from "@/components/auth/ErrorBoundary";
 import logger from "@/lib/logger";
 
 export const Auth = () => {
-  const { isLoading, isSignIn, isPasswordRecovery, toggleAuthMode, authError } = useAuthFlow();
+  const { isLoading, isSignIn, toggleAuthMode, authError } = useAuthFlow();
 
   useEffect(() => {
     // Log component mount for debugging
     logger.info("Auth page mounted", {
       context: "Auth component",
-      data: { isLoading, isSignIn, isPasswordRecovery }
+      data: { isLoading, isSignIn }
     });
 
     // Log any auth errors
@@ -31,7 +30,7 @@ export const Auth = () => {
     return () => {
       logger.info("Auth page unmounted", { context: "Auth component" });
     };
-  }, [isLoading, isSignIn, isPasswordRecovery, authError]);
+  }, [isLoading, isSignIn, authError]);
 
   if (isLoading) {
     return <AuthLoader />;
@@ -50,11 +49,7 @@ export const Auth = () => {
           </div>
         )}
         <div className="w-full max-w-md">
-          {isPasswordRecovery ? (
-            <PasswordRecoveryForm />
-          ) : (
-            <AuthForm isSignIn={isSignIn} onToggleAuthMode={toggleAuthMode} />
-          )}
+          <AuthForm isSignIn={isSignIn} onToggleAuthMode={toggleAuthMode} />
         </div>
       </div>
     </ErrorBoundary>

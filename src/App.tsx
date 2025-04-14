@@ -21,7 +21,7 @@ import { StyleGuide } from "@/components/StyleGuide";
 import { AboutApp } from "@/components/AboutApp";
 import { OurRules } from "@/components/OurRules";
 import { MyList } from "@/components/MyList";
-import { PasswordRecoveryForm } from "@/components/auth/PasswordRecoveryForm";
+import { PasswordRecovery } from "@/pages/PasswordRecovery";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,8 +41,6 @@ function App() {
         <Sonner />
         <HashRouter>
           <Routes>
-          <Route path="/reset-password" element={<PasswordRecoveryForm />} />
-
             <Route path="/" element={<Navigate to="/entrance" replace />} />
             <Route path="/entrance" element={<Entrance />} />
             <Route path="/home" element={<Index />} />
@@ -52,6 +50,7 @@ function App() {
             <Route path="/faq" element={<FAQ />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<PasswordRecovery />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/profile" element={<Profile />} />

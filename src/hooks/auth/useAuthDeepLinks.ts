@@ -10,14 +10,12 @@ import logger from "@/lib/logger";
 interface UseAuthDeepLinksProps {
   setIsLoading: (isLoading: boolean) => void;
   setAuthError: (error: string | null) => void;
-  setIsPasswordRecovery: (isRecovery: boolean) => void;
   setIsSignIn: (isSignIn: boolean) => void;
 }
 
 export const useAuthDeepLinks = ({
   setIsLoading,
   setAuthError,
-  setIsPasswordRecovery,
   setIsSignIn,
 }: UseAuthDeepLinksProps) => {
   const { toast } = useToast();
@@ -40,6 +38,13 @@ export const useAuthDeepLinks = ({
             timestamp: new Date().toISOString()
           }
         });
+        
+        // Check if this is a password recovery link
+        if (data.url.includes('type=recovery')) {
+          logger.info('Password recovery deep link received');
+          navigate('/reset-password');
+          return;
+        }
         
         if (data.url.includes('auth')) {
           setIsLoading(true);
@@ -265,5 +270,5 @@ export const useAuthDeepLinks = ({
         deepLinkListener.remove();
       }
     };
-  }, [navigate, toast, setIsLoading, setAuthError, setIsPasswordRecovery, setIsSignIn]);
+  }, [navigate, toast, setIsLoading, setAuthError, setIsSignIn]);
 };

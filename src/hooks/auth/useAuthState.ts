@@ -9,7 +9,6 @@ export const useAuthState = () => {
   const [state, setState] = useState<AuthFlowState>({
     isLoading: true,
     isSignIn: true,
-    isPasswordRecovery: false,
     authError: null
   });
   const navigate = useNavigate();
@@ -47,11 +46,8 @@ export const useAuthState = () => {
         }));
       } else if (event === 'PASSWORD_RECOVERY') {
         console.log("Password recovery detected");
-        setState(prev => ({ 
-          ...prev, 
-          isPasswordRecovery: true,
-          isSignIn: true 
-        }));
+        // Now we redirect to the dedicated password recovery page
+        navigate('/reset-password');
       } else if (event === 'USER_UPDATED') {
         console.log("User updated");
       } else if (event === 'TOKEN_REFRESHED') {
@@ -76,11 +72,6 @@ export const useAuthState = () => {
     setState(prev => ({ ...prev, isSignIn }));
   };
 
-  const setIsPasswordRecovery = (isPasswordRecovery: boolean) => {
-    console.log(`Setting isPasswordRecovery to ${isPasswordRecovery}`);
-    setState(prev => ({ ...prev, isPasswordRecovery }));
-  };
-
   const setAuthError = (authError: string | null) => {
     console.log(`Setting authError to ${authError}`);
     setState(prev => ({ ...prev, authError }));
@@ -100,7 +91,6 @@ export const useAuthState = () => {
     toggleAuthMode,
     setIsLoading,
     setIsSignIn,
-    setIsPasswordRecovery,
     setAuthError
   };
 };

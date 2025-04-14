@@ -7,17 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
-import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
-
-function getHashParams() {
-  const hash = window.location.hash.substring(1);
-  const params = new URLSearchParams(hash);
-  return {
-    access_token: params.get("access_token"),
-    refresh_token: params.get("refresh_token"),
-  };
-}
+import logger from "@/lib/logger";
 
 export const PasswordRecoveryForm = () => {
   const [password, setPassword] = useState("");
@@ -27,21 +17,6 @@ export const PasswordRecoveryForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-useEffect(() => {
-const { access_token, refresh_token } = getHashParams();
-if (access_token && refresh_token) {
-  supabase.auth.setSession({ access_token, refresh_token });
-}
-
-
-  if (access_token && refresh_token) {
-    supabase.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
-      if (error) {
-        console.error('Error setting session:', error.message);
-      }
-    });
-  }
-}, []);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -75,9 +50,15 @@ if (access_token && refresh_token) {
     setIsSubmitting(true);
 
     try {
+      logger.info("Attempting to update password");
+      
       const { error } = await supabase.auth.updateUser({ password });
 
       if (error) {
+        logger.error("Error updating password", {
+          data: { error: error.message }
+        });
+        
         toast({
           title: "Error",
           description: error.message,
@@ -86,6 +67,8 @@ if (access_token && refresh_token) {
         return;
       }
 
+      logger.info("Password updated successfully");
+      
       toast({
         title: "Password updated",
         description: "Your password has been updated successfully.",
@@ -97,6 +80,10 @@ if (access_token && refresh_token) {
       }, 2000);
       
     } catch (error: any) {
+      logger.error("Unexpected error updating password", {
+        data: { error: error.message }
+      });
+      
       toast({
         title: "Error",
         description: "An unexpected error occurred",

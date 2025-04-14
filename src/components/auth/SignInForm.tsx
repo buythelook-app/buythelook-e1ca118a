@@ -80,8 +80,12 @@ export const SignInForm = () => {
     setIsRecoveringPassword(true);
 
     try {
+      // Important: Use the correct full URL for the reset link
+      const resetUrl = `${window.location.origin}${window.location.pathname}#/reset-password`;
+      console.log("Reset URL:", resetUrl);
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + "/reset-password",
+        redirectTo: resetUrl,
       });
 
       if (error) {

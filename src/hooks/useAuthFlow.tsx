@@ -9,15 +9,14 @@ import logger from "@/lib/logger";
 
 export const useAuthFlow = () => {
   const {
-    isLoading, isSignIn, isPasswordRecovery, authError,
-    toggleAuthMode, setIsLoading, setIsSignIn, setIsPasswordRecovery, setAuthError
+    isLoading, isSignIn, authError,
+    toggleAuthMode, setIsLoading, setIsSignIn, setAuthError
   } = useAuthState();
 
   // Set up deep link handling for native platforms
   useAuthDeepLinks({
     setIsLoading,
     setAuthError,
-    setIsPasswordRecovery,
     setIsSignIn
   });
   
@@ -25,7 +24,6 @@ export const useAuthFlow = () => {
   const { handleDeepLink } = useAuthUrlParams({
     setIsLoading,
     setAuthError,
-    setIsPasswordRecovery,
     setIsSignIn
   });
   
@@ -52,7 +50,7 @@ export const useAuthFlow = () => {
         data: {
           platform,
           isMobile: isMobileNative ? "mobile native" : "browser",
-          capacitorInfo: Capacitor.getPlatform() // Removed VERSION reference
+          capacitorInfo: Capacitor.getPlatform()
         }
       });
       
@@ -111,7 +109,6 @@ export const useAuthFlow = () => {
   return {
     isLoading,
     isSignIn,
-    isPasswordRecovery,
     toggleAuthMode,
     authError,
   };

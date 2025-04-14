@@ -2,18 +2,17 @@
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import logger from "@/lib/logger";
 
 interface UseAuthUrlParamsProps {
   setIsLoading: (isLoading: boolean) => void;
   setAuthError: (error: string | null) => void;
-  setIsPasswordRecovery: (isRecovery: boolean) => void;
   setIsSignIn: (isSignIn: boolean) => void;
 }
 
 export const useAuthUrlParams = ({
   setIsLoading,
   setAuthError,
-  setIsPasswordRecovery,
   setIsSignIn,
 }: UseAuthUrlParamsProps) => {
   const { toast } = useToast();
@@ -48,6 +47,16 @@ export const useAuthUrlParams = ({
                                   (url.hash && new URLSearchParams(url.hash.substring(1)).get('error_description')) || 
                                   "Authentication failed";
           throw new Error(errorDescription);
+        }
+        
+        // Check for password recovery type in URL parameters
+        const type = url.searchParams.get('type') || 
+                    (url.hash && new URLSearchParams(url.hash.substring(1)).get('type'));
+        
+        if (type === 'recovery') {
+          logger.info("Password recovery link detected, redirecting to reset password page");
+          navigate('/reset-password');
+          return true;
         }
         
         // Wait briefly to ensure auth state is ready
@@ -90,15 +99,6 @@ export const useAuthUrlParams = ({
         } catch (sessionError) {
           console.error("Failed to get session:", sessionError);
           throw new Error("Failed to verify authentication status");
-        }
-        
-        // Check for password recovery
-        if (url.hash.includes('type=recovery') || 
-            url.search.includes('type=recovery')) {
-          console.log("Password recovery flow detected");
-          setIsPasswordRecovery(true);
-          setIsSignIn(true);
-          return true;
         }
       } catch (error: any) {
         console.error("Auth redirect processing error:", error);
