@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -98,7 +99,7 @@ export const Landing = () => {
               <span className="text-purple-300 font-display"> Style AI</span>
             </motion.h1>
             <motion.p 
-              className="text-xl md:text-2xl mb-10 text-white"
+              className="text-xl md:text-2xl mb-10 text-purple-100 drop-shadow-lg" 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.5 }}
