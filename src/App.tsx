@@ -21,6 +21,7 @@ import { StyleGuide } from "@/components/StyleGuide";
 import { AboutApp } from "@/components/AboutApp";
 import { OurRules } from "@/components/OurRules";
 import { MyList } from "@/components/MyList";
+import { PasswordRecoveryForm } from "@/components/auth/PasswordRecoveryForm";
 
 const queryClient = new QueryClient({
   defaultOptions: {
