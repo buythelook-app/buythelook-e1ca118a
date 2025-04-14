@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -81,17 +80,17 @@ export const Landing = () => {
               <img
                 src="/lovable-uploads/97187c5b-b4bd-4ead-a4bf-644148da8924.png"
                 alt="Buy the Look Logo"
-                className="w-96 mx-auto drop-shadow-2xl" // Changed from w-64 to w-96 to make it larger
+                className="w-96 mx-auto drop-shadow-2xl"
               />
             </motion.div>
             <motion.h1 
-              className="text-5xl md:text-7xl font-display font-bold mb-6"
+              className="text-6xl md:text-8xl font-display font-bold mb-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.5 }}
             >
               Your Personal 
-              <span className="text-purple-300"> Style AI</span>
+              <span className="text-purple-300 font-display"> Style AI</span>
             </motion.h1>
             <motion.p 
               className="text-xl md:text-2xl mb-10 text-gray-100"
@@ -140,7 +139,7 @@ export const Landing = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-4xl font-bold mb-4">How It Works</h2>
+            <h2 className="text-4xl font-display font-bold mb-4">How It Works</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">Our AI combines your body structure, mood, and preferred style to create perfect outfit suggestions.</p>
           </motion.div>
           
