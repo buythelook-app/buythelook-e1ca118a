@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -62,7 +63,8 @@ export const Landing = () => {
       {/* Hero Section */}
       <section className="relative h-screen flex items-center">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1445205170230-053b83016050')] bg-cover bg-center">
-          <div className="absolute inset-0 bg-gradient-to-t from-purple-900/90 via-purple-900/70 to-purple-900/50" />
+          {/* Adjusted gradient to make text more visible by extending the dark overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-purple-900/90 via-purple-900/80 to-purple-900/70" />
         </div>
         <div className="container mx-auto px-4 z-10">
           <motion.div 
@@ -129,7 +131,7 @@ export const Landing = () => {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Features Section - Making sure the background is solid white for visibility */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <motion.div 
@@ -156,7 +158,7 @@ export const Landing = () => {
                 <div className="bg-white p-4 rounded-full inline-block mb-6">
                   {feature.icon}
                 </div>
-                <h3 className="text-2xl font-semibold mb-3">{feature.title}</h3>
+                <h3 className="text-2xl font-display font-semibold mb-3">{feature.title}</h3>
                 <p className="text-gray-600">{feature.description}</p>
               </motion.div>
             ))}
@@ -174,7 +176,7 @@ export const Landing = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-4xl font-bold mb-4">Simple Three-Step Process</h2>
+            <h2 className="text-4xl font-display font-bold mb-4">Simple Three-Step Process</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">Getting personalized outfit recommendations has never been easier.</p>
           </motion.div>
           
@@ -189,7 +191,7 @@ export const Landing = () => {
               <div className="bg-purple-100 rounded-full h-24 w-24 flex items-center justify-center mx-auto mb-6">
                 <span className="text-3xl font-bold text-purple-600">1</span>
               </div>
-              <h3 className="text-2xl font-semibold mb-3">Take the Quiz</h3>
+              <h3 className="text-2xl font-display font-semibold mb-3">Take the Quiz</h3>
               <p className="text-gray-600">Answer a few questions about your body shape, style preferences, and mood.</p>
             </motion.div>
             
@@ -203,7 +205,7 @@ export const Landing = () => {
               <div className="bg-purple-100 rounded-full h-24 w-24 flex items-center justify-center mx-auto mb-6">
                 <span className="text-3xl font-bold text-purple-600">2</span>
               </div>
-              <h3 className="text-2xl font-semibold mb-3">Get Personalized Outfits</h3>
+              <h3 className="text-2xl font-display font-semibold mb-3">Get Personalized Outfits</h3>
               <p className="text-gray-600">Our AI generates outfit combinations tailored specifically to you.</p>
             </motion.div>
             
@@ -217,7 +219,7 @@ export const Landing = () => {
               <div className="bg-purple-100 rounded-full h-24 w-24 flex items-center justify-center mx-auto mb-6">
                 <span className="text-3xl font-bold text-purple-600">3</span>
               </div>
-              <h3 className="text-2xl font-semibold mb-3">Shop the Look</h3>
+              <h3 className="text-2xl font-display font-semibold mb-3">Shop the Look</h3>
               <p className="text-gray-600">Purchase complete outfits or individual pieces with just a few clicks.</p>
             </motion.div>
           </div>
@@ -234,7 +236,7 @@ export const Landing = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-4xl font-bold mb-4">What Our Users Say</h2>
+            <h2 className="text-4xl font-display font-bold mb-4">What Our Users Say</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">Join thousands of satisfied customers who have transformed their style.</p>
           </motion.div>
           
@@ -255,7 +257,7 @@ export const Landing = () => {
                     className="h-14 w-14 rounded-full object-cover mr-4"
                   />
                   <div>
-                    <h4 className="text-xl font-semibold">{testimonial.name}</h4>
+                    <h4 className="text-xl font-display font-semibold">{testimonial.name}</h4>
                     <p className="text-gray-600">{testimonial.role}</p>
                   </div>
                 </div>
@@ -275,11 +277,11 @@ export const Landing = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-4xl font-bold mb-6">Start Your Style Journey Today</h2>
+            <h2 className="text-4xl font-display font-bold mb-6">Start Your Style Journey Today</h2>
             <p className="text-xl mb-10 max-w-2xl mx-auto">Create an account to discover personalized outfit recommendations tailored specifically for you.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
-                className="bg-white text-purple-600 hover:bg-gray-100 text-lg px-8 py-6"
+                className="bg-white text-purple-600 hover:bg-gray-100 text-lg px-8 py-6 font-semibold"
                 onClick={() => navigate('/auth')}
               >
                 Sign Up Now <ArrowRight className="ml-2 h-5 w-5" />
@@ -310,7 +312,7 @@ export const Landing = () => {
             </div>
             <div className="flex flex-wrap justify-center gap-8">
               <div>
-                <h4 className="font-semibold text-lg mb-4">Company</h4>
+                <h4 className="font-display font-semibold text-lg mb-4">Company</h4>
                 <ul className="space-y-2">
                   <li><a href="#" className="text-gray-400 hover:text-white transition-colors">About</a></li>
                   <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
@@ -318,7 +320,7 @@ export const Landing = () => {
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold text-lg mb-4">Resources</h4>
+                <h4 className="font-display font-semibold text-lg mb-4">Resources</h4>
                 <ul className="space-y-2">
                   <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Blog</a></li>
                   <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Style Guide</a></li>
@@ -326,7 +328,7 @@ export const Landing = () => {
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold text-lg mb-4">Legal</h4>
+                <h4 className="font-display font-semibold text-lg mb-4">Legal</h4>
                 <ul className="space-y-2">
                   <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Privacy</a></li>
                   <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Terms</a></li>
