@@ -83,7 +83,7 @@ export const Landing = () => {
               className="mb-2"
             >
               <img
-                src="/lovable-uploads/97187c5b-b4bd-4ead-a4bf-644148da8924.png"
+                src="/lovable-uploads/160222f3-86e6-41d7-b5c8-ecfc0b63851b.png"
                 alt="Buy the Look Logo"
                 className="w-72 mx-auto drop-shadow-2xl"
               />
@@ -324,7 +324,7 @@ export const Landing = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-8 md:mb-0">
               <img
-                src="/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png"
+                src="/lovable-uploads/160222f3-86e6-41d7-b5c8-ecfc0b63851b.png"
                 alt="Buy the Look Logo"
                 className="w-40"
               />
