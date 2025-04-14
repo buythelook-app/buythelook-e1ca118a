@@ -83,7 +83,7 @@ export const Landing = () => {
               className="mb-2"
             >
               <img
-                src="/lovable-uploads/97187c5b-b4bd-4ead-a4bf-644148da8924.png"
+                src="/lovable-uploads/61aae2c6-dbe0-45a5-8484-cfeb35aa0d10.png"
                 alt="Buy the Look Logo"
                 className="w-72 mx-auto drop-shadow-2xl"
               />
