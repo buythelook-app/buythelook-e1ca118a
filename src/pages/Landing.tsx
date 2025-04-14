@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, UserCircle, Gift } from "lucide-react";
+import { Sparkles, UserCircle, Gift } from "lucide-react";
 
 export const Landing = () => {
   const navigate = useNavigate();
@@ -97,6 +97,14 @@ export const Landing = () => {
               Your Personal 
               <span className="text-purple-300 font-display"> Style AI</span>
             </motion.h1>
+            <motion.p 
+              className="text-xl md:text-2xl mb-10 text-white"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+            >
+              Our AI combines your body structure, mood, and preferred style to create perfect outfit suggestions to your needs.
+            </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
