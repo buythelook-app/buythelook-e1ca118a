@@ -80,12 +80,12 @@ export const Landing = () => {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="mb-6"
+              className="mb-2"
             >
               <img
                 src="/lovable-uploads/97187c5b-b4bd-4ead-a4bf-644148da8924.png"
                 alt="Buy the Look Logo"
-                className="w-96 mx-auto drop-shadow-2xl"
+                className="w-72 mx-auto drop-shadow-2xl"
               />
             </motion.div>
             <motion.h1 
