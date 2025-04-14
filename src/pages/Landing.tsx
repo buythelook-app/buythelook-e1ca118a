@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -63,7 +62,6 @@ export const Landing = () => {
       {/* Hero Section */}
       <section className="relative h-screen flex items-center">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1445205170230-053b83016050')] bg-cover bg-center">
-          {/* Adjusted gradient to make text more visible by extending the dark overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-purple-900/90 via-purple-900/80 to-purple-900/70" />
         </div>
         <div className="container mx-auto px-4 z-10">
@@ -116,7 +114,7 @@ export const Landing = () => {
               </Button>
               <Button 
                 variant="outline" 
-                className="bg-white/10 border-white text-white hover:bg-white/20 text-lg px-8 py-6"
+                className="bg-white/20 border-white text-white hover:bg-white/30 text-lg px-8 py-6"
                 onClick={() => navigate('/quiz')}
               >
                 Take Style Quiz
