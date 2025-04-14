@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -80,7 +81,7 @@ export const Landing = () => {
               <img
                 src="/lovable-uploads/97187c5b-b4bd-4ead-a4bf-644148da8924.png"
                 alt="Buy the Look Logo"
-                className="w-64 mx-auto drop-shadow-2xl"
+                className="w-96 mx-auto drop-shadow-2xl" // Changed from w-64 to w-96 to make it larger
               />
             </motion.div>
             <motion.h1 
