@@ -1,8 +1,7 @@
-
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Check, Sparkles, UserCircle, Gift } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export const Landing = () => {
   const navigate = useNavigate();
@@ -110,7 +109,7 @@ export const Landing = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8, duration: 0.5 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
+              className="flex justify-center space-x-4"
             >
               <Button 
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-lg px-8 py-6"
