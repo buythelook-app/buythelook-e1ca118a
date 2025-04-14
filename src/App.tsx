@@ -22,6 +22,7 @@ import { AboutApp } from "@/components/AboutApp";
 import { OurRules } from "@/components/OurRules";
 import { MyList } from "@/components/MyList";
 import { PasswordRecovery } from "@/pages/PasswordRecovery";
+import { Landing } from "@/pages/Landing";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,7 +42,7 @@ function App() {
         <Sonner />
         <HashRouter>
           <Routes>
-            <Route path="/" element={<Navigate to="/entrance" replace />} />
+            <Route path="/" element={<Landing />} />
             <Route path="/entrance" element={<Entrance />} />
             <Route path="/home" element={<Index />} />
             <Route path="/quiz" element={<StyleQuiz />} />
