@@ -24,10 +24,47 @@ After building, you'll have a `dist` folder containing the compiled application.
 2. Configure the hosting service for a single-page application (SPA)
 3. Ensure all routes redirect to `index.html` (for client-side routing)
 
+### SPA Routing Configuration
+
+For proper SPA functionality (client-side routing), you need to configure your hosting platform to serve `index.html` for any unknown paths. Here's how to set it up on common hosting platforms:
+
+#### Netlify
+Create a file named `_redirects` in your `dist` folder with the following content:
+```
+/*    /index.html   200
+```
+
+#### Vercel
+Create a `vercel.json` file in your project root with:
+```json
+{
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
+```
+
+#### Apache (.htaccess)
+```apache
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+```
+
+#### Nginx
+```nginx
+location / {
+  try_files $uri $uri/ /index.html;
+}
+```
+
 ### Option 2: Manual Server Deployment
 1. Copy the `dist` folder to your server
 2. Configure your web server (nginx, Apache, etc.) to serve the files
-3. Set up URL rewriting for SPA routing
+3. Set up URL rewriting for SPA routing (see configurations above)
 
 ## Environment Configuration
 

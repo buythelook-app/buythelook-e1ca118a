@@ -45,6 +45,25 @@ if (fs.existsSync(versionPath)) {
   console.log(`📝 Created version.json with version ${version}`);
 }
 
+// Add SPA routing configurations for common hosting platforms
+console.log('⚙️ Creating SPA routing configuration files...');
+
+// Create _redirects file for Netlify
+fs.writeFileSync(
+  path.join(distDir, '_redirects'),
+  '/*    /index.html   200'
+);
+console.log('✅ Created _redirects file for Netlify');
+
+// Create vercel.json in the root for Vercel
+fs.writeFileSync(
+  path.join(rootDir, 'vercel.json'),
+  JSON.stringify({
+    "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  }, null, 2)
+);
+console.log('✅ Created vercel.json file for Vercel');
+
 console.log('\n🌐 Web deployment preparation complete!');
 console.log('To deploy your web app:');
 console.log('1. Upload the contents of the "dist" folder to your web hosting provider');

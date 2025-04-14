@@ -100,6 +100,27 @@ export type Database = {
         }
         Relationships: []
       }
+      recommendation_test_cases: {
+        Row: {
+          budget: number
+          event: string
+          id: number
+          style: string
+        }
+        Insert: {
+          budget: number
+          event: string
+          id?: number
+          style: string
+        }
+        Update: {
+          budget?: number
+          event?: string
+          id?: number
+          style?: string
+        }
+        Relationships: []
+      }
       style_quiz_results: {
         Row: {
           body_shape: string | null
