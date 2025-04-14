@@ -7,6 +7,17 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
+
+function getHashParams() {
+  const hash = window.location.hash.substring(1);
+  const params = new URLSearchParams(hash);
+  return {
+    access_token: params.get("access_token"),
+    refresh_token: params.get("refresh_token"),
+  };
+}
 
 export const PasswordRecoveryForm = () => {
   const [password, setPassword] = useState("");
@@ -17,9 +28,11 @@ export const PasswordRecoveryForm = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 useEffect(() => {
-  const hash = window.location.hash;
-  const access_token = new URLSearchParams(hash.substring(1)).get('access_token');
-  const refresh_token = new URLSearchParams(hash.substring(1)).get('refresh_token');
+const { access_token, refresh_token } = getHashParams();
+if (access_token && refresh_token) {
+  supabase.auth.setSession({ access_token, refresh_token });
+}
+
 
   if (access_token && refresh_token) {
     supabase.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
