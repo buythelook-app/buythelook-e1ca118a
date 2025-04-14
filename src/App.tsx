@@ -41,6 +41,8 @@ function App() {
         <Sonner />
         <HashRouter>
           <Routes>
+          <Route path="/reset-password" element={<PasswordRecoveryForm />} />
+
             <Route path="/" element={<Navigate to="/entrance" replace />} />
             <Route path="/entrance" element={<Entrance />} />
             <Route path="/home" element={<Index />} />
