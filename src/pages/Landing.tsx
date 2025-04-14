@@ -98,7 +98,7 @@ export const Landing = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.5 }}
             >
-              Discover personalized outfit recommendations tailored to your body shape, mood, and style preferences.
+              Our AI combines your body structure, mood, and preferred style to create perfect outfit suggestions.
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -116,7 +116,7 @@ export const Landing = () => {
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-lg px-8 py-6"
                 onClick={() => navigate('/quiz')}
               >
-                Take Style Quiz
+                Take Style Quiz <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </motion.div>
           </motion.div>
