@@ -157,10 +157,7 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-netflix-background">
-      {/* Page Identifier - Makes it clear this is the Home page */}
-      <div className="fixed top-4 right-4 bg-netflix-accent text-white px-3 py-1 rounded-full text-sm z-50">
-        Home Page
-      </div>
+      {/* Removed Home Page label from top-right corner */}
       
       <Navbar />
       <HeroSection />
@@ -249,3 +246,4 @@ export default function Index() {
     </div>
   );
 }
+
