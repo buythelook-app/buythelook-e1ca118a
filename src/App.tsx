@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,8 +22,7 @@ import { AboutApp } from "@/components/AboutApp";
 import { OurRules } from "@/components/OurRules";
 import { MyList } from "@/components/MyList";
 import { PasswordRecovery } from "@/pages/PasswordRecovery";
-import Landing from "@/pages/Landing";
-import { DeveloperNav } from "@/components/DeveloperNav";
+// Removed import of DeveloperNav
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,7 +35,7 @@ const queryClient = new QueryClient({
 
 function App() {
   console.log("App component rendering");
-  const isDevelopment = import.meta.env.DEV;
+  // Removed isDevelopment and DeveloperNav rendering
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -43,13 +43,11 @@ function App() {
         <Toaster />
         <Sonner />
         <HashRouter>
-          {isDevelopment && <DeveloperNav />}
           <Routes>
-            {/* Remove route to /landing and redirect / to /landing */}
             <Route path="/" element={<Navigate to="/home" replace />} />
             <Route path="/entrance" element={<Entrance />} />
             <Route path="/home" element={<Index />} />
-            {/* Remove Landing route */}
+            {/* Removed Landing route */}
             {/* <Route path="/landing" element={<Landing />} /> */}
             <Route path="/quiz" element={<StyleQuiz />} />
             <Route path="/suggestions" element={<LookSuggestions />} />
@@ -75,3 +73,4 @@ function App() {
 }
 
 export default App;
+
