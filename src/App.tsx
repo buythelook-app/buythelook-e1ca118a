@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -46,10 +45,12 @@ function App() {
         <HashRouter>
           {isDevelopment && <DeveloperNav />}
           <Routes>
-            <Route path="/" element={<Navigate to="/landing" replace />} />
+            {/* Remove route to /landing and redirect / to /landing */}
+            <Route path="/" element={<Navigate to="/home" replace />} />
             <Route path="/entrance" element={<Entrance />} />
             <Route path="/home" element={<Index />} />
-            <Route path="/landing" element={<Landing />} />
+            {/* Remove Landing route */}
+            {/* <Route path="/landing" element={<Landing />} /> */}
             <Route path="/quiz" element={<StyleQuiz />} />
             <Route path="/suggestions" element={<LookSuggestions />} />
             <Route path="/look/:id" element={<LookDetail />} />
