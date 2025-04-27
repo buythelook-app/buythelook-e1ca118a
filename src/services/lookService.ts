@@ -377,30 +377,26 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
 
     console.log("Using user's preferred style from quiz:", preferredStyle);
 
-    // If forceRefresh is true, clear the cache for this request
     if (forceRefresh) {
       clearOutfitCache(bodyShape, style, mood);
       console.log("Forcing refresh of outfit suggestions");
     }
 
     const response = await generateOutfit(bodyShape, style, mood);
-    const items: DashboardItem[] = [];
+    let items: DashboardItem[] = [];
 
     if (Array.isArray(response.data) && response.data.length > 0) {
       // Try multiple outfits until we find one with all required items
-      // and with items we haven't shown before
-      let outfitFound = false;
-      
       for (const outfit of response.data) {
         const topItem = convertToDashboardItem(outfit.top, 'top', preferredStyle);
         const bottomItem = convertToDashboardItem(outfit.bottom, 'bottom', preferredStyle);
         const shoesItem = convertToDashboardItem(outfit.shoes, 'shoes', preferredStyle);
         
-        // If we have all three required items, use this outfit
+        // Only use this outfit if we have all three required items
         if (topItem && bottomItem && shoesItem) {
-          items.push(topItem, bottomItem, shoesItem);
+          items = [topItem, bottomItem, shoesItem];
           
-          // Store the outfit data for later use (recommendations, colors)
+          // Store the outfit data for later use
           try {
             const outfitData = {
               colors: {
@@ -417,57 +413,35 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
             console.error('Error storing outfit data:', e);
           }
           
-          outfitFound = true;
           break;
         }
       }
       
-      // If we couldn't find a complete outfit, try to create one from different outfits
-      if (!outfitFound) {
-        console.log("Couldn't find a complete outfit, combining items from different outfits");
+      // If we couldn't find a complete outfit, try one more time
+      if (items.length !== 3) {
+        console.log("Couldn't find a complete outfit in first attempt, trying again");
+        clearOutfitCache(bodyShape, style, mood);
+        const retryResponse = await generateOutfit(bodyShape, style, mood);
         
-        let topFound = false, bottomFound = false, shoesFound = false;
-        
-        // Shuffle the outfits to get more variety
-        const shuffledOutfits = [...response.data];
-        for (let i = shuffledOutfits.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [shuffledOutfits[i], shuffledOutfits[j]] = [shuffledOutfits[j], shuffledOutfits[i]];
-        }
-        
-        for (const outfit of shuffledOutfits) {
-          if (!topFound) {
-            const topItem = convertToDashboardItem(outfit.top, 'top', preferredStyle);
-            if (topItem) {
-              items.push(topItem);
-              topFound = true;
-            }
-          }
+        if (Array.isArray(retryResponse.data) && retryResponse.data.length > 0) {
+          const outfit = retryResponse.data[0];
+          const topItem = convertToDashboardItem(outfit.top, 'top', preferredStyle);
+          const bottomItem = convertToDashboardItem(outfit.bottom, 'bottom', preferredStyle);
+          const shoesItem = convertToDashboardItem(outfit.shoes, 'shoes', preferredStyle);
           
-          if (!bottomFound) {
-            const bottomItem = convertToDashboardItem(outfit.bottom, 'bottom', preferredStyle);
-            if (bottomItem) {
-              items.push(bottomItem);
-              bottomFound = true;
-            }
-          }
-          
-          if (!shoesFound) {
-            const shoesItem = convertToDashboardItem(outfit.shoes, 'shoes', preferredStyle);
-            if (shoesItem) {
-              items.push(shoesItem);
-              shoesFound = true;
-            }
-          }
-          
-          if (topFound && bottomFound && shoesFound) {
-            break;
+          if (topItem && bottomItem && shoesItem) {
+            items = [topItem, bottomItem, shoesItem];
           }
         }
       }
     }
 
-    console.log('First outfit items:', items);
+    // If we still don't have exactly 3 items, throw an error
+    if (items.length !== 3) {
+      throw new Error('Could not generate a complete outfit with all required items');
+    }
+
+    console.log('Complete outfit items:', items);
     return items;
   } catch (error) {
     console.error('Error in fetchFirstOutfitSuggestion:', error);
