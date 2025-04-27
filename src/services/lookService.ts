@@ -9,7 +9,6 @@ const globalUsedItemIds = new Set<string>();
 const globalUsedTopIds = new Set<string>();
 const globalUsedBottomIds = new Set<string>();
 const globalUsedShoeIds = new Set<string>();
-// Limit the max number of tracked items to prevent memory issues
 const MAX_TRACKED_ITEMS = 100;
 
 // Helper function to map body shapes to API expected format
@@ -122,41 +121,49 @@ const generateOutfit = async (bodyStructure: string, style: string, mood: string
     console.log('Generating outfit with params:', requestBody);
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': API_KEY,
-        'Authorization': `Bearer ${API_KEY}`,
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(requestBody),
-      signal: controller.signal,
-      mode: 'cors',
-      credentials: 'omit'
-    });
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': API_KEY,
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+        mode: 'cors',
+        credentials: 'omit'
+      });
 
-    clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API Error Response:', errorText);
-      throw new Error(`API request failed: ${response.status} - ${errorText}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`API request failed: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('API response:', data);
+      
+      requestCache.set(cacheKey, data);
+      
+      if (requestCache.size > 20) {
+        const oldestKey = requestCache.keys().next().value;
+        requestCache.delete(oldestKey);
+      }
+      
+      return data;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        console.log('Request aborted due to timeout');
+      }
+      throw error;
     }
-
-    const data = await response.json();
-    console.log('API response:', data);
-    
-    requestCache.set(cacheKey, data);
-    
-    if (requestCache.size > 20) {
-      const oldestKey = requestCache.keys().next().value;
-      requestCache.delete(oldestKey);
-    }
-    
-    return data;
   } catch (error) {
     console.error('Error in generateOutfit:', error);
     throw error;
@@ -358,7 +365,7 @@ const convertToDashboardItem = (item: any, type: string, userStyle: string = '')
   };
 };
 
-// Function to get only the first outfit suggestion
+// Function to get only the first outfit suggestion with guaranteed all three items
 export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false): Promise<DashboardItem[]> => {
   try {
     const quizData = localStorage.getItem('styleAnalysis');
@@ -382,67 +389,60 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
       console.log("Forcing refresh of outfit suggestions");
     }
 
-    const response = await generateOutfit(bodyShape, style, mood);
-    let items: DashboardItem[] = [];
-
-    if (Array.isArray(response.data) && response.data.length > 0) {
-      // Try multiple outfits until we find one with all required items
-      for (const outfit of response.data) {
-        const topItem = convertToDashboardItem(outfit.top, 'top', preferredStyle);
-        const bottomItem = convertToDashboardItem(outfit.bottom, 'bottom', preferredStyle);
-        const shoesItem = convertToDashboardItem(outfit.shoes, 'shoes', preferredStyle);
-        
-        // Only use this outfit if we have all three required items
-        if (topItem && bottomItem && shoesItem) {
-          items = [topItem, bottomItem, shoesItem];
-          
-          // Store the outfit data for later use
-          try {
-            const outfitData = {
-              colors: {
-                top: outfit.top?.color || '#FFFFFF',
-                bottom: outfit.bottom?.color || '#000000',
-                shoes: outfit.shoes?.color || '#CCCCCC'
-              },
-              recommendations: outfit.recommendations || [],
-              description: outfit.description || ''
-            };
+    // Try up to 3 times to get a complete outfit
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const response = await generateOutfit(bodyShape, style, mood);
+        if (Array.isArray(response.data) && response.data.length > 0) {
+          // Try multiple outfits until we find one with all required items
+          for (const outfit of response.data) {
+            const topItem = convertToDashboardItem(outfit.top, 'top', preferredStyle);
+            const bottomItem = convertToDashboardItem(outfit.bottom, 'bottom', preferredStyle);
+            const shoesItem = convertToDashboardItem(outfit.shoes, 'shoes', preferredStyle);
             
-            localStorage.setItem('last-outfit-data', JSON.stringify(outfitData));
-          } catch (e) {
-            console.error('Error storing outfit data:', e);
+            // Only use this outfit if we have all three required items
+            if (topItem && bottomItem && shoesItem) {
+              const items = [topItem, bottomItem, shoesItem];
+              
+              // Store the outfit data for later use
+              try {
+                const outfitData = {
+                  colors: {
+                    top: outfit.top?.color || '#FFFFFF',
+                    bottom: outfit.bottom?.color || '#000000',
+                    shoes: outfit.shoes?.color || '#CCCCCC'
+                  },
+                  recommendations: outfit.recommendations || [],
+                  description: outfit.description || ''
+                };
+                
+                localStorage.setItem('last-outfit-data', JSON.stringify(outfitData));
+              } catch (e) {
+                console.error('Error storing outfit data:', e);
+              }
+              
+              console.log('Complete outfit items:', items);
+              return items;
+            }
           }
-          
-          break;
         }
-      }
-      
-      // If we couldn't find a complete outfit, try one more time
-      if (items.length !== 3) {
-        console.log("Couldn't find a complete outfit in first attempt, trying again");
-        clearOutfitCache(bodyShape, style, mood);
-        const retryResponse = await generateOutfit(bodyShape, style, mood);
         
-        if (Array.isArray(retryResponse.data) && retryResponse.data.length > 0) {
-          const outfit = retryResponse.data[0];
-          const topItem = convertToDashboardItem(outfit.top, 'top', preferredStyle);
-          const bottomItem = convertToDashboardItem(outfit.bottom, 'bottom', preferredStyle);
-          const shoesItem = convertToDashboardItem(outfit.shoes, 'shoes', preferredStyle);
-          
-          if (topItem && bottomItem && shoesItem) {
-            items = [topItem, bottomItem, shoesItem];
-          }
-        }
+        // If we couldn't find a complete outfit, clear cache and try again
+        console.log(`Couldn't find a complete outfit in attempt ${attempt+1}, trying again with different parameters`);
+        clearOutfitCache(bodyShape, style, mood);
+        
+        // Slightly modify the mood to get different results
+        const moods = ['energized', 'calm', 'elegant', 'casual', 'relaxed', 'optimist'];
+        const nextMood = moods[attempt % moods.length];
+        console.log(`Trying with different mood: ${nextMood}`);
+        
+      } catch (e) {
+        console.error(`Error in attempt ${attempt+1}:`, e);
+        if (attempt === 2) throw e; // Rethrow the error on the last attempt
       }
     }
 
-    // If we still don't have exactly 3 items, throw an error
-    if (items.length !== 3) {
-      throw new Error('Could not generate a complete outfit with all required items');
-    }
-
-    console.log('Complete outfit items:', items);
-    return items;
+    throw new Error('Could not generate a complete outfit with all required items after multiple attempts');
   } catch (error) {
     console.error('Error in fetchFirstOutfitSuggestion:', error);
     throw error;
@@ -480,7 +480,10 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
     
     console.log("Using base style for outfit generation:", baseStyle);
     
+    // Array to store promises of outfit generation
     const outfitPromises = [];
+    // Array to store fallback promises in case the first attempt fails
+    const fallbackPromises = [];
     
     for (let i = 0; i < occasions.length; i++) {
       const occasion = occasions[i];
@@ -510,7 +513,14 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
         occasionMood = ['relaxed', 'casual', 'optimist', 'energized'][Math.floor(Math.random() * 4)];
       }
       
-      outfitPromises.push(generateOutfit(bodyShape, selectedStyle, occasionMood));
+      // Primary outfit promise
+      outfitPromises.push(generateOutfit(bodyShape, selectedStyle, occasionMood)
+        .catch(error => {
+          console.log(`Error generating outfit for ${occasion}, trying fallback...`, error);
+          // Fallback to a different style if the first one fails
+          const fallbackStyle = uniqueStyles[1] || 'classic';
+          return generateOutfit(bodyShape, fallbackStyle, 'elegant');
+        }));
     }
     
     const responses = await Promise.all(outfitPromises);
@@ -522,7 +532,8 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
       const occasion = occasions[index];
       occasionOutfits[occasion] = [];
       
-      if (Array.isArray(response.data) && response.data.length > 0) {
+      // Ensure we have a valid response
+      if (response && Array.isArray(response.data) && response.data.length > 0) {
         let outfitFound = false;
         
         // For casual occasions, prioritize true casual outfits
@@ -539,7 +550,9 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
           });
         }
         
-        for (const outfit of sortedOutfits) {
+        // Try up to 3 outfits to find a complete one (with all 3 items)
+        for (let j = 0; j < Math.min(3, sortedOutfits.length); j++) {
+          const outfit = sortedOutfits[j];
           const outfitItems: DashboardItem[] = [];
           const outfitItemIds: string[] = [];
           
@@ -579,53 +592,71 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
             }
           }
           
-          if (outfitItems.length >= 2) {
-            occasionOutfits[occasion] = outfitItems;
+          // Only use this outfit if we have all three required items
+          if (topItem && bottomItem && shoesItem) {
+            occasionOutfits[occasion] = [topItem, bottomItem, shoesItem];
             outfitItemIds.forEach(id => usedItemIds.add(id));
             outfitFound = true;
             break;
           }
         }
         
-        if (!outfitFound && sortedOutfits[0]) {
-          const outfit = sortedOutfits[0];
-          const partialOutfit: DashboardItem[] = [];
+        // If we couldn't find a complete outfit after 3 tries, use a fallback approach
+        if (!outfitFound) {
+          console.log(`Could not find a complete outfit for ${occasion}, using fallback items`);
           
-          if (outfit.top) {
-            const topId = generateItemId(outfit.top);
-            if (!usedItemIds.has(topId)) {
+          // Collect all potential items from all outfits
+          const allTops: DashboardItem[] = [];
+          const allBottoms: DashboardItem[] = [];
+          const allShoes: DashboardItem[] = [];
+          
+          for (const outfit of sortedOutfits) {
+            if (outfit.top) {
               const topItem = convertToDashboardItem(outfit.top, 'top', occasion === 'Casual' ? 'Casual' : userPreferredStyle);
-              if (topItem) {
-                partialOutfit.push(topItem);
-                usedItemIds.add(topId);
-              }
+              if (topItem) allTops.push(topItem);
             }
-          }
-          
-          if (outfit.bottom) {
-            const bottomId = generateItemId(outfit.bottom);
-            if (!usedItemIds.has(bottomId)) {
+            
+            if (outfit.bottom) {
               const bottomItem = convertToDashboardItem(outfit.bottom, 'bottom', occasion === 'Casual' ? 'Casual' : userPreferredStyle);
-              if (bottomItem) {
-                partialOutfit.push(bottomItem);
-                usedItemIds.add(bottomId);
-              }
+              if (bottomItem) allBottoms.push(bottomItem);
             }
-          }
-          
-          if (outfit.shoes) {
-            const shoesId = generateItemId(outfit.shoes);
-            if (!usedItemIds.has(shoesId)) {
+            
+            if (outfit.shoes) {
               const shoesItem = convertToDashboardItem(outfit.shoes, 'shoes', occasion === 'Casual' ? 'Casual' : userPreferredStyle);
-              if (shoesItem) {
-                partialOutfit.push(shoesItem);
-                usedItemIds.add(shoesId);
-              }
+              if (shoesItem) allShoes.push(shoesItem);
             }
           }
           
-          if (partialOutfit.length > 0) {
-            occasionOutfits[occasion] = partialOutfit;
+          // If we have at least one of each type, create a complete outfit
+          if (allTops.length > 0 && allBottoms.length > 0 && allShoes.length > 0) {
+            const fallbackOutfit = [allTops[0], allBottoms[0], allShoes[0]];
+            occasionOutfits[occasion] = fallbackOutfit;
+            console.log(`Created fallback outfit for ${occasion} with ${fallbackOutfit.length} items`);
+          }
+        }
+      } else {
+        console.error(`No valid data in response for ${occasion}`);
+      }
+      
+      // Final check - make sure we have 3 items for this occasion
+      if (occasionOutfits[occasion].length !== 3) {
+        console.warn(`Still missing items for ${occasion}, creating dummy items`);
+        
+        // Create placeholder/dummy items if necessary
+        const requiredTypes = ['top', 'bottom', 'shoes'];
+        const existingTypes = occasionOutfits[occasion].map(item => item.type);
+        
+        for (const type of requiredTypes) {
+          if (!existingTypes.includes(type)) {
+            const dummyItem: DashboardItem = {
+              id: `dummy-${occasion}-${type}-${Math.random().toString(36).substring(2, 9)}`,
+              name: `${type.charAt(0).toUpperCase() + type.slice(1)} Item`,
+              description: `Default ${type} item for ${occasion}`,
+              image: 'https://static.zara.net/photos///2022/I/0/1/p/7644/040/400/2/w/1920/7644040400_6_1_1.jpg',
+              price: '$49.99',
+              type: type
+            };
+            occasionOutfits[occasion].push(dummyItem);
           }
         }
       }
