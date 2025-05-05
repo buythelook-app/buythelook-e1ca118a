@@ -4,6 +4,7 @@ export { personalizationAgent } from './personalizationAgent';
 export { stylingAgent } from './stylingAgent';
 export { validatorAgent } from './validatorAgent';
 export { recommendationAgent } from './recommendationAgent';
+export { trainerAgent, runValidationCycle } from './trainerAgent';
 
 // Define and export the common Agent interface from this central location
 export interface Agent {
