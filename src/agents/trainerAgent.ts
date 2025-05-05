@@ -143,7 +143,7 @@ export const RunValidationCycleTool = {
             successfulTests: successCount,
             successRate: successRate,
             message: successCount === testCases.length ? 
-              "✅ All agents passed the validation test successfully." : 
+              "✅ All users passed validation successfully." : 
               `❌ ${testCases.length - successCount} test cases failed validation.`,
             timestamp: new Date().toISOString()
           }
