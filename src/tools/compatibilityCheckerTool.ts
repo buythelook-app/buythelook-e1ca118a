@@ -4,8 +4,8 @@
  * Ensures that outfit combinations are appropriate and match well
  */
 export const CompatibilityCheckerTool = {
-  name: "compatibility_checker_tool",
-  description: "Checks if outfit items are compatible and appropriate for the occasion",
+  name: "CompatibilityCheckerTool",
+  description: "Checks if all items in the outfit match and make sense together",
   execute: async (outfit: {
     top: string,
     bottom: string,
@@ -13,19 +13,32 @@ export const CompatibilityCheckerTool = {
     coat?: string,
     description: string
   }) => {
-    // Implementation would check color compatibility and style matching
     console.log(`Checking compatibility for: ${JSON.stringify(outfit)}`);
     
-    // This is a placeholder implementation
-    return {
-      success: true,
-      data: {
-        isCompatible: true,
-        compatibilityScore: 0.85,
-        suggestions: [
-          "Consider adding a silver accessory to enhance this look"
-        ]
-      }
-    };
+    try {
+      // Here we would implement real compatibility checking logic
+      // For now we return placeholder data
+      const isValid = outfit.top && outfit.bottom && outfit.shoes;
+      
+      return {
+        success: true,
+        data: {
+          isCompatible: isValid,
+          compatibilityScore: isValid ? 0.85 : 0.3,
+          suggestions: isValid ? [
+            "Consider adding a silver accessory to enhance this look"
+          ] : [
+            "This outfit is missing essential pieces",
+            "Try adding a complementary piece to balance the look"
+          ]
+        }
+      };
+    } catch (error) {
+      console.error('Error checking compatibility:', error);
+      return {
+        success: false,
+        error: 'Failed to check outfit compatibility'
+      };
+    }
   }
 };

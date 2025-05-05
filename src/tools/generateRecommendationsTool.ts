@@ -4,8 +4,8 @@
  * Provides styling tips and additional context for outfits
  */
 export const GenerateRecommendationsTool = {
-  name: "generate_recommendations_tool",
-  description: "Generates styling advice and recommendations for outfits",
+  name: "GenerateRecommendationsTool",
+  description: "Enhances outfit with explanations, alternatives or styling tips",
   execute: async (outfit: {
     top: string,
     bottom: string,
@@ -13,19 +13,27 @@ export const GenerateRecommendationsTool = {
     coat?: string,
     description: string
   }) => {
-    // Implementation would generate contextual recommendations
     console.log(`Generating recommendations for: ${JSON.stringify(outfit)}`);
     
-    // This is a placeholder implementation
-    return {
-      success: true,
-      data: {
-        recommendations: [
-          "Add a silver statement necklace to enhance the elegant feel",
-          "A structured handbag would complete this professional look"
-        ],
-        occasion: "work"
-      }
-    };
+    try {
+      // Here we would implement real recommendation generation logic
+      // For now we return placeholder data
+      return {
+        success: true,
+        data: {
+          recommendations: [
+            "Add a silver statement necklace to enhance the elegant feel",
+            "A structured handbag would complete this professional look"
+          ],
+          occasion: "work"
+        }
+      };
+    } catch (error) {
+      console.error('Error generating recommendations:', error);
+      return {
+        success: false,
+        error: 'Failed to generate styling recommendations'
+      };
+    }
   }
 };
