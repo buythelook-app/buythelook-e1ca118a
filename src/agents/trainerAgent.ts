@@ -23,31 +23,45 @@ export const RunValidationCycleTool = {
       for (const testCase of testCases) {
         logger.debug(`Processing test case: ${testCase.name}`, { context: "ValidationCycle" });
         
-        // Step 1: Test personalization agent
+        // Initialize user score and comments
+        const userScore: UserScore = {
+          userId: testCase.userId,
+          score: 0,
+          comments: [],
+          editable: true
+        };
+        
+        // Step 1: Test personalization agent (25 points)
         const profileResult = await ProfileFetcherTool.execute(testCase.userId);
         if (!profileResult.success) {
           results.push({
             testCase: testCase.name,
             success: false,
             stage: "personalization",
-            error: profileResult.error || "Failed to fetch user profile"
+            error: profileResult.error || "Failed to fetch user profile",
+            userScore
           });
+          userScore.comments.push("Failed to fetch user profile");
           continue;
         }
         
-        // Step 2: Verify profile contains required fields
+        // Verify profile contains required fields
         const profile = profileResult.data;
-        if (!profile.style || !profile.bodyType) {
-          results.push({
-            testCase: testCase.name,
-            success: false,
-            stage: "personalization",
-            error: "Profile is missing required fields (style or bodyType)"
-          });
-          continue;
+        let personalizationScore = 25; // Start with full points
+        
+        if (!profile.style) {
+          personalizationScore -= 12.5; // Deduct half the points
+          userScore.comments.push("Missing style information");
         }
         
-        // Step 3: Test styling agent
+        if (!profile.bodyType) {
+          personalizationScore -= 12.5; // Deduct half the points
+          userScore.comments.push("Missing body type information");
+        }
+        
+        userScore.score += personalizationScore;
+        
+        // Step 2: Test styling agent (25 points)
         const outfitParams = {
           bodyStructure: profile.bodyType,
           mood: profile.mood,
@@ -59,69 +73,91 @@ export const RunValidationCycleTool = {
             testCase: testCase.name,
             success: false,
             stage: "styling",
-            error: outfitResult.error || "Failed to generate outfit"
+            error: outfitResult.error || "Failed to generate outfit",
+            userScore
           });
+          userScore.comments.push("Failed to generate outfit");
           continue;
         }
         
-        // Step 4: Verify outfit contains required items
+        // Verify outfit contains required items (25 points)
         const generatedOutfit = outfitResult.data[0]; // Take the first suggestion
-        if (!generatedOutfit.top || !generatedOutfit.bottom || !generatedOutfit.shoes) {
-          results.push({
-            testCase: testCase.name,
-            success: false,
-            stage: "styling",
-            error: "Generated outfit is missing required items (top, bottom, or shoes)"
-          });
-          continue;
+        let stylingScore = 25; // Start with full points
+        
+        if (!generatedOutfit.top) {
+          stylingScore -= 8.33; // Deduct one-third of the points
+          userScore.comments.push("Missing top item in outfit");
         }
         
-        // Step 5: Test validator agent
+        if (!generatedOutfit.bottom) {
+          stylingScore -= 8.33; // Deduct one-third of the points
+          userScore.comments.push("Missing bottom item in outfit");
+        }
+        
+        if (!generatedOutfit.shoes) {
+          stylingScore -= 8.33; // Deduct one-third of the points
+          userScore.comments.push("Missing shoes in outfit");
+        }
+        
+        userScore.score += stylingScore;
+        
+        // Step 3: Test validator agent (25 points)
         const compatibilityResult = await CompatibilityCheckerTool.execute(generatedOutfit);
-        if (!compatibilityResult.success || !compatibilityResult.data.isCompatible) {
+        if (!compatibilityResult.success) {
           results.push({
             testCase: testCase.name,
             success: false,
             stage: "validator",
-            error: compatibilityResult.error || "Generated outfit is not compatible"
+            error: compatibilityResult.error || "Failed to check outfit compatibility",
+            userScore
           });
+          userScore.comments.push("Failed to validate outfit compatibility");
           continue;
         }
         
-        // Step 6: Test recommendation agent
+        // Award points for validation
+        if (compatibilityResult.data.isCompatible) {
+          userScore.score += 25; // Full points for compatible outfit
+        } else {
+          userScore.comments.push("Outfit is not compatible");
+        }
+        
+        // Step 4: Test recommendation agent (25 points)
         const recommendationsResult = await GenerateRecommendationsTool.execute(generatedOutfit);
         if (!recommendationsResult.success) {
           results.push({
             testCase: testCase.name,
             success: false,
             stage: "recommendation",
-            error: recommendationsResult.error || "Failed to generate recommendations"
+            error: recommendationsResult.error || "Failed to generate recommendations",
+            userScore
           });
+          userScore.comments.push("Failed to generate styling recommendations");
           continue;
         }
         
-        // Step 7: Verify at least one styling tip was provided
+        // Verify at least one styling tip was provided
         const recommendations = recommendationsResult.data.recommendations;
-        if (!recommendations || recommendations.length === 0) {
-          results.push({
-            testCase: testCase.name,
-            success: false,
-            stage: "recommendation",
-            error: "No styling tips were provided"
-          });
-          continue;
+        if (recommendations && recommendations.length > 0) {
+          userScore.score += 25; // Full points for having at least one recommendation
+        } else {
+          userScore.comments.push("No styling tips were provided");
         }
+        
+        // Round score to nearest integer
+        userScore.score = Math.round(userScore.score);
         
         // If all steps passed, mark test case as successful
         results.push({
           testCase: testCase.name,
-          success: true,
+          success: userScore.score === 100,
           stage: "complete",
           data: {
             outfit: generatedOutfit,
             recommendations: recommendations,
             occasion: recommendationsResult.data.occasion
-          }
+          },
+          userScore
         });
       }
       
@@ -134,10 +170,14 @@ export const RunValidationCycleTool = {
         data: { successCount, totalCases: testCases.length } 
       });
       
+      // Get all user scores from results
+      const userScores = results.map(r => r.userScore).filter(Boolean);
+      
       return {
         success: true,
         data: {
           results,
+          userScores,
           summary: {
             totalTests: testCases.length,
             successfulTests: successCount,
@@ -193,12 +233,20 @@ interface TestCase {
   expectedMood: string;
 }
 
+interface UserScore {
+  userId: string;
+  score: number;
+  comments: string[];
+  editable: boolean;
+}
+
 interface ValidationResult {
   testCase: string;
   success: boolean;
   stage: "personalization" | "styling" | "validator" | "recommendation" | "complete";
   error?: string;
   data?: any;
+  userScore?: UserScore;
 }
 
 /**

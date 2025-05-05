@@ -33,7 +33,10 @@ export const startValidationScheduler = (): (() => void) => {
       if (result.success) {
         logger.info("Initial validation cycle completed successfully", {
           context: "ValidationScheduler",
-          data: result.data.summary
+          data: {
+            userScores: result.data.userScores,
+            summary: result.data.summary
+          }
         });
       } else {
         logger.error("Initial validation cycle failed", {
@@ -58,7 +61,10 @@ export const startValidationScheduler = (): (() => void) => {
         if (result.success) {
           logger.info("Scheduled validation cycle completed", {
             context: "ValidationScheduler",
-            data: result.data.summary
+            data: {
+              userScores: result.data.userScores,
+              summary: result.data.summary
+            }
           });
         } else {
           logger.error("Scheduled validation cycle failed", {
@@ -98,7 +104,10 @@ export const runManualValidation = async () => {
     if (result.success) {
       logger.info("Manual validation cycle completed successfully", {
         context: "ValidationScheduler",
-        data: result.data.summary
+        data: {
+          userScores: result.data.userScores,
+          summary: result.data.summary
+        }
       });
     } else {
       logger.error("Manual validation cycle failed", {
