@@ -7,11 +7,35 @@ export const CompatibilityCheckerTool = {
   name: "CompatibilityCheckerTool",
   description: "Checks if all items in the outfit match and make sense together",
   execute: async (outfit: {
-    top: string,
-    bottom: string,
-    shoes: string,
-    coat?: string,
-    description: string
+    top: {
+      color: string;
+      product_name: string;
+      description: string;
+      price: string;
+      image: string;
+    };
+    bottom: {
+      color: string;
+      product_name: string;
+      description: string;
+      price: string;
+      image: string;
+    };
+    shoes: {
+      color: string;
+      product_name: string;
+      description: string;
+      price: string;
+      image: string;
+    };
+    coat?: {
+      color: string;
+      product_name: string;
+      description: string;
+      price: string;
+      image: string;
+    };
+    description: string;
   }) => {
     console.log(`Checking compatibility for: ${JSON.stringify(outfit)}`);
     

@@ -4,6 +4,7 @@ import { ProfileFetcherTool } from "../tools/profileFetcherTool";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 import { CompatibilityCheckerTool } from "../tools/compatibilityCheckerTool";
 import { GenerateRecommendationsTool } from "../tools/generateRecommendationsTool";
+import { OutfitResponse } from "../types/outfitTypes";
 
 /**
  * The AgentCrew orchestrates running all agents in sequence to generate a complete outfit recommendation
@@ -25,7 +26,7 @@ export class AgentCrew {
    * @param userId The ID of the user to generate recommendations for
    * @returns A complete outfit recommendation with styling tips
    */
-  async run(userId: string) {
+  async run(userId: string): Promise<OutfitResponse> {
     console.log(`AgentCrew starting run for user: ${userId}`);
     try {
       // Step 1: Get user profile data using the personalization agent

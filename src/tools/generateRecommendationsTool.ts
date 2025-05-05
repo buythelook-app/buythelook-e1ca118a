@@ -7,11 +7,35 @@ export const GenerateRecommendationsTool = {
   name: "GenerateRecommendationsTool",
   description: "Enhances outfit with explanations, alternatives or styling tips",
   execute: async (outfit: {
-    top: string,
-    bottom: string,
-    shoes: string,
-    coat?: string,
-    description: string
+    top: {
+      color: string;
+      product_name: string;
+      description: string;
+      price: string;
+      image: string;
+    };
+    bottom: {
+      color: string;
+      product_name: string;
+      description: string;
+      price: string;
+      image: string;
+    };
+    shoes: {
+      color: string;
+      product_name: string;
+      description: string;
+      price: string;
+      image: string;
+    };
+    coat?: {
+      color: string;
+      product_name: string;
+      description: string;
+      price: string;
+      image: string;
+    };
+    description: string;
   }) => {
     console.log(`Generating recommendations for: ${JSON.stringify(outfit)}`);
     
