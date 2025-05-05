@@ -35,11 +35,23 @@ export const RunValidationCycleTool = {
           continue;
         }
         
-        // Step 2: Test styling agent
+        // Step 2: Verify profile contains required fields
+        const profile = profileResult.data;
+        if (!profile.style || !profile.bodyType) {
+          results.push({
+            testCase: testCase.name,
+            success: false,
+            stage: "personalization",
+            error: "Profile is missing required fields (style or bodyType)"
+          });
+          continue;
+        }
+        
+        // Step 3: Test styling agent
         const outfitParams = {
-          bodyStructure: profileResult.data.bodyType,
-          mood: profileResult.data.mood,
-          style: profileResult.data.style
+          bodyStructure: profile.bodyType,
+          mood: profile.mood,
+          style: profile.style
         };
         const outfitResult = await GenerateOutfitTool.execute(outfitParams);
         if (!outfitResult.success) {
@@ -52,9 +64,19 @@ export const RunValidationCycleTool = {
           continue;
         }
         
+        // Step 4: Verify outfit contains required items
         const generatedOutfit = outfitResult.data[0]; // Take the first suggestion
+        if (!generatedOutfit.top || !generatedOutfit.bottom || !generatedOutfit.shoes) {
+          results.push({
+            testCase: testCase.name,
+            success: false,
+            stage: "styling",
+            error: "Generated outfit is missing required items (top, bottom, or shoes)"
+          });
+          continue;
+        }
         
-        // Step 3: Test validator agent
+        // Step 5: Test validator agent
         const compatibilityResult = await CompatibilityCheckerTool.execute(generatedOutfit);
         if (!compatibilityResult.success || !compatibilityResult.data.isCompatible) {
           results.push({
@@ -66,7 +88,7 @@ export const RunValidationCycleTool = {
           continue;
         }
         
-        // Step 4: Test recommendation agent
+        // Step 6: Test recommendation agent
         const recommendationsResult = await GenerateRecommendationsTool.execute(generatedOutfit);
         if (!recommendationsResult.success) {
           results.push({
@@ -78,6 +100,18 @@ export const RunValidationCycleTool = {
           continue;
         }
         
+        // Step 7: Verify at least one styling tip was provided
+        const recommendations = recommendationsResult.data.recommendations;
+        if (!recommendations || recommendations.length === 0) {
+          results.push({
+            testCase: testCase.name,
+            success: false,
+            stage: "recommendation",
+            error: "No styling tips were provided"
+          });
+          continue;
+        }
+        
         // If all steps passed, mark test case as successful
         results.push({
           testCase: testCase.name,
@@ -85,7 +119,7 @@ export const RunValidationCycleTool = {
           stage: "complete",
           data: {
             outfit: generatedOutfit,
-            recommendations: recommendationsResult.data.recommendations,
+            recommendations: recommendations,
             occasion: recommendationsResult.data.occasion
           }
         });
@@ -108,6 +142,9 @@ export const RunValidationCycleTool = {
             totalTests: testCases.length,
             successfulTests: successCount,
             successRate: successRate,
+            message: successCount === testCases.length ? 
+              "✅ All agents passed the validation test successfully." : 
+              `❌ ${testCases.length - successCount} test cases failed validation.`,
             timestamp: new Date().toISOString()
           }
         }
