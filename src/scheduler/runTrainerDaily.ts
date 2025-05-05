@@ -16,11 +16,12 @@ let isSchedulerRunning = false;
 /**
  * Starts the periodic validation cycle scheduler
  * Will run the validation cycle once per hour
+ * @returns A function to stop the scheduler
  */
-export const startValidationScheduler = (): void => {
+export const startValidationScheduler = (): (() => void) => {
   if (isSchedulerRunning) {
     logger.warn("Validation scheduler is already running", { context: "ValidationScheduler" });
-    return;
+    return () => {}; // Return a no-op function if scheduler is already running
   }
 
   logger.info("Starting hourly validation cycle scheduler", { context: "ValidationScheduler" });
@@ -87,8 +88,9 @@ export const startValidationScheduler = (): void => {
 /**
  * Runs a single validation cycle on demand
  * Useful for manual triggering of the validation process
+ * @returns A promise resolving to the validation cycle result
  */
-export const runManualValidation = async (): Promise<void> => {
+export const runManualValidation = async () => {
   logger.info("Running manual validation cycle", { context: "ValidationScheduler" });
   
   try {
@@ -113,4 +115,3 @@ export const runManualValidation = async (): Promise<void> => {
     throw error;
   }
 };
-
