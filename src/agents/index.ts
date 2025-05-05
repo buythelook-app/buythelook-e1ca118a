@@ -1,6 +1,14 @@
 
 // Export all agents from a single entry point
-export * from './personalizationAgent';
-export * from './stylingAgent';
-export * from './validatorAgent';
-export * from './recommendationAgent';
+export { personalizationAgent } from './personalizationAgent';
+export { stylingAgent } from './stylingAgent';
+export { validatorAgent } from './validatorAgent';
+export { recommendationAgent } from './recommendationAgent';
+
+// Define and export the common Agent interface from this central location
+export interface Agent {
+  role: string;
+  goal: string;
+  backstory: string;
+  tools: any[];
+}

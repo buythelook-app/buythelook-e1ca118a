@@ -1,7 +1,8 @@
 
 import { ProfileFetcherTool } from "../tools/profileFetcherTool";
 
-export interface Agent {
+// Interface defined but not exported to avoid conflicts
+interface Agent {
   role: string;
   goal: string;
   backstory: string;
