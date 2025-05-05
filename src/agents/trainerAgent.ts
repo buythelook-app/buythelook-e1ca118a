@@ -1,4 +1,3 @@
-
 import { personalizationAgent, stylingAgent, validatorAgent, recommendationAgent, Agent } from "./index";
 import { ProfileFetcherTool } from "../tools/profileFetcherTool";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
@@ -196,6 +195,12 @@ export const RunValidationCycleTool = {
         error: error instanceof Error ? error.message : "Unknown error in validation cycle"
       };
     }
+  },
+  
+  // Add run() method as an alias to execute for compatibility
+  run: async (testCases: TestCase[] = DEFAULT_TEST_CASES) => {
+    logger.info("Running validation cycle via run() method", { context: "TrainerAgent" });
+    return await RunValidationCycleTool.execute(testCases);
   }
 };
 

@@ -124,3 +124,13 @@ export const runManualValidation = async () => {
     throw error;
   }
 };
+
+/**
+ * Simple function to run the daily trainer check
+ * Can be called from a cron job or other scheduler
+ */
+export async function runDailyTrainerCheck() {
+  logger.info("Running daily trainer check", { context: "DailyTrainerCheck" });
+  const result = await runManualValidation();
+  return result;
+}
