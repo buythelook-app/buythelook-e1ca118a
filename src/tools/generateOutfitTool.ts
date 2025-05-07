@@ -1,4 +1,6 @@
 
+import { supabase } from '../lib/supabaseClient';
+
 /**
  * Tool for generating outfit suggestions
  * Creates combinations of clothing items based on user parameters
@@ -59,5 +61,17 @@ export const GenerateOutfitTool = {
         error: 'Failed to generate outfit'
       };
     }
+  },
+  
+  // Add run method as an alias to execute for compatibility
+  run: async (input: { style?: string, bodyType?: string, mood?: string }) => {
+    const params = {
+      bodyStructure: input.bodyType || "Hourglass",
+      style: input.style || "Classic",
+      mood: input.mood || "Romantic"
+    };
+    
+    const result = await GenerateOutfitTool.execute(params);
+    return result.success ? result.data[0] : {};
   }
 };

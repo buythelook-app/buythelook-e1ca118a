@@ -59,5 +59,17 @@ export const GenerateRecommendationsTool = {
         error: 'Failed to generate styling recommendations'
       };
     }
+  },
+  
+  // Add run method as an alias to execute for compatibility
+  run: async (input: { outfit: any }) => {
+    const result = await GenerateRecommendationsTool.execute(input.outfit);
+    return {
+      ...input.outfit,
+      tips: result.success ? result.data.recommendations : [
+        "Add a light jacket to complete the look",
+        "Perfect for a casual day out"
+      ]
+    };
   }
 };

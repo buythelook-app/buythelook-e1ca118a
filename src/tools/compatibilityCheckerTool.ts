@@ -64,5 +64,16 @@ export const CompatibilityCheckerTool = {
         error: 'Failed to check outfit compatibility'
       };
     }
+  },
+  
+  // Add run method as an alias to execute for compatibility
+  run: async (input: { top: any, bottom: any, shoes: any }) => {
+    const result = await CompatibilityCheckerTool.execute(input);
+    return {
+      valid: result.success ? result.data.isCompatible : false,
+      message: result.success ? 
+        (result.data.isCompatible ? "Outfit is compatible" : "Incompatible outfit") : 
+        "Failed to check compatibility"
+    };
   }
 };
