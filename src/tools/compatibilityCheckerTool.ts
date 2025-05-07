@@ -67,7 +67,37 @@ export const CompatibilityCheckerTool = {
   },
   
   // Add run method as an alias to execute for compatibility
-  run: async (input: { top: any, bottom: any, shoes: any }) => {
+  run: async (input: { 
+    top: {
+      color: string;
+      product_name: string;
+      description: string;
+      price: string;
+      image: string;
+    };
+    bottom: {
+      color: string;
+      product_name: string;
+      description: string;
+      price: string;
+      image: string;
+    };
+    shoes: {
+      color: string;
+      product_name: string;
+      description: string;
+      price: string;
+      image: string;
+    };
+    coat?: {
+      color: string;
+      product_name: string;
+      description: string;
+      price: string;
+      image: string;
+    };
+    description: string; 
+  }) => {
     const result = await CompatibilityCheckerTool.execute(input);
     return {
       valid: result.success ? result.data.isCompatible : false,
