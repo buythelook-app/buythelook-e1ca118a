@@ -100,6 +100,33 @@ export type Database = {
         }
         Relationships: []
       }
+      outfit_logs: {
+        Row: {
+          bottom_id: string
+          created_at: string
+          id: string
+          shoes_id: string
+          top_id: string
+          user_id: string | null
+        }
+        Insert: {
+          bottom_id: string
+          created_at?: string
+          id?: string
+          shoes_id: string
+          top_id: string
+          user_id?: string | null
+        }
+        Update: {
+          bottom_id?: string
+          created_at?: string
+          id?: string
+          shoes_id?: string
+          top_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       recommendation_test_cases: {
         Row: {
           budget: number

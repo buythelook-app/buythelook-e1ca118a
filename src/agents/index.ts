@@ -12,4 +12,5 @@ export interface Agent {
   goal: string;
   backstory: string;
   tools: any[];
+  run?: (userId: string) => Promise<any>;
 }

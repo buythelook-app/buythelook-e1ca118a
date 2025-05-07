@@ -34,19 +34,14 @@ export class AgentCrew {
       if (!profileResult.success) {
         return { success: false, error: profileResult.error || "Failed to fetch user profile" };
       }
-      const userProfile = profileResult.data;
       
-      // Step 2: Generate outfit using the styling agent
-      const outfitParams = {
-        bodyStructure: userProfile.bodyType,
-        mood: userProfile.mood,
-        style: userProfile.style
-      };
-      const outfitResult = await GenerateOutfitTool.execute(outfitParams);
+      // Step 2: Generate outfit using the styling agent's run method
+      // Use the new run method instead of the tool
+      const outfitResult = await stylingAgent.run(userId);
       if (!outfitResult.success) {
         return { success: false, error: outfitResult.error || "Failed to generate outfit" };
       }
-      const generatedOutfit = outfitResult.data[0]; // Take the first suggestion
+      const generatedOutfit = outfitResult.data;
       
       // Step 3: Validate the outfit compatibility using the validator agent
       const compatibilityResult = await CompatibilityCheckerTool.execute(generatedOutfit);
