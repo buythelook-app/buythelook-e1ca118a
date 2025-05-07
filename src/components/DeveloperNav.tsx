@@ -18,7 +18,6 @@ export const DeveloperNav = () => {
     { path: "/", label: "Root" },
     { path: "/entrance", label: "Entrance" },
     { path: "/home", label: "Home" },
-    { path: "/landing", label: "Landing" },
     { path: "/quiz", label: "Style Quiz" },
     { path: "/suggestions", label: "Look Suggestions" },
     { path: "/faq", label: "FAQ" },
@@ -35,6 +34,7 @@ export const DeveloperNav = () => {
     { path: "/rules", label: "Rules" },
     { path: "/my-list", label: "My List" },
     { path: "/dev", label: "Developer Tools" },
+    { path: "/test/recommendation", label: "Test Recommendation" },
   ];
 
   return (
