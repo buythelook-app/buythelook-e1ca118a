@@ -1,3 +1,4 @@
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,12 +6,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CreditCard, Package, Settings, User, Apple } from "lucide-react";
+import { CreditCard, Package, Settings, User, Apple, Shirt } from "lucide-react";
 import { HomeButton } from "./HomeButton";
 import { CreditCardForm } from "./payments/CreditCardForm";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
+import RecommendLookButton from "./RecommendLookButton";
 
 const mockOrders = [
   { id: '1', date: '2024-03-15', total: 299.99, status: 'Delivered' },
@@ -22,6 +24,7 @@ export const Profile = () => {
   const [showCreditCardForm, setShowCreditCardForm] = useState(false);
   const [userEmail, setUserEmail] = useState<string>("");
   const [userName, setUserName] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -39,6 +42,7 @@ export const Profile = () => {
 
       setUserEmail(user.email || "");
       setUserName(user.user_metadata.name || user.email?.split('@')[0] || "");
+      setUserId(user.id);
       
       setFormData({
         firstName: user.user_metadata.firstName || "",
@@ -115,7 +119,7 @@ export const Profile = () => {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="profile" className="space-y-6">
-                <TabsList className="grid grid-cols-4 gap-4 bg-netflix-background p-2">
+                <TabsList className="grid grid-cols-5 gap-4 bg-netflix-background p-2">
                   <TabsTrigger value="profile" className="data-[state=active]:bg-netflix-accent">
                     <User className="mr-2 h-4 w-4" />
                     My Profile
@@ -131,6 +135,10 @@ export const Profile = () => {
                   <TabsTrigger value="settings" className="data-[state=active]:bg-netflix-accent">
                     <Settings className="mr-2 h-4 w-4" />
                     Settings
+                  </TabsTrigger>
+                  <TabsTrigger value="looks" className="data-[state=active]:bg-netflix-accent">
+                    <Shirt className="mr-2 h-4 w-4" />
+                    My Looks
                   </TabsTrigger>
                 </TabsList>
 
@@ -272,6 +280,24 @@ export const Profile = () => {
                         Receive order updates
                       </Label>
                     </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="looks">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Fashion Recommendations</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Get personalized outfit recommendations based on your style profile and preferences.
+                    </p>
+                    
+                    {userId && <RecommendLookButton userId={userId} />}
+                    
+                    {!userId && (
+                      <div className="text-center py-8">
+                        <Shirt className="mx-auto h-12 w-12 text-gray-400" />
+                        <p className="mt-4 text-gray-400">Sign in to get personalized outfit recommendations</p>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
               </Tabs>
