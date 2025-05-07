@@ -34,6 +34,7 @@ export const DeveloperNav = () => {
     { path: "/about", label: "About" },
     { path: "/rules", label: "Rules" },
     { path: "/my-list", label: "My List" },
+    { path: "/dev", label: "Developer Tools" },
   ];
 
   return (

@@ -22,7 +22,8 @@ import { AboutApp } from "@/components/AboutApp";
 import { OurRules } from "@/components/OurRules";
 import { MyList } from "@/components/MyList";
 import { PasswordRecovery } from "@/pages/PasswordRecovery";
-// Removed import of DeveloperNav
+import { DeveloperTools } from "@/components/DeveloperTools";
+import { DeveloperNav } from "@/components/DeveloperNav";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,7 +36,7 @@ const queryClient = new QueryClient({
 
 function App() {
   console.log("App component rendering");
-  // Removed isDevelopment and DeveloperNav rendering
+  const isDevelopment = import.meta.env.DEV;
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -43,12 +44,11 @@ function App() {
         <Toaster />
         <Sonner />
         <HashRouter>
+          {isDevelopment && <DeveloperNav />}
           <Routes>
             <Route path="/" element={<Navigate to="/home" replace />} />
             <Route path="/entrance" element={<Entrance />} />
             <Route path="/home" element={<Index />} />
-            {/* Removed Landing route */}
-            {/* <Route path="/landing" element={<Landing />} /> */}
             <Route path="/quiz" element={<StyleQuiz />} />
             <Route path="/suggestions" element={<LookSuggestions />} />
             <Route path="/look/:id" element={<LookDetail />} />
@@ -65,6 +65,7 @@ function App() {
             <Route path="/about" element={<AboutApp />} />
             <Route path="/rules" element={<OurRules />} />
             <Route path="/my-list" element={<MyList />} />
+            <Route path="/dev" element={<DeveloperTools />} />
           </Routes>
         </HashRouter>
       </TooltipProvider>
@@ -73,4 +74,3 @@ function App() {
 }
 
 export default App;
-
