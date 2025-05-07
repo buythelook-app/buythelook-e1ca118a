@@ -42,9 +42,10 @@ export async function runFullRecommendation(userId: string): Promise<OutfitRespo
 
   return {
     success: true,
-    userId,
-    profile,
-    outfit: final
+    data: {
+      ...final,
+      // Include any additional data needed for the response
+    }
   };
 }
 
