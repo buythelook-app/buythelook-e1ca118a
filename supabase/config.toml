@@ -1,1 +1,5 @@
+
 project_id = "aqkeprwxxsryropnhfvm"
+
+[functions.trainer-agent]
+verify_jwt = false
