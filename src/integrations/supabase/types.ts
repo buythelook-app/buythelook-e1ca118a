@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      agent_runs: {
+        Row: {
+          agent_name: string
+          id: string
+          result: Json
+          score: number
+          status: string
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          agent_name: string
+          id?: string
+          result: Json
+          score: number
+          status?: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Update: {
+          agent_name?: string
+          id?: string
+          result?: Json
+          score?: number
+          status?: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       cart_items: {
         Row: {
           created_at: string
@@ -193,6 +223,42 @@ export type Database = {
           user_id?: string | null
           waist?: string | null
           weight?: string | null
+        }
+        Relationships: []
+      }
+      zara_cloth: {
+        Row: {
+          availability: boolean | null
+          colour: string
+          created_at: string
+          description: string | null
+          id: string
+          materials: string[] | null
+          price: number
+          product_name: string
+          size: string[]
+        }
+        Insert: {
+          availability?: boolean | null
+          colour: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          materials?: string[] | null
+          price: number
+          product_name: string
+          size: string[]
+        }
+        Update: {
+          availability?: boolean | null
+          colour?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          materials?: string[] | null
+          price?: number
+          product_name?: string
+          size?: string[]
         }
         Relationships: []
       }
