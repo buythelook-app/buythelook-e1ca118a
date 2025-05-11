@@ -4,9 +4,11 @@ export interface AgentOutfit {
   top?: string;
   bottom?: string;
   shoes?: string;
+  coat?: string;
   score?: number;
   description?: string;
   recommendations?: string[];
+  occasion?: 'work' | 'casual' | 'weekend' | 'date night' | 'general';
 }
 
 export interface AgentResult {

@@ -26,6 +26,7 @@ import { DeveloperTools } from "@/components/DeveloperTools";
 import { DeveloperNav } from "@/components/DeveloperNav";
 import RecommendationTest from "./pages/RecommendationTest";
 import AgentResultsPage from "./pages/AgentResultsPage";
+import OutfitGenerationPage from "./pages/OutfitGenerationPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -70,6 +71,7 @@ function App() {
             <Route path="/dev" element={<DeveloperTools />} />
             <Route path="/test/recommendation" element={<RecommendationTest />} />
             <Route path="/agent-results" element={<AgentResultsPage />} />
+            <Route path="/outfit-generation" element={<OutfitGenerationPage />} />
           </Routes>
         </HashRouter>
       </TooltipProvider>
