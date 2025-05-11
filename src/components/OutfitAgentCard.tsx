@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { LookCanvas } from "@/components/LookCanvas";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, XCircle, MessageSquare, RefreshCw } from "lucide-react";
+import { CheckCircle, XCircle, MessageSquare, RefreshCw, ThumbsUp, ThumbsDown } from "lucide-react";
 import { toast } from "sonner";
 
 interface OutfitItem {
@@ -21,8 +21,10 @@ interface OutfitAgentCardProps {
   details?: Record<string, string>;
   onApprove?: (agentName: string, feedback?: string) => void;
   onReject?: (agentName: string, feedback?: string) => void;
+  onLike?: (agentName: string, liked: boolean, feedback?: string) => void;
   isApproved?: boolean;
   feedback?: string;
+  isLiked?: boolean;
 }
 
 export function OutfitAgentCard({ 
@@ -32,8 +34,10 @@ export function OutfitAgentCard({
   details, 
   onApprove, 
   onReject,
+  onLike,
   isApproved,
-  feedback: existingFeedback
+  feedback: existingFeedback,
+  isLiked
 }: OutfitAgentCardProps) {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedback, setFeedback] = useState(existingFeedback || "");
@@ -69,6 +73,20 @@ export function OutfitAgentCard({
     setSubmitting(false);
   };
 
+  const handleLike = (liked: boolean) => {
+    if (!onLike) return;
+    
+    setSubmitting(true);
+    try {
+      onLike(agentName, liked, feedback);
+      toast.success(liked ? "Added like to outfit" : "Added dislike to outfit");
+    } catch (error) {
+      toast.error("Failed to record feedback");
+      console.error(error);
+    }
+    setSubmitting(false);
+  };
+
   const getScoreBadgeVariant = (score?: number) => {
     if (!score) return "outline";
     if (score >= 90) return "default";
@@ -85,6 +103,11 @@ export function OutfitAgentCard({
             {isApproved !== undefined && (
               <Badge variant={isApproved ? "success" : "destructive"}>
                 {isApproved ? "Approved" : "Rejected"}
+              </Badge>
+            )}
+            {isLiked !== undefined && (
+              <Badge variant={isLiked ? "success" : "destructive"}>
+                {isLiked ? "Liked" : "Disliked"}
               </Badge>
             )}
             {score !== undefined && (
@@ -116,7 +139,7 @@ export function OutfitAgentCard({
         </CardFooter>
       )}
       
-      {(onApprove || onReject) && (
+      {(onApprove || onReject || onLike) && (
         <CardFooter className="flex flex-col gap-2 pt-2 pb-4">
           {showFeedback ? (
             <div className="w-full space-y-2">
@@ -176,7 +199,29 @@ export function OutfitAgentCard({
                   Add Feedback
                 </Button>
               )}
-              {isApproved === undefined && (
+              {onLike && (
+                <>
+                  <Button 
+                    variant={isLiked === true ? "success" : "outline"}
+                    size="sm" 
+                    onClick={() => handleLike(true)}
+                    disabled={submitting}
+                  >
+                    <ThumbsUp className="mr-1 h-4 w-4" />
+                    Like
+                  </Button>
+                  <Button 
+                    variant={isLiked === false ? "destructive" : "outline"}
+                    size="sm" 
+                    onClick={() => handleLike(false)}
+                    disabled={submitting}
+                  >
+                    <ThumbsDown className="mr-1 h-4 w-4" />
+                    Dislike
+                  </Button>
+                </>
+              )}
+              {isApproved === undefined && onApprove && (
                 <>
                   <Button 
                     variant="success" 

@@ -90,7 +90,9 @@ export default function OutfitGenerationPage() {
             agentName: item.agent_name,
             outfitId: item.outfit_id,
             approved: item.approved,
-            feedback: item.feedback
+            feedback: item.feedback,
+            userLiked: item.user_liked,
+            userFeedback: item.user_feedback
           };
         });
         setApprovalData(approvalMap);
@@ -170,6 +172,7 @@ export default function OutfitGenerationPage() {
       setApprovalData(prev => ({
         ...prev,
         [agentName]: {
+          ...prev[agentName],
           agentName,
           outfitId,
           approved: true,
@@ -217,6 +220,7 @@ export default function OutfitGenerationPage() {
       setApprovalData(prev => ({
         ...prev,
         [agentName]: {
+          ...prev[agentName],
           agentName,
           outfitId,
           approved: false,
@@ -233,6 +237,59 @@ export default function OutfitGenerationPage() {
     }
   };
 
+  // Handle user like/dislike feedback
+  const handleLikeFeedback = async (agentName: string, liked: boolean, feedback?: string) => {
+    setSavingFeedback(true);
+    try {
+      const result = results.find(r => formatAgentName(r.agent) === agentName);
+      if (!result) {
+        throw new Error("Agent result not found");
+      }
+
+      // Determine outfit ID based on outfit items
+      const outfitId = `${result.output.top || ''}-${result.output.bottom || ''}-${result.output.shoes || ''}`;
+
+      // Check if we already have approval data for this agent
+      const existingData = approvalData[agentName];
+
+      // Save to database
+      const { error: saveError } = await supabase
+        .from('agent_feedback')
+        .upsert({
+          agent_name: agentName,
+          outfit_id: outfitId,
+          approved: existingData?.approved ?? null,
+          feedback: existingData?.feedback ?? null,
+          user_liked: liked,
+          user_feedback: feedback || null,
+          timestamp: new Date().toISOString()
+        }, { onConflict: 'agent_name' });
+
+      if (saveError) {
+        throw saveError;
+      }
+
+      // Update local state
+      setApprovalData(prev => ({
+        ...prev,
+        [agentName]: {
+          ...prev[agentName],
+          agentName,
+          outfitId,
+          userLiked: liked,
+          userFeedback: feedback
+        }
+      }));
+
+      toast.success(`${liked ? 'Liked' : 'Disliked'} outfit by ${agentName}`);
+    } catch (error: any) {
+      console.error("Error saving like/dislike:", error);
+      toast.error("Failed to save feedback");
+    } finally {
+      setSavingFeedback(false);
+    }
+  };
+
   // Filter results based on active tab
   const filteredResults = activeTab === 'all' 
     ? results 
@@ -240,7 +297,11 @@ export default function OutfitGenerationPage() {
       ? results.filter(r => approvalData[formatAgentName(r.agent)]?.approved)
       : activeTab === 'rejected'
         ? results.filter(r => approvalData[formatAgentName(r.agent)]?.approved === false)
-        : results.filter(r => !approvalData[formatAgentName(r.agent)]);
+        : activeTab === 'liked'
+          ? results.filter(r => approvalData[formatAgentName(r.agent)]?.userLiked === true)
+          : activeTab === 'disliked'
+            ? results.filter(r => approvalData[formatAgentName(r.agent)]?.userLiked === false)
+            : results.filter(r => !approvalData[formatAgentName(r.agent)]);
 
   return (
     <div className="min-h-screen bg-netflix-background">
@@ -283,6 +344,7 @@ export default function OutfitGenerationPage() {
                     <TableHead>Shoes</TableHead>
                     <TableHead>Score</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>User Feedback</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -306,12 +368,21 @@ export default function OutfitGenerationPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {approvalInfo ? (
+                          {approvalInfo?.approved !== undefined ? (
                             <Badge variant={approvalInfo.approved ? "success" : "destructive"}>
                               {approvalInfo.approved ? "Approved" : "Rejected"}
                             </Badge>
                           ) : (
                             <Badge variant="outline">Pending</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {approvalInfo?.userLiked !== undefined ? (
+                            <Badge variant={approvalInfo.userLiked ? "success" : "destructive"}>
+                              {approvalInfo.userLiked ? "Liked" : "Disliked"}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">No Feedback</Badge>
                           )}
                         </TableCell>
                       </TableRow>
@@ -329,6 +400,8 @@ export default function OutfitGenerationPage() {
                 <TabsTrigger value="pending">Pending Review</TabsTrigger>
                 <TabsTrigger value="approved">Approved</TabsTrigger>
                 <TabsTrigger value="rejected">Rejected</TabsTrigger>
+                <TabsTrigger value="liked">Liked</TabsTrigger>
+                <TabsTrigger value="disliked">Disliked</TabsTrigger>
               </TabsList>
             </Tabs>
             
@@ -363,8 +436,10 @@ export default function OutfitGenerationPage() {
                       details={details}
                       onApprove={handleApprove}
                       onReject={handleReject}
+                      onLike={handleLikeFeedback}
                       isApproved={approvalInfo?.approved}
                       feedback={approvalInfo?.feedback}
+                      isLiked={approvalInfo?.userLiked}
                     />
                   );
                 })}

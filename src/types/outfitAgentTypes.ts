@@ -11,6 +11,10 @@ export interface AgentOutfit {
   occasion?: 'work' | 'casual' | 'weekend' | 'date night' | 'general';
   approved?: boolean;
   feedback?: string;
+  userFeedback?: {
+    isLiked?: boolean; 
+    comment?: string;
+  };
 }
 
 export interface AgentResult {
@@ -43,4 +47,6 @@ export interface ApprovalData {
   outfitId: string;
   approved: boolean;
   feedback?: string;
+  userLiked?: boolean;
+  userFeedback?: string;
 }
