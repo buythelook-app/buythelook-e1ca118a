@@ -25,6 +25,7 @@ import { PasswordRecovery } from "@/pages/PasswordRecovery";
 import { DeveloperTools } from "@/components/DeveloperTools";
 import { DeveloperNav } from "@/components/DeveloperNav";
 import RecommendationTest from "./pages/RecommendationTest";
+import AgentResultsPage from "./pages/AgentResultsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,6 +69,7 @@ function App() {
             <Route path="/my-list" element={<MyList />} />
             <Route path="/dev" element={<DeveloperTools />} />
             <Route path="/test/recommendation" element={<RecommendationTest />} />
+            <Route path="/agent-results" element={<AgentResultsPage />} />
           </Routes>
         </HashRouter>
       </TooltipProvider>
