@@ -7,12 +7,14 @@ export interface AgentOutfit {
   score?: number;
   description?: string;
   recommendations?: string[];
+  occasion?: string;
 }
 
 export interface AgentResult {
   agent: string;
   output: AgentOutfit;
   timestamp?: string;
+  occasion?: string;
 }
 
 export interface TrainerAgentResponse {
