@@ -9,6 +9,8 @@ export interface AgentOutfit {
   description?: string;
   recommendations?: string[];
   occasion?: 'work' | 'casual' | 'weekend' | 'date night' | 'general';
+  approved?: boolean;
+  feedback?: string;
 }
 
 export interface AgentResult {
@@ -34,4 +36,11 @@ export interface OutfitItem {
     width: number;
     height: number;
   };
+}
+
+export interface ApprovalData {
+  agentName: string;
+  outfitId: string;
+  approved: boolean;
+  feedback?: string;
 }

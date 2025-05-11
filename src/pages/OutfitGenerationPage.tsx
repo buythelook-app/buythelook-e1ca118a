@@ -5,7 +5,8 @@ import {
   AgentOutfit, 
   AgentResult, 
   TrainerAgentResponse,
-  OutfitItem
+  OutfitItem,
+  ApprovalData
 } from "@/types/outfitAgentTypes";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import { OutfitAgentCard } from "@/components/OutfitAgentCard";
 import { Navbar } from "@/components/Navbar";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Helper to format agent names nicely
 const formatAgentName = (name: string): string => {
@@ -37,6 +39,9 @@ export default function OutfitGenerationPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [itemImages, setItemImages] = useState<Record<string, string>>({});
+  const [approvalData, setApprovalData] = useState<Record<string, ApprovalData>>({});
+  const [activeTab, setActiveTab] = useState<string>("all");
+  const [savingFeedback, setSavingFeedback] = useState<boolean>(false);
 
   const fetchResults = async () => {
     try {
@@ -72,6 +77,24 @@ export default function OutfitGenerationPage() {
       });
 
       setItemImages(mockImages);
+
+      // Load saved approvals
+      const { data: savedApprovals, error: approvalsError } = await supabase
+        .from('agent_feedback')
+        .select('*');
+
+      if (!approvalsError && savedApprovals) {
+        const approvalMap: Record<string, ApprovalData> = {};
+        savedApprovals.forEach((item: any) => {
+          approvalMap[item.agent_name] = {
+            agentName: item.agent_name,
+            outfitId: item.outfit_id,
+            approved: item.approved,
+            feedback: item.feedback
+          };
+        });
+        setApprovalData(approvalMap);
+      }
     } catch (err: any) {
       console.error('Error fetching trainer agent results:', err);
       setError(err.message);
@@ -116,6 +139,109 @@ export default function OutfitGenerationPage() {
     return lookItems;
   };
 
+  // Handle outfit approval
+  const handleApprove = async (agentName: string, feedback?: string) => {
+    setSavingFeedback(true);
+    try {
+      const result = results.find(r => formatAgentName(r.agent) === agentName);
+      if (!result) {
+        throw new Error("Agent result not found");
+      }
+
+      // Determine outfit ID based on outfit items
+      const outfitId = `${result.output.top || ''}-${result.output.bottom || ''}-${result.output.shoes || ''}`;
+
+      // Save to database
+      const { error: saveError } = await supabase
+        .from('agent_feedback')
+        .upsert({
+          agent_name: agentName,
+          outfit_id: outfitId,
+          approved: true,
+          feedback: feedback || null,
+          timestamp: new Date().toISOString()
+        }, { onConflict: 'agent_name' });
+
+      if (saveError) {
+        throw saveError;
+      }
+
+      // Update local state
+      setApprovalData(prev => ({
+        ...prev,
+        [agentName]: {
+          agentName,
+          outfitId,
+          approved: true,
+          feedback
+        }
+      }));
+
+      toast.success(`Approved outfit by ${agentName}`);
+    } catch (error: any) {
+      console.error("Error saving approval:", error);
+      toast.error("Failed to save approval");
+    } finally {
+      setSavingFeedback(false);
+    }
+  };
+
+  // Handle outfit rejection
+  const handleReject = async (agentName: string, feedback?: string) => {
+    setSavingFeedback(true);
+    try {
+      const result = results.find(r => formatAgentName(r.agent) === agentName);
+      if (!result) {
+        throw new Error("Agent result not found");
+      }
+
+      // Determine outfit ID based on outfit items
+      const outfitId = `${result.output.top || ''}-${result.output.bottom || ''}-${result.output.shoes || ''}`;
+
+      // Save to database
+      const { error: saveError } = await supabase
+        .from('agent_feedback')
+        .upsert({
+          agent_name: agentName,
+          outfit_id: outfitId,
+          approved: false,
+          feedback: feedback || null,
+          timestamp: new Date().toISOString()
+        }, { onConflict: 'agent_name' });
+
+      if (saveError) {
+        throw saveError;
+      }
+
+      // Update local state
+      setApprovalData(prev => ({
+        ...prev,
+        [agentName]: {
+          agentName,
+          outfitId,
+          approved: false,
+          feedback
+        }
+      }));
+
+      toast.success(`Rejected outfit by ${agentName}`);
+    } catch (error: any) {
+      console.error("Error saving rejection:", error);
+      toast.error("Failed to save rejection");
+    } finally {
+      setSavingFeedback(false);
+    }
+  };
+
+  // Filter results based on active tab
+  const filteredResults = activeTab === 'all' 
+    ? results 
+    : activeTab === 'approved'
+      ? results.filter(r => approvalData[formatAgentName(r.agent)]?.approved)
+      : activeTab === 'rejected'
+        ? results.filter(r => approvalData[formatAgentName(r.agent)]?.approved === false)
+        : results.filter(r => !approvalData[formatAgentName(r.agent)]);
+
   return (
     <div className="min-h-screen bg-netflix-background">
       <Navbar />
@@ -156,39 +282,66 @@ export default function OutfitGenerationPage() {
                     <TableHead>Bottom Item</TableHead>
                     <TableHead>Shoes</TableHead>
                     <TableHead>Score</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {results.map((result, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{formatAgentName(result.agent)}</TableCell>
-                      <TableCell>{result.output.top || 'N/A'}</TableCell>
-                      <TableCell>{result.output.bottom || 'N/A'}</TableCell>
-                      <TableCell>{result.output.shoes || 'N/A'}</TableCell>
-                      <TableCell>
-                        {result.output.score !== undefined ? (
-                          <Badge variant={result.output.score > 80 ? "default" : "outline"}>
-                            {result.output.score}
-                          </Badge>
-                        ) : (
-                          'N/A'
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {results.map((result, index) => {
+                    const formattedName = formatAgentName(result.agent);
+                    const approvalInfo = approvalData[formattedName];
+                    
+                    return (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{formattedName}</TableCell>
+                        <TableCell>{result.output.top || 'N/A'}</TableCell>
+                        <TableCell>{result.output.bottom || 'N/A'}</TableCell>
+                        <TableCell>{result.output.shoes || 'N/A'}</TableCell>
+                        <TableCell>
+                          {result.output.score !== undefined ? (
+                            <Badge variant={result.output.score > 80 ? "default" : "outline"}>
+                              {result.output.score}
+                            </Badge>
+                          ) : (
+                            'N/A'
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {approvalInfo ? (
+                            <Badge variant={approvalInfo.approved ? "success" : "destructive"}>
+                              {approvalInfo.approved ? "Approved" : "Rejected"}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">Pending</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
 
             <h2 className="text-2xl font-semibold mb-4">Visual Outfits</h2>
+            
+            <Tabs defaultValue="all" className="mb-6" value={activeTab} onValueChange={setActiveTab}>
+              <TabsList>
+                <TabsTrigger value="all">All Outfits</TabsTrigger>
+                <TabsTrigger value="pending">Pending Review</TabsTrigger>
+                <TabsTrigger value="approved">Approved</TabsTrigger>
+                <TabsTrigger value="rejected">Rejected</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {results
+              {filteredResults
                 .filter(result => (
                   // Only show results with at least one outfit item
                   result.output.top || result.output.bottom || result.output.shoes
                 ))
                 .map((result, index) => {
                   const lookItems = getLookItems(result.output);
+                  const formattedName = formatAgentName(result.agent);
+                  const approvalInfo = approvalData[formattedName];
                   
                   // Create details object for display
                   const details: Record<string, string> = {};
@@ -204,14 +357,24 @@ export default function OutfitGenerationPage() {
                   return (
                     <OutfitAgentCard 
                       key={index}
-                      agentName={formatAgentName(result.agent)}
+                      agentName={formattedName}
                       score={result.output.score}
                       items={lookItems}
                       details={details}
+                      onApprove={handleApprove}
+                      onReject={handleReject}
+                      isApproved={approvalInfo?.approved}
+                      feedback={approvalInfo?.feedback}
                     />
                   );
                 })}
             </div>
+
+            {filteredResults.length === 0 && (
+              <div className="text-center py-10">
+                <p className="text-gray-500">No outfits found for the selected filter.</p>
+              </div>
+            )}
           </div>
         )}
       </div>
