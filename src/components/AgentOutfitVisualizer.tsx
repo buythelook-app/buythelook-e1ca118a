@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw } from "lucide-react";
@@ -45,8 +45,6 @@ export function AgentOutfitVisualizer() {
     try {
       setLoading(true);
       setError(null);
-      
-      const supabase = createClient();
       
       // Call the trainer-agent Edge Function
       const { data, error } = await supabase.functions.invoke<TrainerAgentResponse>('trainer-agent');

@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -51,7 +50,6 @@ export default function AgentResultsPage() {
     const fetchTrainerAgentResults = async () => {
       try {
         setLoading(true);
-        const supabase = createClient();
         
         // Call the trainer-agent Edge Function
         const { data, error } = await supabase.functions.invoke<TrainerAgentResponse>('trainer-agent');
