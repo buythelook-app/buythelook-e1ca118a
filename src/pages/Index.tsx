@@ -13,7 +13,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Shuffle, ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/components/Cart";
 import { toast as sonnerToast } from "sonner";
-import { useAgentOutfits } from "@/components/AgentOutfitVisualizer";
 
 interface Look {
   id: string;
@@ -35,10 +34,8 @@ export default function Index() {
   const [userStyle, setUserStyle] = useState<any>(null);
   const [combinations, setCombinations] = useState<{ [key: string]: number }>({});
   const [forceRefresh, setForceRefresh] = useState(false);
-  const { addLook } = useCartStore();
-  const { outfits: agentOutfits, loading: agentLoading, refetch: refetchAgentOutfits } = useAgentOutfits();
-
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
+  const { addLook } = useCartStore();
 
   useEffect(() => {
     console.log("Index page loaded");
@@ -62,9 +59,8 @@ export default function Index() {
     if (selectedMood) {
       localStorage.setItem('current-mood', selectedMood);
       refetch();
-      refetchAgentOutfits(); // Also refresh agent outfits when mood changes
     }
-  }, [selectedMood, refetch, refetchAgentOutfits]);
+  }, [selectedMood, refetch]);
 
   useEffect(() => {
     if (forceRefresh) {
@@ -120,7 +116,6 @@ export default function Index() {
     
     setForceRefresh(true);
     refetch();
-    refetchAgentOutfits(); // Also refresh agent outfits when shuffling
   };
   
   const handleAddToCart = (look: Look) => {
@@ -138,17 +133,6 @@ export default function Index() {
     });
     
     sonnerToast.success(`${look.title} added to cart`);
-  };
-
-  // Decide which items to display for each occasion
-  const getItemsForOccasion = (occasion: string) => {
-    // First try to get agent-generated outfits
-    if (!agentLoading && agentOutfits[occasion] && agentOutfits[occasion].length > 0) {
-      return agentOutfits[occasion];
-    }
-    
-    // Fallback to traditional outfits
-    return occasionOutfits?.[occasion] || [];
   };
 
   if (!userStyle) {
@@ -173,6 +157,8 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-netflix-background">
+      {/* Removed Home Page label from top-right corner */}
+      
       <Navbar />
       <HeroSection />
       <main className="container mx-auto px-4 py-8">
@@ -195,18 +181,16 @@ export default function Index() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {(isLoading || agentLoading) ? (
+              {isLoading ? (
                 <div className="col-span-2 text-center py-12">
                   <div className="animate-pulse">Loading your personalized looks...</div>
                 </div>
               ) : (
                 occasions.map((occasion, index) => {
-                  const items = getItemsForOccasion(occasion);
+                  const items = occasionOutfits?.[occasion] || [];
                   const look = createLookFromItems(items, occasion, index);
                   
                   if (!look) return null;
-                  
-                  const isAgentGenerated = agentOutfits[occasion] && agentOutfits[occasion].length > 0;
                   
                   return (
                     <div 
@@ -215,14 +199,7 @@ export default function Index() {
                     >
                       <div className="flex justify-between items-start mb-4">
                         <h3 className="text-xl font-semibold">{look.title}</h3>
-                        <div className="flex items-center">
-                          <span className="text-sm text-netflix-accent">{look.occasion}</span>
-                          {isAgentGenerated && (
-                            <span className="ml-2 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-                              AI Generated
-                            </span>
-                          )}
-                        </div>
+                        <span className="text-sm text-netflix-accent">{look.occasion}</span>
                       </div>
                       <div className="mb-4 bg-white rounded-lg overflow-hidden relative group">
                         <LookCanvas items={look.items} width={300} height={480} />
@@ -269,3 +246,4 @@ export default function Index() {
     </div>
   );
 }
+

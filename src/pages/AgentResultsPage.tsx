@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +8,25 @@ import { Loader2 } from "lucide-react";
 import { LookCanvas } from "@/components/LookCanvas";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { AgentOutfit, AgentResult, TrainerAgentResponse } from "@/types/outfitAgentTypes";
+
+// Types for agent results
+interface AgentOutfit {
+  top?: string;
+  bottom?: string;
+  shoes?: string;
+  score?: number;
+}
+
+interface AgentResult {
+  agent: string;
+  output: AgentOutfit;
+}
+
+interface TrainerAgentResponse {
+  success: boolean;
+  status: string;
+  results: AgentResult[];
+}
 
 // Helper function to format agent names
 const formatAgentName = (name: string): string => {
@@ -114,18 +131,6 @@ export default function AgentResultsPage() {
     return lookItems;
   };
 
-  // Determine occasion based on agent name
-  const getAgentOccasion = (agentName: string): string => {
-    if (agentName.includes('work') || agentName === 'personalization-agent') {
-      return 'Work';
-    } else if (agentName.includes('evening') || agentName === 'styling-agent') {
-      return 'Evening';
-    } else if (agentName.includes('weekend') || agentName === 'recommendation-agent') {
-      return 'Weekend';
-    }
-    return 'Casual';
-  };
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -152,23 +157,17 @@ export default function AgentResultsPage() {
             }
             
             const lookItems = getLookItems(result.output);
-            const occasion = getAgentOccasion(result.agent);
             
             return (
               <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <CardHeader className="bg-gray-50">
                   <CardTitle className="flex justify-between items-center">
                     <span>{formatAgentName(result.agent)}</span>
-                    <div className="flex items-center">
-                      {result.output.score !== undefined && (
-                        <Badge variant={result.output.score > 80 ? "default" : "outline"} className="ml-2">
-                          Score: {result.output.score}
-                        </Badge>
-                      )}
-                      <Badge variant="outline" className="ml-2 bg-purple-50">
-                        {occasion}
+                    {result.output.score !== undefined && (
+                      <Badge variant={result.output.score > 80 ? "default" : "outline"} className="ml-2">
+                        Score: {result.output.score}
                       </Badge>
-                    </div>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
