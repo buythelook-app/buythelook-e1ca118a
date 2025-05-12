@@ -24,6 +24,7 @@ import { Navbar } from "@/components/Navbar";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DemoOutfitGenerator } from "@/components/DemoOutfitGenerator";
 
 // Helper to format agent names nicely
 const formatAgentName = (name: string): string => {
@@ -59,6 +60,7 @@ export default function OutfitGenerationPage() {
         throw new Error('Invalid response from trainer agent');
       }
 
+      console.log('Received data from trainer-agent:', data);
       setResults(data.results);
 
       // Collect all item IDs from results
@@ -69,13 +71,17 @@ export default function OutfitGenerationPage() {
         if (result.output.shoes) itemIds.push(result.output.shoes);
       });
 
+      console.log('Collected item IDs:', itemIds);
+
       // Create mock image URLs for demo purposes
       const mockImages: Record<string, string> = {};
       itemIds.forEach((id) => {
         // Generate placeholder images using dummy image service
-        mockImages[id] = `https://placehold.co/400x600/random?text=${id}`;
+        const randomColor = Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+        mockImages[id] = `https://placehold.co/400x600/${randomColor}/ffffff?text=${id}`;
       });
 
+      console.log('Generated mock images:', mockImages);
       setItemImages(mockImages);
 
       // Load saved approvals
@@ -303,6 +309,8 @@ export default function OutfitGenerationPage() {
             ? results.filter(r => approvalData[formatAgentName(r.agent)]?.userLiked === false)
             : results.filter(r => !approvalData[formatAgentName(r.agent)]);
 
+  const showDemo = !loading && !error && (results.length === 0 || filteredResults.length === 0);
+
   return (
     <div className="min-h-screen bg-netflix-background">
       <Navbar />
@@ -324,27 +332,27 @@ export default function OutfitGenerationPage() {
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2 text-lg">Loading agent results...</span>
+            <span className="mr-2 text-lg">טוען תוצאות אימון...</span>
           </div>
         ) : error ? (
           <Alert variant="destructive">
-            <AlertTitle>Error</AlertTitle>
+            <AlertTitle>שגיאה</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-        ) : (
+        ) : results.length > 0 ? (
           <div>
             <div className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">Overview</h2>
+              <h2 className="text-2xl font-semibold mb-4">סקירה כללית</h2>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Agent</TableHead>
-                    <TableHead>Top Item</TableHead>
-                    <TableHead>Bottom Item</TableHead>
-                    <TableHead>Shoes</TableHead>
-                    <TableHead>Score</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>User Feedback</TableHead>
+                    <TableHead>סוכן</TableHead>
+                    <TableHead>פריט עליון</TableHead>
+                    <TableHead>פריט תחתון</TableHead>
+                    <TableHead>נעליים</TableHead>
+                    <TableHead>ציון</TableHead>
+                    <TableHead>סטטוס</TableHead>
+                    <TableHead>פידבק משתמש</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -370,19 +378,19 @@ export default function OutfitGenerationPage() {
                         <TableCell>
                           {approvalInfo?.approved !== undefined ? (
                             <Badge variant={approvalInfo.approved ? "success" : "destructive"}>
-                              {approvalInfo.approved ? "Approved" : "Rejected"}
+                              {approvalInfo.approved ? "אושר" : "נדחה"}
                             </Badge>
                           ) : (
-                            <Badge variant="outline">Pending</Badge>
+                            <Badge variant="outline">ממתין</Badge>
                           )}
                         </TableCell>
                         <TableCell>
                           {approvalInfo?.userLiked !== undefined ? (
                             <Badge variant={approvalInfo.userLiked ? "success" : "destructive"}>
-                              {approvalInfo.userLiked ? "Liked" : "Disliked"}
+                              {approvalInfo.userLiked ? "אהבתי" : "לא אהבתי"}
                             </Badge>
                           ) : (
-                            <Badge variant="outline">No Feedback</Badge>
+                            <Badge variant="outline">אין פידבק</Badge>
                           )}
                         </TableCell>
                       </TableRow>
@@ -392,16 +400,16 @@ export default function OutfitGenerationPage() {
               </Table>
             </div>
 
-            <h2 className="text-2xl font-semibold mb-4">Visual Outfits</h2>
+            <h2 className="text-2xl font-semibold mb-4">לוקים ויזואליים</h2>
             
             <Tabs defaultValue="all" className="mb-6" value={activeTab} onValueChange={setActiveTab}>
               <TabsList>
-                <TabsTrigger value="all">All Outfits</TabsTrigger>
-                <TabsTrigger value="pending">Pending Review</TabsTrigger>
-                <TabsTrigger value="approved">Approved</TabsTrigger>
-                <TabsTrigger value="rejected">Rejected</TabsTrigger>
-                <TabsTrigger value="liked">Liked</TabsTrigger>
-                <TabsTrigger value="disliked">Disliked</TabsTrigger>
+                <TabsTrigger value="all">כל הלוקים</TabsTrigger>
+                <TabsTrigger value="pending">ממתינים לסקירה</TabsTrigger>
+                <TabsTrigger value="approved">מאושרים</TabsTrigger>
+                <TabsTrigger value="rejected">דחויים</TabsTrigger>
+                <TabsTrigger value="liked">אהובים</TabsTrigger>
+                <TabsTrigger value="disliked">לא אהובים</TabsTrigger>
               </TabsList>
             </Tabs>
             
@@ -415,6 +423,8 @@ export default function OutfitGenerationPage() {
                   const lookItems = getLookItems(result.output);
                   const formattedName = formatAgentName(result.agent);
                   const approvalInfo = approvalData[formattedName];
+                  
+                  console.log('Rendering outfit for agent:', formattedName, 'with items:', lookItems);
                   
                   // Create details object for display
                   const details: Record<string, string> = {};
@@ -447,10 +457,12 @@ export default function OutfitGenerationPage() {
 
             {filteredResults.length === 0 && (
               <div className="text-center py-10">
-                <p className="text-gray-500">No outfits found for the selected filter.</p>
+                <p className="text-gray-500">לא נמצאו לוקים עבור הסינון שנבחר.</p>
               </div>
             )}
           </div>
+        ) : (
+          <DemoOutfitGenerator />
         )}
       </div>
     </div>

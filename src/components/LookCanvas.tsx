@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface OutfitItem {
   id: string;
@@ -21,6 +21,8 @@ interface LookCanvasProps {
 
 export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [loadingState, setLoadingState] = useState<'loading' | 'success' | 'error'>('loading');
+  const [loadedCount, setLoadedCount] = useState(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -28,6 +30,10 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    // Reset loading state when items change
+    setLoadingState('loading');
+    setLoadedCount(0);
 
     // Set up canvas with device pixel ratio
     const scale = window.devicePixelRatio || 1;
@@ -39,6 +45,16 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
+
+    // Render a loading message if no items
+    if (items.length === 0) {
+      ctx.font = '16px Arial';
+      ctx.fillStyle = '#666666';
+      ctx.textAlign = 'center';
+      ctx.fillText('No outfit items to display', width / 2, height / 2);
+      setLoadingState('error');
+      return;
+    }
 
     // Sort items in correct rendering order
     const renderOrder = { outerwear: 0, top: 1, bottom: 2, shoes: 3 };
@@ -60,10 +76,21 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       cart: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 }
     };
 
+    // Show loading state
+    ctx.font = '16px Arial';
+    ctx.fillStyle = '#666666';
+    ctx.textAlign = 'center';
+    ctx.fillText('Loading outfit items...', width / 2, height / 2);
+
     const loadImages = async () => {
       try {
+        let successCount = 0;
+        let errorCount = 0;
+        
+        console.log('Loading images for items:', sortedItems);
+        
         for (const item of sortedItems) {
-          console.log('Loading image for item:', item);
+          console.log('Loading image for item:', item.id, item.type, item.image);
           
           const img = new Image();
           img.crossOrigin = "anonymous";
@@ -79,10 +106,14 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
             await new Promise((resolve, reject) => {
               img.onload = () => {
                 console.log('Image loaded successfully:', imageUrl);
+                successCount++;
+                setLoadedCount(prev => prev + 1);
                 resolve(null);
               };
               img.onerror = (e) => {
                 console.error('Error loading image:', imageUrl, e);
+                errorCount++;
+                setLoadedCount(prev => prev + 1);
                 reject(e);
               };
             });
@@ -176,8 +207,28 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
             console.error('Error processing image:', imgError);
           }
         }
+
+        // Update loading state based on success/error count
+        if (errorCount === sortedItems.length) {
+          setLoadingState('error');
+          
+          // Draw error message
+          ctx.clearRect(0, 0, width, height);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, width, height);
+          ctx.font = '16px Arial';
+          ctx.fillStyle = '#ff0000';
+          ctx.textAlign = 'center';
+          ctx.fillText('Failed to load outfit images', width / 2, height / 2);
+        } else if (successCount > 0) {
+          setLoadingState('success');
+        } else {
+          setLoadingState('error');
+        }
+
       } catch (error) {
         console.error('Error in loadImages:', error);
+        setLoadingState('error');
       }
     };
 
@@ -185,14 +236,31 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
   }, [items, width, height]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="border rounded-lg shadow-lg bg-white"
-      style={{ 
-        maxWidth: '100%',
-        width: `${width}px`,
-        height: `${height}px`
-      }}
-    />
+    <div className="relative">
+      <canvas
+        ref={canvasRef}
+        className="border rounded-lg shadow-lg bg-white"
+        style={{ 
+          maxWidth: '100%',
+          width: `${width}px`,
+          height: `${height}px`
+        }}
+      />
+      {loadingState === 'loading' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 rounded-lg">
+          <div className="bg-white p-2 rounded shadow">
+            טוען... {loadedCount}/{items.length}
+          </div>
+        </div>
+      )}
+      {loadingState === 'error' && items.length > 0 && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-10 rounded-lg">
+          <div className="bg-white p-3 rounded shadow text-center">
+            <p className="text-red-500 mb-1">שגיאה בטעינת התמונות</p>
+            <p className="text-xs text-gray-600">נסה לרענן את העמוד</p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
