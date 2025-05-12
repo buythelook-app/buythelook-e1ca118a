@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { 
@@ -8,6 +7,7 @@ import {
   OutfitItem,
   ApprovalData
 } from "@/types/outfitAgentTypes";
+import { ButtonVariant } from "@/types/buttonTypes";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw } from "lucide-react";
