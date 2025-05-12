@@ -2,6 +2,8 @@
 import { Button } from "@/components/ui/button";
 import { OutfitAgentCard } from "@/components/OutfitAgentCard";
 import { toast } from "sonner";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 // Define demo items
 const generateDemoOutfits = () => {
@@ -80,18 +82,144 @@ function getContrastColor(hexColor: string) {
 
 export function DemoOutfitGenerator() {
   const demoOutfits = generateDemoOutfits();
+  const [userFeedback, setUserFeedback] = useState<Record<string, { isLiked?: boolean, feedback?: string }>>({});
   
   const handleApprove = (agentName: string, feedback?: string) => {
+    // Update local state
+    setUserFeedback(prev => ({
+      ...prev,
+      [agentName]: { ...prev[agentName], feedback }
+    }));
+    
+    // Log approval to AI system
+    logOutfitFeedback(agentName, true, feedback);
+    
     toast.success(`אישרת את הלוק של ${agentName}${feedback ? ' עם פידבק' : ''}`);
   };
   
   const handleReject = (agentName: string, feedback?: string) => {
+    // Update local state
+    setUserFeedback(prev => ({
+      ...prev,
+      [agentName]: { ...prev[agentName], feedback }
+    }));
+    
+    // Log rejection to AI system
+    logOutfitFeedback(agentName, false, feedback);
+    
     toast.error(`דחית את הלוק של ${agentName}${feedback ? ' עם פידבק' : ''}`);
   };
   
   const handleLike = (agentName: string, liked: boolean) => {
+    // Update local state
+    setUserFeedback(prev => ({
+      ...prev,
+      [agentName]: { ...prev[agentName], isLiked: liked }
+    }));
+    
+    // Log user preference to AI system
+    logOutfitFeedback(agentName, undefined, undefined, liked);
+    
     toast.info(`${liked ? 'אהבת' : 'לא אהבת'} את הלוק של ${agentName}`);
   };
+  
+  // Function to log outfit feedback to the system
+  const logOutfitFeedback = async (agentName: string, approved?: boolean, feedback?: string, liked?: boolean) => {
+    try {
+      // Find the outfit
+      const outfit = demoOutfits.find(o => o.agentName === agentName);
+      if (!outfit) return;
+      
+      // Generate outfit ID from items
+      const topId = outfit.items.find(i => i.type === 'top')?.id;
+      const bottomId = outfit.items.find(i => i.type === 'bottom')?.id;
+      const shoesId = outfit.items.find(i => i.type === 'shoes')?.id;
+      const outfitId = `${topId}-${bottomId}-${shoesId}`;
+      
+      console.log(`Logging feedback for outfit ${outfitId}:`, { approved, feedback, liked });
+      
+      // Store feedback in database (if authenticated)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase
+          .from('agent_feedback')
+          .upsert({
+            agent_name: agentName,
+            outfit_id: outfitId,
+            approved: approved,
+            feedback: feedback,
+            user_liked: liked,
+            timestamp: new Date().toISOString()
+          }, { onConflict: 'agent_name' });
+        
+        if (error) {
+          console.error('Error saving outfit feedback:', error);
+        } else {
+          console.log('Successfully saved outfit feedback to database');
+        }
+      } else {
+        // Store in localStorage for non-authenticated users
+        const feedbackHistory = JSON.parse(localStorage.getItem('outfit-feedback') || '[]');
+        feedbackHistory.push({
+          timestamp: new Date().toISOString(),
+          agentName,
+          outfitId,
+          approved,
+          feedback,
+          liked
+        });
+        localStorage.setItem('outfit-feedback', JSON.stringify(feedbackHistory));
+        console.log('Saved outfit feedback to localStorage');
+      }
+    } catch (error) {
+      console.error('Error logging outfit feedback:', error);
+    }
+  };
+
+  // Load existing feedback when component mounts
+  useEffect(() => {
+    const loadSavedFeedback = async () => {
+      try {
+        // Try to load from database first
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: savedFeedback, error } = await supabase
+            .from('agent_feedback')
+            .select('*');
+          
+          if (!error && savedFeedback) {
+            const feedbackMap: Record<string, { isLiked?: boolean, feedback?: string }> = {};
+            savedFeedback.forEach((item: any) => {
+              feedbackMap[item.agent_name] = {
+                isLiked: item.user_liked,
+                feedback: item.feedback
+              };
+            });
+            setUserFeedback(feedbackMap);
+          }
+        } else {
+          // Fall back to localStorage
+          const feedbackHistory = JSON.parse(localStorage.getItem('outfit-feedback') || '[]');
+          const feedbackMap: Record<string, { isLiked?: boolean, feedback?: string }> = {};
+          
+          feedbackHistory.forEach((item: any) => {
+            if (item.agentName) {
+              feedbackMap[item.agentName] = {
+                isLiked: item.liked,
+                feedback: item.feedback
+              };
+            }
+          });
+          
+          setUserFeedback(feedbackMap);
+        }
+      } catch (error) {
+        console.error('Error loading saved feedback:', error);
+      }
+    };
+    
+    loadSavedFeedback();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -113,6 +241,8 @@ export function DemoOutfitGenerator() {
             onApprove={handleApprove}
             onReject={handleReject}
             onLike={handleLike}
+            isLiked={userFeedback[outfit.agentName]?.isLiked}
+            feedback={userFeedback[outfit.agentName]?.feedback}
           />
         ))}
       </div>

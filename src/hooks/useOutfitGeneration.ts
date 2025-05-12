@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
 import { fetchFirstOutfitSuggestion, clearOutfitCache } from "@/services/lookService";
 import { DashboardItem } from "@/types/lookTypes";
+import { supabase } from "@/lib/supabaseClient";
 
 interface OutfitColors {
   top: string;
@@ -26,6 +27,14 @@ const globalItemTracker = {
   maxRepetitions: 2 // Allow an item to appear this many times max
 };
 
+// Track user preferences for color combinations and styles
+const userPreferences = {
+  likedCombinations: new Set<string>(), // store color combinations the user liked
+  dislikedCombinations: new Set<string>(), // store color combinations the user disliked
+  likedItems: new Set<string>(), // store specific items the user liked
+  dislikedItems: new Set<string>() // store specific items the user disliked
+};
+
 // Track API attempt counts to avoid infinite loops
 let attemptCounter = 0;
 const MAX_ATTEMPTS = 5;
@@ -33,6 +42,69 @@ const MAX_ATTEMPTS = 5;
 export function useOutfitGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
+  
+  // Function to record user feedback (like/dislike)
+  const recordUserFeedback = async (outfitItems: any[], isLiked: boolean) => {
+    try {
+      // Extract item IDs
+      const topId = outfitItems.find(item => item.type === 'top')?.id;
+      const bottomId = outfitItems.find(item => item.type === 'bottom')?.id;
+      const shoesId = outfitItems.find(item => item.type === 'shoes')?.id;
+      
+      if (!topId || !bottomId || !shoesId) {
+        console.warn('Incomplete outfit for feedback', { topId, bottomId, shoesId });
+        return;
+      }
+      
+      // Create a combination signature
+      const combinationKey = `${topId}-${bottomId}-${shoesId}`;
+      
+      // Store locally for immediate use
+      if (isLiked) {
+        userPreferences.likedCombinations.add(combinationKey);
+        outfitItems.forEach(item => userPreferences.likedItems.add(item.id));
+      } else {
+        userPreferences.dislikedCombinations.add(combinationKey);
+        outfitItems.forEach(item => userPreferences.dislikedItems.add(item.id));
+      }
+      
+      console.log(`User ${isLiked ? 'liked' : 'disliked'} outfit combination: ${combinationKey}`);
+      
+      // Store in database if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase
+          .from('outfit_logs')
+          .insert({
+            user_id: user.id,
+            top_id: topId,
+            bottom_id: bottomId,
+            shoes_id: shoesId,
+            user_liked: isLiked
+          });
+          
+        if (error) {
+          console.error('Error saving outfit feedback:', error);
+        }
+      } else {
+        // Store in localStorage for non-authenticated users
+        const feedbackHistory = JSON.parse(localStorage.getItem('outfit-feedback') || '[]');
+        feedbackHistory.push({
+          timestamp: new Date().toISOString(),
+          topId,
+          bottomId,
+          shoesId,
+          isLiked
+        });
+        localStorage.setItem('outfit-feedback', JSON.stringify(feedbackHistory));
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error recording user feedback:', error);
+      return false;
+    }
+  };
   
   const generateOutfit = async (forceRefresh: boolean = true) => {
     setIsGenerating(true);
@@ -101,6 +173,13 @@ export function useOutfitGeneration() {
         localStorage.setItem('current-mood', newMood);
         console.log(`Trying with different mood: ${newMood}`);
         
+        return generateOutfit(true);
+      }
+      
+      // Check if this is a disliked combination (to avoid showing disliked outfits)
+      const outfitKey = `${top?.id || ''}-${bottom?.id || ''}-${shoes?.id || ''}`;
+      if (userPreferences.dislikedCombinations.has(outfitKey)) {
+        console.log('This combination was previously disliked, regenerating...');
         return generateOutfit(true);
       }
       
@@ -210,6 +289,7 @@ export function useOutfitGeneration() {
   
   return {
     isGenerating,
-    generateOutfit
+    generateOutfit,
+    recordUserFeedback // Expose the new function
   };
 }
