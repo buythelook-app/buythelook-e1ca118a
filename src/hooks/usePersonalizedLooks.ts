@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -20,11 +21,6 @@ export interface Look {
   price: string;
   category: string;
   occasion: string;
-}
-
-// Define type for the data structure returned by fetchDashboardItems
-interface DashboardData {
-  [key: string]: DashboardItem[];
 }
 
 // Define allowed types for proper type checking
@@ -98,11 +94,11 @@ export function usePersonalizedLooks() {
       }
       
       // Merge API data with fallbacks for any missing occasions
-      const mergedData: DashboardData = { ...convertedFallbackItems() };
+      const mergedData: {[key: string]: DashboardItem[]} = { ...convertedFallbackItems() };
       
       for (const occasion of occasions) {
         if (data[occasion] && Array.isArray(data[occasion]) && data[occasion].length > 0) {
-          // Properly validate and transform each item to ensure type safety
+          // Validate each item to ensure it has a valid type
           mergedData[occasion] = data[occasion]
             .filter(item => item.type && isValidItemType(item.type))
             .map(item => ({
@@ -171,11 +167,11 @@ export function usePersonalizedLooks() {
     
     // Filter and map to ensure item types conform to the allowed types
     const mappedItems = lookItems
-      .filter(item => item.type && isValidItemType(item.type.toLowerCase()))
+      .filter(item => item.type && isValidItemType(item.type))
       .map(item => ({
         id: item.id || `fallback-${Math.random().toString(36).substring(7)}`,
         image: item.image || '/placeholder.svg',
-        type: item.type.toLowerCase() as AllowedType
+        type: item.type
       }));
     
     // If we filtered out all items, return null
@@ -186,8 +182,13 @@ export function usePersonalizedLooks() {
     let totalPrice = 0;
     items.forEach(item => {
       if (item.price) {
-        const itemPrice = parseFloat(item.price.toString().replace(/[^0-9.]/g, '') || '0');
-        totalPrice += itemPrice;
+        const price = typeof item.price === 'string' 
+          ? parseFloat(item.price.replace(/[^0-9.]/g, '')) 
+          : (typeof item.price === 'number' ? item.price : 0);
+        
+        if (!isNaN(price)) {
+          totalPrice += price;
+        }
       }
     });
     
@@ -199,7 +200,7 @@ export function usePersonalizedLooks() {
       category: userStyle?.analysis?.styleProfile || "Casual",
       occasion: occasion
     };
-  }, [convertedFallbackItems]);
+  }, [convertedFallbackItems, userStyle]);
 
   const handleMoodSelect = useCallback((mood: Mood) => {
     setSelectedMood(mood);
