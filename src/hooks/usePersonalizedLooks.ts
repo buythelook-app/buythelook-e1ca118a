@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -47,6 +46,26 @@ export function usePersonalizedLooks() {
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
   const { fallbackItems } = useLocalOutfitData();
 
+  // Convert LocalOutfitItems to DashboardItems
+  const convertedFallbackItems = useCallback(() => {
+    const result: { [key: string]: DashboardItem[] } = {};
+    
+    for (const [occasion, items] of Object.entries(fallbackItems)) {
+      // Filter and map to ensure all items have valid types
+      result[occasion] = items
+        .filter(item => isValidItemType(item.type))
+        .map(item => ({
+          id: item.id,
+          name: `${item.type.charAt(0).toUpperCase() + item.type.slice(1)} Item`,
+          image: item.image,
+          type: item.type,
+          price: '$49.99'
+        }));
+    }
+    
+    return result;
+  }, [fallbackItems]);
+
   // Load style analysis from localStorage on component mount
   useEffect(() => {
     const styleAnalysis = localStorage.getItem('styleAnalysis');
@@ -75,26 +94,24 @@ export function usePersonalizedLooks() {
       
       if (!hasRealData) {
         console.log("No real data received, using fallbacks");
-        return fallbackItems;
+        return convertedFallbackItems();
       }
       
       // Merge API data with fallbacks for any missing occasions
-      const mergedData: DashboardData = { ...fallbackItems };
+      const mergedData: DashboardData = { ...convertedFallbackItems() };
       
       for (const occasion of occasions) {
         if (data[occasion] && Array.isArray(data[occasion]) && data[occasion].length > 0) {
           // Properly validate and transform each item to ensure type safety
-          mergedData[occasion] = data[occasion].map(item => {
-            const itemType = isValidItemType(item.type) ? item.type : 'top';
-            
-            return {
+          mergedData[occasion] = data[occasion]
+            .filter(item => item.type && isValidItemType(item.type))
+            .map(item => ({
               id: item.id || `generated-${Math.random().toString(36).substring(7)}`,
               image: item.image || '/placeholder.svg', // Ensure image is never undefined
-              type: itemType,
+              type: item.type as AllowedType,
               price: item.price,
               name: item.name || 'Item'
-            };
-          });
+            }));
         }
       }
       
@@ -111,9 +128,9 @@ export function usePersonalizedLooks() {
       }
       // Always return fallback data on failure
       console.log("Error fetching data, using fallbacks", err);
-      return fallbackItems;
+      return convertedFallbackItems();
     }
-  }, [fallbackItems, occasions, apiErrorShown, toast]);
+  }, [convertedFallbackItems, occasions, apiErrorShown, toast]);
 
   // The useQuery hook with improved fallback handling
   const { data: occasionOutfits, isLoading, isError, error, refetch } = useQuery({
@@ -124,7 +141,7 @@ export function usePersonalizedLooks() {
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
     // Use placeholderData instead of keepPreviousData
-    placeholderData: fallbackItems,
+    placeholderData: convertedFallbackItems(),
     // Prevent refetching on window focus which can cause flickering
     refetchOnWindowFocus: false,
   });
@@ -146,25 +163,25 @@ export function usePersonalizedLooks() {
 
   const createLookFromItems = useCallback((items: any[] = [], occasion: string, index: number): Look | null => {
     // Always ensure we have items, using fallbacks if needed
-    const lookItems = items.length > 0 ? items : (fallbackItems[occasion] || []);
+    const lookItems = items.length > 0 ? items : (convertedFallbackItems()[occasion] || []);
     
     if (lookItems.length === 0) {
       return null;
     }
     
-    // Map and ensure item types conform to the allowed types
-    const mappedItems = lookItems.map(item => {
-      const validType = isValidItemType(item.type?.toLowerCase())
-        ? item.type.toLowerCase() as AllowedType
-        : 'top';
-      
-      return {
+    // Filter and map to ensure item types conform to the allowed types
+    const mappedItems = lookItems
+      .filter(item => item.type && isValidItemType(item.type.toLowerCase()))
+      .map(item => ({
         id: item.id || `fallback-${Math.random().toString(36).substring(7)}`,
-        // Ensure image is never undefined
         image: item.image || '/placeholder.svg',
-        type: validType
-      };
-    });
+        type: item.type.toLowerCase() as AllowedType
+      }));
+    
+    // If we filtered out all items, return null
+    if (mappedItems.length === 0) {
+      return null;
+    }
     
     let totalPrice = 0;
     items.forEach(item => {
@@ -182,7 +199,7 @@ export function usePersonalizedLooks() {
       category: userStyle?.analysis?.styleProfile || "Casual",
       occasion: occasion
     };
-  }, [fallbackItems]);
+  }, [convertedFallbackItems]);
 
   const handleMoodSelect = useCallback((mood: Mood) => {
     setSelectedMood(mood);
@@ -229,7 +246,7 @@ export function usePersonalizedLooks() {
       
       for (const occasion of occasions) {
         if (!result[occasion] || !Array.isArray(result[occasion]) || result[occasion].length === 0) {
-          result[occasion] = fallbackItems[occasion];
+          result[occasion] = convertedFallbackItems()[occasion];
         }
       }
       
@@ -237,8 +254,8 @@ export function usePersonalizedLooks() {
     }
     
     // If no data at all, return fallbacks
-    return fallbackItems;
-  }, [occasionOutfits, fallbackItems, occasions]);
+    return convertedFallbackItems();
+  }, [occasionOutfits, convertedFallbackItems, occasions]);
 
   return {
     selectedMood,

@@ -1,5 +1,6 @@
 
 import { useMemo } from 'react';
+import { DashboardItem } from '@/types/lookTypes';
 
 export interface LocalOutfitItem {
   id: string;

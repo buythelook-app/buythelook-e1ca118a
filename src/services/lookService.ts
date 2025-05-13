@@ -355,13 +355,18 @@ const convertToDashboardItem = (item: any, type: string, userStyle: string = '')
     }
   }
 
+  // Ensure type is one of the allowed values
+  const validType = ['top', 'bottom', 'dress', 'shoes', 'accessory', 'sunglasses', 'outerwear', 'cart'].includes(type) 
+    ? type as 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' | 'cart'
+    : 'top';
+
   return {
     id: itemId,
-    name: item.product_name || `${type.charAt(0).toUpperCase() + type.slice(1)} Item`,
+    name: item.product_name || `${validType.charAt(0).toUpperCase() + validType.slice(1)} Item`,
     description: item.description || '',
     image: imageUrl,
     price: item.price ? `$${Number(item.price).toFixed(2)}` : '$49.99',
-    type: type
+    type: validType
   };
 };
 
