@@ -4,6 +4,11 @@ project_id = "mwsblnposuyhrgzrtoyo"
 [functions.generate-outfit]
 verify_jwt = false
 cors = true
+# Avoid rate limits with higher limits
+rate_limits = [
+  { method = "POST", count = 100, duration = 60 }
+]
 
 [functions.trainer-agent]
 verify_jwt = false
+cors = true

@@ -5,8 +5,7 @@ import { AlertCircle, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Look } from "@/hooks/usePersonalizedLooks";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { memo } from "react";
+import { memo, useMemo } from "react";
 
 interface PersonalizedLooksGridProps {
   isLoading: boolean;
@@ -31,6 +30,19 @@ export const PersonalizedLooksGrid = memo(({
   resetError,
   userStyleProfile
 }: PersonalizedLooksGridProps) => {
+  
+  // Pre-compute looks to prevent recalculation during renders
+  const computedLooks = useMemo(() => {
+    if (!occasionOutfits) return {};
+    
+    return occasions.reduce((acc, occasion, index) => {
+      const items = occasionOutfits[occasion] || [];
+      const look = createLookFromItems(items, occasion, index);
+      acc[occasion] = look;
+      return acc;
+    }, {} as Record<string, Look | null>);
+  }, [occasions, occasionOutfits, createLookFromItems]);
+  
   return (
     <>
       {isError && (
@@ -52,11 +64,8 @@ export const PersonalizedLooksGrid = memo(({
       )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Use key with item id and loading state to prevent flicker during state transitions */}
         {occasions.map((occasion, index) => {
-          // Always ensure we have items for each occasion
-          const items = occasionOutfits?.[occasion] || [];
-          const look = createLookFromItems(items, occasion, index);
+          const look = computedLooks[occasion];
           
           if (!look || !look.items || look.items.length === 0) {
             return (
@@ -71,7 +80,7 @@ export const PersonalizedLooksGrid = memo(({
           
           return (
             <PersonalizedLookCard
-              key={`${look.id}-${look.items.map(i => i.id).join('-')}`}
+              key={`${look.id}-${isLoading}`}
               look={look}
               onShuffle={() => handleShuffleLook(occasion)}
               onAddToCart={handleAddToCart}

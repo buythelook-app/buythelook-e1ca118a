@@ -9,7 +9,7 @@ import { toast as sonnerToast } from "sonner";
 import { StyleProfileDisplay } from "@/components/look/StyleProfileDisplay";
 import { PersonalizedLooksGrid } from "@/components/look/PersonalizedLooksGrid";
 import { usePersonalizedLooks } from "@/hooks/usePersonalizedLooks";
-import { memo } from "react";
+import { memo, useCallback, useMemo } from "react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -28,11 +28,17 @@ const Index = () => {
     resetError
   } = usePersonalizedLooks();
   
-  const handleAddToCart = (look: any) => {
+  // Memoize handleAddToCart to prevent creating a new function on every render
+  const handleAddToCart = useCallback((look: any) => {
+    // Only process if look has valid items
+    if (!look || !look.items || look.items.length === 0) {
+      return;
+    }
+    
     const lookItems = look.items.map((item: any) => ({
       ...item,
       title: `Item from ${look.title}`,
-      price: (parseFloat(look.price.replace('$', '')) / look.items.length).toFixed(2),
+      price: (parseFloat(look.price?.replace('$', '') || '0') / look.items.length).toFixed(2),
     }));
     
     addLook({
@@ -43,26 +49,30 @@ const Index = () => {
     });
     
     sonnerToast.success(`${look.title} added to cart`);
-  };
+  }, [addLook]);
 
-  if (!userStyle) {
-    return (
-      <div className="min-h-screen bg-netflix-background">
-        <Navbar />
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h2 className="text-2xl font-bold mb-4">Complete Your Style Quiz</h2>
-          <p className="text-gray-600 mb-8">
-            Take our style quiz to get personalized look suggestions that match your style.
-          </p>
-          <button
-            onClick={() => navigate('/quiz')}
-            className="bg-netflix-accent text-white px-6 py-3 rounded-lg hover:bg-netflix-accent/90 transition-colors"
-          >
-            Take Style Quiz
-          </button>
-        </div>
+  // For when no style is defined
+  const renderNoStyleContent = useMemo(() => (
+    <div className="min-h-screen bg-netflix-background">
+      <Navbar />
+      <div className="container mx-auto px-4 py-16 text-center">
+        <h2 className="text-2xl font-bold mb-4">Complete Your Style Quiz</h2>
+        <p className="text-gray-600 mb-8">
+          Take our style quiz to get personalized look suggestions that match your style.
+        </p>
+        <button
+          onClick={() => navigate('/quiz')}
+          className="bg-netflix-accent text-white px-6 py-3 rounded-lg hover:bg-netflix-accent/90 transition-colors"
+        >
+          Take Style Quiz
+        </button>
       </div>
-    );
+    </div>
+  ), [navigate]);
+
+  // Early return if no user style to prevent unnecessary rendering
+  if (!userStyle) {
+    return renderNoStyleContent;
   }
 
   return (

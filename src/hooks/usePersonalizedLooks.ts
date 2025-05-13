@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { fetchDashboardItems, clearOutfitCache } from "@/services/lookService";
@@ -19,6 +20,19 @@ export interface Look {
   price: string;
   category: string;
   occasion: string;
+}
+
+// Define DashboardItem type to match the API response structure
+interface DashboardItem {
+  id: string;
+  image: string; // Make image required to match LocalOutfitItem
+  type: LookItem['type'];
+  price?: string;
+}
+
+// Type for the data structure returned by fetchDashboardItems
+interface DashboardData {
+  [key: string]: DashboardItem[];
 }
 
 export function usePersonalizedLooks() {
@@ -47,46 +61,57 @@ export function usePersonalizedLooks() {
     }
   }, []);
 
+  // Memoized query function to prevent unnecessary re-creations
+  const queryFn = useCallback(async () => {
+    try {
+      const data = await fetchDashboardItems();
+      
+      // Check if we received actual data
+      const hasRealData = Object.keys(data || {}).some(key => 
+        Array.isArray(data[key]) && data[key].length > 0
+      );
+      
+      if (!hasRealData) {
+        console.log("No real data received, using fallbacks");
+        return fallbackItems;
+      }
+      
+      // Merge API data with fallbacks for any missing occasions
+      const mergedData: DashboardData = { ...fallbackItems };
+      
+      for (const occasion of occasions) {
+        if (data[occasion] && Array.isArray(data[occasion]) && data[occasion].length > 0) {
+          // Ensure all items have the required fields for LookItem
+          mergedData[occasion] = data[occasion].map(item => ({
+            id: item.id || `generated-${Math.random().toString(36).substring(7)}`,
+            image: item.image || '/placeholder.svg', // Ensure image is never undefined
+            type: item.type || 'top',
+            price: item.price
+          }));
+        }
+      }
+      
+      return mergedData;
+    } catch (err) {
+      // Show error toast only once
+      if (!apiErrorShown) {
+        setApiErrorShown(true);
+        toast({
+          title: "Connection Issue",
+          description: "Using fallback outfits while we restore connection.",
+          variant: "default",
+        });
+      }
+      // Always return fallback data on failure
+      console.log("Error fetching data, using fallbacks", err);
+      return fallbackItems;
+    }
+  }, [fallbackItems, occasions, apiErrorShown, toast]);
+
   // The useQuery hook with improved fallback handling
   const { data: occasionOutfits, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['dashboardItems', selectedMood, forceRefresh],
-    queryFn: async () => {
-      try {
-        const data = await fetchDashboardItems();
-        
-        // Check if we received actual data
-        const hasRealData = Object.keys(data || {}).some(key => 
-          Array.isArray(data[key]) && data[key].length > 0
-        );
-        
-        if (!hasRealData) {
-          return fallbackItems;
-        }
-        
-        // Merge API data with fallbacks for any missing occasions
-        const mergedData = { ...fallbackItems };
-        
-        for (const occasion of occasions) {
-          if (data[occasion] && Array.isArray(data[occasion]) && data[occasion].length > 0) {
-            mergedData[occasion] = data[occasion];
-          }
-        }
-        
-        return mergedData;
-      } catch (err) {
-        // Show error toast only once
-        if (!apiErrorShown) {
-          setApiErrorShown(true);
-          toast({
-            title: "Connection Issue",
-            description: "Using fallback outfits while we restore connection.",
-            variant: "default",
-          });
-        }
-        // Always return fallback data on failure
-        return fallbackItems;
-      }
-    },
+    queryFn,
     enabled: !!userStyle,
     staleTime: 30000, // Cache data for 30 seconds
     retry: 2,
@@ -97,6 +122,7 @@ export function usePersonalizedLooks() {
     refetchOnWindowFocus: false,
   });
 
+  // Only trigger refetch when mood actually changes
   useEffect(() => {
     if (selectedMood) {
       localStorage.setItem('current-mood', selectedMood);
@@ -104,15 +130,16 @@ export function usePersonalizedLooks() {
     }
   }, [selectedMood, refetch]);
 
+  // Reset forceRefresh after update
   useEffect(() => {
     if (forceRefresh) {
       setForceRefresh(false);
     }
   }, [occasionOutfits, forceRefresh]);
 
-  const createLookFromItems = (items: any[] = [], occasion: string, index: number): Look | null => {
+  const createLookFromItems = useCallback((items: any[] = [], occasion: string, index: number): Look | null => {
     // Always ensure we have items, using fallbacks if needed
-    const lookItems = items.length > 0 ? items : fallbackItems[occasion] || [];
+    const lookItems = items.length > 0 ? items : (fallbackItems[occasion] || []);
     
     if (lookItems.length === 0) {
       return null;
@@ -126,15 +153,18 @@ export function usePersonalizedLooks() {
       
       return {
         id: item.id || `fallback-${Math.random().toString(36).substring(7)}`,
-        image: item.image,
+        // Ensure image is never undefined
+        image: item.image || '/placeholder.svg',
         type: validType
       };
     });
     
     let totalPrice = 0;
     items.forEach(item => {
-      const itemPrice = item.price?.replace(/[^0-9.]/g, '') || '0';
-      totalPrice += parseFloat(itemPrice);
+      if (item.price) {
+        const itemPrice = item.price?.replace(/[^0-9.]/g, '') || '0';
+        totalPrice += parseFloat(itemPrice);
+      }
     });
     
     return {
@@ -145,15 +175,15 @@ export function usePersonalizedLooks() {
       category: userStyle?.analysis?.styleProfile || "Casual",
       occasion: occasion
     };
-  };
+  }, [fallbackItems]);
 
-  const handleMoodSelect = (mood: Mood) => {
+  const handleMoodSelect = useCallback((mood: Mood) => {
     setSelectedMood(mood);
     localStorage.setItem('current-mood', mood);
     setApiErrorShown(false);
-  };
+  }, []);
 
-  const handleShuffleLook = (occasion: string) => {
+  const handleShuffleLook = useCallback((occasion: string) => {
     const styleAnalysis = localStorage.getItem('styleAnalysis');
     if (styleAnalysis) {
       const parsed = JSON.parse(styleAnalysis);
@@ -177,15 +207,15 @@ export function usePersonalizedLooks() {
     });
     
     refetch();
-  };
+  }, [refetch]);
 
-  const resetError = () => {
+  const resetError = useCallback(() => {
     setApiErrorShown(false);
     refetch();
-  };
+  }, [refetch]);
 
   // Always ensure we have data to return
-  const getOutfitData = () => {
+  const getOutfitData = useCallback(() => {
     if (occasionOutfits) {
       // Check if each occasion has items, if not, use fallbacks
       const result = { ...occasionOutfits };
@@ -201,7 +231,7 @@ export function usePersonalizedLooks() {
     
     // If no data at all, return fallbacks
     return fallbackItems;
-  };
+  }, [occasionOutfits, fallbackItems, occasions]);
 
   return {
     selectedMood,

@@ -10,8 +10,16 @@ interface EmptyLookCardProps {
   isLoading?: boolean;
 }
 
-// Use memo to prevent unnecessary re-renders
 export const EmptyLookCard = memo(({ occasion, onShuffle, isLoading = false }: EmptyLookCardProps) => {
+  // Prevent shuffle button action during loading
+  const handleShuffle = (e: React.MouseEvent) => {
+    if (isLoading) {
+      e.preventDefault();
+      return;
+    }
+    onShuffle();
+  };
+  
   return (
     <div className="bg-netflix-card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow h-full">
       <div className="flex justify-between items-start mb-4">
@@ -26,9 +34,10 @@ export const EmptyLookCard = memo(({ occasion, onShuffle, isLoading = false }: E
               : "Generate a look that matches your style"}
           </p>
           <Button 
-            onClick={onShuffle}
+            onClick={handleShuffle}
             variant="outline" 
-            className="flex items-center gap-2"
+            className={`flex items-center gap-2 ${isLoading ? 'pointer-events-none' : ''}`}
+            disabled={isLoading}
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             {isLoading ? "Creating..." : "Generate Look"}
