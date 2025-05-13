@@ -1,25 +1,13 @@
 
 import { Shuffle, ShoppingCart } from "lucide-react";
 import { LookCanvas } from "@/components/LookCanvas";
-import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-
-interface LookItem {
-  id: string;
-  image: string;
-  type: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' | 'cart';
-}
+import { Look, LookItem } from "@/hooks/usePersonalizedLooks";
 
 interface LookCardProps {
-  look: {
-    id: string;
-    title: string;
-    occasion: string;
-    price: string;
-    items: LookItem[];
-  };
+  look: Look;
   onShuffle: (occasion: string) => void;
-  onAddToCart: (look: any) => void;
+  onAddToCart: (look: Look) => void;
   userStyleProfile?: string;
 }
 

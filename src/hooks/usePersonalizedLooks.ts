@@ -65,36 +65,41 @@ export function usePersonalizedLooks() {
     }
   }, []);
 
+  // Initialize mood from localStorage if available
+  useEffect(() => {
+    const storedMood = localStorage.getItem('current-mood');
+    if (storedMood) {
+      setSelectedMood(storedMood as Mood);
+    }
+  }, []);
+
   const { data: occasionOutfits, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['dashboardItems', selectedMood, forceRefresh],
     queryFn: async () => {
       try {
         const data = await fetchDashboardItems();
+        console.log("Successfully fetched dashboard items:", data);
         return data;
       } catch (err) {
         console.error("Error fetching dashboard items:", err);
+        // Show error toast only once
+        if (!apiErrorShown) {
+          setApiErrorShown(true);
+          toast({
+            title: "Connection Issue",
+            description: "Using fallback outfits while we restore connection.",
+            variant: "default",
+          });
+        }
         // Return fallback data when API fails
         return fallbackItems;
       }
     },
     enabled: !!userStyle,
     staleTime: 0,
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    retry: 1,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
-
-  // Handle API errors gracefully
-  useEffect(() => {
-    if (isError && !apiErrorShown) {
-      console.error("API error:", error);
-      setApiErrorShown(true);
-      toast({
-        title: "Connection Error",
-        description: "Using locally stored outfits until connection is restored.",
-        variant: "default",
-      });
-    }
-  }, [isError, error, toast, apiErrorShown]);
 
   useEffect(() => {
     if (selectedMood) {
@@ -119,12 +124,12 @@ export function usePersonalizedLooks() {
     // Map and ensure item types conform to the allowed types
     const lookItems = items.map(item => {
       // Ensure type is one of the allowed types, defaulting to 'top' if not valid
-      const validType = ['top', 'bottom', 'dress', 'shoes', 'accessory', 'sunglasses', 'outerwear', 'cart'].includes(item.type.toLowerCase()) 
+      const validType = ['top', 'bottom', 'dress', 'shoes', 'accessory', 'sunglasses', 'outerwear', 'cart'].includes(item.type?.toLowerCase()) 
         ? item.type.toLowerCase() as 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' | 'cart' 
         : 'top';
       
       return {
-        id: item.id,
+        id: item.id || `fallback-${Math.random().toString(36).substring(7)}`,
         image: item.image,
         type: validType
       };
@@ -171,12 +176,13 @@ export function usePersonalizedLooks() {
     
     setForceRefresh(true);
     setApiErrorShown(false); // Reset error flag when shuffling
-    refetch();
-
+    
     // Show feedback to user on shuffle
     sonnerToast.info("Finding new look combinations...", {
       duration: 1500
     });
+    
+    refetch();
   };
 
   const resetError = () => {
