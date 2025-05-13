@@ -6,14 +6,16 @@ import { fetchDashboardItems, clearOutfitCache } from "@/services/lookService";
 import { toast as sonnerToast } from "sonner";
 import type { Mood } from "@/components/filters/MoodFilter";
 
+export interface LookItem {
+  id: string;
+  image: string;
+  type: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' | 'cart';
+}
+
 export interface Look {
   id: string;
   title: string;
-  items: Array<{
-    id: string;
-    image: string;
-    type: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear';
-  }>;
+  items: LookItem[];
   price: string;
   category: string;
   occasion: string;
@@ -77,11 +79,19 @@ export function usePersonalizedLooks() {
   const createLookFromItems = (items: any[] = [], occasion: string, index: number): Look | null => {
     if (!items || items.length === 0) return null;
     
-    const lookItems = items.map(item => ({
-      id: item.id,
-      image: item.image,
-      type: item.type.toLowerCase() as 'top' | 'bottom' | 'shoes'
-    }));
+    // Map and ensure item types conform to the allowed types
+    const lookItems = items.map(item => {
+      // Ensure type is one of the allowed types, defaulting to 'top' if not valid
+      const validType = ['top', 'bottom', 'dress', 'shoes', 'accessory', 'sunglasses', 'outerwear', 'cart'].includes(item.type.toLowerCase()) 
+        ? item.type.toLowerCase() as 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' | 'cart' 
+        : 'top';
+      
+      return {
+        id: item.id,
+        image: item.image,
+        type: validType
+      };
+    });
     
     let totalPrice = 0;
     items.forEach(item => {

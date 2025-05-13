@@ -4,17 +4,19 @@ import { LookCanvas } from "@/components/LookCanvas";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
+interface LookItem {
+  id: string;
+  image: string;
+  type: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' | 'cart';
+}
+
 interface LookCardProps {
   look: {
     id: string;
     title: string;
     occasion: string;
     price: string;
-    items: Array<{
-      id: string;
-      image: string;
-      type: string;
-    }>;
+    items: LookItem[];
   };
   onShuffle: (occasion: string) => void;
   onAddToCart: (look: any) => void;

@@ -4,15 +4,16 @@ import { EmptyLookCard } from "./EmptyLookCard";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Look } from "@/hooks/usePersonalizedLooks";
 
 interface PersonalizedLooksGridProps {
   isLoading: boolean;
   isError: boolean;
   occasionOutfits: Record<string, any[]> | undefined;
   occasions: string[];
-  createLookFromItems: (items: any[], occasion: string, index: number) => any | null;
+  createLookFromItems: (items: any[], occasion: string, index: number) => Look | null;
   handleShuffleLook: (occasion: string) => void;
-  handleAddToCart: (look: any) => void;
+  handleAddToCart: (look: Look) => void;
   resetError: () => void;
   userStyleProfile?: string;
 }
