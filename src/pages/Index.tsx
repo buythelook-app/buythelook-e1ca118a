@@ -10,9 +10,11 @@ import { MoodFilter } from "@/components/filters/MoodFilter";
 import { useToast } from "@/hooks/use-toast";
 import { fetchDashboardItems, clearOutfitCache } from "@/services/lookService";
 import { useQuery } from "@tanstack/react-query";
-import { Shuffle, ShoppingCart } from "lucide-react";
+import { Shuffle, ShoppingCart, AlertCircle } from "lucide-react";
 import { useCartStore } from "@/components/Cart";
 import { toast as sonnerToast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 interface Look {
   id: string;
@@ -36,6 +38,7 @@ export default function Index() {
   const [forceRefresh, setForceRefresh] = useState(false);
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
   const { addLook } = useCartStore();
+  const [apiErrorShown, setApiErrorShown] = useState(false);
 
   useEffect(() => {
     console.log("Index page loaded");
@@ -48,12 +51,26 @@ export default function Index() {
     }
   }, []);
 
-  const { data: occasionOutfits, isLoading, refetch } = useQuery({
+  const { data: occasionOutfits, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['dashboardItems', selectedMood, forceRefresh],
     queryFn: fetchDashboardItems,
     enabled: !!userStyle,
     staleTime: 0,
+    retry: 1, // Limit retries to prevent excessive flickering
   });
+
+  // Handle API errors gracefully
+  useEffect(() => {
+    if (isError && !apiErrorShown) {
+      console.error("API error:", error);
+      setApiErrorShown(true);
+      toast({
+        title: "Connection Error",
+        description: "Unable to load outfit recommendations. Please try again later.",
+        variant: "destructive",
+      });
+    }
+  }, [isError, error, toast, apiErrorShown]);
 
   useEffect(() => {
     if (selectedMood) {
@@ -96,6 +113,8 @@ export default function Index() {
   const handleMoodSelect = (mood: Mood) => {
     setSelectedMood(mood);
     localStorage.setItem('current-mood', mood);
+    // Reset the API error flag when trying with a new mood
+    setApiErrorShown(false);
   };
 
   const handleShuffleLook = (occasion: string) => {
@@ -115,6 +134,7 @@ export default function Index() {
     }));
     
     setForceRefresh(true);
+    setApiErrorShown(false); // Reset error flag when shuffling
     refetch();
   };
   
@@ -157,8 +177,6 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-netflix-background">
-      {/* Removed Home Page label from top-right corner */}
-      
       <Navbar />
       <HeroSection />
       <main className="container mx-auto px-4 py-8">
@@ -180,6 +198,26 @@ export default function Index() {
               )}
             </div>
             
+            {isError && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Connection error: Unable to load outfit recommendations.
+                </AlertDescription>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2 ml-auto" 
+                  onClick={() => {
+                    setApiErrorShown(false);
+                    refetch();
+                  }}
+                >
+                  Try Again
+                </Button>
+              </Alert>
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {isLoading ? (
                 <div className="col-span-2 text-center py-12">
@@ -190,7 +228,26 @@ export default function Index() {
                   const items = occasionOutfits?.[occasion] || [];
                   const look = createLookFromItems(items, occasion, index);
                   
-                  if (!look) return null;
+                  if (!look) {
+                    return (
+                      <div key={`empty-${occasion}-${index}`} className="bg-netflix-card p-6 rounded-lg shadow-lg">
+                        <div className="flex justify-between items-start mb-4">
+                          <h3 className="text-xl font-semibold">{occasion} Look</h3>
+                        </div>
+                        <div className="mb-4 bg-white/10 rounded-lg h-80 flex items-center justify-center">
+                          <div className="text-center p-4">
+                            <Button
+                              onClick={() => handleShuffleLook(occasion)}
+                              className="bg-netflix-accent text-white"
+                            >
+                              <Shuffle className="mr-2 h-4 w-4" />
+                              Generate Look
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
                   
                   return (
                     <div 
@@ -246,4 +303,3 @@ export default function Index() {
     </div>
   );
 }
-
