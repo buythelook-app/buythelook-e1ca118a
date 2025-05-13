@@ -32,10 +32,10 @@ export const PersonalizedLooksGrid = ({
   return (
     <>
       {isError && (
-        <Alert variant="destructive" className="mb-6">
+        <Alert variant="default" className="mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Connection error: Unable to load outfit recommendations.
+            Using locally stored outfit combinations while we try to reconnect.
           </AlertDescription>
           <Button 
             variant="outline" 
