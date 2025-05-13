@@ -2,19 +2,17 @@
 import { HeroSection } from "@/components/HeroSection";
 import { Navbar } from "@/components/Navbar";
 import { FilterOptions } from "@/components/filters/FilterOptions";
-import { LookCanvas } from "@/components/LookCanvas";
-import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import type { Mood } from "@/components/filters/MoodFilter";
 import { MoodFilter } from "@/components/filters/MoodFilter";
 import { useToast } from "@/hooks/use-toast";
 import { fetchDashboardItems, clearOutfitCache } from "@/services/lookService";
 import { useQuery } from "@tanstack/react-query";
-import { Shuffle, ShoppingCart, AlertCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useCartStore } from "@/components/Cart";
 import { toast as sonnerToast } from "sonner";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { StyleProfileDisplay } from "@/components/look/StyleProfileDisplay";
+import { PersonalizedLooksGrid } from "@/components/look/PersonalizedLooksGrid";
 
 interface Look {
   id: string;
@@ -155,6 +153,11 @@ export default function Index() {
     sonnerToast.success(`${look.title} added to cart`);
   };
 
+  const resetError = () => {
+    setApiErrorShown(false);
+    refetch();
+  };
+
   if (!userStyle) {
     return (
       <div className="min-h-screen bg-netflix-background">
@@ -191,112 +194,20 @@ export default function Index() {
                 Personalized Looks
                 <span className="absolute -bottom-2 left-0 w-24 h-1 bg-netflix-accent rounded-full"></span>
               </h2>
-              {userStyle?.analysis?.styleProfile && (
-                <div className="mt-4 md:mt-0 px-4 py-2 bg-netflix-card rounded-full text-netflix-accent">
-                  Based on your {userStyle.analysis.styleProfile} style preference
-                </div>
-              )}
+              <StyleProfileDisplay styleProfile={userStyle?.analysis?.styleProfile} />
             </div>
             
-            {isError && (
-              <Alert variant="destructive" className="mb-6">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Connection error: Unable to load outfit recommendations.
-                </AlertDescription>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2 ml-auto" 
-                  onClick={() => {
-                    setApiErrorShown(false);
-                    refetch();
-                  }}
-                >
-                  Try Again
-                </Button>
-              </Alert>
-            )}
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {isLoading ? (
-                <div className="col-span-2 text-center py-12">
-                  <div className="animate-pulse">Loading your personalized looks...</div>
-                </div>
-              ) : (
-                occasions.map((occasion, index) => {
-                  const items = occasionOutfits?.[occasion] || [];
-                  const look = createLookFromItems(items, occasion, index);
-                  
-                  if (!look) {
-                    return (
-                      <div key={`empty-${occasion}-${index}`} className="bg-netflix-card p-6 rounded-lg shadow-lg">
-                        <div className="flex justify-between items-start mb-4">
-                          <h3 className="text-xl font-semibold">{occasion} Look</h3>
-                        </div>
-                        <div className="mb-4 bg-white/10 rounded-lg h-80 flex items-center justify-center">
-                          <div className="text-center p-4">
-                            <Button
-                              onClick={() => handleShuffleLook(occasion)}
-                              className="bg-netflix-accent text-white"
-                            >
-                              <Shuffle className="mr-2 h-4 w-4" />
-                              Generate Look
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-                  
-                  return (
-                    <div 
-                      key={look.id}
-                      className="bg-netflix-card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow"
-                    >
-                      <div className="flex justify-between items-start mb-4">
-                        <h3 className="text-xl font-semibold">{look.title}</h3>
-                        <span className="text-sm text-netflix-accent">{look.occasion}</span>
-                      </div>
-                      <div className="mb-4 bg-white rounded-lg overflow-hidden relative group">
-                        <LookCanvas items={look.items} width={300} height={480} />
-                        <button
-                          onClick={() => handleShuffleLook(look.occasion)}
-                          className="absolute bottom-4 right-4 bg-netflix-accent text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Try different combination"
-                        >
-                          <Shuffle className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <p className="text-netflix-accent font-semibold">{look.price}</p>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleAddToCart(look)}
-                            className="bg-netflix-accent text-white p-2 rounded-lg hover:bg-netflix-accent/90 transition-colors"
-                            title="Add to cart"
-                          >
-                            <ShoppingCart className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              localStorage.setItem(`look-${look.id}`, JSON.stringify({
-                                ...look,
-                                description: `A curated ${look.occasion.toLowerCase()} look that matches your ${userStyle.analysis.styleProfile} style preference.`
-                              }));
-                              navigate(`/look/${look.id}`);
-                            }}
-                            className="bg-netflix-accent text-white px-4 py-2 rounded-lg hover:bg-netflix-accent/90 transition-colors text-sm flex items-center gap-2"
-                          >
-                            View Details
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
+            <PersonalizedLooksGrid
+              isLoading={isLoading}
+              isError={isError}
+              occasionOutfits={occasionOutfits}
+              occasions={occasions}
+              createLookFromItems={createLookFromItems}
+              handleShuffleLook={handleShuffleLook}
+              handleAddToCart={handleAddToCart}
+              resetError={resetError}
+              userStyleProfile={userStyle?.analysis?.styleProfile}
+            />
           </div>
         </section>
       </main>
