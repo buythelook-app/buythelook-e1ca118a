@@ -64,7 +64,7 @@ function generateOutfitSuggestions(
       'Use accessories to define your waistline'
     ],
     O: [
-      'Choose flowing fabrics that don't cling too tightly',
+      "Choose flowing fabrics that don\'t cling too tightly",
       'Try vertical patterns to create a lengthening effect',
       'Empire waists and A-line silhouettes will be flattering'
     ],
