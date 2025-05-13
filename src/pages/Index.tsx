@@ -9,8 +9,9 @@ import { toast as sonnerToast } from "sonner";
 import { StyleProfileDisplay } from "@/components/look/StyleProfileDisplay";
 import { PersonalizedLooksGrid } from "@/components/look/PersonalizedLooksGrid";
 import { usePersonalizedLooks } from "@/hooks/usePersonalizedLooks";
+import { memo } from "react";
 
-export default function Index() {
+const Index = () => {
   const navigate = useNavigate();
   const { addLook } = useCartStore();
   
@@ -99,4 +100,6 @@ export default function Index() {
       </main>
     </div>
   );
-}
+};
+
+export default memo(Index);

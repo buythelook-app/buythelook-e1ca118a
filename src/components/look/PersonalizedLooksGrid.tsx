@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Look } from "@/hooks/usePersonalizedLooks";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { memo } from "react";
 
 interface PersonalizedLooksGridProps {
   isLoading: boolean;
@@ -19,7 +20,7 @@ interface PersonalizedLooksGridProps {
   userStyleProfile?: string;
 }
 
-export const PersonalizedLooksGrid = ({
+export const PersonalizedLooksGrid = memo(({
   isLoading,
   isError,
   occasionOutfits,
@@ -51,50 +52,36 @@ export const PersonalizedLooksGrid = ({
       )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {isLoading ? (
-          // Loading skeleton cards
-          Array.from({ length: 4 }).map((_, index) => (
-            <div key={`loading-${index}`} className="bg-netflix-card p-6 rounded-lg shadow-lg animate-pulse">
-              <div className="flex justify-between items-start mb-4">
-                <div className="h-4 bg-gray-300 rounded w-1/3"></div>
-                <div className="h-3 bg-gray-300 rounded w-1/4"></div>
-              </div>
-              <AspectRatio ratio={3/4} className="mb-4 bg-gray-300 rounded"></AspectRatio>
-              <div className="flex justify-between items-center">
-                <div className="h-4 bg-gray-300 rounded w-1/4"></div>
-                <div className="h-8 bg-gray-300 rounded w-1/3"></div>
-              </div>
-            </div>
-          ))
-        ) : (
-          occasions.map((occasion, index) => {
-            // Always ensure we have items for each occasion
-            const items = occasionOutfits?.[occasion] || [];
-            const look = createLookFromItems(items, occasion, index);
-            
-            // If for some reason we still don't have a look, show the empty look card
-            if (!look || !look.items || look.items.length === 0) {
-              return (
-                <EmptyLookCard 
-                  key={`empty-${occasion}-${index}`}
-                  occasion={occasion}
-                  onShuffle={() => handleShuffleLook(occasion)}
-                />
-              );
-            }
-            
+        {/* Use key with item id and loading state to prevent flicker during state transitions */}
+        {occasions.map((occasion, index) => {
+          // Always ensure we have items for each occasion
+          const items = occasionOutfits?.[occasion] || [];
+          const look = createLookFromItems(items, occasion, index);
+          
+          if (!look || !look.items || look.items.length === 0) {
             return (
-              <PersonalizedLookCard
-                key={look.id}
-                look={look}
+              <EmptyLookCard 
+                key={`empty-${occasion}-${index}-${isLoading}`}
+                occasion={occasion}
                 onShuffle={() => handleShuffleLook(occasion)}
-                onAddToCart={handleAddToCart}
-                userStyleProfile={userStyleProfile}
+                isLoading={isLoading}
               />
             );
-          })
-        )}
+          }
+          
+          return (
+            <PersonalizedLookCard
+              key={`${look.id}-${look.items.map(i => i.id).join('-')}`}
+              look={look}
+              onShuffle={() => handleShuffleLook(occasion)}
+              onAddToCart={handleAddToCart}
+              userStyleProfile={userStyleProfile}
+            />
+          );
+        })}
       </div>
     </>
   );
-};
+});
+
+PersonalizedLooksGrid.displayName = "PersonalizedLooksGrid";

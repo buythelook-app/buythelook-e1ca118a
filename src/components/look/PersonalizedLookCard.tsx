@@ -1,8 +1,9 @@
 
+import { memo } from "react";
 import { Shuffle, ShoppingCart } from "lucide-react";
 import { LookCanvas } from "@/components/LookCanvas";
 import { useNavigate } from "react-router-dom";
-import { Look, LookItem } from "@/hooks/usePersonalizedLooks";
+import { Look } from "@/hooks/usePersonalizedLooks";
 
 interface LookCardProps {
   look: Look;
@@ -11,7 +12,8 @@ interface LookCardProps {
   userStyleProfile?: string;
 }
 
-export const PersonalizedLookCard = ({ look, onShuffle, onAddToCart, userStyleProfile }: LookCardProps) => {
+// Use memo to prevent unnecessary re-renders
+export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userStyleProfile }: LookCardProps) => {
   const navigate = useNavigate();
   
   return (
@@ -58,4 +60,6 @@ export const PersonalizedLookCard = ({ look, onShuffle, onAddToCart, userStylePr
       </div>
     </div>
   );
-};
+});
+
+PersonalizedLookCard.displayName = "PersonalizedLookCard";

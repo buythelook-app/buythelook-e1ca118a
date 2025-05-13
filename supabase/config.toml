@@ -3,6 +3,7 @@ project_id = "mwsblnposuyhrgzrtoyo"
 
 [functions.generate-outfit]
 verify_jwt = false
+cors = true
 
 [functions.trainer-agent]
 verify_jwt = false
