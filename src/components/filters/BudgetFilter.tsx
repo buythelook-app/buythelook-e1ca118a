@@ -50,10 +50,10 @@ export const BudgetFilter = ({
         </DialogHeader>
         <div className="space-y-6 p-4">
           <div className="relative p-6 bg-netflix-card rounded-lg">
-            <div className="flex justify-between items-center text-sm mb-6">
-              <span className="font-medium bg-netflix-card/50 px-3 py-1 rounded-full">$100</span>
-              <span className="font-medium bg-netflix-card/50 px-3 py-1 rounded-full">
-                {isUnlimited ? "Money is not an issue" : `$${budget}`}
+            <div className="flex justify-between items-center mb-6">
+              <span className="font-medium bg-netflix-accent/90 text-white px-3 py-1 rounded-full text-sm">$100</span>
+              <span className="font-medium bg-netflix-accent/90 text-white px-3 py-1 rounded-full text-sm">
+                {isUnlimited ? "Unlimited" : `$${budget}`}
               </span>
             </div>
             <Slider
@@ -64,6 +64,10 @@ export const BudgetFilter = ({
               step={50}
               className="w-full"
             />
+            <div className="flex justify-between items-center text-xs mt-2 px-1">
+              <span className="text-white font-medium">Min</span>
+              <span className="text-white font-medium">Max</span>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -79,7 +83,7 @@ export const BudgetFilter = ({
                 }
               }}
               placeholder={isUnlimited ? "Unlimited budget" : "Enter amount"}
-              className="bg-netflix-card"
+              className="bg-netflix-card text-white"
             />
           </div>
         </div>
