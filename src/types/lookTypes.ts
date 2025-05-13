@@ -1,10 +1,11 @@
+
 export interface DashboardItem {
   id: string;
   name: string;
   description?: string;
   image?: string;
   price?: string;
-  type: string;
+  type: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' | 'cart';
 }
 
 export interface OutfitItem {

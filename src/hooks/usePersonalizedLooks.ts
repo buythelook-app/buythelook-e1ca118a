@@ -6,6 +6,7 @@ import { fetchDashboardItems, clearOutfitCache } from "@/services/lookService";
 import { toast as sonnerToast } from "sonner";
 import type { Mood } from "@/components/filters/MoodFilter";
 import { useLocalOutfitData } from "./useLocalOutfitData";
+import { DashboardItem } from "@/types/lookTypes";
 
 export interface LookItem {
   id: string;
@@ -22,18 +23,19 @@ export interface Look {
   occasion: string;
 }
 
-// Define DashboardItem type to match the API response structure
-interface DashboardItem {
-  id: string;
-  image: string; // Make image required to match LocalOutfitItem
-  type: LookItem['type'];
-  price?: string;
-}
-
-// Type for the data structure returned by fetchDashboardItems
+// Define type for the data structure returned by fetchDashboardItems
 interface DashboardData {
   [key: string]: DashboardItem[];
 }
+
+// Define allowed types for proper type checking
+const ALLOWED_TYPES = ['top', 'bottom', 'dress', 'shoes', 'accessory', 'sunglasses', 'outerwear', 'cart'] as const;
+type AllowedType = typeof ALLOWED_TYPES[number];
+
+// Helper function to check if a type is valid
+const isValidItemType = (type: string): type is AllowedType => {
+  return ALLOWED_TYPES.includes(type as AllowedType);
+};
 
 export function usePersonalizedLooks() {
   const { toast } = useToast();
@@ -81,13 +83,18 @@ export function usePersonalizedLooks() {
       
       for (const occasion of occasions) {
         if (data[occasion] && Array.isArray(data[occasion]) && data[occasion].length > 0) {
-          // Ensure all items have the required fields for LookItem
-          mergedData[occasion] = data[occasion].map(item => ({
-            id: item.id || `generated-${Math.random().toString(36).substring(7)}`,
-            image: item.image || '/placeholder.svg', // Ensure image is never undefined
-            type: item.type || 'top',
-            price: item.price
-          }));
+          // Properly validate and transform each item to ensure type safety
+          mergedData[occasion] = data[occasion].map(item => {
+            const itemType = isValidItemType(item.type) ? item.type : 'top';
+            
+            return {
+              id: item.id || `generated-${Math.random().toString(36).substring(7)}`,
+              image: item.image || '/placeholder.svg', // Ensure image is never undefined
+              type: itemType,
+              price: item.price,
+              name: item.name || 'Item'
+            };
+          });
         }
       }
       
@@ -147,8 +154,8 @@ export function usePersonalizedLooks() {
     
     // Map and ensure item types conform to the allowed types
     const mappedItems = lookItems.map(item => {
-      const validType = ['top', 'bottom', 'dress', 'shoes', 'accessory', 'sunglasses', 'outerwear', 'cart'].includes(item.type?.toLowerCase()) 
-        ? item.type.toLowerCase() as LookItem['type']
+      const validType = isValidItemType(item.type?.toLowerCase())
+        ? item.type.toLowerCase() as AllowedType
         : 'top';
       
       return {
@@ -162,8 +169,8 @@ export function usePersonalizedLooks() {
     let totalPrice = 0;
     items.forEach(item => {
       if (item.price) {
-        const itemPrice = item.price?.replace(/[^0-9.]/g, '') || '0';
-        totalPrice += parseFloat(itemPrice);
+        const itemPrice = parseFloat(item.price.toString().replace(/[^0-9.]/g, '') || '0');
+        totalPrice += itemPrice;
       }
     });
     
