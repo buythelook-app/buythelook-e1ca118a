@@ -5,6 +5,7 @@ import { AlertCircle, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Look } from "@/hooks/usePersonalizedLooks";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface PersonalizedLooksGridProps {
   isLoading: boolean;
@@ -51,11 +52,15 @@ export const PersonalizedLooksGrid = ({
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {isLoading ? (
+          // Loading skeleton cards
           Array.from({ length: 4 }).map((_, index) => (
             <div key={`loading-${index}`} className="bg-netflix-card p-6 rounded-lg shadow-lg animate-pulse">
-              <div className="h-4 bg-gray-300 rounded w-1/2 mb-4"></div>
-              <div className="h-64 bg-gray-300 rounded mb-4"></div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-start mb-4">
+                <div className="h-4 bg-gray-300 rounded w-1/3"></div>
+                <div className="h-3 bg-gray-300 rounded w-1/4"></div>
+              </div>
+              <AspectRatio ratio={3/4} className="mb-4 bg-gray-300 rounded"></AspectRatio>
+              <div className="flex justify-between items-center">
                 <div className="h-4 bg-gray-300 rounded w-1/4"></div>
                 <div className="h-8 bg-gray-300 rounded w-1/3"></div>
               </div>
@@ -63,10 +68,12 @@ export const PersonalizedLooksGrid = ({
           ))
         ) : (
           occasions.map((occasion, index) => {
+            // Always ensure we have items for each occasion
             const items = occasionOutfits?.[occasion] || [];
             const look = createLookFromItems(items, occasion, index);
             
-            if (!look) {
+            // If for some reason we still don't have a look, show the empty look card
+            if (!look || !look.items || look.items.length === 0) {
               return (
                 <EmptyLookCard 
                   key={`empty-${occasion}-${index}`}
