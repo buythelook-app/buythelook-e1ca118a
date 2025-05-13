@@ -73,6 +73,7 @@ export function usePersonalizedLooks() {
   }, []);
 
   // Improved query with aggressive caching and error handling
+  // Fixed: Removed the keepPreviousData option that's not supported in TanStack Query v5
   const { data: occasionOutfits, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['dashboardItems', selectedMood, forceRefresh],
     queryFn: async () => {
@@ -120,8 +121,9 @@ export function usePersonalizedLooks() {
     staleTime: 30000, // Cache data for 30 seconds
     retry: 2, // Try up to 3 times total
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
-    // Prevent flickering by keeping previous data on refetch
-    keepPreviousData: true,
+    // Note: keepPreviousData has been removed as it's not supported in TanStack Query v5
+    // The placeholderData option can be used for similar functionality
+    placeholderData: fallbackItems,
   });
 
   useEffect(() => {
