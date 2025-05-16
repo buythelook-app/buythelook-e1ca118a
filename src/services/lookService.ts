@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 
@@ -91,7 +92,27 @@ const mapToOutfitItem = (item: ZaraClothItem): DashboardItem => {
   };
 };
 
-// Function to fetch items by type with improved randomization
+// Function to verify if the zara_cloth table exists
+const verifyZaraClothTableExists = async (): Promise<boolean> => {
+  try {
+    // Try to get the count to verify table exists
+    const { error } = await supabase
+      .from('zara_cloth')
+      .select('id', { count: 'exact', head: true });
+    
+    if (error) {
+      console.error('Error checking zara_cloth table:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Exception checking zara_cloth table:', error);
+    return false;
+  }
+};
+
+// Function to fetch items by type with improved randomization and error handling
 export const fetchItemsByType = async (
   type: string,
   occasion: string,
@@ -99,6 +120,14 @@ export const fetchItemsByType = async (
 ): Promise<DashboardItem[]> => {
   try {
     console.log(`Fetching ${type} items for ${occasion} (excluding ${excludeIds.length} items)`);
+    
+    // Check if the zara_cloth table exists
+    const tableExists = await verifyZaraClothTableExists();
+    if (!tableExists) {
+      console.warn('zara_cloth table does not exist, using fallback data');
+      // Return empty array, which will trigger fallback data in the usePersonalizedLooks hook
+      return [];
+    }
     
     // Convert excludeIds to string array for proper filtering
     const excludeIdsArray = excludeIds.map(id => String(id));
@@ -147,7 +176,7 @@ export const fetchItemsByType = async (
           : null;
     
     // Filter out items that have been used before (in global trackers)
-    let availableItems = (clothesData || []) as ZaraClothItem[];
+    let availableItems = (clothesData || []);
     if (typeTracker) {
       availableItems = availableItems.filter(item => !typeTracker.has(String(item.id)));
     }
@@ -219,7 +248,6 @@ export const fetchOutfitItems = async (occasion: string): Promise<DashboardItem[
     }
     
     // Get current used IDs for this occasion and convert to string array
-    // Fix: Explicitly cast the Set to an array of strings
     const excludeIds = Array.from(usedItemIds[occasion] || new Set<string>()).map(id => String(id));
     
     console.log(`Fetching outfit items for ${occasion}, excluding ${excludeIds.length} items`);
@@ -257,6 +285,13 @@ export const fetchDashboardItems = async (): Promise<Record<string, DashboardIte
   try {
     const occasions = ["Work", "Casual", "Evening", "Weekend"];
     const result: Record<string, DashboardItem[]> = {};
+    
+    // Check if the zara_cloth table exists before making any requests
+    const tableExists = await verifyZaraClothTableExists();
+    if (!tableExists) {
+      console.warn('zara_cloth table does not exist, using fallback data');
+      return {};
+    }
     
     await Promise.all(
       occasions.map(async (occasion) => {
