@@ -455,19 +455,19 @@ const fetchItemsByType = async (itemType: string, preferredStyle: string): Promi
     
     switch (itemType.toLowerCase()) {
       case 'top':
-        possibleTypes.push('tops', 'shirts', 'blouses', 't-shirts', 'sweaters');
+        possibleTypes.push('top', 'tops', 'shirts', 'blouses', 't-shirts', 'sweaters');
         break;
       case 'bottom':
-        possibleTypes.push('bottoms', 'pants', 'trousers', 'jeans', 'shorts', 'skirts');
+        possibleTypes.push('bottom', 'bottoms', 'pants', 'trousers', 'jeans', 'shorts', 'skirts');
         break;
       case 'dress':
-        possibleTypes.push('dresses');
+        possibleTypes.push('dress', 'dresses');
         break;
       case 'shoes':
         possibleTypes.push('shoes', 'footwear', 'sneakers', 'boots', 'heels', 'sandals');
         break;
       case 'accessory':
-        possibleTypes.push('accessories', 'jewelry', 'bags', 'hats');
+        possibleTypes.push('accessory', 'accessories', 'jewelry', 'bags', 'hats');
         break;
       case 'sunglasses':
         possibleTypes.push('sunglasses', 'glasses', 'eyewear');
@@ -479,31 +479,42 @@ const fetchItemsByType = async (itemType: string, preferredStyle: string): Promi
         possibleTypes.push(itemType);
     }
     
+    // Generate OR condition for the query
+    const productFamilyConditions = possibleTypes.map(type => 
+      `product_family.ilike.%${type}%`
+    );
+    
+    const categoryIdConditions = possibleTypes.map(type => 
+      `category_id.ilike.%${type}%`
+    );
+    
     // Query Supabase for items matching the type
-    const { data, error } = await supabase
+    // First try with product_family
+    let { data: familyData, error: familyError } = await supabase
       .from('zara_cloth')
       .select('*')
-      .limit(20);
+      .or(productFamilyConditions.join(','))
+      .limit(10);
     
-    if (error) {
-      console.error('Error fetching items from Supabase:', error);
-      return [];
+    if (familyError || !familyData || familyData.length === 0) {
+      // If no results with product_family, try with category_id
+      const { data: categoryData, error: categoryError } = await supabase
+        .from('zara_cloth')
+        .select('*')
+        .or(categoryIdConditions.join(','))
+        .limit(10);
+      
+      if (categoryError || !categoryData || categoryData.length === 0) {
+        console.log(`No ${itemType} items found in Supabase using either product_family or category_id`);
+        return [];
+      }
+      
+      console.log(`Found ${categoryData.length} ${itemType} items using category_id in Supabase`);
+      return categoryData;
     }
     
-    if (!data || data.length === 0) {
-      console.log(`No ${itemType} items found in Supabase`);
-      return [];
-    }
-    
-    // Filter items by type using our product family logic
-    const filteredItems = data.filter(item => {
-      const productFamily = (item.product_family || item.category_id || '').toLowerCase();
-      return possibleTypes.some(type => productFamily.includes(type.toLowerCase()));
-    });
-    
-    console.log(`Found ${filteredItems.length} ${itemType} items in Supabase`);
-    
-    return filteredItems;
+    console.log(`Found ${familyData.length} ${itemType} items using product_family in Supabase`);
+    return familyData;
   } catch (error) {
     console.error(`Error fetching ${itemType} items from Supabase:`, error);
     return [];
@@ -633,22 +644,22 @@ export const fetchDashboardItems = async (): Promise<{[key: string]: DashboardIt
     // Use Promise.all to fetch items for all occasions in parallel
     await Promise.all(occasions.map(async (occasion) => {
       try {
-        // Fetch items from Supabase for each category
+        // Fetch items from Supabase for each category with different queries to ensure variety
         const topItems = await fetchItemsByType('top', userPreferredStyle);
         const bottomItems = await fetchItemsByType('bottom', userPreferredStyle);
         const shoeItems = await fetchItemsByType('shoes', userPreferredStyle);
         
-        // Randomly select items for this occasion (using different items for each occasion)
-        const selectedTopIndex = Math.floor(Math.random() * topItems.length);
-        const selectedBottomIndex = Math.floor(Math.random() * bottomItems.length);
-        const selectedShoeIndex = Math.floor(Math.random() * shoeItems.length);
-        
-        const topItem = convertToDashboardItem(topItems[selectedTopIndex], 'top', userPreferredStyle);
-        const bottomItem = convertToDashboardItem(bottomItems[selectedBottomIndex], 'bottom', userPreferredStyle);
-        const shoeItem = convertToDashboardItem(shoeItems[selectedShoeIndex], 'shoes', userPreferredStyle);
-        
-        // Build the outfit for this occasion
+        // Create a unique outfit for this occasion by selecting random items
         const outfitItems: DashboardItem[] = [];
+        
+        // Get random items for each category, ensuring they're different for each occasion
+        const randomTop = topItems[Math.floor(Math.random() * Math.max(topItems.length, 1))];
+        const randomBottom = bottomItems[Math.floor(Math.random() * Math.max(bottomItems.length, 1))];
+        const randomShoes = shoeItems[Math.floor(Math.random() * Math.max(shoeItems.length, 1))];
+        
+        const topItem = convertToDashboardItem(randomTop, 'top', userPreferredStyle);
+        const bottomItem = convertToDashboardItem(randomBottom, 'bottom', userPreferredStyle);
+        const shoeItem = convertToDashboardItem(randomShoes, 'shoes', userPreferredStyle);
         
         if (topItem) outfitItems.push(topItem);
         if (bottomItem) outfitItems.push(bottomItem);

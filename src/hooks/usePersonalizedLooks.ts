@@ -133,7 +133,7 @@ export function usePersonalizedLooks() {
     queryKey: ['dashboardItems', selectedMood, forceRefresh],
     queryFn,
     enabled: !!userStyle,
-    staleTime: 30000, // Cache data for 30 seconds
+    staleTime: 5000, // Reduced from 30000 to 5000 to refresh more often
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
     // Use placeholderData instead of keepPreviousData
@@ -158,15 +158,29 @@ export function usePersonalizedLooks() {
   }, [occasionOutfits, forceRefresh]);
 
   const createLookFromItems = useCallback((items: any[] = [], occasion: string, index: number): Look | null => {
-    // Always ensure we have items, using fallbacks if needed
-    const lookItems = items.length > 0 ? items : (convertedFallbackItems()[occasion] || []);
+    // Ensure we have different items for each outfit component
+    let uniqueItems = items;
     
-    if (lookItems.length === 0) {
-      return null;
+    // If there are not enough items or they have duplicate types, use fallbacks
+    const itemTypes = new Set(uniqueItems.map(item => item.type));
+    if (uniqueItems.length < 3 || itemTypes.size < 3) {
+      // Look for more items in the fallback data
+      const fallbacksForOccasion = convertedFallbackItems()[occasion] || [];
+      
+      // Add missing types from fallbacks
+      const requiredTypes = ['top', 'bottom', 'shoes'];
+      requiredTypes.forEach(type => {
+        if (!itemTypes.has(type)) {
+          const fallbackItem = fallbacksForOccasion.find(item => item.type === type);
+          if (fallbackItem) {
+            uniqueItems.push(fallbackItem);
+          }
+        }
+      });
     }
     
     // Filter and map to ensure item types conform to the allowed types
-    const mappedItems = lookItems
+    const mappedItems = uniqueItems
       .filter(item => item.type && isValidItemType(item.type))
       .map(item => ({
         id: item.id || `fallback-${Math.random().toString(36).substring(7)}`,
@@ -180,7 +194,7 @@ export function usePersonalizedLooks() {
     }
     
     let totalPrice = 0;
-    items.forEach(item => {
+    uniqueItems.forEach(item => {
       if (item.price) {
         const price = typeof item.price === 'string' 
           ? parseFloat(item.price.replace(/[^0-9.]/g, '')) 
@@ -209,6 +223,12 @@ export function usePersonalizedLooks() {
   }, []);
 
   const handleShuffleLook = useCallback((occasion: string) => {
+    // Clear the global tracking sets to get completely different items
+    globalUsedItemIds.clear();
+    globalUsedTopIds.clear();
+    globalUsedBottomIds.clear();
+    globalUsedShoeIds.clear();
+    
     const styleAnalysis = localStorage.getItem('styleAnalysis');
     if (styleAnalysis) {
       const parsed = JSON.parse(styleAnalysis);
@@ -272,3 +292,9 @@ export function usePersonalizedLooks() {
     apiErrorShown
   };
 }
+
+// Fix global variable reference error
+const globalUsedItemIds = new Set<string>();
+const globalUsedTopIds = new Set<string>();
+const globalUsedBottomIds = new Set<string>();
+const globalUsedShoeIds = new Set<string>();
