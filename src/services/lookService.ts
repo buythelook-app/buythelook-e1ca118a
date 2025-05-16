@@ -37,7 +37,7 @@ export const clearOutfitCache = (
 // Helper function to map Supabase zara_cloth items to DashboardItem type
 const mapToOutfitItem = (item: any): DashboardItem => {
   // Map product_family or category_id to one of the allowed types
-  let type = item.product_family ? item.product_family.toLowerCase() : '';
+  let type = item.product_name ? item.product_name.toLowerCase() : '';
   
   // Ensure type is one of the allowed values
   const allowedTypes = [
@@ -45,30 +45,37 @@ const mapToOutfitItem = (item: any): DashboardItem => {
   ];
   
   if (!allowedTypes.includes(type)) {
-    // Handle mapping for category_id if product_family doesn't match allowed types
-    if (item.category_id) {
-      const categoryMap: Record<string, string> = {
-        "tops": "top",
-        "bottoms": "bottom",
-        "dresses": "dress",
-        "footwear": "shoes",
-        "accessories": "accessory",
-        "eyewear": "sunglasses",
-        "jackets": "outerwear",
-        "coats": "outerwear",
-      };
-      
-      type = categoryMap[item.category_id.toLowerCase()] || "top";
+    // Map based on common clothing terms in the product name
+    if (type.includes('shirt') || type.includes('blouse') || type.includes('tee') || 
+        type.includes('top') || type.includes('sweater')) {
+      type = "top";
+    } else if (type.includes('pant') || type.includes('trouser') || type.includes('jean') || 
+               type.includes('skirt') || type.includes('bottom') || type.includes('short')) {
+      type = "bottom";
+    } else if (type.includes('shoe') || type.includes('boot') || type.includes('sneaker') || 
+               type.includes('sandal') || type.includes('footwear')) {
+      type = "shoes";
+    } else if (type.includes('dress')) {
+      type = "dress";
+    } else if (type.includes('jacket') || type.includes('coat') || type.includes('outerwear')) {
+      type = "outerwear";
+    } else if (type.includes('accessory') || type.includes('hat') || type.includes('bag')) {
+      type = "accessory";
+    } else if (type.includes('sunglasses') || type.includes('glasses')) {
+      type = "sunglasses";
     } else {
       // Default to "top" if we can't determine type
       type = "top";
     }
   }
   
+  // Make sure we have a valid image URL
+  const imageUrl = item.image || '/placeholder.svg';
+  
   return {
-    id: item.product_id || `zara-${item.id}`,
+    id: item.id || `zara-${Math.random().toString(36).substring(2, 9)}`,
     name: item.product_name || 'Fashion item',
-    image: item.image || '/placeholder.svg',
+    image: imageUrl,
     type: type as "top" | "bottom" | "dress" | "shoes" | "accessory" | "sunglasses" | "outerwear" | "cart",
     price: item.price ? `$${parseFloat(item.price).toFixed(2)}` : '$49.99'
   };
@@ -83,29 +90,42 @@ export const fetchItemsByType = async (
   try {
     console.log(`Fetching ${type} items for ${occasion} (excluding ${excludeIds.length} items)`);
     
-    // Use product_family or category_id for filtering - fix the query conditions
+    // Convert excludeIds to string array for proper filtering
+    const excludeIdsArray = excludeIds.map(id => String(id));
+    
+    // Simple query to the zara_cloth table
     let query = supabase
       .from('zara_cloth')
       .select('*');
     
-    // Filter by type using proper conditions (looking for both product_family and category_id)
+    // Apply filtering based on the type we're looking for
+    // First, try to check if the product_name contains relevant type keywords
     if (type === 'top') {
-      query = query.or('product_family.ilike.%top%,category_id.ilike.%top%');
+      query = query.or('product_name.ilike.%shirt%,product_name.ilike.%blouse%,product_name.ilike.%tee%,product_name.ilike.%sweater%,product_name.ilike.%top%');
     } else if (type === 'bottom') {
-      query = query.or('product_family.ilike.%bottom%,category_id.ilike.%bottom%');
+      query = query.or('product_name.ilike.%pant%,product_name.ilike.%trouser%,product_name.ilike.%jean%,product_name.ilike.%skirt%,product_name.ilike.%short%,product_name.ilike.%bottom%');
     } else if (type === 'shoes') {
-      query = query.or('product_family.ilike.%shoe%,product_family.ilike.%footwear%,category_id.ilike.%shoe%,category_id.ilike.%footwear%');
+      query = query.or('product_name.ilike.%shoe%,product_name.ilike.%boot%,product_name.ilike.%sneaker%,product_name.ilike.%sandal%,product_name.ilike.%footwear%');
+    } else if (type === 'outerwear') {
+      query = query.or('product_name.ilike.%jacket%,product_name.ilike.%coat%,product_name.ilike.%outerwear%');
     } else {
-      query = query.or(`product_family.ilike.%${type}%,category_id.ilike.%${type}%`);
+      // For other types, just try a simple match
+      query = query.ilike('product_name', `%${type}%`);
     }
     
-    // Exclude already used items to prevent duplication (only if we have excludeIds)
-    if (excludeIds.length > 0) {
-      // Convert excludeIds to an array of strings if it's not already
-      const excludeIdsArray = excludeIds.map(id => String(id));
-      // Use the 'not.in' syntax correctly
-      query = query.not('product_id', 'in', excludeIdsArray);
+    // Exclude IDs that have already been used
+    if (excludeIdsArray.length > 0) {
+      query = query.not('id', 'in', excludeIdsArray);
     }
+    
+    const { data: clothesData, error } = await query;
+    
+    if (error) {
+      console.error("Error fetching items from Supabase:", error);
+      throw error;
+    }
+    
+    console.log(`Retrieved ${clothesData?.length || 0} items for ${type} from database`);
     
     // Track items in global trackers based on type
     const typeTracker = type === 'top' 
@@ -116,32 +136,43 @@ export const fetchItemsByType = async (
           ? globalItemTrackers.usedShoeIds
           : null;
     
-    const { data, error } = await query;
-    
-    if (error) {
-      console.error("Error fetching items from Supabase:", error);
-      throw error;
-    }
-    
     // Filter out items that have been used before (in global trackers)
-    let availableItems = data || [];
+    let availableItems = clothesData || [];
     if (typeTracker) {
-      availableItems = availableItems.filter(item => !typeTracker.has(item.product_id));
+      availableItems = availableItems.filter(item => !typeTracker.has(item.id));
     }
     
-    // If we've used up most items, clear the tracker to allow reuse
-    if (availableItems.length < 3 && typeTracker && typeTracker.size > 10) {
-      console.log(`Clearing ${type} tracker as we're running out of unique items`);
+    // If we found no items or very few, we should get more by clearing the trackers
+    if (availableItems.length < 3 && typeTracker && typeTracker.size > 0) {
+      console.log(`Not enough ${type} items, clearing tracker to get more options`);
       typeTracker.clear();
-      // Re-filter without the tracker constraint
-      availableItems = data || [];
+      
+      // Requery without tracker constraints, but still respect excludeIds
+      if (excludeIdsArray.length > 0) {
+        availableItems = (clothesData || []).filter(item => !excludeIdsArray.includes(item.id));
+      } else {
+        availableItems = clothesData || [];
+      }
+    }
+    
+    // If still no data, use a more lenient query
+    if (availableItems.length === 0) {
+      console.log(`No ${type} items found with specific filters, using broader search`);
+      
+      const fallbackQuery = supabase
+        .from('zara_cloth')
+        .select('*')
+        .limit(10);
+      
+      const { data: fallbackData } = await fallbackQuery;
+      availableItems = fallbackData || [];
     }
     
     // Shuffle the array to get random items
-    const shuffledData = availableItems.sort(() => Math.random() - 0.5);
+    const shuffledData = [...availableItems].sort(() => Math.random() - 0.5);
     
     // Map to the required format
-    const mappedItems = shuffledData.map(mapToOutfitItem);
+    const mappedItems = shuffledData.slice(0, 5).map(mapToOutfitItem);
     
     // Add used items to the appropriate tracker
     if (typeTracker && mappedItems.length > 0) {
@@ -151,11 +182,12 @@ export const fetchItemsByType = async (
       });
     }
     
+    console.log(`Returning ${mappedItems.length} ${type} items for ${occasion}`);
+    
     // Return items, or empty array if no items found
-    return mappedItems.length > 0 ? mappedItems : [];
+    return mappedItems;
   } catch (error) {
     console.error(`Error fetching ${type} items:`, error);
-    // If there's an error, fall back to API-generated items if needed
     return [];
   }
 };
@@ -177,12 +209,16 @@ export const fetchOutfitItems = async (occasion: string): Promise<DashboardItem[
     }
     
     // Get current used IDs for this occasion and convert to string array
-    const excludeIds = Array.from(usedItemIds[occasion] || new Set()).map(id => String(id));
+    const excludeIds = Array.from(usedItemIds[occasion] || new Set());
+    
+    console.log(`Fetching outfit items for ${occasion}, excluding ${excludeIds.length} items`);
     
     // Fetch different item types for the occasion
     const topItems = await fetchItemsByType("top", occasion, excludeIds);
     const bottomItems = await fetchItemsByType("bottom", occasion, excludeIds);
     const shoesItems = await fetchItemsByType("shoes", occasion, excludeIds);
+    
+    console.log(`Fetched: ${topItems.length} tops, ${bottomItems.length} bottoms, ${shoesItems.length} shoes`);
     
     // Select one random item from each type
     const randomTop = topItems.length > 0 ? topItems[Math.floor(Math.random() * topItems.length)] : null;
