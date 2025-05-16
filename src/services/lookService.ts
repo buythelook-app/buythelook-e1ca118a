@@ -287,7 +287,12 @@ export const fetchOutfitItems = async (occasion: string): Promise<DashboardItem[
     // Filter out null values and return
     const items = [randomTop, randomBottom, randomShoes].filter(Boolean) as DashboardItem[];
     
-    logger.debug(`Generated outfit for ${occasion}:`, items, { context: "lookService" });
+    // Fix: Modify logger.debug call to pass items inside the data object instead of as a separate parameter
+    logger.debug(`Generated outfit for ${occasion}:`, { 
+      context: "lookService", 
+      data: items 
+    });
+    
     return items;
   } catch (error) {
     logger.error(`Error generating outfit for ${occasion}:`, { context: "lookService", data: error });
