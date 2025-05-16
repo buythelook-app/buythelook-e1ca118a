@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client"; // Use centralized Supabase client
+import { supabase } from "@/lib/supabaseClient"; // Use centralized Supabase client
 import { DashboardItem } from "@/types/lookTypes";
 import logger from "@/lib/logger";
 import { generateOutfit as generateOutfitFromAPI, getOutfitColors } from "./outfitGenerationService";

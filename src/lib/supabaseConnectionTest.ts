@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseClient";
 import logger from "./logger";
 
 /**
@@ -30,31 +30,6 @@ export const testSupabaseConnection = async () => {
         context: "supabaseTest",
         data: tableError
       });
-      
-      // Instead of trying to list tables (which doesn't work with typed client),
-      // just log the error and check if other tables are accessible
-      try {
-        const { data: itemsData, error: itemsError } = await supabase
-          .from('items')
-          .select('*', { count: 'exact', head: true });
-          
-        if (itemsError) {
-          logger.error("Failed to access items table as well:", {
-            context: "supabaseTest",
-            data: itemsError
-          });
-        } else {
-          logger.info("Successfully connected to items table:", {
-            context: "supabaseTest",
-            data: { count: itemsData?.length ?? 0 }
-          });
-        }
-      } catch (innerError) {
-        logger.error("Error checking alternative tables:", {
-          context: "supabaseTest",
-          data: innerError
-        });
-      }
       
       return {
         success: false,

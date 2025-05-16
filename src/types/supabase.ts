@@ -49,6 +49,72 @@ export interface Database {
         };
         Relationships: [];
       };
+      agent_runs: {
+        Row: {
+          id: string;
+          agent_name: string;
+          timestamp: string;
+          user_id: string | null;
+          result: Json;
+          score: number;
+          status: string;
+        };
+        Insert: {
+          id?: string;
+          agent_name: string;
+          timestamp?: string;
+          user_id?: string | null;
+          result: Json;
+          score: number;
+          status?: string;
+        };
+        Update: {
+          id?: string;
+          agent_name?: string;
+          timestamp?: string;
+          user_id?: string | null;
+          result?: Json;
+          score?: number;
+          status?: string;
+        };
+        Relationships: [];
+      };
+      agent_feedback: {
+        Row: {
+          id: string;
+          agent_name: string;
+          outfit_id: string;
+          approved: boolean | null;
+          feedback: string | null;
+          user_liked: boolean | null;
+          user_feedback: string | null;
+          timestamp: string;
+          user_id: string | null;
+        };
+        Insert: {
+          id?: string;
+          agent_name: string;
+          outfit_id: string;
+          approved?: boolean | null;
+          feedback?: string | null;
+          user_liked?: boolean | null;
+          user_feedback?: string | null;
+          timestamp?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          id?: string;
+          agent_name?: string;
+          outfit_id?: string;
+          approved?: boolean | null;
+          feedback?: string | null;
+          user_liked?: boolean | null;
+          user_feedback?: string | null;
+          timestamp?: string;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {};
     Functions: {};

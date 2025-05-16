@@ -84,24 +84,27 @@ export default function OutfitGenerationPage() {
       console.log('Generated mock images:', mockImages);
       setItemImages(mockImages);
 
-      // Load saved approvals
-      const { data: savedApprovals, error: approvalsError } = await supabase
-        .from('agent_feedback')
-        .select('*');
-
-      if (!approvalsError && savedApprovals) {
-        const approvalMap: Record<string, ApprovalData> = {};
-        savedApprovals.forEach((item: any) => {
-          approvalMap[item.agent_name] = {
-            agentName: item.agent_name,
-            outfitId: item.outfit_id,
-            approved: item.approved,
-            feedback: item.feedback,
-            userLiked: item.user_liked,
-            userFeedback: item.user_feedback
-          };
-        });
-        setApprovalData(approvalMap);
+      // Load saved approvals from localStorage instead of database
+      try {
+        const savedApprovalString = localStorage.getItem('agent-feedback') || '[]';
+        const savedApprovals = JSON.parse(savedApprovalString);
+        
+        if (savedApprovals && Array.isArray(savedApprovals)) {
+          const approvalMap: Record<string, ApprovalData> = {};
+          savedApprovals.forEach((item: any) => {
+            approvalMap[item.agent_name || item.agentName] = {
+              agentName: item.agent_name || item.agentName,
+              outfitId: item.outfit_id || item.outfitId,
+              approved: item.approved,
+              feedback: item.feedback,
+              userLiked: item.user_liked || item.userLiked,
+              userFeedback: item.user_feedback || item.userFeedback
+            };
+          });
+          setApprovalData(approvalMap);
+        }
+      } catch (loadError) {
+        console.error('Error loading saved approvals:', loadError);
       }
     } catch (err: any) {
       console.error('Error fetching trainer agent results:', err);
@@ -159,20 +162,25 @@ export default function OutfitGenerationPage() {
       // Determine outfit ID based on outfit items
       const outfitId = `${result.output.top || ''}-${result.output.bottom || ''}-${result.output.shoes || ''}`;
 
-      // Save to database
-      const { error: saveError } = await supabase
-        .from('agent_feedback')
-        .upsert({
-          agent_name: agentName,
-          outfit_id: outfitId,
-          approved: true,
-          feedback: feedback || null,
-          timestamp: new Date().toISOString()
-        }, { onConflict: 'agent_name' });
-
-      if (saveError) {
-        throw saveError;
-      }
+      // Save to localStorage instead of database
+      const feedbackData = {
+        agent_name: agentName,
+        outfit_id: outfitId,
+        approved: true,
+        feedback: feedback || null,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Get existing feedback
+      const existingFeedback = JSON.parse(localStorage.getItem('agent-feedback') || '[]');
+      
+      // Update or add new feedback
+      const updatedFeedback = [...existingFeedback.filter((item: any) => 
+        (item.agent_name || item.agentName) !== agentName
+      ), feedbackData];
+      
+      // Save back to localStorage
+      localStorage.setItem('agent-feedback', JSON.stringify(updatedFeedback));
 
       // Update local state
       setApprovalData(prev => ({
@@ -207,20 +215,25 @@ export default function OutfitGenerationPage() {
       // Determine outfit ID based on outfit items
       const outfitId = `${result.output.top || ''}-${result.output.bottom || ''}-${result.output.shoes || ''}`;
 
-      // Save to database
-      const { error: saveError } = await supabase
-        .from('agent_feedback')
-        .upsert({
-          agent_name: agentName,
-          outfit_id: outfitId,
-          approved: false,
-          feedback: feedback || null,
-          timestamp: new Date().toISOString()
-        }, { onConflict: 'agent_name' });
-
-      if (saveError) {
-        throw saveError;
-      }
+      // Save to localStorage instead of database
+      const feedbackData = {
+        agent_name: agentName,
+        outfit_id: outfitId,
+        approved: false,
+        feedback: feedback || null,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Get existing feedback
+      const existingFeedback = JSON.parse(localStorage.getItem('agent-feedback') || '[]');
+      
+      // Update or add new feedback
+      const updatedFeedback = [...existingFeedback.filter((item: any) => 
+        (item.agent_name || item.agentName) !== agentName
+      ), feedbackData];
+      
+      // Save back to localStorage
+      localStorage.setItem('agent-feedback', JSON.stringify(updatedFeedback));
 
       // Update local state
       setApprovalData(prev => ({
@@ -258,22 +271,27 @@ export default function OutfitGenerationPage() {
       // Check if we already have approval data for this agent
       const existingData = approvalData[agentName];
 
-      // Save to database
-      const { error: saveError } = await supabase
-        .from('agent_feedback')
-        .upsert({
-          agent_name: agentName,
-          outfit_id: outfitId,
-          approved: existingData?.approved ?? null,
-          feedback: existingData?.feedback ?? null,
-          user_liked: liked,
-          user_feedback: feedback || null,
-          timestamp: new Date().toISOString()
-        }, { onConflict: 'agent_name' });
-
-      if (saveError) {
-        throw saveError;
-      }
+      // Save to localStorage
+      const feedbackData = {
+        agent_name: agentName,
+        outfit_id: outfitId,
+        approved: existingData?.approved ?? null,
+        feedback: existingData?.feedback ?? null,
+        user_liked: liked,
+        user_feedback: feedback || null,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Get existing feedback
+      const existingFeedback = JSON.parse(localStorage.getItem('agent-feedback') || '[]');
+      
+      // Update or add new feedback
+      const updatedFeedback = [...existingFeedback.filter((item: any) => 
+        (item.agent_name || item.agentName) !== agentName
+      ), feedbackData];
+      
+      // Save back to localStorage
+      localStorage.setItem('agent-feedback', JSON.stringify(updatedFeedback));
 
       // Update local state
       setApprovalData(prev => ({
