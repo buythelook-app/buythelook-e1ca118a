@@ -163,8 +163,8 @@ export const fetchOutfitItems = async (occasion: string): Promise<DashboardItem[
       usedItemIds[occasion] = new Set();
     }
     
-    // Get current used IDs for this occasion
-    const excludeIds = Array.from(usedItemIds[occasion] || new Set());
+    // Get current used IDs for this occasion and convert to string array
+    const excludeIds = Array.from(usedItemIds[occasion] || new Set()).map(id => String(id));
     
     // Fetch different item types for the occasion
     const topItems = await fetchItemsByType("top", occasion, excludeIds);
