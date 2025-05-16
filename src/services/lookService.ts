@@ -157,7 +157,9 @@ export const fetchItemsByType = async (
       query = query.not('id', 'in', excludeIdsArray);
     }
     
-    const { data: clothesData, error } = await query.returns<ZaraClothItem[]>();
+    // Use explicit type casting as suggested
+    const { data, error } = await query;
+    const clothesData = data as ZaraClothItem[];
     
     if (error) {
       console.error("Error fetching items from Supabase:", error);
@@ -176,7 +178,7 @@ export const fetchItemsByType = async (
           : null;
     
     // Filter out items that have been used before (in global trackers)
-    let availableItems = (clothesData || []);
+    let availableItems = clothesData || [];
     if (typeTracker) {
       availableItems = availableItems.filter(item => !typeTracker.has(String(item.id)));
     }
@@ -203,8 +205,9 @@ export const fetchItemsByType = async (
         .select('*')
         .limit(10);
       
-      const { data: fallbackData } = await fallbackQuery.returns<ZaraClothItem[]>();
-      availableItems = fallbackData || [];
+      // Use explicit type casting for fallback query
+      const { data: fallbackData } = await fallbackQuery;
+      availableItems = (fallbackData as ZaraClothItem[]) || [];
     }
     
     // Shuffle the array to get random items
