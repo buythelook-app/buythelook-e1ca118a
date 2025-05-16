@@ -14,7 +14,7 @@ export const testSupabaseConnection = async () => {
     logger.debug("Supabase client info:", {
       context: "supabaseTest", 
       data: {
-        url: supabase.getUrl ? supabase.getUrl() : "URL method not available",
+        url: supabase.storageUrl ?? "URL not available",
         auth: !!supabase.auth,
         from: !!supabase.from
       }
@@ -31,21 +31,28 @@ export const testSupabaseConnection = async () => {
         data: tableError
       });
       
-      // Check if the table exists by listing all tables
-      const { data: tables, error: tablesError } = await supabase
-        .from('pg_tables')
-        .select('tablename')
-        .eq('schemaname', 'public');
-        
-      if (tablesError) {
-        logger.error("Failed to list tables:", {
+      // Instead of trying to list tables (which doesn't work with typed client),
+      // just log the error and check if other tables are accessible
+      try {
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('items')
+          .select('*', { count: 'exact', head: true });
+          
+        if (itemsError) {
+          logger.error("Failed to access items table as well:", {
+            context: "supabaseTest",
+            data: itemsError
+          });
+        } else {
+          logger.info("Successfully connected to items table:", {
+            context: "supabaseTest",
+            data: { count: itemsData?.length ?? 0 }
+          });
+        }
+      } catch (innerError) {
+        logger.error("Error checking alternative tables:", {
           context: "supabaseTest",
-          data: tablesError
-        });
-      } else {
-        logger.info("Available tables in public schema:", {
-          context: "supabaseTest",
-          data: tables
+          data: innerError
         });
       }
       

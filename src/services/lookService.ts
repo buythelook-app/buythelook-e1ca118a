@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client"; // שימוש בלקוח הסופהבייס המרכזי
+import { supabase } from "@/integrations/supabase/client"; // Use centralized Supabase client
 import { DashboardItem } from "@/types/lookTypes";
 import logger from "@/lib/logger";
 import { generateOutfit as generateOutfitFromAPI, getOutfitColors } from "./outfitGenerationService";
@@ -98,9 +98,13 @@ const verifyZaraClothTableExists = async (): Promise<boolean> => {
   try {
     // Try to get the count to verify table exists and log connection details
     logger.info('Attempting to connect to Supabase and verify zara_cloth table', { context: "lookService" });
-    logger.debug('Supabase URL being used:', { 
+    logger.debug('Supabase connection info:', { 
       context: "lookService", 
-      data: supabase.getUrl ? supabase.getUrl() : 'URL method not available' 
+      data: {
+        url: supabase.storageUrl ?? 'URL not available',
+        auth: !!supabase.auth,
+        from: !!supabase.from
+      }
     });
     
     const { error, count } = await supabase
@@ -134,7 +138,7 @@ export const fetchItemsByType = async (
     logger.debug('Using Supabase client with URL:', { 
       context: "lookService", 
       data: {
-        url: supabase.getUrl ? supabase.getUrl() : 'URL method not available',
+        url: supabase.storageUrl ?? 'URL not available',
         clientType: typeof supabase
       }
     });

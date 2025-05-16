@@ -27,6 +27,7 @@ import RecommendationTest from "./pages/RecommendationTest";
 import AgentResultsPage from "./pages/AgentResultsPage";
 import OutfitGenerationPage from "./pages/OutfitGenerationPage";
 import { testSupabaseConnection } from "./lib/supabaseConnectionTest";
+import { supabaseHealth } from "./lib/supabaseHealthCheck";
 import { useEffect } from "react";
 import logger from "./lib/logger";
 
@@ -45,7 +46,32 @@ function App() {
     // Set log level for verbose debugging
     logger.setLogLevel('debug');
     
-    // Test the Supabase connection
+    // Log Supabase client information
+    supabaseHealth.logClientInfo();
+    
+    // Check access to critical tables
+    const checkCriticalTables = async () => {
+      logger.info("Checking access to critical Supabase tables", { context: "App" });
+      
+      // Check zara_cloth table
+      const zaraClothAccess = await supabaseHealth.checkTableAccess('zara_cloth');
+      logger.info(`zara_cloth table access: ${zaraClothAccess ? 'OK' : 'FAILED'}`, { context: "App" });
+      
+      // Check items table as fallback
+      const itemsAccess = await supabaseHealth.checkTableAccess('items');
+      logger.info(`items table access: ${itemsAccess ? 'OK' : 'FAILED'}`, { context: "App" });
+      
+      // If neither table is accessible, check data retrieval from zara_cloth with more details
+      if (!zaraClothAccess && !itemsAccess) {
+        const zaraClothData = await supabaseHealth.checkDataRetrieval('zara_cloth', 5);
+        logger.debug("Detailed zara_cloth data check:", { 
+          context: "App", 
+          data: zaraClothData 
+        });
+      }
+    };
+    
+    // Run comprehensive test
     testSupabaseConnection()
       .then(result => {
         if (result.success) {
@@ -58,6 +84,8 @@ function App() {
             context: "App",
             data: result
           });
+          // Run additional checks if main test fails
+          checkCriticalTables();
         }
       })
       .catch(error => {
@@ -65,6 +93,8 @@ function App() {
           context: "App",
           data: error
         });
+        // Run additional checks if main test throws an exception
+        checkCriticalTables();
       });
   }, []);
 

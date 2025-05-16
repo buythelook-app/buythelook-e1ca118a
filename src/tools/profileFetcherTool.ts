@@ -1,4 +1,3 @@
-
 import { supabase } from '../integrations/supabase/client'; // שימוש בלקוח הסופהבייס המרכזי
 import logger from "../lib/logger";
 
@@ -24,7 +23,7 @@ export const ProfileFetcherTool = {
       logger.debug('Using Supabase client with URL:', { 
         context: "ProfileFetcherTool", 
         data: {
-          url: supabase.getUrl ? supabase.getUrl() : 'URL method not available'
+          url: supabase.storageUrl ?? 'URL not available'
         }
       });
       
