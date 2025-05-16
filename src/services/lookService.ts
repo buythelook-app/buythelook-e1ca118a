@@ -335,12 +335,12 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh = false): Promise<
       
       // If we're forcing a refresh or we don't have cached data, try to generate a new outfit
       if (forceRefresh || !localStorage.getItem('last-outfit-data')) {
-        // Call the outfit generation API with proper request structure
-        const response = await generateOutfitFromAPI(
-          bodyShape as any, 
-          mood, 
-          style as any
-        );
+        // Call the outfit generation API with a single request object
+        const response = await generateOutfitFromAPI({
+          bodyStructure: bodyShape as any,
+          mood,
+          style: style as any
+        });
         
         // If successful, store the result
         if (response.success && response.data) {

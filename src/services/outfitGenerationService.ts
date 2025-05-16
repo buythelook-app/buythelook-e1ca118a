@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabaseClient";
 import logger from "@/lib/logger";
 import { OutfitResponse } from "@/types/outfitTypes";
@@ -16,25 +15,21 @@ interface OutfitGenerationRequest {
 
 /**
  * Generate outfit suggestions using the Fashion Outfit Generator API
- * @param bodyStructure The user's body structure type
- * @param mood The desired mood for the outfit
- * @param style The preferred clothing style
+ * @param request The outfit generation request containing bodyStructure, mood, and style
  * @returns A promise containing the outfit suggestion response
  */
 export const generateOutfit = async (
-  bodyStructure: BodyStructure,
-  mood: string,
-  style: StylePreference
+  request: OutfitGenerationRequest
 ): Promise<OutfitResponse> => {
   try {
     logger.info("Generating outfit recommendations", {
       context: "outfitGenerationService",
-      data: { bodyStructure, mood, style }
+      data: request
     });
 
     // Call the Supabase Edge Function to generate outfit
     const response = await supabase.functions.invoke('generate-outfit', {
-      body: { bodyStructure, mood, style }
+      body: request
     });
 
     if (response.error) {

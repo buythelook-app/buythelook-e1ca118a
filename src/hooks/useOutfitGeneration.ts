@@ -5,7 +5,7 @@ import { toast as sonnerToast } from "sonner";
 import { fetchFirstOutfitSuggestion, clearOutfitCache, matchOutfitToColors } from "@/services/lookService";
 import { DashboardItem } from "@/types/lookTypes";
 import { supabase } from "@/lib/supabaseClient";
-import { generateOutfit, getStyleRecommendations } from "@/services/outfitGenerationService";
+import { generateOutfit as generateOutfitAPI, getStyleRecommendations } from "@/services/outfitGenerationService";
 import logger from "@/lib/logger";
 
 interface OutfitColors {
@@ -129,12 +129,12 @@ export function useOutfitGeneration() {
         data: { bodyShape, style, mood }
       });
       
-      // Call the outfit generation API with the request object instead of separate arguments
-      const response = await generateOutfit(
-        bodyShape as any, 
-        mood, 
-        style as any
-      );
+      // Call the outfit generation API with a single request object
+      const response = await generateOutfitAPI({
+        bodyStructure: bodyShape as any,
+        mood,
+        style: style as any
+      });
       
       if (!response.success) {
         logger.warn("API outfit generation failed", { 
