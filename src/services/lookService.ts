@@ -1,14 +1,26 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 
 // Cache for storing outfit suggestions to avoid unnecessary API calls
 const outfitCache: Record<string, any> = {};
 
-interface OutfitColors {
-  top: string;
-  bottom: string;
-  shoes: string;
-}
+// Global trackers for item repetition prevention
+const globalItemTrackers = {
+  usedItemIds: new Set<string>(),
+  usedTopIds: new Set<string>(),
+  usedBottomIds: new Set<string>(),
+  usedShoeIds: new Set<string>()
+};
+
+// Function to clear the global item trackers
+export const clearGlobalItemTrackers = () => {
+  globalItemTrackers.usedItemIds.clear();
+  globalItemTrackers.usedTopIds.clear();
+  globalItemTrackers.usedBottomIds.clear();
+  globalItemTrackers.usedShoeIds.clear();
+  console.log("Global item trackers cleared");
+};
 
 // Function to clear the outfit cache when user wants new combinations
 export const clearOutfitCache = (
@@ -72,14 +84,25 @@ export const fetchItemsByType = async (
   try {
     console.log(`Fetching ${type} items for ${occasion} (excluding ${excludeIds.length} items)`);
     
+    // Use product_family or category_id for filtering
     let query = supabase
       .from('zara_cloth')
       .select('*')
       .or(`product_family.eq.${type},category_id.eq.${type}`);
     
+    // Exclude already used items to prevent duplication
     if (excludeIds.length > 0) {
       query = query.not('product_id', 'in', `(${excludeIds.join(',')})`);
     }
+    
+    // Track items in global trackers based on type
+    const typeTracker = type === 'top' 
+      ? globalItemTrackers.usedTopIds
+      : type === 'bottom' 
+        ? globalItemTrackers.usedBottomIds 
+        : type === 'shoes'
+          ? globalItemTrackers.usedShoeIds
+          : null;
     
     const { data, error } = await query;
     
@@ -88,20 +111,33 @@ export const fetchItemsByType = async (
       throw error;
     }
     
-    // Filter items by occasion suitability (simplified logic for demo)
-    // In real app, we would have more complex filtering based on occasion
-    const occasionMap: Record<string, string[]> = {
-      "Work": ["formal", "business", "elegant"],
-      "Casual": ["casual", "relaxed", "comfortable"],
-      "Evening": ["elegant", "formal", "sophisticated"],
-      "Weekend": ["casual", "comfortable", "relaxed"]
-    };
+    // Filter out items that have been used before (in global trackers)
+    let availableItems = data || [];
+    if (typeTracker) {
+      availableItems = availableItems.filter(item => !typeTracker.has(item.product_id));
+    }
+    
+    // If we've used up most items, clear the tracker to allow reuse
+    if (availableItems.length < 3 && typeTracker && typeTracker.size > 10) {
+      console.log(`Clearing ${type} tracker as we're running out of unique items`);
+      typeTracker.clear();
+      // Re-filter without the tracker constraint
+      availableItems = data || [];
+    }
     
     // Shuffle the array to get random items
-    const shuffledData = data.sort(() => Math.random() - 0.5);
+    const shuffledData = availableItems.sort(() => Math.random() - 0.5);
     
     // Map to the required format
     const mappedItems = shuffledData.map(mapToOutfitItem);
+    
+    // Add used items to the appropriate tracker
+    if (typeTracker && mappedItems.length > 0) {
+      mappedItems.forEach(item => {
+        typeTracker.add(item.id);
+        globalItemTrackers.usedItemIds.add(item.id);
+      });
+    }
     
     // Return items, or empty array if no items found
     return mappedItems.length > 0 ? mappedItems : [];
@@ -127,10 +163,13 @@ export const fetchOutfitItems = async (occasion: string): Promise<DashboardItem[
       usedItemIds[occasion] = new Set();
     }
     
+    // Get current used IDs for this occasion
+    const excludeIds = Array.from(usedItemIds[occasion] || new Set());
+    
     // Fetch different item types for the occasion
-    const topItems = await fetchItemsByType("top", occasion, Array.from(usedItemIds[occasion]));
-    const bottomItems = await fetchItemsByType("bottom", occasion, Array.from(usedItemIds[occasion]));
-    const shoesItems = await fetchItemsByType("shoes", occasion, Array.from(usedItemIds[occasion]));
+    const topItems = await fetchItemsByType("top", occasion, excludeIds);
+    const bottomItems = await fetchItemsByType("bottom", occasion, excludeIds);
+    const shoesItems = await fetchItemsByType("shoes", occasion, excludeIds);
     
     // Select one random item from each type
     const randomTop = topItems.length > 0 ? topItems[Math.floor(Math.random() * topItems.length)] : null;
@@ -186,4 +225,5 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh = false): Promise<
 // Export other functions as needed
 export {
   outfitCache,
+  globalItemTrackers
 };
