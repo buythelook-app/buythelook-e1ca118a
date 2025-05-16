@@ -1,4 +1,5 @@
-import { supabase } from '../lib/supabaseClient';
+
+import { supabase } from '../integrations/supabase/client'; // שימוש בלקוח הסופהבייס המרכזי
 import logger from "../lib/logger";
 
 /**

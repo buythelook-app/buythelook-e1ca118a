@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client"; // שימוש בלקוח הסופהבייס המרכזי
 import { DashboardItem } from "@/types/lookTypes";
 import logger from "@/lib/logger";
 import { generateOutfit as generateOutfitFromAPI, getOutfitColors } from "./outfitGenerationService";
@@ -97,7 +97,7 @@ const mapToOutfitItem = (item: ZaraClothItem): DashboardItem => {
 const verifyZaraClothTableExists = async (): Promise<boolean> => {
   try {
     // Try to get the count to verify table exists
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from('zara_cloth')
       .select('id', { count: 'exact', head: true });
     
@@ -106,6 +106,7 @@ const verifyZaraClothTableExists = async (): Promise<boolean> => {
       return false;
     }
     
+    logger.debug('zara_cloth table exists with count:', { context: "lookService", data: count });
     return true;
   } catch (error) {
     logger.error('Exception checking zara_cloth table:', { context: "lookService", data: error });
@@ -160,6 +161,8 @@ export const fetchItemsByType = async (
       query = query.not('id', 'in', excludeIdsArray);
     }
     
+    logger.debug('Executing query to zara_cloth table:', { context: "lookService", data: { type, occasion } });
+    
     // Explicitly cast the data to ZaraClothItem[] type
     const { data, error } = await query;
     const clothesData = data as ZaraClothItem[];
@@ -170,7 +173,7 @@ export const fetchItemsByType = async (
     }
     
     logger.debug(`Retrieved ${clothesData?.length || 0} items for ${type} from database`, 
-               { context: "lookService" });
+               { context: "lookService", data: clothesData });
     
     // Track items in global trackers based on type
     const typeTracker = type === 'top' 
@@ -287,7 +290,7 @@ export const fetchOutfitItems = async (occasion: string): Promise<DashboardItem[
     // Filter out null values and return
     const items = [randomTop, randomBottom, randomShoes].filter(Boolean) as DashboardItem[];
     
-    // Fix: Modify logger.debug call to pass items inside the data object instead of as a separate parameter
+    // Fixed: Modify logger.debug call to pass items inside the data object instead of as a separate parameter
     logger.debug(`Generated outfit for ${occasion}:`, { 
       context: "lookService", 
       data: items 
