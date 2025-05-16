@@ -1,6 +1,7 @@
-
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
+import logger from "@/lib/logger";
+import { generateOutfit, getOutfitColors } from "./outfitGenerationService";
 
 // Cache for storing outfit suggestions to avoid unnecessary API calls
 const outfitCache: Record<string, any> = {};
@@ -19,7 +20,7 @@ export const clearGlobalItemTrackers = () => {
   globalItemTrackers.usedTopIds.clear();
   globalItemTrackers.usedBottomIds.clear();
   globalItemTrackers.usedShoeIds.clear();
-  console.log("Global item trackers cleared");
+  logger.debug("Global item trackers cleared");
 };
 
 // Function to clear the outfit cache when user wants new combinations
@@ -31,7 +32,7 @@ export const clearOutfitCache = (
   const key = `${bodyShape}-${style}-${mood}`;
   if (outfitCache[key]) {
     delete outfitCache[key];
-    console.log("Cache cleared for", key);
+    logger.debug("Cache cleared for", { context: "lookService", data: key });
   }
 };
 
@@ -101,13 +102,13 @@ const verifyZaraClothTableExists = async (): Promise<boolean> => {
       .select('id', { count: 'exact', head: true });
     
     if (error) {
-      console.error('Error checking zara_cloth table:', error);
+      logger.error('Error checking zara_cloth table:', { context: "lookService", data: error });
       return false;
     }
     
     return true;
   } catch (error) {
-    console.error('Exception checking zara_cloth table:', error);
+    logger.error('Exception checking zara_cloth table:', { context: "lookService", data: error });
     return false;
   }
 };
@@ -119,12 +120,14 @@ export const fetchItemsByType = async (
   excludeIds: string[] = []
 ): Promise<DashboardItem[]> => {
   try {
-    console.log(`Fetching ${type} items for ${occasion} (excluding ${excludeIds.length} items)`);
+    logger.debug(`Fetching ${type} items for ${occasion} (excluding ${excludeIds.length} items)`, 
+                { context: "lookService" });
     
     // Check if the zara_cloth table exists
     const tableExists = await verifyZaraClothTableExists();
     if (!tableExists) {
-      console.warn('zara_cloth table does not exist, using fallback data');
+      logger.warn('zara_cloth table does not exist, using fallback data', 
+                 { context: "lookService" });
       // Return empty array, which will trigger fallback data in the usePersonalizedLooks hook
       return [];
     }
@@ -162,11 +165,12 @@ export const fetchItemsByType = async (
     const clothesData = data as ZaraClothItem[];
     
     if (error) {
-      console.error("Error fetching items from Supabase:", error);
+      logger.error("Error fetching items from Supabase:", { context: "lookService", data: error });
       throw error;
     }
     
-    console.log(`Retrieved ${clothesData?.length || 0} items for ${type} from database`);
+    logger.debug(`Retrieved ${clothesData?.length || 0} items for ${type} from database`, 
+               { context: "lookService" });
     
     // Track items in global trackers based on type
     const typeTracker = type === 'top' 
@@ -185,7 +189,8 @@ export const fetchItemsByType = async (
     
     // If we found no items or very few, we should get more by clearing the trackers
     if (availableItems.length < 3 && typeTracker && typeTracker.size > 0) {
-      console.log(`Not enough ${type} items, clearing tracker to get more options`);
+      logger.debug(`Not enough ${type} items, clearing tracker to get more options`, 
+                  { context: "lookService" });
       typeTracker.clear();
       
       // Requery without tracker constraints, but still respect excludeIds
@@ -198,7 +203,8 @@ export const fetchItemsByType = async (
     
     // If still no data, use a more lenient query
     if (availableItems.length === 0) {
-      console.log(`No ${type} items found with specific filters, using broader search`);
+      logger.debug(`No ${type} items found with specific filters, using broader search`, 
+                  { context: "lookService" });
       
       const fallbackQuery = supabase
         .from('zara_cloth')
@@ -209,7 +215,8 @@ export const fetchItemsByType = async (
       const { data: fallbackData } = await fallbackQuery;
       availableItems = (fallbackData as ZaraClothItem[]) || [];
       
-      console.log(`Fallback query returned ${availableItems.length} items`);
+      logger.debug(`Fallback query returned ${availableItems.length} items`, 
+                  { context: "lookService" });
     }
     
     // Shuffle the array to get random items
@@ -226,12 +233,13 @@ export const fetchItemsByType = async (
       });
     }
     
-    console.log(`Returning ${mappedItems.length} ${type} items for ${occasion}`);
+    logger.debug(`Returning ${mappedItems.length} ${type} items for ${occasion}`, 
+               { context: "lookService" });
     
     // Return items, or empty array if no items found
     return mappedItems;
   } catch (error) {
-    console.error(`Error fetching ${type} items:`, error);
+    logger.error(`Error fetching ${type} items:`, { context: "lookService", data: error });
     return [];
   }
 };
@@ -255,14 +263,16 @@ export const fetchOutfitItems = async (occasion: string): Promise<DashboardItem[
     // Get current used IDs for this occasion and convert to string array
     const excludeIds = Array.from(usedItemIds[occasion] || new Set<string>()).map(id => String(id));
     
-    console.log(`Fetching outfit items for ${occasion}, excluding ${excludeIds.length} items`);
+    logger.debug(`Fetching outfit items for ${occasion}, excluding ${excludeIds.length} items`, 
+                { context: "lookService" });
     
     // Fetch different item types for the occasion
     const topItems = await fetchItemsByType("top", occasion, excludeIds);
     const bottomItems = await fetchItemsByType("bottom", occasion, excludeIds);
     const shoesItems = await fetchItemsByType("shoes", occasion, excludeIds);
     
-    console.log(`Fetched: ${topItems.length} tops, ${bottomItems.length} bottoms, ${shoesItems.length} shoes`);
+    logger.debug(`Fetched: ${topItems.length} tops, ${bottomItems.length} bottoms, ${shoesItems.length} shoes`, 
+                { context: "lookService" });
     
     // Select one random item from each type
     const randomTop = topItems.length > 0 ? topItems[Math.floor(Math.random() * topItems.length)] : null;
@@ -277,10 +287,10 @@ export const fetchOutfitItems = async (occasion: string): Promise<DashboardItem[
     // Filter out null values and return
     const items = [randomTop, randomBottom, randomShoes].filter(Boolean) as DashboardItem[];
     
-    console.log(`Generated outfit for ${occasion}:`, items);
+    logger.debug(`Generated outfit for ${occasion}:`, items, { context: "lookService" });
     return items;
   } catch (error) {
-    console.error(`Error generating outfit for ${occasion}:`, error);
+    logger.error(`Error generating outfit for ${occasion}:`, { context: "lookService", data: error });
     return [];
   }
 };
@@ -294,7 +304,8 @@ export const fetchDashboardItems = async (): Promise<Record<string, DashboardIte
     // Check if the zara_cloth table exists before making any requests
     const tableExists = await verifyZaraClothTableExists();
     if (!tableExists) {
-      console.warn('zara_cloth table does not exist, using fallback data');
+      logger.warn('zara_cloth table does not exist, using fallback data', 
+                 { context: "lookService" });
       return {};
     }
     
@@ -306,7 +317,7 @@ export const fetchDashboardItems = async (): Promise<Record<string, DashboardIte
     
     return result;
   } catch (error) {
-    console.error("Error fetching dashboard items:", error);
+    logger.error("Error fetching dashboard items:", { context: "lookService", data: error });
     throw error;
   }
 };
@@ -314,11 +325,76 @@ export const fetchDashboardItems = async (): Promise<Record<string, DashboardIte
 // Function to fetch the first outfit suggestion (for main display)
 export const fetchFirstOutfitSuggestion = async (forceRefresh = false): Promise<DashboardItem[]> => {
   try {
+    // Try to get user style data
+    const styleData = localStorage.getItem('styleAnalysis');
+    if (styleData) {
+      const parsedData = JSON.parse(styleData);
+      const bodyShape = parsedData?.analysis?.bodyShape || 'H';
+      const style = parsedData?.analysis?.styleProfile || 'classic';
+      const mood = localStorage.getItem('current-mood') || 'energized';
+      
+      // If we're forcing a refresh or we don't have cached data, try to generate a new outfit
+      if (forceRefresh || !localStorage.getItem('last-outfit-data')) {
+        // Call the outfit generation API
+        const response = await generateOutfit(
+          bodyShape as any, 
+          mood, 
+          style as any
+        );
+        
+        // If successful, store the result
+        if (response.success && response.data) {
+          logger.info("Successfully generated new outfit from API", 
+                    { context: "lookService" });
+        } else {
+          logger.warn("Failed to generate outfit from API, using fallback method", 
+                     { context: "lookService" });
+        }
+      }
+    }
+    
+    // Regardless of API success, continue with the standard fetch method
+    // as a fallback or to match items with the AI suggestions
     const data = await fetchOutfitItems("Casual");
     return data;
   } catch (error) {
-    console.error("Error fetching first outfit suggestion:", error);
+    logger.error("Error fetching first outfit suggestion:", 
+               { context: "lookService", data: error });
     return [];
+  }
+};
+
+// Function to match clothing items to the generated outfit colors
+export const matchOutfitToColors = async (): Promise<Record<string, DashboardItem[]>> => {
+  try {
+    // Get color recommendations from the cached outfit
+    const outfitColors = getOutfitColors();
+    if (!outfitColors || Object.keys(outfitColors).length === 0) {
+      logger.warn("No outfit colors found for matching", { context: "lookService" });
+      return {};
+    }
+    
+    const result: Record<string, DashboardItem[]> = {};
+    
+    // For each item type in the outfit, find matching clothing items
+    for (const [type, color] of Object.entries(outfitColors)) {
+      if (!color) continue;
+      
+      // Only process main outfit components
+      if (!['top', 'bottom', 'shoes', 'coat'].includes(type)) continue;
+      
+      // Find items of this type
+      const items = await fetchItemsByType(type, "AI Generated", []);
+      
+      // Add to the result
+      result[type] = items;
+    }
+    
+    return result;
+  } catch (error) {
+    logger.error("Error matching outfit to colors", 
+               { context: "lookService", data: error });
+    return {};
   }
 };
 
