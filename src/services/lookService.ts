@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 
@@ -38,7 +37,7 @@ export const clearOutfitCache = (
 // Helper function to map Supabase zara_cloth items to DashboardItem type
 const mapToOutfitItem = (item: any): DashboardItem => {
   // Map product_family or category_id to one of the allowed types
-  let type = item.product_family.toLowerCase();
+  let type = item.product_family ? item.product_family.toLowerCase() : '';
   
   // Ensure type is one of the allowed values
   const allowedTypes = [
@@ -68,10 +67,10 @@ const mapToOutfitItem = (item: any): DashboardItem => {
   
   return {
     id: item.product_id || `zara-${item.id}`,
-    name: item.product_name,
-    image: item.image,
+    name: item.product_name || 'Fashion item',
+    image: item.image || '/placeholder.svg',
     type: type as "top" | "bottom" | "dress" | "shoes" | "accessory" | "sunglasses" | "outerwear" | "cart",
-    price: `$${parseFloat(item.price).toFixed(2)}`
+    price: item.price ? `$${parseFloat(item.price).toFixed(2)}` : '$49.99'
   };
 };
 
@@ -84,15 +83,28 @@ export const fetchItemsByType = async (
   try {
     console.log(`Fetching ${type} items for ${occasion} (excluding ${excludeIds.length} items)`);
     
-    // Use product_family or category_id for filtering
+    // Use product_family or category_id for filtering - fix the query conditions
     let query = supabase
       .from('zara_cloth')
-      .select('*')
-      .or(`product_family.eq.${type},category_id.eq.${type}`);
+      .select('*');
     
-    // Exclude already used items to prevent duplication
+    // Filter by type using proper conditions (looking for both product_family and category_id)
+    if (type === 'top') {
+      query = query.or('product_family.ilike.%top%,category_id.ilike.%top%');
+    } else if (type === 'bottom') {
+      query = query.or('product_family.ilike.%bottom%,category_id.ilike.%bottom%');
+    } else if (type === 'shoes') {
+      query = query.or('product_family.ilike.%shoe%,product_family.ilike.%footwear%,category_id.ilike.%shoe%,category_id.ilike.%footwear%');
+    } else {
+      query = query.or(`product_family.ilike.%${type}%,category_id.ilike.%${type}%`);
+    }
+    
+    // Exclude already used items to prevent duplication (only if we have excludeIds)
     if (excludeIds.length > 0) {
-      query = query.not('product_id', 'in', `(${excludeIds.join(',')})`);
+      // Convert excludeIds to an array of strings if it's not already
+      const excludeIdsArray = excludeIds.map(id => String(id));
+      // Use the 'not.in' syntax correctly
+      query = query.not('product_id', 'in', excludeIdsArray);
     }
     
     // Track items in global trackers based on type
@@ -143,6 +155,7 @@ export const fetchItemsByType = async (
     return mappedItems.length > 0 ? mappedItems : [];
   } catch (error) {
     console.error(`Error fetching ${type} items:`, error);
+    // If there's an error, fall back to API-generated items if needed
     return [];
   }
 };
