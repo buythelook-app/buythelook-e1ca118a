@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import logger from "@/lib/logger";
-import { generateOutfit, getOutfitColors } from "./outfitGenerationService";
+import { generateOutfit as generateOutfitFromAPI, getOutfitColors } from "./outfitGenerationService";
 
 // Cache for storing outfit suggestions to avoid unnecessary API calls
 const outfitCache: Record<string, any> = {};
@@ -335,8 +335,8 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh = false): Promise<
       
       // If we're forcing a refresh or we don't have cached data, try to generate a new outfit
       if (forceRefresh || !localStorage.getItem('last-outfit-data')) {
-        // Call the outfit generation API
-        const response = await generateOutfit(
+        // Call the outfit generation API with proper request structure
+        const response = await generateOutfitFromAPI(
           bodyShape as any, 
           mood, 
           style as any

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
@@ -128,7 +129,7 @@ export function useOutfitGeneration() {
         data: { bodyShape, style, mood }
       });
       
-      // Call the outfit generation API
+      // Call the outfit generation API with the request object instead of separate arguments
       const response = await generateOutfit(
         bodyShape as any, 
         mood, 
