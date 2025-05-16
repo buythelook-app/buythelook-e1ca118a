@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 
@@ -129,7 +128,7 @@ export const fetchItemsByType = async (
       query = query.not('id', 'in', excludeIdsArray);
     }
     
-    const { data: clothesData, error } = await query;
+    const { data: clothesData, error } = await query.returns<ZaraClothItem[]>();
     
     if (error) {
       console.error("Error fetching items from Supabase:", error);
@@ -147,11 +146,8 @@ export const fetchItemsByType = async (
           ? globalItemTrackers.usedShoeIds
           : null;
     
-    // Cast clothesData to ZaraClothItem[] for proper typing
-    const typedClothesData = (clothesData || []) as ZaraClothItem[];
-    
     // Filter out items that have been used before (in global trackers)
-    let availableItems = typedClothesData;
+    let availableItems = (clothesData || []) as ZaraClothItem[];
     if (typeTracker) {
       availableItems = availableItems.filter(item => !typeTracker.has(String(item.id)));
     }
@@ -163,9 +159,9 @@ export const fetchItemsByType = async (
       
       // Requery without tracker constraints, but still respect excludeIds
       if (excludeIdsArray.length > 0) {
-        availableItems = typedClothesData.filter(item => !excludeIdsArray.includes(String(item.id)));
+        availableItems = (clothesData || []).filter(item => !excludeIdsArray.includes(String(item.id)));
       } else {
-        availableItems = typedClothesData;
+        availableItems = clothesData || [];
       }
     }
     
@@ -178,8 +174,8 @@ export const fetchItemsByType = async (
         .select('*')
         .limit(10);
       
-      const { data: fallbackData } = await fallbackQuery;
-      availableItems = (fallbackData || []) as ZaraClothItem[];
+      const { data: fallbackData } = await fallbackQuery.returns<ZaraClothItem[]>();
+      availableItems = fallbackData || [];
     }
     
     // Shuffle the array to get random items
