@@ -157,7 +157,7 @@ export const fetchItemsByType = async (
       query = query.not('id', 'in', excludeIdsArray);
     }
     
-    // Use explicit type casting as suggested
+    // Explicitly cast the data to ZaraClothItem[] type
     const { data, error } = await query;
     const clothesData = data as ZaraClothItem[];
     
@@ -205,9 +205,11 @@ export const fetchItemsByType = async (
         .select('*')
         .limit(10);
       
-      // Use explicit type casting for fallback query
+      // Explicitly cast the fallback data to ZaraClothItem[] type
       const { data: fallbackData } = await fallbackQuery;
       availableItems = (fallbackData as ZaraClothItem[]) || [];
+      
+      console.log(`Fallback query returned ${availableItems.length} items`);
     }
     
     // Shuffle the array to get random items
