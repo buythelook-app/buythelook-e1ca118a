@@ -101,7 +101,7 @@ const verifyZaraClothTableExists = async (): Promise<boolean> => {
     logger.debug('Supabase connection info:', { 
       context: "lookService", 
       data: {
-        url: supabase.storageUrl ?? 'URL not available',
+        url: "https://mwsblnposuyhrgzrtoyo.supabase.co", // Use hardcoded URL
         auth: !!supabase.auth,
         from: !!supabase.from
       }

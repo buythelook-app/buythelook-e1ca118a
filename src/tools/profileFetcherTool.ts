@@ -1,4 +1,5 @@
-import { supabase } from '../integrations/supabase/client'; // שימוש בלקוח הסופהבייס המרכזי
+
+import { supabase } from '../integrations/supabase/client'; // Use the centralized Supabase client
 import logger from "../lib/logger";
 
 /**
@@ -19,11 +20,11 @@ export const ProfileFetcherTool = {
       
       const currentMood = localStorage.getItem('current-mood');
       
-      // Log Supabase client information for debugging
+      // Log Supabase client information for debugging - use hardcoded URL
       logger.debug('Using Supabase client with URL:', { 
         context: "ProfileFetcherTool", 
         data: {
-          url: supabase.storageUrl ?? 'URL not available'
+          url: 'https://mwsblnposuyhrgzrtoyo.supabase.co'
         }
       });
       

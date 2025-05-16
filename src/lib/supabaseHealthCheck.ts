@@ -14,8 +14,9 @@ export const supabaseHealth = {
     try {
       logger.debug(`Checking access to ${tableName} table`, { context: "supabaseHealth" });
       
+      // We need to use type assertion since we're using a dynamic table name
       const { error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select('*', { count: 'exact', head: true });
         
       if (error) {
@@ -43,8 +44,8 @@ export const supabaseHealth = {
     logger.debug("Supabase client information:", {
       context: "supabaseHealth",
       data: {
-        // Use optional chaining to safely access potentially undefined properties
-        url: supabase.storageUrl ?? "URL not available",
+        // Use hardcoded URL instead of protected property
+        url: "https://mwsblnposuyhrgzrtoyo.supabase.co",
         authEnabled: !!supabase.auth,
         fromEnabled: !!supabase.from
       }
@@ -56,8 +57,9 @@ export const supabaseHealth = {
    */
   checkDataRetrieval: async (tableName: string, limit = 1): Promise<{ success: boolean, count?: number, error?: any }> => {
     try {
+      // Use type assertion for the dynamic table name
       const { data, error, count } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select('*', { count: 'exact' })
         .limit(limit);
         

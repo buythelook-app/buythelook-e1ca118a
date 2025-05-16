@@ -10,11 +10,11 @@ export const testSupabaseConnection = async () => {
   logger.info("Testing Supabase connection...", { context: "supabaseTest" });
   
   try {
-    // Log the Supabase client information
+    // Log the Supabase client information without accessing protected properties
     logger.debug("Supabase client info:", {
       context: "supabaseTest", 
       data: {
-        url: supabase.storageUrl ?? "URL not available",
+        url: "https://mwsblnposuyhrgzrtoyo.supabase.co",
         auth: !!supabase.auth,
         from: !!supabase.from
       }
