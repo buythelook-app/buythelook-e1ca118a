@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 
@@ -34,8 +35,18 @@ export const clearOutfitCache = (
   }
 };
 
+// Define a type for the Supabase zara_cloth items
+interface ZaraClothItem {
+  id: string;
+  product_name: string;
+  price: number | string;
+  image?: string;
+  colour?: string;
+  description?: string;
+}
+
 // Helper function to map Supabase zara_cloth items to DashboardItem type
-const mapToOutfitItem = (item: any): DashboardItem => {
+const mapToOutfitItem = (item: ZaraClothItem): DashboardItem => {
   // Map product_family or category_id to one of the allowed types
   let type = item.product_name ? item.product_name.toLowerCase() : '';
   
@@ -44,7 +55,7 @@ const mapToOutfitItem = (item: any): DashboardItem => {
     "top", "bottom", "dress", "shoes", "accessory", "sunglasses", "outerwear", "cart"
   ];
   
-  if (!allowedTypes.includes(type)) {
+  if (!allowedTypes.includes(type as any)) {
     // Map based on common clothing terms in the product name
     if (type.includes('shirt') || type.includes('blouse') || type.includes('tee') || 
         type.includes('top') || type.includes('sweater')) {
@@ -77,7 +88,7 @@ const mapToOutfitItem = (item: any): DashboardItem => {
     name: item.product_name || 'Fashion item',
     image: imageUrl,
     type: type as "top" | "bottom" | "dress" | "shoes" | "accessory" | "sunglasses" | "outerwear" | "cart",
-    price: item.price ? `$${parseFloat(item.price).toFixed(2)}` : '$49.99'
+    price: item.price ? `$${parseFloat(String(item.price)).toFixed(2)}` : '$49.99'
   };
 };
 
@@ -136,10 +147,13 @@ export const fetchItemsByType = async (
           ? globalItemTrackers.usedShoeIds
           : null;
     
+    // Cast clothesData to ZaraClothItem[] for proper typing
+    const typedClothesData = (clothesData || []) as ZaraClothItem[];
+    
     // Filter out items that have been used before (in global trackers)
-    let availableItems = clothesData || [];
+    let availableItems = typedClothesData;
     if (typeTracker) {
-      availableItems = availableItems.filter(item => !typeTracker.has(item.id));
+      availableItems = availableItems.filter(item => !typeTracker.has(String(item.id)));
     }
     
     // If we found no items or very few, we should get more by clearing the trackers
@@ -149,9 +163,9 @@ export const fetchItemsByType = async (
       
       // Requery without tracker constraints, but still respect excludeIds
       if (excludeIdsArray.length > 0) {
-        availableItems = (clothesData || []).filter(item => !excludeIdsArray.includes(item.id));
+        availableItems = typedClothesData.filter(item => !excludeIdsArray.includes(String(item.id)));
       } else {
-        availableItems = clothesData || [];
+        availableItems = typedClothesData;
       }
     }
     
@@ -165,7 +179,7 @@ export const fetchItemsByType = async (
         .limit(10);
       
       const { data: fallbackData } = await fallbackQuery;
-      availableItems = fallbackData || [];
+      availableItems = (fallbackData || []) as ZaraClothItem[];
     }
     
     // Shuffle the array to get random items
@@ -177,8 +191,8 @@ export const fetchItemsByType = async (
     // Add used items to the appropriate tracker
     if (typeTracker && mappedItems.length > 0) {
       mappedItems.forEach(item => {
-        typeTracker.add(item.id);
-        globalItemTrackers.usedItemIds.add(item.id);
+        typeTracker.add(String(item.id));
+        globalItemTrackers.usedItemIds.add(String(item.id));
       });
     }
     
