@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +30,12 @@ type AllowedType = typeof ALLOWED_TYPES[number];
 const isValidItemType = (type: string): type is AllowedType => {
   return ALLOWED_TYPES.includes(type as AllowedType);
 };
+
+// Track used items to prevent duplication
+const globalUsedItemIds = new Set<string>();
+const globalUsedTopIds = new Set<string>();
+const globalUsedBottomIds = new Set<string>();
+const globalUsedShoeIds = new Set<string>();
 
 export function usePersonalizedLooks() {
   const { toast } = useToast();
@@ -81,9 +86,17 @@ export function usePersonalizedLooks() {
   // Memoized query function to prevent unnecessary re-creations
   const queryFn = useCallback(async () => {
     try {
+      // Clear global tracking sets when forced refresh to ensure completely different items
+      if (forceRefresh) {
+        globalUsedItemIds.clear();
+        globalUsedTopIds.clear();
+        globalUsedBottomIds.clear();
+        globalUsedShoeIds.clear();
+      }
+      
       const data = await fetchDashboardItems();
       
-      // Check if we received actual data
+      // Check if we received actual data for each occasion
       const hasRealData = Object.keys(data || {}).some(key => 
         Array.isArray(data[key]) && data[key].length > 0
       );
@@ -94,20 +107,29 @@ export function usePersonalizedLooks() {
       }
       
       // Merge API data with fallbacks for any missing occasions
-      const mergedData: {[key: string]: DashboardItem[]} = { ...convertedFallbackItems() };
+      const mergedData: {[key: string]: DashboardItem[]} = {};
       
       for (const occasion of occasions) {
         if (data[occasion] && Array.isArray(data[occasion]) && data[occasion].length > 0) {
           // Validate each item to ensure it has a valid type
-          mergedData[occasion] = data[occasion]
-            .filter(item => item.type && isValidItemType(item.type))
+          const validItems = data[occasion]
+            .filter(item => item && item.type && isValidItemType(item.type))
             .map(item => ({
               id: item.id || `generated-${Math.random().toString(36).substring(7)}`,
               image: item.image || '/placeholder.svg', // Ensure image is never undefined
               type: item.type as AllowedType,
-              price: item.price,
+              price: item.price || '$49.99',
               name: item.name || 'Item'
             }));
+          
+          if (validItems.length >= 3) {
+            mergedData[occasion] = validItems;
+          } else {
+            // Use fallback if we don't have enough valid items
+            mergedData[occasion] = convertedFallbackItems()[occasion];
+          }
+        } else {
+          mergedData[occasion] = convertedFallbackItems()[occasion];
         }
       }
       
@@ -126,7 +148,7 @@ export function usePersonalizedLooks() {
       console.log("Error fetching data, using fallbacks", err);
       return convertedFallbackItems();
     }
-  }, [convertedFallbackItems, occasions, apiErrorShown, toast]);
+  }, [convertedFallbackItems, occasions, apiErrorShown, toast, forceRefresh]);
 
   // The useQuery hook with improved fallback handling
   const { data: occasionOutfits, isLoading, isError, error, refetch } = useQuery({
@@ -161,19 +183,27 @@ export function usePersonalizedLooks() {
     // Ensure we have different items for each outfit component
     let uniqueItems = items;
     
+    // Filter out items with duplicate types
+    const seenTypes = new Set<string>();
+    uniqueItems = uniqueItems.filter(item => {
+      if (!item || !item.type || seenTypes.has(item.type)) return false;
+      seenTypes.add(item.type);
+      return true;
+    });
+    
     // If there are not enough items or they have duplicate types, use fallbacks
-    const itemTypes = new Set(uniqueItems.map(item => item.type));
-    if (uniqueItems.length < 3 || itemTypes.size < 3) {
+    if (uniqueItems.length < 3 || seenTypes.size < 3) {
       // Look for more items in the fallback data
       const fallbacksForOccasion = convertedFallbackItems()[occasion] || [];
       
       // Add missing types from fallbacks
       const requiredTypes = ['top', 'bottom', 'shoes'];
       requiredTypes.forEach(type => {
-        if (!itemTypes.has(type)) {
+        if (!seenTypes.has(type)) {
           const fallbackItem = fallbacksForOccasion.find(item => item.type === type);
           if (fallbackItem) {
             uniqueItems.push(fallbackItem);
+            seenTypes.add(type);
           }
         }
       });
@@ -181,7 +211,7 @@ export function usePersonalizedLooks() {
     
     // Filter and map to ensure item types conform to the allowed types
     const mappedItems = uniqueItems
-      .filter(item => item.type && isValidItemType(item.type))
+      .filter(item => item && item.type && isValidItemType(item.type))
       .map(item => ({
         id: item.id || `fallback-${Math.random().toString(36).substring(7)}`,
         image: item.image || '/placeholder.svg',
@@ -223,12 +253,6 @@ export function usePersonalizedLooks() {
   }, []);
 
   const handleShuffleLook = useCallback((occasion: string) => {
-    // Clear the global tracking sets to get completely different items
-    globalUsedItemIds.clear();
-    globalUsedTopIds.clear();
-    globalUsedBottomIds.clear();
-    globalUsedShoeIds.clear();
-    
     const styleAnalysis = localStorage.getItem('styleAnalysis');
     if (styleAnalysis) {
       const parsed = JSON.parse(styleAnalysis);
@@ -292,9 +316,3 @@ export function usePersonalizedLooks() {
     apiErrorShown
   };
 }
-
-// Fix global variable reference error
-const globalUsedItemIds = new Set<string>();
-const globalUsedTopIds = new Set<string>();
-const globalUsedBottomIds = new Set<string>();
-const globalUsedShoeIds = new Set<string>();
