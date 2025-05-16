@@ -208,10 +208,10 @@ export const fetchItemsByType = async (
 
 // Keep track of used item IDs across different occasions to prevent duplication
 const usedItemIds: Record<string, Set<string>> = {
-  "Work": new Set(),
-  "Casual": new Set(),
-  "Evening": new Set(),
-  "Weekend": new Set()
+  "Work": new Set<string>(),
+  "Casual": new Set<string>(),
+  "Evening": new Set<string>(),
+  "Weekend": new Set<string>()
 };
 
 // Function to fetch items for a complete outfit
@@ -219,11 +219,12 @@ export const fetchOutfitItems = async (occasion: string): Promise<DashboardItem[
   try {
     // Reset used items for this occasion if it's getting too restrictive
     if (usedItemIds[occasion] && usedItemIds[occasion].size > 15) {
-      usedItemIds[occasion] = new Set();
+      usedItemIds[occasion] = new Set<string>();
     }
     
     // Get current used IDs for this occasion and convert to string array
-    const excludeIds = Array.from(usedItemIds[occasion] || new Set());
+    // Fix: Explicitly cast the Set to an array of strings
+    const excludeIds = Array.from(usedItemIds[occasion] || new Set<string>()).map(id => String(id));
     
     console.log(`Fetching outfit items for ${occasion}, excluding ${excludeIds.length} items`);
     
@@ -240,9 +241,9 @@ export const fetchOutfitItems = async (occasion: string): Promise<DashboardItem[
     const randomShoes = shoesItems.length > 0 ? shoesItems[Math.floor(Math.random() * shoesItems.length)] : null;
     
     // Add selected items to usedItemIds to avoid repeated use
-    if (randomTop) usedItemIds[occasion].add(randomTop.id);
-    if (randomBottom) usedItemIds[occasion].add(randomBottom.id);
-    if (randomShoes) usedItemIds[occasion].add(randomShoes.id);
+    if (randomTop) usedItemIds[occasion].add(String(randomTop.id));
+    if (randomBottom) usedItemIds[occasion].add(String(randomBottom.id));
+    if (randomShoes) usedItemIds[occasion].add(String(randomShoes.id));
     
     // Filter out null values and return
     const items = [randomTop, randomBottom, randomShoes].filter(Boolean) as DashboardItem[];
