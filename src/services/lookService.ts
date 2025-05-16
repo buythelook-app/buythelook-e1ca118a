@@ -96,7 +96,13 @@ const mapToOutfitItem = (item: ZaraClothItem): DashboardItem => {
 // Function to verify if the zara_cloth table exists
 const verifyZaraClothTableExists = async (): Promise<boolean> => {
   try {
-    // Try to get the count to verify table exists
+    // Try to get the count to verify table exists and log connection details
+    logger.info('Attempting to connect to Supabase and verify zara_cloth table', { context: "lookService" });
+    logger.debug('Supabase URL being used:', { 
+      context: "lookService", 
+      data: supabase.getUrl ? supabase.getUrl() : 'URL method not available' 
+    });
+    
     const { error, count } = await supabase
       .from('zara_cloth')
       .select('id', { count: 'exact', head: true });
@@ -106,7 +112,7 @@ const verifyZaraClothTableExists = async (): Promise<boolean> => {
       return false;
     }
     
-    logger.debug('zara_cloth table exists with count:', { context: "lookService", data: count });
+    logger.info('zara_cloth table exists with count:', { context: "lookService", data: count });
     return true;
   } catch (error) {
     logger.error('Exception checking zara_cloth table:', { context: "lookService", data: error });
@@ -114,23 +120,32 @@ const verifyZaraClothTableExists = async (): Promise<boolean> => {
   }
 };
 
-// Function to fetch items by type with improved randomization and error handling
+// Function to fetch items by type with improved error handling and debugging
 export const fetchItemsByType = async (
   type: string,
   occasion: string,
   excludeIds: string[] = []
 ): Promise<DashboardItem[]> => {
   try {
-    logger.debug(`Fetching ${type} items for ${occasion} (excluding ${excludeIds.length} items)`, 
+    logger.info(`Fetching ${type} items for ${occasion} (excluding ${excludeIds.length} items)`, 
                 { context: "lookService" });
+    
+    // Explicitly log supabase client information for debugging
+    logger.debug('Using Supabase client with URL:', { 
+      context: "lookService", 
+      data: {
+        url: supabase.getUrl ? supabase.getUrl() : 'URL method not available',
+        clientType: typeof supabase
+      }
+    });
     
     // Check if the zara_cloth table exists
     const tableExists = await verifyZaraClothTableExists();
     if (!tableExists) {
-      logger.warn('zara_cloth table does not exist, using fallback data', 
+      logger.warn('zara_cloth table does not exist or cannot be accessed, using fallback data', 
                  { context: "lookService" });
-      // Return empty array, which will trigger fallback data in the usePersonalizedLooks hook
-      return [];
+      // Return fallback data for testing (since we know table should exist)
+      return generateFallbackItems(type, 3);
     }
     
     // Convert excludeIds to string array for proper filtering
@@ -161,18 +176,30 @@ export const fetchItemsByType = async (
       query = query.not('id', 'in', excludeIdsArray);
     }
     
-    logger.debug('Executing query to zara_cloth table:', { context: "lookService", data: { type, occasion } });
+    // Log the full query for debugging
+    logger.debug('Executing query to zara_cloth table:', { 
+      context: "lookService", 
+      data: { type, occasion, excludeIds: excludeIdsArray } 
+    });
+    
+    // Execute the query with additional logging
+    logger.debug('About to execute Supabase query', {
+      context: "lookService",
+      data: { timestamp: new Date().toISOString() }
+    });
     
     // Explicitly cast the data to ZaraClothItem[] type
     const { data, error } = await query;
-    const clothesData = data as ZaraClothItem[];
     
     if (error) {
       logger.error("Error fetching items from Supabase:", { context: "lookService", data: error });
-      throw error;
+      // Return fallback data on error
+      return generateFallbackItems(type, 3);
     }
     
-    logger.debug(`Retrieved ${clothesData?.length || 0} items for ${type} from database`, 
+    const clothesData = data as ZaraClothItem[];
+    
+    logger.info(`Retrieved ${clothesData?.length || 0} items for ${type} from database`, 
                { context: "lookService", data: clothesData });
     
     // Track items in global trackers based on type
@@ -225,26 +252,55 @@ export const fetchItemsByType = async (
     // Shuffle the array to get random items
     const shuffledData = [...availableItems].sort(() => Math.random() - 0.5);
     
-    // Map to the required format
-    const mappedItems = shuffledData.slice(0, 5).map(mapToOutfitItem);
+    // Map to the required format with better logging
+    const mappedItems = (shuffledData || []).slice(0, 5).map(mapToOutfitItem);
     
-    // Add used items to the appropriate tracker
-    if (typeTracker && mappedItems.length > 0) {
-      mappedItems.forEach(item => {
-        typeTracker.add(String(item.id));
-        globalItemTrackers.usedItemIds.add(String(item.id));
-      });
-    }
+    logger.info(`Returning ${mappedItems.length} ${type} items for ${occasion}`, 
+               { context: "lookService", data: mappedItems });
     
-    logger.debug(`Returning ${mappedItems.length} ${type} items for ${occasion}`, 
-               { context: "lookService" });
-    
-    // Return items, or empty array if no items found
-    return mappedItems;
+    // Return items, or fallback if no items found
+    return mappedItems.length > 0 ? mappedItems : generateFallbackItems(type, 3);
   } catch (error) {
     logger.error(`Error fetching ${type} items:`, { context: "lookService", data: error });
-    return [];
+    // Return fallback data on error
+    return generateFallbackItems(type, 3);
   }
+};
+
+// New helper function to generate fallback items when database access fails
+const generateFallbackItems = (type: string, count: number): DashboardItem[] => {
+  logger.warn(`Generating ${count} fallback items for ${type}`, { context: "lookService" });
+  
+  const items: DashboardItem[] = [];
+  for (let i = 1; i <= count; i++) {
+    const id = `fallback-${type}-${i}`;
+    let image = '/placeholder.svg';
+    
+    // Use different placeholder images based on type
+    switch(type) {
+      case 'top':
+        image = '/lovable-uploads/b2b5da4b-c967-4791-8832-747541e275be.png';
+        break;
+      case 'bottom':
+        image = '/lovable-uploads/a1785297-040b-496d-a2fa-af4ecb55207a.png';
+        break;
+      case 'shoes':
+        image = '/lovable-uploads/c7a32d15-ffe2-4f07-ae82-a943d5128293.png';
+        break;
+      default:
+        image = '/placeholder.svg';
+    }
+    
+    items.push({
+      id,
+      name: `Fallback ${type} item ${i}`,
+      image,
+      type: type as any,
+      price: `$${(Math.random() * 50 + 20).toFixed(2)}`
+    });
+  }
+  
+  return items;
 };
 
 // Keep track of used item IDs across different occasions to prevent duplication

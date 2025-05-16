@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,6 +26,9 @@ import { DeveloperNav } from "@/components/DeveloperNav";
 import RecommendationTest from "./pages/RecommendationTest";
 import AgentResultsPage from "./pages/AgentResultsPage";
 import OutfitGenerationPage from "./pages/OutfitGenerationPage";
+import { testSupabaseConnection } from "./lib/supabaseConnectionTest";
+import { useEffect } from "react";
+import logger from "./lib/logger";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +40,34 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  // Add this effect to test Supabase connection on app initialization
+  useEffect(() => {
+    // Set log level for verbose debugging
+    logger.setLogLevel('debug');
+    
+    // Test the Supabase connection
+    testSupabaseConnection()
+      .then(result => {
+        if (result.success) {
+          logger.info("Supabase connection test successful", {
+            context: "App",
+            data: result
+          });
+        } else {
+          logger.error("Supabase connection test failed", {
+            context: "App",
+            data: result
+          });
+        }
+      })
+      .catch(error => {
+        logger.error("Exception during Supabase connection test", {
+          context: "App",
+          data: error
+        });
+      });
+  }, []);
+
   console.log("App component rendering");
   const isDevelopment = import.meta.env.DEV;
 

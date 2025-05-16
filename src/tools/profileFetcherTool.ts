@@ -20,18 +20,46 @@ export const ProfileFetcherTool = {
       
       const currentMood = localStorage.getItem('current-mood');
       
-      // Fetch product data from Supabase
+      // Log Supabase client information for debugging
+      logger.debug('Using Supabase client with URL:', { 
+        context: "ProfileFetcherTool", 
+        data: {
+          url: supabase.getUrl ? supabase.getUrl() : 'URL method not available'
+        }
+      });
+      
+      // Fetch product data from Supabase with additional logging
+      logger.debug('About to query zara_cloth table', { context: "ProfileFetcherTool" });
+      
       const { data: productData, error: productError } = await supabase
         .from('zara_cloth')
-        .select('product_name, price, colour, description, size, materials, availability');
+        .select('product_name, price, colour, description, size, materials, availability')
+        .limit(50);
 
       if (productError) {
         logger.error('Error fetching product data:', { context: "ProfileFetcherTool", data: productError });
+        
+        // Try a simpler query to see if the table exists
+        const { error: checkError, count } = await supabase
+          .from('zara_cloth')
+          .select('*', { count: 'exact', head: true });
+          
+        if (checkError) {
+          logger.error('Table check failed:', { context: "ProfileFetcherTool", data: checkError });
+        } else {
+          logger.info('Table exists with count:', { context: "ProfileFetcherTool", data: count });
+        }
+        
         return {
           success: false,
           error: `Failed to fetch product data: ${productError.message}`
         };
       }
+
+      logger.info('Successfully retrieved product data:', { 
+        context: "ProfileFetcherTool", 
+        data: { count: productData?.length || 0 }
+      });
 
       return {
         success: true,
