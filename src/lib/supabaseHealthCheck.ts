@@ -1,6 +1,7 @@
 
 import { supabase } from "@/lib/supabaseClient";
 import logger from "./logger";
+import { Database } from "@/types/supabase";
 
 /**
  * Utility to check Supabase health and accessibility
@@ -10,13 +11,13 @@ export const supabaseHealth = {
   /**
    * Check if a specific table exists and is accessible
    */
-  checkTableAccess: async (tableName: keyof Database['public']['Tables']): Promise<boolean> => {
+  checkTableAccess: async (tableName: string): Promise<boolean> => {
     try {
       logger.debug(`Checking access to ${tableName} table`, { context: "supabaseHealth" });
       
-      // We need to use type assertion since we're using a dynamic table name
+      // Cast the dynamic table name to any to avoid type issues with Supabase client
       const { error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select('*', { count: 'exact', head: true });
         
       if (error) {
@@ -29,7 +30,7 @@ export const supabaseHealth = {
       
       return true;
     } catch (error) {
-      logger.error(`Error checking ${tableName} table:`, { 
+      logger.error(`Error checking ${String(tableName)} table:`, { 
         context: "supabaseHealth", 
         data: error 
       });
@@ -55,11 +56,11 @@ export const supabaseHealth = {
   /**
    * Check data retrieval from a table
    */
-  checkDataRetrieval: async (tableName: keyof Database['public']['Tables'], limit = 1): Promise<{ success: boolean, count?: number, error?: any }> => {
+  checkDataRetrieval: async (tableName: string, limit = 1): Promise<{ success: boolean, count?: number, error?: any }> => {
     try {
-      // Type assertion for the dynamic table name
+      // Cast the dynamic table name to any to work around type issues
       const { data, error, count } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select('*', { count: 'exact' })
         .limit(limit);
         

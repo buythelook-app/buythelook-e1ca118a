@@ -101,7 +101,7 @@ const verifyZaraClothTableExists = async (): Promise<boolean> => {
     logger.debug('Supabase connection info:', { 
       context: "lookService", 
       data: {
-        url: "https://mwsblnposuyhrgzrtoyo.supabase.co", // Use hardcoded URL
+        url: "https://mwsblnposuyhrgzrtoyo.supabase.co", // Hardcode URL instead of accessing protected property
         auth: !!supabase.auth,
         from: !!supabase.from
       }
@@ -138,7 +138,7 @@ export const fetchItemsByType = async (
     logger.debug('Using Supabase client with URL:', { 
       context: "lookService", 
       data: {
-        url: supabase.storageUrl ?? 'URL not available',
+        url: "https://mwsblnposuyhrgzrtoyo.supabase.co", // Hardcode URL instead of accessing protected property
         clientType: typeof supabase
       }
     });
