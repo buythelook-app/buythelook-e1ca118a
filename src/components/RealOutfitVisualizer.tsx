@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "./ui/badge";
+import { transformImageUrl } from "@/utils/imageUtils";
 
 // סוגי מבני גוף
 const bodyStructures = [
@@ -145,6 +146,12 @@ export function RealOutfitVisualizer() {
     itemTypes.push({ id: "coat", label: "מעיל/ז׳קט" });
   }
 
+  // פונקציה לטיפול בשגיאות בטעינת תמונות
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    console.warn(`Error loading image: ${e.currentTarget.src}`);
+    e.currentTarget.src = 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158';
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start gap-4">
@@ -254,9 +261,10 @@ export function RealOutfitVisualizer() {
                         <Card key={item.id} className="overflow-hidden">
                           <div className="relative aspect-square w-full">
                             <img 
-                              src={item.image || '/placeholder.svg'}
+                              src={transformImageUrl(item.image) || '/placeholder.svg'}
                               alt={item.name}
                               className="object-cover w-full h-full"
+                              onError={handleImageError}
                             />
                           </div>
                           <CardContent className="p-3">

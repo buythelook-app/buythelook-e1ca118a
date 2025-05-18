@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabaseClient"; // שימוש בלקוח הסופהבייס המרכזי
 import logger from "@/lib/logger";
 import { OutfitResponse } from "@/types/outfitTypes";
@@ -157,6 +156,55 @@ export const getColorName = (hex: string): string => {
   return colorMap[normalizedHex] || hex;
 };
 
+/**
+ * Extract the first image URL from the image JSON field
+ * @param imageJson The image JSON object from the database
+ * @returns The first image URL or a placeholder
+ */
+export const extractImageUrl = (imageJson: any): string => {
+  try {
+    // Check if imageJson is a string (could be a direct URL)
+    if (typeof imageJson === 'string') {
+      return imageJson;
+    }
+    
+    // If it's an array, take the first element
+    if (Array.isArray(imageJson)) {
+      return imageJson[0] || '/placeholder.svg';
+    }
+    
+    // If it's an object with urls property that is an array
+    if (imageJson && typeof imageJson === 'object') {
+      // Check if it has a urls property that is an array
+      if (imageJson.urls && Array.isArray(imageJson.urls)) {
+        return imageJson.urls[0] || '/placeholder.svg';
+      }
+      
+      // Check if it has a url property
+      if (imageJson.url) {
+        return imageJson.url;
+      }
+      
+      // If it's a complex object, try to find any property that might be a URL
+      for (const key of Object.keys(imageJson)) {
+        if (typeof imageJson[key] === 'string' && 
+            (imageJson[key].startsWith('http') || imageJson[key].startsWith('/'))) {
+          return imageJson[key];
+        }
+      }
+    }
+    
+    // If nothing works, return placeholder
+    return '/placeholder.svg';
+  } catch (error) {
+    logger.error("Error extracting image URL", {
+      context: "outfitGenerationService",
+      data: error
+    });
+    return '/placeholder.svg';
+  }
+};
+
 // פונקציה חדשה למציאת פריטי לבוש שמתאימים לצבעים המומלצים על ידי האייג'נטים
 export const findMatchingClothingItems = async (colors: Record<string, string>): Promise<Record<string, any[]>> => {
   try {
@@ -210,7 +258,7 @@ export const findMatchingClothingItems = async (colors: Record<string, string>):
         name: item.product_name,
         type,
         price: `₪${item.price}`,
-        image: item.image || '/placeholder.svg',
+        image: extractImageUrl(item.image), // שימוש בפונקציה החדשה להוצאת ה-URL של התמונה
         color: item.colour
       }));
       
