@@ -3,6 +3,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { LookCanvas } from "@/components/LookCanvas";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { OutfitItem } from "@/types/outfitAgentTypes";
 
 interface OutfitAgentCardProps {
@@ -11,9 +13,26 @@ interface OutfitAgentCardProps {
   items: OutfitItem[];
   details: Record<string, string>;
   showImagePaths?: boolean;
+  // Adding the missing props
+  onApprove?: (agentName: string, feedback?: string) => void;
+  onReject?: (agentName: string, feedback?: string) => void;
+  onLike?: (agentName: string, liked: boolean) => void;
+  isLiked?: boolean;
+  feedback?: string;
 }
 
-export function OutfitAgentCard({ agentName, score, items, details, showImagePaths = false }: OutfitAgentCardProps) {
+export function OutfitAgentCard({ 
+  agentName, 
+  score, 
+  items, 
+  details, 
+  showImagePaths = false,
+  onApprove,
+  onReject,
+  onLike,
+  isLiked,
+  feedback
+}: OutfitAgentCardProps) {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <CardHeader className="bg-gray-50">
@@ -56,17 +75,71 @@ export function OutfitAgentCard({ agentName, score, items, details, showImagePat
           </div>
         )}
       </CardContent>
-      {Object.keys(details).length > 0 && (
-        <CardFooter className="bg-gray-50 pt-3 pb-3">
-          <div className="text-sm text-gray-500">
-            {Object.entries(details).map(([key, value], i) => (
-              <span key={i} className="mr-2">
-                {key}: {value}
-              </span>
-            ))}
+      <CardFooter className="bg-gray-50 flex-col pt-3 pb-3">
+        <div className="text-sm text-gray-500 w-full mb-3">
+          {Object.entries(details).map(([key, value], i) => (
+            <span key={i} className="mr-2">
+              {key}: {value}
+            </span>
+          ))}
+        </div>
+        
+        {/* Render feedback and action buttons only if handlers are provided */}
+        {(onApprove || onReject || onLike) && (
+          <div className="flex flex-col w-full gap-2">
+            {feedback && (
+              <div className="text-sm italic bg-gray-100 p-2 rounded">
+                Feedback: {feedback}
+              </div>
+            )}
+            
+            <div className="flex justify-between">
+              <div className="space-x-2">
+                {onApprove && (
+                  <Button 
+                    size="sm" 
+                    variant="default" 
+                    onClick={() => onApprove(agentName)}
+                  >
+                    Approve
+                  </Button>
+                )}
+                
+                {onReject && (
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => onReject(agentName)}
+                  >
+                    Reject
+                  </Button>
+                )}
+              </div>
+              
+              {onLike && (
+                <div className="flex gap-1">
+                  <Button 
+                    size="sm" 
+                    variant={isLiked === true ? "default" : "outline"} 
+                    className="p-1 h-8 w-8"
+                    onClick={() => onLike(agentName, true)}
+                  >
+                    <ThumbsUp className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={isLiked === false ? "default" : "outline"} 
+                    className="p-1 h-8 w-8"
+                    onClick={() => onLike(agentName, false)}
+                  >
+                    <ThumbsDown className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
-        </CardFooter>
-      )}
+        )}
+      </CardFooter>
     </Card>
   );
 }
