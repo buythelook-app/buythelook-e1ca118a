@@ -157,12 +157,68 @@ export const getColorName = (hex: string): string => {
 };
 
 /**
+ * Debug function to inspect the image JSON structure
+ * @param imageData The image data to inspect
+ * @returns A detailed analysis of the image structure
+ */
+const inspectImageStructure = (imageData: any): string => {
+  try {
+    if (imageData === null || imageData === undefined) {
+      return "Image data is null or undefined";
+    }
+
+    if (typeof imageData === 'string') {
+      return `Image is a string URL: ${imageData}`;
+    }
+
+    if (Array.isArray(imageData)) {
+      return `Image is an array with ${imageData.length} items. First item: ${JSON.stringify(imageData[0])}`;
+    }
+
+    if (typeof imageData === 'object') {
+      const keys = Object.keys(imageData);
+      let result = `Image is an object with keys: ${keys.join(', ')}\n`;
+      
+      // Check for common URL patterns
+      if (imageData.urls) {
+        result += `urls property found: ${JSON.stringify(imageData.urls)}\n`;
+      }
+      
+      if (imageData.url) {
+        result += `url property found: ${imageData.url}\n`;
+      }
+      
+      // Check first-level properties for URL-like strings
+      for (const key of keys) {
+        const value = imageData[key];
+        if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('/'))) {
+          result += `URL-like string found in property "${key}": ${value}\n`;
+        }
+      }
+      
+      return result;
+    }
+    
+    return `Image data is of unexpected type: ${typeof imageData}`;
+  } catch (error) {
+    return `Error inspecting image: ${error instanceof Error ? error.message : 'Unknown error'}`;
+  }
+};
+
+/**
  * Extract the first image URL from the image JSON field
  * @param imageJson The image JSON object from the database
  * @returns The first image URL or a placeholder
  */
 export const extractImageUrl = (imageJson: any): string => {
   try {
+    // Log the structure for debugging
+    const structureInfo = inspectImageStructure(imageJson);
+    logger.info("Image structure analysis:", {
+      context: "extractImageUrl",
+      data: structureInfo
+    });
+    
     // Check if imageJson is a string (could be a direct URL)
     if (typeof imageJson === 'string') {
       return imageJson;
@@ -173,11 +229,15 @@ export const extractImageUrl = (imageJson: any): string => {
       return imageJson[0] || '/placeholder.svg';
     }
     
-    // If it's an object with urls property that is an array
+    // If it has a urls property that is an array
     if (imageJson && typeof imageJson === 'object') {
-      // Check if it has a urls property that is an array
       if (imageJson.urls && Array.isArray(imageJson.urls)) {
         return imageJson.urls[0] || '/placeholder.svg';
+      }
+      
+      // Check if it has a 'paths' property which is common in some image storage systems
+      if (imageJson.paths && Array.isArray(imageJson.paths)) {
+        return imageJson.paths[0] || '/placeholder.svg';
       }
       
       // Check if it has a url property
@@ -185,20 +245,41 @@ export const extractImageUrl = (imageJson: any): string => {
         return imageJson.url;
       }
       
+      // Check specifically for image property in case the structure is nested
+      if (imageJson.image) {
+        if (typeof imageJson.image === 'string') {
+          return imageJson.image;
+        }
+        if (Array.isArray(imageJson.image)) {
+          return imageJson.image[0] || '/placeholder.svg';
+        }
+      }
+      
       // If it's a complex object, try to find any property that might be a URL
       for (const key of Object.keys(imageJson)) {
-        if (typeof imageJson[key] === 'string' && 
-            (imageJson[key].startsWith('http') || imageJson[key].startsWith('/'))) {
-          return imageJson[key];
+        const value = imageJson[key];
+        if (typeof value === 'string' && 
+            (value.startsWith('http') || value.startsWith('/'))) {
+          return value;
+        }
+        
+        // Check if the value is an array of strings
+        if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'string') {
+          return value[0];
         }
       }
     }
     
-    // If nothing works, return placeholder
+    // If nothing works, return placeholder and log the structure
+    logger.warn("Could not extract image URL from data", {
+      context: "extractImageUrl",
+      data: imageJson ? JSON.stringify(imageJson).substring(0, 200) + '...' : 'null'
+    });
+    
     return '/placeholder.svg';
   } catch (error) {
     logger.error("Error extracting image URL", {
-      context: "outfitGenerationService",
+      context: "extractImageUrl",
       data: error
     });
     return '/placeholder.svg';
@@ -252,15 +333,42 @@ export const findMatchingClothingItems = async (colors: Record<string, string>):
         continue;
       }
       
+      // Log the first item's image data for debugging
+      if (items.length > 0) {
+        logger.info(`First ${type} item image data:`, {
+          context: "findMatchingClothingItems",
+          data: {
+            id: items[0].id,
+            productName: items[0].product_name,
+            imageType: typeof items[0].image,
+            imagePreview: JSON.stringify(items[0].image).substring(0, 200) + '...'
+          }
+        });
+      }
+      
       // מיפוי התוצאות לפורמט המוחזר
-      result[type] = items.map(item => ({
-        id: item.id,
-        name: item.product_name,
-        type,
-        price: `₪${item.price}`,
-        image: extractImageUrl(item.image), // שימוש בפונקציה החדשה להוצאת ה-URL של התמונה
-        color: item.colour
-      }));
+      result[type] = items.map(item => {
+        const imageUrl = extractImageUrl(item.image);
+        
+        // Log the extracted URL for debugging
+        logger.info(`Extracted image URL for ${item.product_name}:`, {
+          context: "findMatchingClothingItems",
+          data: {
+            id: item.id,
+            originalImage: typeof item.image,
+            extractedUrl: imageUrl
+          }
+        });
+        
+        return {
+          id: item.id,
+          name: item.product_name,
+          type,
+          price: `₪${item.price}`,
+          image: imageUrl,
+          color: item.colour
+        };
+      });
       
       logger.info(`Found ${result[type].length} ${type} items matching ${colorName}`, {
         context: "outfitGenerationService"

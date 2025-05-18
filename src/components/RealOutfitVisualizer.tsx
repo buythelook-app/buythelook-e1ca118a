@@ -1,14 +1,14 @@
-
 import { useState, useEffect } from "react";
 import { findMatchingClothingItems, generateOutfit, getOutfitColors } from "@/services/outfitGenerationService";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Info } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "./ui/badge";
 import { transformImageUrl } from "@/utils/imageUtils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // סוגי מבני גוף
 const bodyStructures = [
@@ -54,6 +54,7 @@ export function RealOutfitVisualizer() {
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [description, setDescription] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("top");
+  const [showImagePath, setShowImagePath] = useState<boolean>(false);
 
   // טען מידע שמור
   useEffect(() => {
@@ -207,6 +208,16 @@ export function RealOutfitVisualizer() {
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             צור תלבושת
           </Button>
+
+          <Button 
+            onClick={() => setShowImagePath(!showImagePath)} 
+            variant="outline"
+            className="flex items-center gap-1"
+            title="הצג/הסתר נתיבי תמונות"
+          >
+            <Info className="h-4 w-4" />
+            {showImagePath ? "הסתר נתיבים" : "הצג נתיבים"}
+          </Button>
         </div>
       </div>
 
@@ -260,12 +271,25 @@ export function RealOutfitVisualizer() {
                       {outfitItems[type.id].map(item => (
                         <Card key={item.id} className="overflow-hidden">
                           <div className="relative aspect-square w-full">
-                            <img 
-                              src={transformImageUrl(item.image) || '/placeholder.svg'}
-                              alt={item.name}
-                              className="object-cover w-full h-full"
-                              onError={handleImageError}
-                            />
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <img 
+                                    src={transformImageUrl(item.image) || '/placeholder.svg'}
+                                    alt={item.name}
+                                    className="object-cover w-full h-full"
+                                    onError={handleImageError}
+                                  />
+                                </TooltipTrigger>
+                                {showImagePath && (
+                                  <TooltipContent>
+                                    <p className="max-w-xs break-all">
+                                      {item.image}
+                                    </p>
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                           <CardContent className="p-3">
                             <div className="flex justify-between items-start">
