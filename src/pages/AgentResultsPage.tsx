@@ -1,13 +1,16 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Info } from "lucide-react";
 import { LookCanvas } from "@/components/LookCanvas";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { extractImageUrl } from "@/services/outfitGenerationService";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Types for agent results
 interface AgentOutfit {
@@ -45,6 +48,7 @@ export default function AgentResultsPage() {
 
   // Store mapping between item IDs and image URLs
   const [itemImages, setItemImages] = useState<Record<string, string>>({});
+  const [showImagePath, setShowImagePath] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchTrainerAgentResults = async () => {
@@ -72,20 +76,34 @@ export default function AgentResultsPage() {
           if (result.output.shoes) itemIds.push(result.output.shoes);
         });
 
-        // Fetch item data for each unique ID
+        // Fetch real item data from zara_cloth table
         if (itemIds.length > 0) {
-          const { data: items } = await supabase
-            .from('zara_cloth')
-            .select('id, product_name');
-
-          // Create mock image URLs for demo purposes
-          const mockImages: Record<string, string> = {};
-          itemIds.forEach((id) => {
-            // Generate placeholder images using dummy image service
-            mockImages[id] = `https://placehold.co/400x600/random?text=${id}`;
-          });
-
-          setItemImages(mockImages);
+          const images: Record<string, string> = {};
+          
+          // For each item ID, query the database for the actual item data
+          for (const id of itemIds) {
+            const itemId = id.replace(/^(top|bottom|shoes|coat)-/, ''); // Extract the color code
+            
+            // Search for items with similar color codes
+            const { data: items } = await supabase
+              .from('zara_cloth')
+              .select('id, image, product_name, colour')
+              .limit(1);
+              
+            if (items && items.length > 0) {
+              // Extract real image URL from the first matching item
+              const imageUrl = extractImageUrl(items[0].image);
+              images[id] = imageUrl;
+              
+              console.log(`Found image for ${id}:`, imageUrl);
+            } else {
+              // Fallback to placeholder if no match found
+              images[id] = `https://placehold.co/400x600/random?text=${id}`;
+              console.log(`No database item found for ${id}, using placeholder`);
+            }
+          }
+          
+          setItemImages(images);
         }
 
       } catch (err: any) {
@@ -135,7 +153,17 @@ export default function AgentResultsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Fashion Agent Results</h1>
-        <Button variant="outline" onClick={() => navigate(-1)}>Back</Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowImagePath(!showImagePath)}
+            title="הצג/הסתר נתיבי תמונות"
+          >
+            <Info className="h-4 w-4 mr-1" />
+            {showImagePath ? "Hide Paths" : "Show Paths"}
+          </Button>
+          <Button variant="outline" onClick={() => navigate(-1)}>Back</Button>
+        </div>
       </div>
 
       {loading ? (
@@ -174,6 +202,25 @@ export default function AgentResultsPage() {
                   {lookItems.length > 0 ? (
                     <div className="bg-white rounded-md overflow-hidden">
                       <LookCanvas items={lookItems} width={300} height={480} />
+                      {showImagePath && (
+                        <div className="bg-gray-50 p-2 text-xs text-gray-500 mt-2 rounded">
+                          <p className="font-semibold mb-1">Image Paths:</p>
+                          {lookItems.map((item, i) => (
+                            <div key={i} className="truncate">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-help">{item.type}: {item.image.substring(0, 30)}...</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="max-w-xs break-all">{item.image}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="flex justify-center items-center h-64 bg-gray-100 rounded-md">

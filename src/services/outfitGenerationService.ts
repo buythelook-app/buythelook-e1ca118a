@@ -207,73 +207,76 @@ const inspectImageStructure = (imageData: any): string => {
 
 /**
  * Extract the first image URL from the image JSON field
- * @param imageJson The image JSON object from the database
+ * This function handles different JSON structures to find the first valid image URL
+ * @param imageJson The image JSON data from the database
  * @returns The first image URL or a placeholder
  */
 export const extractImageUrl = (imageJson: any): string => {
   try {
-    // Log the structure for debugging
-    const structureInfo = inspectImageStructure(imageJson);
-    logger.info("Image structure analysis:", {
-      context: "extractImageUrl",
-      data: structureInfo
-    });
-    
-    // Check if imageJson is a string (could be a direct URL)
+    // Case 1: If imageJson is a string (direct URL)
     if (typeof imageJson === 'string') {
       return imageJson;
     }
     
-    // If it's an array, take the first element
-    if (Array.isArray(imageJson)) {
-      return imageJson[0] || '/placeholder.svg';
+    // Case 2: If imageJson is null or undefined
+    if (!imageJson) {
+      return '/placeholder.svg';
     }
     
-    // If it has a urls property that is an array
-    if (imageJson && typeof imageJson === 'object') {
-      if (imageJson.urls && Array.isArray(imageJson.urls)) {
-        return imageJson.urls[0] || '/placeholder.svg';
-      }
-      
-      // Check if it has a 'paths' property which is common in some image storage systems
-      if (imageJson.paths && Array.isArray(imageJson.paths)) {
-        return imageJson.paths[0] || '/placeholder.svg';
-      }
-      
-      // Check if it has a url property
-      if (imageJson.url) {
-        return imageJson.url;
-      }
-      
-      // Check specifically for image property in case the structure is nested
-      if (imageJson.image) {
-        if (typeof imageJson.image === 'string') {
-          return imageJson.image;
+    // Case 3: If imageJson is an array, take the first element
+    if (Array.isArray(imageJson)) {
+      if (imageJson.length > 0) {
+        // If first element is a string (URL), return it
+        if (typeof imageJson[0] === 'string') {
+          return imageJson[0];
         }
-        if (Array.isArray(imageJson.image)) {
-          return imageJson.image[0] || '/placeholder.svg';
+        // If first element is an object with a url property
+        if (typeof imageJson[0] === 'object' && imageJson[0] && imageJson[0].url) {
+          return imageJson[0].url;
         }
       }
-      
-      // If it's a complex object, try to find any property that might be a URL
+      return '/placeholder.svg';
+    }
+    
+    // Case 4: If imageJson is an object with urls array
+    if (typeof imageJson === 'object' && imageJson.urls && Array.isArray(imageJson.urls)) {
+      return imageJson.urls[0] || '/placeholder.svg';
+    }
+    
+    // Case 5: If imageJson is an object with url property
+    if (typeof imageJson === 'object' && imageJson.url) {
+      return imageJson.url;
+    }
+
+    // Case 6: If imageJson is an object with images array
+    if (typeof imageJson === 'object' && imageJson.images && Array.isArray(imageJson.images)) {
+      return imageJson.images[0] || '/placeholder.svg';
+    }
+    
+    // Case 7: Search for any string property that looks like a URL
+    if (typeof imageJson === 'object') {
       for (const key of Object.keys(imageJson)) {
         const value = imageJson[key];
         if (typeof value === 'string' && 
-            (value.startsWith('http') || value.startsWith('/'))) {
+            (value.startsWith('http') || value.startsWith('/') || 
+             value.includes('image') || value.includes('.jpg') || 
+             value.includes('.png') || value.includes('.webp'))) {
           return value;
         }
         
-        // Check if the value is an array of strings
-        if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'string') {
-          return value[0];
+        // Check for nested arrays of strings
+        if (Array.isArray(value) && value.length > 0) {
+          if (typeof value[0] === 'string') {
+            return value[0];
+          }
         }
       }
     }
     
-    // If nothing works, return placeholder and log the structure
-    logger.warn("Could not extract image URL from data", {
+    // Log the structure for debugging
+    logger.debug("Unable to extract image URL, JSON structure:", {
       context: "extractImageUrl",
-      data: imageJson ? JSON.stringify(imageJson).substring(0, 200) + '...' : 'null'
+      data: JSON.stringify(imageJson).substring(0, 200) + '...'
     });
     
     return '/placeholder.svg';
@@ -286,7 +289,11 @@ export const extractImageUrl = (imageJson: any): string => {
   }
 };
 
-// פונקציה חדשה למציאת פריטי לבוש שמתאימים לצבעים המומלצים על ידי האייג'נטים
+/**
+ * Find clothing items matching the recommended colors from the agent
+ * @param colors Record of item types to hex colors
+ * @returns A record of item types to matching clothing items
+ */
 export const findMatchingClothingItems = async (colors: Record<string, string>): Promise<Record<string, any[]>> => {
   try {
     logger.info("Finding matching clothing items for colors", {
@@ -296,14 +303,14 @@ export const findMatchingClothingItems = async (colors: Record<string, string>):
     
     const result: Record<string, any[]> = {};
     
-    // עבור כל סוג פריט, מחפשים פריטים מתאימים לפי צבע
+    // For each item type (top, bottom, shoes), find matching items by color
     for (const [type, hexColor] of Object.entries(colors)) {
       if (!hexColor) continue;
       
-      // המרת צבע ההקס לשם צבע לחיפוש בדאטאבייס
+      // Convert hex color to color name for database search
       const colorName = getColorName(hexColor);
       
-      // מיפוי סוגי פריטים לקטגוריות בדאטאבייס
+      // Map item types to database categories
       let categoryPattern = '';
       if (type === 'top') {
         categoryPattern = 'חולצ|טופ|עליון';
@@ -317,7 +324,7 @@ export const findMatchingClothingItems = async (colors: Record<string, string>):
       
       if (!categoryPattern) continue;
       
-      // חיפוש פריטים בצבע דומה ובקטגוריה המתאימה
+      // Search for items with matching color and category
       const { data: items, error } = await supabase
         .from('zara_cloth')
         .select('*')
@@ -333,29 +340,27 @@ export const findMatchingClothingItems = async (colors: Record<string, string>):
         continue;
       }
       
-      // Log the first item's image data for debugging
+      // Log information about the first item for debugging
       if (items.length > 0) {
-        logger.info(`First ${type} item image data:`, {
+        logger.info(`First ${type} item data:`, {
           context: "findMatchingClothingItems",
           data: {
             id: items[0].id,
             productName: items[0].product_name,
             imageType: typeof items[0].image,
-            imagePreview: JSON.stringify(items[0].image).substring(0, 200) + '...'
+            color: items[0].colour
           }
         });
       }
       
-      // מיפוי התוצאות לפורמט המוחזר
+      // Map the results to the return format, extracting image URLs
       result[type] = items.map(item => {
         const imageUrl = extractImageUrl(item.image);
         
-        // Log the extracted URL for debugging
         logger.info(`Extracted image URL for ${item.product_name}:`, {
           context: "findMatchingClothingItems",
           data: {
             id: item.id,
-            originalImage: typeof item.image,
             extractedUrl: imageUrl
           }
         });

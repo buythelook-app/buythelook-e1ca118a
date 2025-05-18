@@ -3,28 +3,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Info } from "lucide-react";
 import { OutfitAgentCard } from "./OutfitAgentCard";
 import { toast } from "sonner";
-
-// Types for agent results
-interface AgentOutfit {
-  top?: string;
-  bottom?: string;
-  shoes?: string;
-  score?: number;
-}
-
-interface AgentResult {
-  agent: string;
-  output: AgentOutfit;
-}
-
-interface TrainerAgentResponse {
-  success: boolean;
-  status: string;
-  results: AgentResult[];
-}
+import { extractImageUrl } from "@/services/outfitGenerationService";
+import { AgentResult, TrainerAgentResponse } from "@/types/outfitAgentTypes";
 
 // Helper to format agent names nicely
 const formatAgentName = (name: string): string => {
@@ -40,6 +23,7 @@ export function AgentOutfitVisualizer() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [itemImages, setItemImages] = useState<Record<string, string>>({});
+  const [showImagePath, setShowImagePath] = useState<boolean>(false);
 
   const fetchResults = async () => {
     try {
@@ -67,14 +51,35 @@ export function AgentOutfitVisualizer() {
         if (result.output.shoes) itemIds.push(result.output.shoes);
       });
 
-      // Create mock image URLs for demo purposes
-      const mockImages: Record<string, string> = {};
-      itemIds.forEach((id) => {
-        // Generate placeholder images using dummy image service
-        mockImages[id] = `https://placehold.co/400x600/random?text=${id}`;
-      });
-
-      setItemImages(mockImages);
+      // Fetch real item data from zara_cloth table
+      if (itemIds.length > 0) {
+        const images: Record<string, string> = {};
+        
+        // For each item ID, query the database for the actual item data
+        for (const id of itemIds) {
+          const itemId = id.replace(/^(top|bottom|shoes|coat)-/, ''); // Extract the color code
+          
+          // Search for items with similar color codes
+          const { data: items } = await supabase
+            .from('zara_cloth')
+            .select('id, image, product_name, colour')
+            .limit(1);
+            
+          if (items && items.length > 0) {
+            // Extract real image URL from the first matching item
+            const imageUrl = extractImageUrl(items[0].image);
+            images[id] = imageUrl;
+            
+            console.log(`Found image for ${id}:`, imageUrl);
+          } else {
+            // Fallback to placeholder if no match found
+            images[id] = `https://placehold.co/400x600/random?text=${id}`;
+            console.log(`No database item found for ${id}, using placeholder`);
+          }
+        }
+        
+        setItemImages(images);
+      }
     } catch (err: any) {
       console.error('Error fetching trainer agent results:', err);
       setError(err.message);
@@ -89,7 +94,7 @@ export function AgentOutfitVisualizer() {
   }, []);
 
   // Function to create LookCanvas items from agent output
-  const getLookItems = (agentOutput: AgentOutfit) => {
+  const getLookItems = (agentOutput: any) => {
     const lookItems = [];
     
     if (agentOutput.top && itemImages[agentOutput.top]) {
@@ -123,16 +128,27 @@ export function AgentOutfitVisualizer() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">AI Agent Outfit Visualizations</h2>
-        <Button 
-          onClick={fetchResults} 
-          variant="outline" 
-          size="sm" 
-          disabled={loading}
-          className="flex items-center gap-1"
-        >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setShowImagePath(!showImagePath)} 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-1"
+          >
+            <Info className="h-4 w-4" />
+            {showImagePath ? "Hide Paths" : "Show Paths"}
+          </Button>
+          <Button 
+            onClick={fetchResults} 
+            variant="outline" 
+            size="sm" 
+            disabled={loading}
+            className="flex items-center gap-1"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -168,6 +184,7 @@ export function AgentOutfitVisualizer() {
                   score={result.output.score}
                   items={lookItems}
                   details={details}
+                  showImagePaths={showImagePath}
                 />
               );
             })}
