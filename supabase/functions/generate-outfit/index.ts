@@ -1,323 +1,266 @@
-// This Edge Function generates outfit recommendations based on user preferences
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.8.0'
-import { corsHeaders } from '../_shared/cors.ts'
 
-// Define our request body type
-interface GenerateOutfitRequest {
-  bodyStructure: 'X' | 'V' | 'H' | 'O' | 'A';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { corsHeaders } from "../_shared/cors.ts";
+
+// Types for our input parameters
+type BodyStructure = 'X' | 'V' | 'H' | 'O' | 'A';
+type StylePreference = 'classic' | 'romantic' | 'minimalist' | 'casual' | 'boohoo' | 'sporty';
+
+interface OutfitRequest {
+  bodyStructure: BodyStructure;
   mood: string;
-  style: 'classic' | 'romantic' | 'minimalist' | 'casual' | 'boohoo' | 'sporty';
+  style: StylePreference;
 }
 
-// Define our outfit suggestion type
 interface OutfitSuggestion {
-  top: string; // Hex color code for top item
-  bottom: string; // Hex color code for bottom item
-  shoes: string; // Hex color code for shoes
-  coat?: string; // Optional hex color code for coat/outerwear
-  description: string; // Description of the outfit
-  recommendations: string[]; // Style tips for the outfit
-  occasion?: 'work' | 'casual' | 'weekend' | 'date night' | 'general'; // Appropriate occasion for the outfit
+  top: string; // Hex color code
+  bottom: string; // Hex color code
+  shoes: string; // Hex color code
+  coat?: string; // Optional hex color code
+  description: string;
+  recommendations: string[];
+  occasion?: 'work' | 'casual' | 'weekend' | 'date night' | 'general';
 }
 
-interface GenerateOutfitResponse {
+interface OutfitResponse {
   success: boolean;
   data?: OutfitSuggestion[];
   error?: string;
 }
 
-// Function to generate outfit color palettes based on body structure and style
-function generateOutfitSuggestions(
-  bodyStructure: string, 
-  mood: string, 
-  style: string,
-  userPreferences: { likedColors: string[], dislikedColors: string[] } = { likedColors: [], dislikedColors: [] }
-): OutfitSuggestion[] {
-  const suggestions: OutfitSuggestion[] = [];
-  
-  // Color palettes by style
-  const stylePalettes: Record<string, string[]> = {
+// Helper function to generate color palettes based on style
+function getColorPaletteForStyle(style: StylePreference): string[] {
+  const colorPalettes = {
     classic: ['#2C3E50', '#34495E', '#7F8C8D', '#BDC3C7', '#ECF0F1'],
-    romantic: ['#FF80AB', '#FF4081', '#F8BBD0', '#FCE4EC', '#FFEBEE'],
-    minimalist: ['#FFFFFF', '#FAFAFA', '#F5F5F5', '#EEEEEE', '#E0E0E0', '#212121'],
-    casual: ['#1976D2', '#2196F3', '#BBDEFB', '#E3F2FD', '#0D47A1'],
-    boohoo: ['#424242', '#616161', '#757575', '#9E9E9E', '#BDBDBD'],
-    sporty: ['#F44336', '#FF5722', '#FFC107', '#FFEB3B', '#8BC34A']
+    romantic: ['#FF4081', '#F8BBD0', '#EC407A', '#C2185B', '#F48FB1'],
+    minimalist: ['#212121', '#424242', '#616161', '#FAFAFA', '#FFFFFF'],
+    casual: ['#607D8B', '#90A4AE', '#455A64', '#ECEFF1', '#CFD8DC'],
+    boohoo: ['#F44336', '#FF5722', '#9C27B0', '#673AB7', '#3F51B5'],
+    sporty: ['#00BCD4', '#009688', '#4CAF50', '#CDDC39', '#FFEB3B']
   };
-  
-  // Body structure recommendations
-  const bodyRecommendations: Record<string, string[]> = {
-    X: [
-      'Balance your proportions with well-fitted pieces',
-      'Highlight your waist with a belt or fitted top',
-      'Choose structured pieces that maintain your natural shape'
-    ],
-    V: [
-      'Balance your shoulders with wider bottoms',
-      'Use darker colors for the top and brighter for the bottom',
-      'Layer pieces to add dimension to your lower body'
-    ],
-    H: [
-      'Create curves with peplum tops or A-line skirts',
-      'Try color blocking to create visual interest',
-      'Use accessories to define your waistline'
-    ],
-    O: [
-      "Choose flowing fabrics that don't cling too tightly",
-      'Try vertical patterns to create a lengthening effect',
-      'Empire waists and A-line silhouettes will be flattering'
-    ],
-    A: [
-      'Draw attention upward with statement tops or accessories',
-      'Opt for fitted tops and A-line or full bottoms',
-      'Choose darker colors for the bottom half'
-    ]
-  };
-  
-  // Generate 3-5 suggestions - ALWAYS generate at least 3 to ensure we have data
-  const numSuggestions = Math.floor(Math.random() * 3) + 3;
-  const palette = stylePalettes[style] || stylePalettes.classic;
-  const bodyTips = bodyRecommendations[bodyStructure] || bodyRecommendations.H;
-  
-  // Mood-based occasions
-  const moodOccasions: Record<string, ('work' | 'casual' | 'weekend' | 'date night' | 'general')[]> = {
-    elegant: ['work', 'date night'],
-    casual: ['casual', 'weekend'],
-    energized: ['casual', 'weekend'],
-    relaxed: ['casual', 'weekend', 'general'],
-    unique: ['date night', 'general'],
-    powerful: ['work', 'date night'],
-    mysterious: ['date night', 'general']
-  };
-  
-  const occasions = moodOccasions[mood] || ['general'];
-  
-  // Get user color preferences into consideration
-  const preferredColors = new Set(userPreferences.likedColors);
-  const avoidColors = new Set(userPreferences.dislikedColors);
-  
-  // Filter palette based on preferences
-  let workingPalette = [...palette];
-  if (preferredColors.size > 0) {
-    // Prioritize preferred colors
-    workingPalette = [
-      ...palette.filter(color => preferredColors.has(color)),
-      ...palette.filter(color => !preferredColors.has(color) && !avoidColors.has(color))
-    ];
-  }
-  
-  // Remove disliked colors
-  workingPalette = workingPalette.filter(color => !avoidColors.has(color));
-  
-  // If after filtering we have too few colors, add back some from the original palette
-  if (workingPalette.length < 3) {
-    // Add back colors from original palette that weren't explicitly disliked
-    workingPalette = [
-      ...workingPalette,
-      ...palette.filter(color => !avoidColors.has(color) && !workingPalette.includes(color))
-    ];
-  }
-  
-  // If still too few colors, use original palette as fallback
-  if (workingPalette.length < 3) {
-    workingPalette = palette;
-  }
-  
-  for (let i = 0; i < numSuggestions; i++) {
-    // Randomly select colors from palette
-    const topIndex = Math.floor(Math.random() * workingPalette.length);
-    let bottomIndex;
-    do {
-      bottomIndex = Math.floor(Math.random() * workingPalette.length);
-    } while (bottomIndex === topIndex);
-    
-    let shoesIndex;
-    do {
-      shoesIndex = Math.floor(Math.random() * workingPalette.length);
-    } while (shoesIndex === topIndex || shoesIndex === bottomIndex);
-    
-    // Maybe add a coat (30% chance)
-    let coatColor = undefined;
-    if (Math.random() < 0.3) {
-      let coatIndex;
-      do {
-        coatIndex = Math.floor(Math.random() * workingPalette.length);
-      } while (coatIndex === topIndex || coatIndex === bottomIndex || coatIndex === shoesIndex);
-      coatColor = workingPalette[coatIndex];
-    }
-    
-    // Generate description based on color names
-    const colorNames = {
-      '#2C3E50': 'navy',
-      '#34495E': 'dark blue',
-      '#7F8C8D': 'charcoal',
-      '#BDC3C7': 'light gray',
-      '#ECF0F1': 'off-white',
-      '#FF80AB': 'pink',
-      '#FF4081': 'hot pink',
-      '#F8BBD0': 'light pink',
-      '#FCE4EC': 'pale pink',
-      '#FFEBEE': 'blush',
-      '#FFFFFF': 'white',
-      '#FAFAFA': 'off-white',
-      '#F5F5F5': 'light gray',
-      '#EEEEEE': 'pale gray',
-      '#E0E0E0': 'silver',
-      '#212121': 'black',
-      '#1976D2': 'blue',
-      '#2196F3': 'bright blue',
-      '#BBDEFB': 'light blue',
-      '#E3F2FD': 'pale blue',
-      '#0D47A1': 'navy blue',
-      '#424242': 'dark gray',
-      '#616161': 'gray',
-      '#757575': 'medium gray',
-      '#9E9E9E': 'gray',
-      '#BDBDBD': 'light gray',
-      '#F44336': 'red',
-      '#FF5722': 'orange-red',
-      '#FFC107': 'amber',
-      '#FFEB3B': 'yellow',
-      '#8BC34A': 'light green'
-    };
-    
-    const topColorName = colorNames[workingPalette[topIndex]] || 'colored';
-    const bottomColorName = colorNames[workingPalette[bottomIndex]] || 'colored';
-    const shoesColorName = colorNames[workingPalette[shoesIndex]] || 'colored';
-    
-    const styleAdjectives = {
-      classic: ['sophisticated', 'timeless', 'elegant', 'refined'],
-      romantic: ['feminine', 'delicate', 'graceful', 'flowing'],
-      minimalist: ['clean', 'simple', 'understated', 'streamlined'],
-      casual: ['relaxed', 'comfortable', 'laid-back', 'effortless'],
-      boohoo: ['edgy', 'bold', 'contemporary', 'fashion-forward'],
-      sporty: ['athletic', 'dynamic', 'energetic', 'vibrant']
-    };
-    
-    const adjective = styleAdjectives[style]?.[Math.floor(Math.random() * styleAdjectives[style].length)] || 'stylish';
-    
-    const description = `A ${adjective} ensemble featuring a ${topColorName} top paired with ${bottomColorName} bottoms and ${shoesColorName} shoes.`;
-    
-    // Get random recommendations (2-3)
-    const numRecs = Math.floor(Math.random() * 2) + 2;
-    const shuffledRecs = [...bodyTips].sort(() => 0.5 - Math.random());
-    const recommendations = shuffledRecs.slice(0, numRecs);
-    
-    // Select a random occasion from the mood's occasions
-    const occasion = occasions[Math.floor(Math.random() * occasions.length)];
-    
-    suggestions.push({
-      top: workingPalette[topIndex],
-      bottom: workingPalette[bottomIndex],
-      shoes: workingPalette[shoesIndex],
-      coat: coatColor,
-      description,
-      recommendations,
-      occasion
-    });
-  }
-  
-  return suggestions;
+
+  return colorPalettes[style] || colorPalettes.classic;
 }
 
-// Main handler for the edge function
-Deno.serve(async (req) => {
-  // Handle CORS
+// Generate specific outfit recommendations based on body structure
+function generateOutfitForBodyStructure(bodyStructure: BodyStructure, style: StylePreference, mood: string): OutfitSuggestion[] {
+  const palette = getColorPaletteForStyle(style);
+  const results: OutfitSuggestion[] = [];
+  
+  // Create 3 outfit suggestions
+  for (let i = 0; i < 3; i++) {
+    // Shuffle palette for variety
+    const shuffledPalette = [...palette].sort(() => Math.random() - 0.5);
+    
+    // Basic outfit structure
+    let outfit: OutfitSuggestion = {
+      top: shuffledPalette[0],
+      bottom: shuffledPalette[1],
+      shoes: shuffledPalette[2],
+      description: "",
+      recommendations: []
+    };
+    
+    // Add a coat 30% of the time
+    if (Math.random() < 0.3) {
+      outfit.coat = shuffledPalette[3];
+    }
+    
+    // Customize based on body structure
+    switch(bodyStructure) {
+      case 'X': // Hourglass
+        outfit.description = `חליפה מחמיאה לגזרת שעון החול שלך, עם ${getColorName(outfit.top)} למעלה שמדגיש את המותניים ו${getColorName(outfit.bottom)} למטה.`;
+        outfit.recommendations = [
+          "בחרי בגדים עליונים שמדגישים את המותניים",
+          "שקלי להוסיף חגורה כדי להדגיש עוד יותר את קו המותן"
+        ];
+        outfit.occasion = Math.random() > 0.5 ? 'casual' : 'work';
+        break;
+        
+      case 'V': // Inverted triangle
+        outfit.description = `לוק מאוזן לגזרת המשולש ההפוך, עם ${getColorName(outfit.top)} למעלה ו${getColorName(outfit.bottom)} בגזרה רחבה למטה.`;
+        outfit.recommendations = [
+          "העדיפי מכנסיים או חצאיות בגזרה רחבה",
+          "הימנעי מכתפיות מודגשות או שרוולי פאף"
+        ];
+        outfit.occasion = Math.random() > 0.5 ? 'weekend' : 'casual';
+        break;
+        
+      case 'H': // Rectangle
+        outfit.description = `לוק שיוצר אשליית עקומות לגזרה הישרה, עם ${getColorName(outfit.top)} בחלק העליון שמוסיף נפח ו${getColorName(outfit.bottom)} בחלק התחתון.`;
+        outfit.recommendations = [
+          "נסי בגדים בשכבות כדי ליצור אשליית נפח",
+          "הוסיפי אביזרים שיוצרים עניין חזותי"
+        ];
+        outfit.occasion = Math.random() > 0.5 ? 'work' : 'date night';
+        break;
+        
+      case 'O': // Apple/Round
+        outfit.description = `לוק מחמיא לגזרה עגלגלה, עם ${getColorName(outfit.top)} עליון מרופרף ו${getColorName(outfit.bottom)} תחתון מחמיא.`;
+        outfit.recommendations = [
+          "בחרי טופים שנופלים בחופשיות מסביב לחגורת המותן",
+          "התמקדי בהדגשת הרגליים והצוואר"
+        ];
+        outfit.occasion = Math.random() > 0.5 ? 'casual' : 'general';
+        break;
+        
+      case 'A': // Pear/Triangle
+        outfit.description = `לוק שמאזן את הפרופורציות לגזרת האגס, עם ${getColorName(outfit.top)} בהיר בחלק העליון ו${getColorName(outfit.bottom)} כהה בחלק התחתון.`;
+        outfit.recommendations = [
+          "בחרי טופים בצבעים בהירים או עם פרטים מושכי עין",
+          "חצאיות וג'ינסים בגזרות A עשויים להחמיא במיוחד"
+        ];
+        outfit.occasion = Math.random() > 0.5 ? 'weekend' : 'work';
+        break;
+        
+      default:
+        outfit.description = `שילוב אופנתי של ${getColorName(outfit.top)} עם ${getColorName(outfit.bottom)}, המשלים היטב את מבנה הגוף שלך.`;
+        outfit.recommendations = [
+          "בחרי בגדים שמרגישים נוחים ונותנים לך ביטחון",
+          "התאימי את האביזרים לסגנון הכללי של הלוק"
+        ];
+        outfit.occasion = 'general';
+    }
+    
+    // Add mood-specific recommendations
+    if (mood.includes('elegant') || mood.includes('אלגנטי')) {
+      outfit.recommendations.push("הוסיפי תכשיט אחד מרשים שיהיה מוקד הלוק");
+      outfit.occasion = 'work';
+    } else if (mood.includes('casual') || mood.includes('יום יום')) {
+      outfit.recommendations.push("שלבי נעלי סניקרס לנוחות יומיומית");
+      outfit.occasion = 'casual';
+    } else if (mood.includes('energized') || mood.includes('אנרגטי')) {
+      outfit.recommendations.push("הוסיפי פריט אחד בצבע חי שמושך תשומת לב");
+      outfit.occasion = 'weekend';
+    }
+    
+    // Add style-specific recommendations
+    if (style === 'classic') {
+      outfit.recommendations.push("בחרי בפריטים באיכות גבוהה שיחזיקו מעמד לאורך זמן");
+    } else if (style === 'romantic') {
+      outfit.recommendations.push("שקלי להוסיף פריטים עם תחרה או דוגמאות פרחוניות");
+    } else if (style === 'minimalist') {
+      outfit.recommendations.push("התמקדי בקווים נקיים וטקסטורות מעניינות במקום בצבעים עזים");
+    }
+
+    results.push(outfit);
+  }
+  
+  return results;
+}
+
+// Helper function to convert hex color to human-readable name
+function getColorName(hex: string): string {
+  const colorMap: Record<string, string> = {
+    '#000000': 'שחור',
+    '#FFFFFF': 'לבן',
+    '#FF0000': 'אדום',
+    '#00FF00': 'ירוק',
+    '#0000FF': 'כחול',
+    '#FFFF00': 'צהוב',
+    '#FF00FF': 'מגנטה',
+    '#00FFFF': 'טורקיז',
+    '#C0C0C0': 'כסוף',
+    '#808080': 'אפור',
+    '#800000': 'בורדו',
+    '#808000': 'זית',
+    '#008000': 'ירוק כהה',
+    '#800080': 'סגול',
+    '#008080': 'טורקיז כהה',
+    '#000080': 'כחול נייבי',
+    '#FFA500': 'כתום',
+    '#A52A2A': 'חום',
+    '#FFC0CB': 'ורוד',
+    '#F5F5DC': 'בז׳',
+    '#2C3E50': 'כחול-אפור כהה',
+    '#34495E': 'אפור עמוק',
+    '#7F8C8D': 'אפור בינוני',
+    '#BDC3C7': 'אפור בהיר',
+    '#ECF0F1': 'אפור-לבן',
+    '#FF4081': 'ורוד חם',
+    '#F8BBD0': 'ורוד בהיר',
+    '#EC407A': 'פוקסיה',
+    '#C2185B': 'בורגונדי',
+    '#F48FB1': 'ורוד עתיק',
+    '#212121': 'שחור פחם',
+    '#424242': 'אפור כהה',
+    '#616161': 'אפור',
+    '#FAFAFA': 'לבן שבור',
+    '#607D8B': 'כחול אפרפר',
+    '#90A4AE': 'תכלת אפרפר',
+    '#455A64': 'אפור כחלחל',
+    '#ECEFF1': 'אפור בהיר מאוד',
+    '#CFD8DC': 'אפור פנינה',
+    '#F44336': 'אדום בהיר',
+    '#FF5722': 'אדום כתום',
+    '#9C27B0': 'סגול חזק',
+    '#673AB7': 'סגול עמוק',
+    '#3F51B5': 'אינדיגו',
+    '#00BCD4': 'טורקיז בהיר',
+    '#009688': 'ירוק-טורקיז',
+    '#4CAF50': 'ירוק בהיר',
+    '#CDDC39': 'ליים',
+    '#FFEB3B': 'צהוב בהיר'
+  };
+
+  // If color isn't in our map, return the hex code
+  return colorMap[hex.toUpperCase()] || hex;
+}
+
+serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
-  
+
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
-    );
-    
     // Parse request body
-    const { bodyStructure, mood, style } = await req.json() as GenerateOutfitRequest;
-    
-    if (!bodyStructure || !style) {
-      // If missing parameters, just set defaults to ensure something always returns
-      console.log("Missing parameters, using defaults");
-    }
-    
-    // Get user preferences
-    let userPreferences = { likedColors: [], dislikedColors: [] };
-    
-    // Get the user's ID from the JWT if authenticated
-    try {
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      
-      if (user) {
-        // Query user feedback from the database
-        const { data: feedbackData } = await supabaseClient
-          .from('agent_feedback')
-          .select('*')
-          .eq('user_id', user.id);
-        
-        // Extract color preferences from feedback if available
-        if (feedbackData && feedbackData.length > 0) {
-          userPreferences = {
-            likedColors: [],
-            dislikedColors: []
-          };
+    const input: OutfitRequest = await req.json();
+
+    // Validate required params
+    if (!input.bodyStructure || !input.mood || !input.style) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Missing required parameters. Please provide bodyStructure, mood, and style."
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
-      }
-    } catch (authError) {
-      console.error("Auth error:", authError);
-      // Continue without user preferences
+      );
     }
-    
-    // Generate outfit suggestions - always provide defaults if parameters are missing
-    const outfitSuggestions = generateOutfitSuggestions(
-      bodyStructure || 'H', 
-      mood || 'elegant', 
-      style || 'classic',
-      userPreferences
+
+    // Generate outfit suggestions based on the input
+    const outfitSuggestions = generateOutfitForBodyStructure(
+      input.bodyStructure, 
+      input.style,
+      input.mood
     );
-    
-    const response: GenerateOutfitResponse = {
+
+    // Return outfit suggestions
+    const response: OutfitResponse = {
       success: true,
-      data: outfitSuggestions
+      data: outfitSuggestions,
     };
-    
+
     return new Response(
       JSON.stringify(response),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json' 
-        } 
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   } catch (error) {
-    console.error("Error in generate-outfit function:", error);
-    
-    // Always return some data even on error, to prevent frontend issues
-    const fallbackSuggestions = [
-      {
-        top: "#2C3E50",
-        bottom: "#BDC3C7",
-        shoes: "#7F8C8D",
-        description: "A fallback outfit generated due to an error",
-        recommendations: ["This is a fallback outfit", "Try again later for personalized recommendations"],
-        occasion: "general" as 'general'
-      }
-    ];
-    
+    // Return error response
     return new Response(
       JSON.stringify({
-        success: true,
-        data: fallbackSuggestions,
-        error: "An error occurred, but fallback data is provided"
+        success: false,
+        error: `Error generating outfit: ${error.message}`
       }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json' 
-        },
-        status: 200 // Return 200 even on error, with fallback data
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   }

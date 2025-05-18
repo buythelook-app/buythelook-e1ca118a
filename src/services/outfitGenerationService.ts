@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client"; // שימוש בלקוח הסופהבייס המרכזי
+import { supabase } from "@/lib/supabaseClient"; // שימוש בלקוח הסופהבייס המרכזי
 import logger from "@/lib/logger";
 import { OutfitResponse } from "@/types/outfitTypes";
 
@@ -128,26 +128,26 @@ export const getOutfitColors = (): Record<string, string> => {
 export const getColorName = (hex: string): string => {
   // Basic color mapping (could be expanded)
   const colorMap: Record<string, string> = {
-    '#000000': 'Black',
-    '#FFFFFF': 'White',
-    '#FF0000': 'Red',
-    '#00FF00': 'Green',
-    '#0000FF': 'Blue',
-    '#FFFF00': 'Yellow',
-    '#FF00FF': 'Magenta',
-    '#00FFFF': 'Cyan',
-    '#C0C0C0': 'Silver',
-    '#808080': 'Gray',
-    '#800000': 'Maroon',
-    '#808000': 'Olive',
-    '#008000': 'Green',
-    '#800080': 'Purple',
-    '#008080': 'Teal',
-    '#000080': 'Navy',
-    '#FFA500': 'Orange',
-    '#A52A2A': 'Brown',
-    '#FFC0CB': 'Pink',
-    '#F5F5DC': 'Beige'
+    '#000000': 'שחור',
+    '#FFFFFF': 'לבן',
+    '#FF0000': 'אדום',
+    '#00FF00': 'ירוק',
+    '#0000FF': 'כחול',
+    '#FFFF00': 'צהוב',
+    '#FF00FF': 'מגנטה',
+    '#00FFFF': 'טורקיז',
+    '#C0C0C0': 'כסוף',
+    '#808080': 'אפור',
+    '#800000': 'בורדו',
+    '#808000': 'זית',
+    '#008000': 'ירוק כהה',
+    '#800080': 'סגול',
+    '#008080': 'טורקיז כהה',
+    '#000080': 'כחול נייבי',
+    '#FFA500': 'כתום',
+    '#A52A2A': 'חום',
+    '#FFC0CB': 'ורוד',
+    '#F5F5DC': 'בז׳'
   };
 
   // Normalize hex to uppercase
@@ -155,4 +155,76 @@ export const getColorName = (hex: string): string => {
   
   // Return the mapped color name or the hex code if not found
   return colorMap[normalizedHex] || hex;
+};
+
+// פונקציה חדשה למציאת פריטי לבוש שמתאימים לצבעים המומלצים על ידי האייג'נטים
+export const findMatchingClothingItems = async (colors: Record<string, string>): Promise<Record<string, any[]>> => {
+  try {
+    logger.info("Finding matching clothing items for colors", {
+      context: "outfitGenerationService",
+      data: colors
+    });
+    
+    const result: Record<string, any[]> = {};
+    
+    // עבור כל סוג פריט, מחפשים פריטים מתאימים לפי צבע
+    for (const [type, hexColor] of Object.entries(colors)) {
+      if (!hexColor) continue;
+      
+      // המרת צבע ההקס לשם צבע לחיפוש בדאטאבייס
+      const colorName = getColorName(hexColor);
+      
+      // מיפוי סוגי פריטים לקטגוריות בדאטאבייס
+      let categoryPattern = '';
+      if (type === 'top') {
+        categoryPattern = 'חולצ|טופ|עליון';
+      } else if (type === 'bottom') {
+        categoryPattern = 'מכנס|חצאית|תחתון';
+      } else if (type === 'shoes') {
+        categoryPattern = 'נעל|סנדל';
+      } else if (type === 'coat') {
+        categoryPattern = 'ז\'קט|מעיל|עליון';
+      }
+      
+      if (!categoryPattern) continue;
+      
+      // חיפוש פריטים בצבע דומה ובקטגוריה המתאימה
+      const { data: items, error } = await supabase
+        .from('zara_cloth')
+        .select('*')
+        .or(`product_name.ilike.%${categoryPattern}%,description.ilike.%${categoryPattern}%,product_family.ilike.%${categoryPattern}%`)
+        .or(`colour.ilike.%${colorName}%,description.ilike.%${colorName}%`)
+        .limit(5);
+      
+      if (error) {
+        logger.error(`Error finding ${type} items:`, {
+          context: "outfitGenerationService",
+          data: error
+        });
+        continue;
+      }
+      
+      // מיפוי התוצאות לפורמט המוחזר
+      result[type] = items.map(item => ({
+        id: item.id,
+        name: item.product_name,
+        type,
+        price: `₪${item.price}`,
+        image: item.image || '/placeholder.svg',
+        color: item.colour
+      }));
+      
+      logger.info(`Found ${result[type].length} ${type} items matching ${colorName}`, {
+        context: "outfitGenerationService"
+      });
+    }
+    
+    return result;
+  } catch (error) {
+    logger.error("Error finding matching clothing items", {
+      context: "outfitGenerationService",
+      data: error
+    });
+    return {};
+  }
 };

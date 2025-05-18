@@ -229,36 +229,84 @@ export type Database = {
       zara_cloth: {
         Row: {
           availability: boolean | null
+          care: Json | null
+          category_id: number | null
           colour: string
+          colour_code: number | null
           created_at: string
+          currency: string | null
           description: string | null
+          dimension: string | null
           id: string
-          materials: string[] | null
+          image: Json | null
+          low_on_stock: boolean | null
+          materials: Json[] | null
+          materials_description: string | null
           price: number
+          product_family: string | null
+          product_family_en: string | null
+          product_id: number | null
           product_name: string
-          size: string[]
+          product_subfamily: string | null
+          section: string | null
+          size: string
+          sku: string | null
+          url: string | null
+          you_may_also_like: Json | null
         }
         Insert: {
           availability?: boolean | null
+          care?: Json | null
+          category_id?: number | null
           colour: string
+          colour_code?: number | null
           created_at?: string
+          currency?: string | null
           description?: string | null
+          dimension?: string | null
           id?: string
-          materials?: string[] | null
+          image?: Json | null
+          low_on_stock?: boolean | null
+          materials?: Json[] | null
+          materials_description?: string | null
           price: number
+          product_family?: string | null
+          product_family_en?: string | null
+          product_id?: number | null
           product_name: string
-          size: string[]
+          product_subfamily?: string | null
+          section?: string | null
+          size: string
+          sku?: string | null
+          url?: string | null
+          you_may_also_like?: Json | null
         }
         Update: {
           availability?: boolean | null
+          care?: Json | null
+          category_id?: number | null
           colour?: string
+          colour_code?: number | null
           created_at?: string
+          currency?: string | null
           description?: string | null
+          dimension?: string | null
           id?: string
-          materials?: string[] | null
+          image?: Json | null
+          low_on_stock?: boolean | null
+          materials?: Json[] | null
+          materials_description?: string | null
           price?: number
+          product_family?: string | null
+          product_family_en?: string | null
+          product_id?: number | null
           product_name?: string
-          size?: string[]
+          product_subfamily?: string | null
+          section?: string | null
+          size?: string
+          sku?: string | null
+          url?: string | null
+          you_may_also_like?: Json | null
         }
         Relationships: []
       }
