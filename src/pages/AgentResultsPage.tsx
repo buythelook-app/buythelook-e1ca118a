@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -99,7 +98,7 @@ export default function AgentResultsPage() {
                 const imageData = items[0].image;
                 console.log(`Raw image data for ${id}:`, typeof imageData, imageData);
                 
-                // Use the utility function to extract URL
+                // Use the utility function to extract URL with proper type handling
                 const imageUrl = extractZaraImageUrl(imageData);
                 console.log(`Extracted image URL: ${imageUrl}`);
                 

@@ -15,111 +15,96 @@ export const validateImageUrl = (url: string): boolean => {
   );
 };
 
-// Function to extract URL from Zara image field format
-export const extractZaraImageUrl = (imageData: any): string => {
+// Helper type for our image extraction function
+type ZaraImageData = string | string[] | { url?: string } | { [key: string]: any } | null | undefined;
+
+/**
+ * Extracts a usable image URL from Zara's various image data formats
+ * @param imageData - The image data from Zara API or database
+ * @returns A usable image URL or placeholder
+ */
+export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
   try {
-    // If it's null or undefined
-    if (!imageData) {
+    // Handle null/undefined
+    if (imageData === null || imageData === undefined) {
       console.log('Image data is null or undefined');
       return '/placeholder.svg';
     }
     
-    // If it's already a string URL
+    // Handle string URL directly
     if (typeof imageData === 'string') {
-      console.log('Image data is a string:', imageData);
-      if (imageData.startsWith('https://static.zara.net/')) {
+      if (imageData.startsWith('https://') || imageData.startsWith('http://')) {
         return imageData;
       }
       
+      // Try parsing JSON string
       try {
-        // Check if it's a stringified JSON
         const parsed = JSON.parse(imageData);
-        console.log('Parsed JSON from string:', parsed);
         
+        // Handle array of URLs
         if (Array.isArray(parsed) && parsed.length > 0) {
-          console.log('Parsed data is an array, using first element:', parsed[0]);
-          return parsed[0];
+          const firstItem = parsed[0];
+          if (typeof firstItem === 'string') {
+            return firstItem;
+          }
         }
         
+        // Handle object with URL property
         if (parsed && typeof parsed === 'object') {
-          if (parsed.url) {
-            console.log('Found URL in parsed object:', parsed.url);
+          if (typeof parsed.url === 'string') {
             return parsed.url;
           }
           
-          // Look for any string that looks like a URL
+          // Search for URL-like strings in object properties
           for (const key in parsed) {
-            const value = parsed[key];
-            if (typeof value === 'string' && value.startsWith('http')) {
-              console.log('Found URL-like string in parsed object:', value);
-              return value;
+            if (Object.prototype.hasOwnProperty.call(parsed, key)) {
+              const value = parsed[key];
+              if (typeof value === 'string' && (value.startsWith('https://') || value.startsWith('http://'))) {
+                return value;
+              }
             }
           }
         }
-        
-        console.log('No URL found in parsed object, using placeholder');
-        return '/placeholder.svg';
-      } catch (parseError) {
-        console.log('Failed to parse string as JSON:', parseError);
-        return imageData || '/placeholder.svg';
+      } catch (e) {
+        // If parsing fails, return the string as-is
+        return imageData;
       }
     }
     
-    // If it's an array, take the first element
-    if (Array.isArray(imageData)) {
-      console.log('Image data is an array of length:', imageData.length);
-      if (imageData.length === 0) {
-        console.log('Empty array, using placeholder');
-        return '/placeholder.svg';
-      }
-      
+    // Handle array directly
+    if (Array.isArray(imageData) && imageData.length > 0) {
       const firstItem = imageData[0];
-      console.log('First item in array:', firstItem);
-      
       if (typeof firstItem === 'string') {
-        console.log('Using first string item from array');
         return firstItem;
-      } else {
-        console.log('First array item is not a string, using placeholder');
-        return '/placeholder.svg';
       }
     }
     
-    // If it's an object, look for common URL patterns
+    // Handle object with URL property
     if (typeof imageData === 'object' && imageData !== null) {
-      console.log('Image data is an object:', JSON.stringify(imageData).slice(0, 100) + '...');
-      
-      // If the object has an explicit "url" property
-      if (imageData.url && typeof imageData.url === 'string') {
-        console.log('Found direct url property:', imageData.url);
+      if (typeof imageData.url === 'string') {
         return imageData.url;
       }
       
-      // Check for arrays in the object that might contain URLs
+      // Search for URL-like strings in object properties
       for (const key in imageData) {
-        if (Array.isArray(imageData[key]) && imageData[key].length > 0) {
-          const firstInArray = imageData[key][0];
-          if (typeof firstInArray === 'string' && firstInArray.startsWith('http')) {
-            console.log(`Found URL in array at key "${key}":`, firstInArray);
-            return firstInArray;
+        if (Object.prototype.hasOwnProperty.call(imageData, key)) {
+          const value = imageData[key];
+          if (typeof value === 'string' && (value.startsWith('https://') || value.startsWith('http://'))) {
+            return value;
+          }
+          
+          // Check for arrays that might contain URLs
+          if (Array.isArray(value) && value.length > 0) {
+            const firstInArray = value[0];
+            if (typeof firstInArray === 'string' && (firstInArray.startsWith('https://') || firstInArray.startsWith('http://'))) {
+              return firstInArray;
+            }
           }
         }
       }
-      
-      // Return the first URL-like string we find
-      for (const key in imageData) {
-        const value = imageData[key];
-        if (typeof value === 'string' && value.startsWith('http')) {
-          console.log(`Found URL at key "${key}":`, value);
-          return value;
-        }
-      }
-      
-      console.log('No URL found in object properties, using placeholder');
-      return '/placeholder.svg';
     }
     
-    console.log('Unhandled image data type, using placeholder');
+    console.log('No suitable image URL found in data', imageData);
     return '/placeholder.svg';
   } catch (error) {
     console.error('Error extracting image URL:', error);
