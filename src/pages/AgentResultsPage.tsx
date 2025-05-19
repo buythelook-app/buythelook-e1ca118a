@@ -9,7 +9,6 @@ import { Loader2, Info } from "lucide-react";
 import { LookCanvas } from "@/components/LookCanvas";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { extractImageUrl } from "@/services/outfitGenerationService";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Types for agent results
@@ -80,23 +79,53 @@ export default function AgentResultsPage() {
         if (itemIds.length > 0) {
           const images: Record<string, string> = {};
           
-          // For each item type (top, bottom, shoes), find matching items
           for (const id of itemIds) {
-            const { data: items } = await supabase
-              .from('zara_cloth')
-              .select('id, image, product_name, colour')
-              .limit(1);
+            try {
+              // Query for items from the zara_cloth table
+              const { data: items, error } = await supabase
+                .from('zara_cloth')
+                .select('id, image')
+                .limit(1);
               
-            if (items && items.length > 0) {
-              // Extract real image URL from the first matching item
-              const imageUrl = extractImageUrl(items[0].image);
-              images[id] = imageUrl;
+              if (error) {
+                console.error(`Error fetching items for ${id}:`, error);
+                continue;
+              }
               
-              console.log(`Found image for ${id}:`, imageUrl);
-            } else {
-              // Fallback to placeholder if no match found
+              if (items && items.length > 0) {
+                const imageData = items[0].image;
+                
+                // Extract URL from the image data
+                let imageUrl = "";
+                
+                if (typeof imageData === 'string') {
+                  imageUrl = imageData;
+                } else if (Array.isArray(imageData) && imageData.length > 0) {
+                  imageUrl = typeof imageData[0] === 'string' ? imageData[0] : '';
+                } else if (imageData && typeof imageData === 'object') {
+                  // Look through the object for any string that starts with https://static.zara.net/
+                  for (const key in imageData) {
+                    if (typeof imageData[key] === 'string' && imageData[key].startsWith('https://static.zara.net/')) {
+                      imageUrl = imageData[key];
+                      break;
+                    }
+                  }
+                }
+                
+                if (!imageUrl) {
+                  imageUrl = `https://placehold.co/400x600/random?text=${id}`;
+                } 
+                
+                images[id] = imageUrl;
+                console.log(`Image URL for ${id}:`, imageUrl);
+              } else {
+                // Fallback to placeholder if no match found
+                images[id] = `https://placehold.co/400x600/random?text=${id}`;
+                console.log(`No database item found for ${id}, using placeholder`);
+              }
+            } catch (error) {
+              console.error(`Error processing item ${id}:`, error);
               images[id] = `https://placehold.co/400x600/random?text=${id}`;
-              console.log(`No database item found for ${id}, using placeholder`);
             }
           }
           

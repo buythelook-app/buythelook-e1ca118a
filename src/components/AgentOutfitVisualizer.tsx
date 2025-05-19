@@ -72,7 +72,7 @@ export function AgentOutfitVisualizer() {
             // Query for items with matching type and similar color
             const { data: items, error: queryError } = await supabase
               .from('zara_cloth')
-              .select('id, image, product_name, product_family')
+              .select('id, image, product_name')
               .limit(1);
               
             if (queryError) {
@@ -86,28 +86,31 @@ export function AgentOutfitVisualizer() {
               // Get the image data from the first item
               const imageData = items[0].image;
               
-              // Extract the URL from the JSONB data
+              // Process the image data to extract URL
               let imageUrl = '';
               
               if (typeof imageData === 'string') {
-                // If it's already a string URL
                 imageUrl = imageData;
               } else if (Array.isArray(imageData) && imageData.length > 0) {
                 // If it's an array of URLs, take the first one
-                imageUrl = typeof imageData[0] === 'string' ? imageData[0] : '';
+                if (typeof imageData[0] === 'string') {
+                  imageUrl = imageData[0];
+                } else {
+                  imageUrl = '';
+                }
               } else if (imageData && typeof imageData === 'object') {
-                // If it's a complex object with a URL field
-                if (imageData.urls && Array.isArray(imageData.urls) && imageData.urls.length > 0) {
-                  imageUrl = imageData.urls[0];
-                } else if (imageData.url) {
-                  imageUrl = imageData.url;
+                // Look through the object for any string that starts with https://static.zara.net/
+                for (const key in imageData) {
+                  if (typeof imageData[key] === 'string' && imageData[key].startsWith('https://static.zara.net/')) {
+                    imageUrl = imageData[key];
+                    break;
+                  }
                 }
               }
               
-              // If we couldn't parse the image URL, log an error
               if (!imageUrl) {
-                console.error(`Could not extract image URL from data:`, imageData);
                 imageUrl = `https://placehold.co/400x600/random?text=${id}`;
+                console.log(`Could not extract image URL, using placeholder: ${imageUrl}`);
               } else {
                 console.log(`Successfully extracted image URL: ${imageUrl}`);
               }
