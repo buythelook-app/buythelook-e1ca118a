@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -75,6 +76,8 @@ export default function AgentResultsPage() {
           if (result.output.shoes) itemIds.push(result.output.shoes);
         });
 
+        console.log("Collected item IDs in AgentResultsPage:", itemIds);
+
         // Fetch real item data from zara_cloth table
         if (itemIds.length > 0) {
           const images: Record<string, string> = {};
@@ -94,9 +97,11 @@ export default function AgentResultsPage() {
               
               if (items && items.length > 0) {
                 const imageData = items[0].image;
+                console.log(`Raw image data for ${id}:`, typeof imageData, imageData);
                 
                 // Use the utility function to extract URL
                 const imageUrl = extractZaraImageUrl(imageData);
+                console.log(`Extracted image URL: ${imageUrl}`);
                 
                 if (!imageUrl || imageUrl === '/placeholder.svg') {
                   images[id] = `https://placehold.co/400x600/random?text=${id}`;
