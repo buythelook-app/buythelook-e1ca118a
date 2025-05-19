@@ -41,6 +41,7 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
     
     // Handle string URL directly
     if (typeof imageData === 'string') {
+      // If it's already a URL, return it directly
       if (imageData.startsWith('https://') || imageData.startsWith('http://')) {
         return imageData;
       }
@@ -74,7 +75,7 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
           }
         }
       } catch (e) {
-        // If parsing fails, return the string as-is
+        // If parsing fails, return the string as-is (might be a URL)
         return imageData;
       }
     }

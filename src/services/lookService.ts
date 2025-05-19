@@ -1,8 +1,8 @@
-
 import { supabase } from "@/lib/supabaseClient"; // Use centralized Supabase client
 import { DashboardItem } from "@/types/lookTypes";
 import logger from "@/lib/logger";
 import { generateOutfit as generateOutfitFromAPI, getOutfitColors } from "./outfitGenerationService";
+import { extractZaraImageUrl } from "@/utils/imageUtils";
 
 // Cache for storing outfit suggestions to avoid unnecessary API calls
 const outfitCache: Record<string, any> = {};
@@ -82,8 +82,8 @@ const mapToOutfitItem = (item: ZaraClothItem): DashboardItem => {
     }
   }
   
-  // Extract image URL directly from array if applicable
-  const imageUrl = Array.isArray(item.image) ? item.image[0] : item.image || '/placeholder.svg';
+  // Process the image field using our dedicated utility
+  let imageUrl = extractZaraImageUrl(item.image);
   
   return {
     id: item.id || `zara-${Math.random().toString(36).substring(2, 9)}`,
