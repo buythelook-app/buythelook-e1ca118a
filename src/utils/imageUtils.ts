@@ -79,16 +79,19 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
       }
     }
     
-    // Handle object with URL property
-    if (typeof imageData === 'object' && imageData !== null) {
-      if (typeof imageData.url === 'string') {
-        return imageData.url;
+    // Handle object with URL property - FIX: Check if it's an object first and not an array
+    if (typeof imageData === 'object' && imageData !== null && !Array.isArray(imageData)) {
+      // Now we know it's an object and not an array, so this is safe
+      const objData = imageData as { url?: string; [key: string]: any };
+      
+      if (typeof objData.url === 'string') {
+        return objData.url;
       }
       
       // Search for URL-like strings in object properties
-      for (const key in imageData) {
-        if (Object.prototype.hasOwnProperty.call(imageData, key)) {
-          const value = imageData[key];
+      for (const key in objData) {
+        if (Object.prototype.hasOwnProperty.call(objData, key)) {
+          const value = objData[key];
           if (typeof value === 'string' && (value.startsWith('https://') || value.startsWith('http://'))) {
             return value;
           }

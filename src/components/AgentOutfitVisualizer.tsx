@@ -57,6 +57,7 @@ export function AgentOutfitVisualizer() {
       if (itemIds.length > 0) {
         const images: Record<string, string> = {};
         
+        // Process each item ID
         for (const id of itemIds) {
           try {
             // Extract the type (top, bottom, shoes) and color from the ID
@@ -83,6 +84,7 @@ export function AgentOutfitVisualizer() {
               continue;
             }
             
+            // Process the query results
             if (items && items.length > 0) {
               console.log(`Found item for ${id}:`, items[0]);
               
