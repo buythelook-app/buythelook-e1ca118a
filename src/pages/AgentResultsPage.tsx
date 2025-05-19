@@ -80,11 +80,8 @@ export default function AgentResultsPage() {
         if (itemIds.length > 0) {
           const images: Record<string, string> = {};
           
-          // For each item ID, query the database for the actual item data
+          // For each item type (top, bottom, shoes), find matching items
           for (const id of itemIds) {
-            const itemId = id.replace(/^(top|bottom|shoes|coat)-/, ''); // Extract the color code
-            
-            // Search for items with similar color codes
             const { data: items } = await supabase
               .from('zara_cloth')
               .select('id, image, product_name, colour')

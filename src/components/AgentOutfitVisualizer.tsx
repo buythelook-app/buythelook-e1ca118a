@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw, Info } from "lucide-react";
 import { OutfitAgentCard } from "./OutfitAgentCard";
 import { toast } from "sonner";
-import { extractImageUrl } from "@/services/outfitGenerationService";
 import { AgentResult, TrainerAgentResponse } from "@/types/outfitAgentTypes";
 
 // Helper to format agent names nicely
@@ -55,26 +54,73 @@ export function AgentOutfitVisualizer() {
       if (itemIds.length > 0) {
         const images: Record<string, string> = {};
         
-        // For each item ID, query the database for the actual item data
         for (const id of itemIds) {
-          const itemId = id.replace(/^(top|bottom|shoes|coat)-/, ''); // Extract the color code
-          
-          // Search for items with similar color codes
-          const { data: items } = await supabase
-            .from('zara_cloth')
-            .select('id, image, product_name, colour')
-            .limit(1);
+          try {
+            // Extract the type (top, bottom, shoes) and color from the ID
+            const match = id.match(/(top|bottom|shoes|coat)-([a-fA-F0-9]+)/);
             
-          if (items && items.length > 0) {
-            // Extract real image URL from the first matching item
-            const imageUrl = extractImageUrl(items[0].image);
-            images[id] = imageUrl;
+            if (!match) {
+              console.error(`Invalid item ID format: ${id}`);
+              continue;
+            }
             
-            console.log(`Found image for ${id}:`, imageUrl);
-          } else {
-            // Fallback to placeholder if no match found
+            const itemType = match[1];
+            const colorCode = match[2];
+            
+            console.log(`Fetching ${itemType} with color code: ${colorCode}`);
+            
+            // Query for items with matching type and similar color
+            const { data: items, error: queryError } = await supabase
+              .from('zara_cloth')
+              .select('id, image, product_name, product_family')
+              .limit(1);
+              
+            if (queryError) {
+              console.error(`Error fetching items for ${id}:`, queryError);
+              continue;
+            }
+            
+            if (items && items.length > 0) {
+              console.log(`Found item for ${id}:`, items[0]);
+              
+              // Get the image data from the first item
+              const imageData = items[0].image;
+              
+              // Extract the URL from the JSONB data
+              let imageUrl = '';
+              
+              if (typeof imageData === 'string') {
+                // If it's already a string URL
+                imageUrl = imageData;
+              } else if (Array.isArray(imageData) && imageData.length > 0) {
+                // If it's an array of URLs, take the first one
+                imageUrl = typeof imageData[0] === 'string' ? imageData[0] : '';
+              } else if (imageData && typeof imageData === 'object') {
+                // If it's a complex object with a URL field
+                if (imageData.urls && Array.isArray(imageData.urls) && imageData.urls.length > 0) {
+                  imageUrl = imageData.urls[0];
+                } else if (imageData.url) {
+                  imageUrl = imageData.url;
+                }
+              }
+              
+              // If we couldn't parse the image URL, log an error
+              if (!imageUrl) {
+                console.error(`Could not extract image URL from data:`, imageData);
+                imageUrl = `https://placehold.co/400x600/random?text=${id}`;
+              } else {
+                console.log(`Successfully extracted image URL: ${imageUrl}`);
+              }
+              
+              images[id] = imageUrl;
+            } else {
+              // Fallback to placeholder if no match found
+              images[id] = `https://placehold.co/400x600/random?text=${id}`;
+              console.log(`No database item found for ${id}, using placeholder`);
+            }
+          } catch (itemError) {
+            console.error(`Error processing item ${id}:`, itemError);
             images[id] = `https://placehold.co/400x600/random?text=${id}`;
-            console.log(`No database item found for ${id}, using placeholder`);
           }
         }
         
