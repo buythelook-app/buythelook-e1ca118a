@@ -31,7 +31,7 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
       return '/placeholder.svg';
     }
     
-    // Handle JSON array directly - specific case for jsonb arrays from zara_cloth table
+    // Direct handling for arrays (jsonb arrays from zara_cloth table)
     if (Array.isArray(imageData) && imageData.length > 0) {
       const firstImage = imageData[0];
       if (typeof firstImage === 'string') {
@@ -79,9 +79,8 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
       }
     }
     
-    // Handle object with URL property - Check if it's an object first and not an array
+    // Handle object with URL property
     if (typeof imageData === 'object' && imageData !== null && !Array.isArray(imageData)) {
-      // Now we know it's an object and not an array, so this is safe
       const objData = imageData as { url?: string; [key: string]: any };
       
       if (typeof objData.url === 'string') {

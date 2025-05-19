@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient"; // Use centralized Supabase client
 import { DashboardItem } from "@/types/lookTypes";
 import logger from "@/lib/logger";
@@ -41,7 +42,7 @@ interface ZaraClothItem {
   id: string;
   product_name: string;
   price: number | string;
-  image?: string;
+  image?: string | string[] | any;
   colour?: string;
   description?: string;
 }
@@ -81,8 +82,8 @@ const mapToOutfitItem = (item: ZaraClothItem): DashboardItem => {
     }
   }
   
-  // Make sure we have a valid image URL
-  const imageUrl = item.image || '/placeholder.svg';
+  // Extract image URL directly from array if applicable
+  const imageUrl = Array.isArray(item.image) ? item.image[0] : item.image || '/placeholder.svg';
   
   return {
     id: item.id || `zara-${Math.random().toString(36).substring(2, 9)}`,
