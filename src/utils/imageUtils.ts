@@ -46,7 +46,7 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
         return imageData;
       }
       
-      // Try parsing JSON string (might be a stringified array or object)
+      // IMPORTANT: Handle JSON string arrays like "[\"https://static.zara.net/photos/...jpg\"]"
       try {
         const parsed = JSON.parse(imageData);
         
@@ -54,6 +54,7 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
         if (Array.isArray(parsed) && parsed.length > 0) {
           const firstItem = parsed[0];
           if (typeof firstItem === 'string') {
+            console.log(`Successfully parsed JSON string array and extracted URL: ${firstItem}`);
             return firstItem;
           }
         }
@@ -75,6 +76,7 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
           }
         }
       } catch (e) {
+        console.warn('JSON parsing failed for image data:', imageData, e);
         // If parsing fails, return the string as-is (might be a URL)
         return imageData;
       }

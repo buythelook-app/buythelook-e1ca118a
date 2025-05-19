@@ -8,8 +8,8 @@ interface LookImageProps {
 }
 
 export const LookImage = ({ image, title }: LookImageProps) => {
-  // Ensure the image is a string URL
-  const imageUrl = typeof image === 'string' ? image : extractZaraImageUrl(image);
+  // Ensure the image is a proper URL by using our extraction utility
+  const imageUrl = extractZaraImageUrl(image);
   
   return (
     <AspectRatio ratio={3/4} className="relative overflow-hidden">
@@ -19,7 +19,7 @@ export const LookImage = ({ image, title }: LookImageProps) => {
         className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-300"
         onError={(e) => {
           console.error(`Error loading image: ${imageUrl}`);
-          e.currentTarget.src = 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158';
+          e.currentTarget.src = '/placeholder.svg';
         }}
       />
     </AspectRatio>
