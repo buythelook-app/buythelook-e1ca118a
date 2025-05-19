@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -7,6 +6,7 @@ import { Loader2, RefreshCw, Info } from "lucide-react";
 import { OutfitAgentCard } from "./OutfitAgentCard";
 import { toast } from "sonner";
 import { AgentResult, TrainerAgentResponse } from "@/types/outfitAgentTypes";
+import { extractZaraImageUrl } from "@/utils/imageUtils";
 
 // Helper to format agent names nicely
 const formatAgentName = (name: string): string => {
@@ -86,36 +86,16 @@ export function AgentOutfitVisualizer() {
               // Get the image data from the first item
               const imageData = items[0].image;
               
-              // Process the image data to extract URL
-              let imageUrl = '';
+              // Use the utility function to extract URL
+              const imageUrl = extractZaraImageUrl(imageData);
               
-              if (typeof imageData === 'string') {
-                imageUrl = imageData;
-              } else if (Array.isArray(imageData) && imageData.length > 0) {
-                // If it's an array of URLs, take the first one
-                if (typeof imageData[0] === 'string') {
-                  imageUrl = imageData[0];
-                } else {
-                  imageUrl = '';
-                }
-              } else if (imageData && typeof imageData === 'object') {
-                // Look through the object for any string that starts with https://static.zara.net/
-                for (const key in imageData) {
-                  if (typeof imageData[key] === 'string' && imageData[key].startsWith('https://static.zara.net/')) {
-                    imageUrl = imageData[key];
-                    break;
-                  }
-                }
-              }
-              
-              if (!imageUrl) {
-                imageUrl = `https://placehold.co/400x600/random?text=${id}`;
-                console.log(`Could not extract image URL, using placeholder: ${imageUrl}`);
+              if (!imageUrl || imageUrl === '/placeholder.svg') {
+                images[id] = `https://placehold.co/400x600/random?text=${id}`;
+                console.log(`Could not extract image URL, using placeholder: ${images[id]}`);
               } else {
                 console.log(`Successfully extracted image URL: ${imageUrl}`);
+                images[id] = imageUrl;
               }
-              
-              images[id] = imageUrl;
             } else {
               // Fallback to placeholder if no match found
               images[id] = `https://placehold.co/400x600/random?text=${id}`;

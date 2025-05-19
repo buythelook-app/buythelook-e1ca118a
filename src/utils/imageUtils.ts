@@ -48,7 +48,7 @@ export const extractZaraImageUrl = (imageData: any): string => {
     }
     
     // If it's an object, look for common URL patterns
-    if (typeof imageData === 'object') {
+    if (typeof imageData === 'object' && imageData !== null) {
       // Return the first URL-like string we find
       const urlKeys = Object.keys(imageData).find(key => 
         typeof imageData[key] === 'string' && 

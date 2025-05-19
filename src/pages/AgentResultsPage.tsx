@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import { LookCanvas } from "@/components/LookCanvas";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { extractZaraImageUrl } from "@/utils/imageUtils";
 
 // Types for agent results
 interface AgentOutfit {
@@ -95,29 +95,16 @@ export default function AgentResultsPage() {
               if (items && items.length > 0) {
                 const imageData = items[0].image;
                 
-                // Extract URL from the image data
-                let imageUrl = "";
+                // Use the utility function to extract URL
+                const imageUrl = extractZaraImageUrl(imageData);
                 
-                if (typeof imageData === 'string') {
-                  imageUrl = imageData;
-                } else if (Array.isArray(imageData) && imageData.length > 0) {
-                  imageUrl = typeof imageData[0] === 'string' ? imageData[0] : '';
-                } else if (imageData && typeof imageData === 'object') {
-                  // Look through the object for any string that starts with https://static.zara.net/
-                  for (const key in imageData) {
-                    if (typeof imageData[key] === 'string' && imageData[key].startsWith('https://static.zara.net/')) {
-                      imageUrl = imageData[key];
-                      break;
-                    }
-                  }
+                if (!imageUrl || imageUrl === '/placeholder.svg') {
+                  images[id] = `https://placehold.co/400x600/random?text=${id}`;
+                  console.log(`Could not extract image URL, using placeholder`);
+                } else {
+                  images[id] = imageUrl;
+                  console.log(`Image URL for ${id}:`, imageUrl);
                 }
-                
-                if (!imageUrl) {
-                  imageUrl = `https://placehold.co/400x600/random?text=${id}`;
-                } 
-                
-                images[id] = imageUrl;
-                console.log(`Image URL for ${id}:`, imageUrl);
               } else {
                 // Fallback to placeholder if no match found
                 images[id] = `https://placehold.co/400x600/random?text=${id}`;
