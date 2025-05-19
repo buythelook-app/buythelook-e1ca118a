@@ -88,11 +88,11 @@ export function AgentOutfitVisualizer() {
             if (items && items.length > 0) {
               console.log(`Found item for ${id}:`, items[0]);
               
-              // Get the image data from the first item
+              // Get the image data from the first item - specifically handle jsonb array format
               const imageData = items[0].image;
               console.log(`Raw image data for ${id}:`, typeof imageData, imageData);
               
-              // Use the utility function to extract URL
+              // Use the modified utility function to extract URL
               const imageUrl = extractZaraImageUrl(imageData);
               console.log(`Extracted image URL: ${imageUrl}`);
               

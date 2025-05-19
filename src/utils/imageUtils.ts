@@ -31,17 +31,25 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
       return '/placeholder.svg';
     }
     
+    // Handle JSON array directly - specific case for jsonb arrays from zara_cloth table
+    if (Array.isArray(imageData) && imageData.length > 0) {
+      const firstImage = imageData[0];
+      if (typeof firstImage === 'string') {
+        return firstImage;
+      }
+    }
+    
     // Handle string URL directly
     if (typeof imageData === 'string') {
       if (imageData.startsWith('https://') || imageData.startsWith('http://')) {
         return imageData;
       }
       
-      // Try parsing JSON string
+      // Try parsing JSON string (might be a stringified array or object)
       try {
         const parsed = JSON.parse(imageData);
         
-        // Handle array of URLs
+        // If parsed into array, get first item
         if (Array.isArray(parsed) && parsed.length > 0) {
           const firstItem = parsed[0];
           if (typeof firstItem === 'string') {
@@ -49,7 +57,7 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
           }
         }
         
-        // Handle object with URL property
+        // If parsed into object, look for URL
         if (parsed && typeof parsed === 'object') {
           if (typeof parsed.url === 'string') {
             return parsed.url;
@@ -71,15 +79,7 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
       }
     }
     
-    // Handle array directly
-    if (Array.isArray(imageData) && imageData.length > 0) {
-      const firstItem = imageData[0];
-      if (typeof firstItem === 'string') {
-        return firstItem;
-      }
-    }
-    
-    // Handle object with URL property - FIX: Check if it's an object first and not an array
+    // Handle object with URL property - Check if it's an object first and not an array
     if (typeof imageData === 'object' && imageData !== null && !Array.isArray(imageData)) {
       // Now we know it's an object and not an array, so this is safe
       const objData = imageData as { url?: string; [key: string]: any };

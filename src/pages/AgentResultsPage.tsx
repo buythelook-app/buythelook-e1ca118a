@@ -96,10 +96,11 @@ export default function AgentResultsPage() {
               }
               
               if (items && items.length > 0) {
+                // Get image data - properly handling jsonb array format
                 const imageData = items[0].image;
                 console.log(`Raw image data for ${id}:`, typeof imageData, imageData);
                 
-                // Use the utility function to extract URL with proper type handling
+                // Use the updated utility function to extract URL from array or other formats
                 const imageUrl = extractZaraImageUrl(imageData);
                 console.log(`Extracted image URL: ${imageUrl}`);
                 
