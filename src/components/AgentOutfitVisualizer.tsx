@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -29,17 +30,21 @@ export function AgentOutfitVisualizer() {
       setLoading(true);
       setError(null);
       
+      console.log("מתחיל לקרוא לאייג'נט הטריינר...");
+      
       // Call the trainer-agent Edge Function
       const { data, error } = await supabase.functions.invoke<TrainerAgentResponse>('trainer-agent');
       
       if (error) {
+        console.error('שגיאה בקריאה לאייג\'נט הטריינר:', error);
         throw new Error(error.message);
       }
       
       if (!data || !data.results) {
-        throw new Error('Invalid response from trainer agent');
+        throw new Error('תגובה לא תקינה מהאייג\'נט הטריינר');
       }
 
+      console.log(`התקבלו ${data.results.length} תוצאות מהאייג'נט`);
       setResults(data.results);
 
       // Collect all item IDs from results
@@ -50,71 +55,50 @@ export function AgentOutfitVisualizer() {
         if (result.output.shoes) itemIds.push(result.output.shoes);
       });
 
-      console.log("Collected item IDs:", itemIds);
+      console.log("מזהי פריטים שנאספו:", itemIds);
 
       // Fetch real item data from zara_cloth table
       if (itemIds.length > 0) {
         const images: Record<string, string> = {};
         
-        // Process each item ID
-        for (const id of itemIds) {
-          try {
-            // Extract the type (top, bottom, shoes) and color from the ID
-            const match = id.match(/(top|bottom|shoes|coat)-([a-fA-F0-9]+)/);
+        // Get a sample of items from the database for image mapping
+        const { data: sampleItems, error: queryError } = await supabase
+          .from('zara_cloth')
+          .select('id, image, product_name')
+          .limit(50); // Get more items for better variety
+          
+        if (queryError) {
+          console.error('שגיאה בשליפת פריטים:', queryError);
+        } else if (sampleItems && sampleItems.length > 0) {
+          console.log(`נמצאו ${sampleItems.length} פריטים בדאטהבייס`);
+          
+          // Map each item ID to a random item from the database
+          itemIds.forEach((id, index) => {
+            const randomItem = sampleItems[index % sampleItems.length];
+            const imageUrl = extractZaraImageUrl(randomItem.image);
             
-            if (!match) {
-              console.error(`Invalid item ID format: ${id}`);
-              continue;
-            }
-            
-            const itemType = match[1];
-            const colorCode = match[2];
-            
-            console.log(`Fetching ${itemType} with color code: ${colorCode}`);
-            
-            // Query for items with matching type and similar color
-            const { data: items, error: queryError } = await supabase
-              .from('zara_cloth')
-              .select('id, image, product_name')
-              .limit(1);
-              
-            if (queryError) {
-              console.error(`Error fetching items for ${id}:`, queryError);
-              continue;
-            }
-            
-            // Process the query results
-            if (items && items.length > 0) {
-              console.log(`Found item for ${id}:`, items[0]);
-              
-              // Use the utility function to extract URL from any image data format
-              const imageUrl = extractZaraImageUrl(items[0].image);
-              console.log(`Extracted image URL: ${imageUrl}`);
-              
-              if (!imageUrl || imageUrl === '/placeholder.svg') {
-                images[id] = `https://placehold.co/400x600/random?text=${id}`;
-                console.log(`Could not extract image URL, using placeholder: ${images[id]}`);
-              } else {
-                console.log(`Successfully extracted image URL: ${imageUrl}`);
-                images[id] = imageUrl;
-              }
+            if (imageUrl && imageUrl !== '/placeholder.svg') {
+              images[id] = imageUrl;
+              console.log(`מיפוי תמונה עבור ${id}: ${imageUrl}`);
             } else {
-              // Fallback to placeholder if no match found
-              images[id] = `https://placehold.co/400x600/random?text=${id}`;
-              console.log(`No database item found for ${id}, using placeholder`);
+              images[id] = `https://placehold.co/400x600/random?text=${encodeURIComponent(id)}`;
+              console.log(`משתמש בפלייסהולדר עבור ${id}`);
             }
-          } catch (itemError) {
-            console.error(`Error processing item ${id}:`, itemError);
-            images[id] = `https://placehold.co/400x600/random?text=${id}`;
-          }
+          });
+        } else {
+          console.log("לא נמצאו פריטים בדאטהבייס, משתמש בפלייסהולדרים");
+          itemIds.forEach(id => {
+            images[id] = `https://placehold.co/400x600/random?text=${encodeURIComponent(id)}`;
+          });
         }
         
         setItemImages(images);
+        console.log("מיפוי תמונות הושלם:", Object.keys(images).length, "פריטים");
       }
     } catch (err: any) {
-      console.error('Error fetching trainer agent results:', err);
+      console.error('שגיאה בטעינת תוצאות האייג\'נט:', err);
       setError(err.message);
-      toast.error('Failed to load agent results');
+      toast.error('שגיאה בטעינת תוצאות האייג\'נט');
     } finally {
       setLoading(false);
     }
@@ -158,7 +142,7 @@ export function AgentOutfitVisualizer() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">AI Agent Outfit Visualizations</h2>
+        <h2 className="text-2xl font-bold">ויזואליזציה של אייג'נטי אופנה</h2>
         <div className="flex gap-2">
           <Button 
             onClick={() => setShowImagePath(!showImagePath)} 
@@ -167,7 +151,7 @@ export function AgentOutfitVisualizer() {
             className="flex items-center gap-1"
           >
             <Info className="h-4 w-4" />
-            {showImagePath ? "Hide Paths" : "Show Paths"}
+            {showImagePath ? "הסתר נתיבים" : "הראה נתיבים"}
           </Button>
           <Button 
             onClick={fetchResults} 
@@ -177,7 +161,7 @@ export function AgentOutfitVisualizer() {
             className="flex items-center gap-1"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            Refresh
+            רענן
           </Button>
         </div>
       </div>
@@ -185,11 +169,11 @@ export function AgentOutfitVisualizer() {
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2 text-lg">Loading agent results...</span>
+          <span className="ml-2 text-lg">טוען תוצאות אייג'נטים...</span>
         </div>
       ) : error ? (
         <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>שגיאה</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : (
@@ -224,7 +208,7 @@ export function AgentOutfitVisualizer() {
 
       {results.length === 0 && !loading && !error && (
         <div className="py-10 text-center">
-          <p className="text-gray-500">No agent results available</p>
+          <p className="text-gray-500">אין תוצאות אייג'נטים זמינות</p>
         </div>
       )}
     </div>
