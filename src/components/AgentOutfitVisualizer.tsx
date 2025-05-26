@@ -53,43 +53,39 @@ export function AgentOutfitVisualizer() {
         if (result.output.top) itemIds.push(result.output.top);
         if (result.output.bottom) itemIds.push(result.output.bottom);
         if (result.output.shoes) itemIds.push(result.output.shoes);
+        if (result.output.coat) itemIds.push(result.output.coat);
       });
 
       console.log("מזהי פריטים שנאספו:", itemIds);
 
-      // Fetch real item data from zara_cloth table
+      // Fetch real item data from zara_cloth table using the actual IDs
       if (itemIds.length > 0) {
         const images: Record<string, string> = {};
         
-        // Get a sample of items from the database for image mapping
-        const { data: sampleItems, error: queryError } = await supabase
+        const { data: itemsData, error: queryError } = await supabase
           .from('zara_cloth')
           .select('id, image, product_name')
-          .limit(50); // Get more items for better variety
+          .in('id', itemIds);
           
         if (queryError) {
           console.error('שגיאה בשליפת פריטים:', queryError);
-        } else if (sampleItems && sampleItems.length > 0) {
-          console.log(`נמצאו ${sampleItems.length} פריטים בדאטהבייס`);
+        } else if (itemsData && itemsData.length > 0) {
+          console.log(`נמצאו ${itemsData.length} פריטים בדאטהבייס`);
           
-          // Map each item ID to a random item from the database
-          itemIds.forEach((id, index) => {
-            const randomItem = sampleItems[index % sampleItems.length];
-            const imageUrl = extractZaraImageUrl(randomItem.image);
+          // Map each item ID to its actual image
+          itemsData.forEach(item => {
+            const imageUrl = extractZaraImageUrl(item.image);
             
             if (imageUrl && imageUrl !== '/placeholder.svg') {
-              images[id] = imageUrl;
-              console.log(`מיפוי תמונה עבור ${id}: ${imageUrl}`);
+              images[item.id] = imageUrl;
+              console.log(`מיפוי תמונה עבור ${item.id}: ${imageUrl}`);
             } else {
-              images[id] = `https://placehold.co/400x600/random?text=${encodeURIComponent(id)}`;
-              console.log(`משתמש בפלייסהולדר עבור ${id}`);
+              images[item.id] = '/placeholder.svg';
+              console.log(`משתמש בפלייסהולדר עבור ${item.id}`);
             }
           });
         } else {
-          console.log("לא נמצאו פריטים בדאטהבייס, משתמש בפלייסהולדרים");
-          itemIds.forEach(id => {
-            images[id] = `https://placehold.co/400x600/random?text=${encodeURIComponent(id)}`;
-          });
+          console.log("לא נמצאו פריטים בדאטהבייס");
         }
         
         setItemImages(images);
@@ -133,6 +129,14 @@ export function AgentOutfitVisualizer() {
         id: agentOutput.shoes,
         image: itemImages[agentOutput.shoes],
         type: 'shoes'
+      });
+    }
+    
+    if (agentOutput.coat && itemImages[agentOutput.coat]) {
+      lookItems.push({
+        id: agentOutput.coat,
+        image: itemImages[agentOutput.coat],
+        type: 'coat'
       });
     }
     
@@ -191,6 +195,7 @@ export function AgentOutfitVisualizer() {
               if (result.output.top) details.Top = result.output.top;
               if (result.output.bottom) details.Bottom = result.output.bottom;
               if (result.output.shoes) details.Shoes = result.output.shoes;
+              if (result.output.coat) details.Coat = result.output.coat;
               
               return (
                 <OutfitAgentCard 

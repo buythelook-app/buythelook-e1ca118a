@@ -36,89 +36,105 @@ const agents = [
   'body-shape-expert-agent'
 ];
 
-// Sample outfit data generation function
-function generateAgentResults(userPreferences?: { likedOutfits: any[], dislikedOutfits: any[] }): AgentResult[] {
+// Function to fetch random items by type from zara_cloth table
+async function fetchRandomItemsByType(supabaseClient: any, type: string, count: number = 3) {
+  try {
+    let query = supabaseClient.from('zara_cloth').select('id, product_name');
+    
+    // Filter by product type based on product_name
+    if (type === 'top') {
+      query = query.or('product_name.ilike.%shirt%,product_name.ilike.%blouse%,product_name.ilike.%tee%,product_name.ilike.%sweater%,product_name.ilike.%top%');
+    } else if (type === 'bottom') {
+      query = query.or('product_name.ilike.%pant%,product_name.ilike.%trouser%,product_name.ilike.%jean%,product_name.ilike.%skirt%,product_name.ilike.%short%,product_name.ilike.%bottom%');
+    } else if (type === 'shoes') {
+      query = query.or('product_name.ilike.%shoe%,product_name.ilike.%boot%,product_name.ilike.%sneaker%,product_name.ilike.%sandal%,product_name.ilike.%footwear%');
+    } else if (type === 'coat') {
+      query = query.or('product_name.ilike.%jacket%,product_name.ilike.%coat%,product_name.ilike.%outerwear%');
+    }
+    
+    const { data, error } = await query.limit(count * 3); // Get more items to have variety
+    
+    if (error) {
+      console.error(`Error fetching ${type} items:`, error);
+      return [];
+    }
+    
+    // Shuffle and return random items
+    const shuffled = (data || []).sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, count);
+  } catch (error) {
+    console.error(`Error in fetchRandomItemsByType for ${type}:`, error);
+    return [];
+  }
+}
+
+// Sample outfit data generation function using real items
+async function generateAgentResults(supabaseClient: any, userPreferences?: { likedOutfits: any[], dislikedOutfits: any[] }): Promise<AgentResult[]> {
   const results: AgentResult[] = [];
   
-  // Color palettes by style
-  const colorPalettes = {
-    classic: ['#2C3E50', '#34495E', '#7F8C8D', '#BDC3C7', '#ECF0F1'],
-    modern: ['#212121', '#424242', '#616161', '#FAFAFA', '#FFFFFF'],
-    trendy: ['#FF4081', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5'],
-    colorful: ['#F44336', '#4CAF50', '#2196F3', '#FFEB3B', '#FF9800'],
-    neutral: ['#795548', '#9E9E9E', '#607D8B', '#EEEEEE', '#EFEBE9']
-  };
-  
-  // Generate unique results for each agent
-  for (const agent of agents) {
-    let palette;
+  try {
+    // Fetch real items from the database
+    console.log("Fetching real items from zara_cloth table...");
+    const topItems = await fetchRandomItemsByType(supabaseClient, 'top', 10);
+    const bottomItems = await fetchRandomItemsByType(supabaseClient, 'bottom', 10);
+    const shoeItems = await fetchRandomItemsByType(supabaseClient, 'shoes', 10);
+    const coatItems = await fetchRandomItemsByType(supabaseClient, 'coat', 5);
     
-    // Assign palette based on agent type
-    if (agent === 'classic-style-agent') {
-      palette = colorPalettes.classic;
-    } else if (agent === 'modern-minimalist-agent') {
-      palette = colorPalettes.modern;
-    } else if (agent === 'trend-spotter-agent') {
-      palette = colorPalettes.trendy;
-    } else if (agent === 'color-harmony-agent') {
-      palette = colorPalettes.colorful;
-    } else {
-      palette = colorPalettes.neutral;
-    }
+    console.log(`Found ${topItems.length} tops, ${bottomItems.length} bottoms, ${shoeItems.length} shoes, ${coatItems.length} coats`);
     
-    // If we have user preference data, use that to adjust item selection
-    if (userPreferences && (userPreferences.likedOutfits.length > 0 || userPreferences.dislikedOutfits.length > 0)) {
-      // Apply user preferences logic here
-      // This is where an AI system would use the feedback to improve suggestions
-      console.log("Applying user preferences to agent recommendations");
-    }
-    
-    // Select random colors for outfit
-    const topIndex = Math.floor(Math.random() * palette.length);
-    let bottomIndex;
-    do {
-      bottomIndex = Math.floor(Math.random() * palette.length);
-    } while (bottomIndex === topIndex);
-    
-    let shoesIndex;
-    do {
-      shoesIndex = Math.floor(Math.random() * palette.length);
-    } while (shoesIndex === topIndex || shoesIndex === bottomIndex);
-    
-    // Maybe add a coat (30% chance)
-    let coatColor = undefined;
-    if (Math.random() < 0.3) {
-      let coatIndex;
-      do {
-        coatIndex = Math.floor(Math.random() * palette.length);
-      } while (coatIndex === topIndex || coatIndex === bottomIndex || coatIndex === shoesIndex);
-      coatColor = palette[coatIndex];
-    }
-    
-    // Generate a random score - agents would each have their own scoring logic
-    const score = Math.floor(Math.random() * 30) + 70;
-    
-    // Add the result
-    results.push({
-      agent,
-      output: {
-        top: `top-${palette[topIndex].replace('#', '')}`,
-        bottom: `bottom-${palette[bottomIndex].replace('#', '')}`,
-        shoes: `shoes-${palette[shoesIndex].replace('#', '')}`,
-        coat: coatColor ? `coat-${coatColor.replace('#', '')}` : undefined,
+    // Generate unique results for each agent
+    for (const agent of agents) {
+      // If we have user preference data, use that to adjust item selection
+      if (userPreferences && (userPreferences.likedOutfits.length > 0 || userPreferences.dislikedOutfits.length > 0)) {
+        console.log("Applying user preferences to agent recommendations for", agent);
+      }
+      
+      // Select random real items for outfit
+      const randomTop = topItems.length > 0 ? topItems[Math.floor(Math.random() * topItems.length)] : null;
+      const randomBottom = bottomItems.length > 0 ? bottomItems[Math.floor(Math.random() * bottomItems.length)] : null;
+      const randomShoes = shoeItems.length > 0 ? shoeItems[Math.floor(Math.random() * shoeItems.length)] : null;
+      
+      // Maybe add a coat (30% chance)
+      const randomCoat = (Math.random() < 0.3 && coatItems.length > 0) 
+        ? coatItems[Math.floor(Math.random() * coatItems.length)] 
+        : null;
+      
+      // Generate a random score - agents would each have their own scoring logic
+      const score = Math.floor(Math.random() * 30) + 70;
+      
+      // Create outfit with real item IDs
+      const outfit: AgentOutfit = {
         score,
-        description: `Sample outfit by ${agent}`,
+        description: `Curated outfit by ${agent.replace('-', ' ')}`,
         recommendations: [
           "This outfit balances your body shape well",
           "The color palette complements your skin tone"
         ],
         occasion: Math.random() > 0.5 ? 'work' : 'casual'
-      },
-      timestamp: new Date().toISOString()
-    });
+      };
+      
+      // Add real item IDs if available
+      if (randomTop) outfit.top = randomTop.id;
+      if (randomBottom) outfit.bottom = randomBottom.id;
+      if (randomShoes) outfit.shoes = randomShoes.id;
+      if (randomCoat) outfit.coat = randomCoat.id;
+      
+      // Only add results that have at least top, bottom, and shoes
+      if (outfit.top && outfit.bottom && outfit.shoes) {
+        results.push({
+          agent,
+          output: outfit,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+    
+    console.log(`Generated ${results.length} complete outfits with real items`);
+    return results;
+  } catch (error) {
+    console.error("Error generating agent results:", error);
+    return [];
   }
-  
-  return results;
 }
 
 // Main handler for the edge function
@@ -164,8 +180,8 @@ Deno.serve(async (req) => {
       }
     }
     
-    // Generate results (in a real system, this would use the user preferences data)
-    const agentResults = generateAgentResults(userPreferences);
+    // Generate results using real items from the database
+    const agentResults = await generateAgentResults(supabaseClient, userPreferences);
     
     // Create response
     const response: TrainerAgentResponse = {
