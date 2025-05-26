@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -7,7 +6,7 @@ import { Loader2, RefreshCw, Info } from "lucide-react";
 import { OutfitAgentCard } from "./OutfitAgentCard";
 import { toast } from "sonner";
 import { AgentResult, TrainerAgentResponse } from "@/types/outfitAgentTypes";
-import { extractZaraImageUrl } from "@/utils/imageUtils";
+import { extractZaraImageUrl, ZaraImageData } from "@/utils/imageUtils";
 
 // Helper to format agent names nicely
 const formatAgentName = (name: string): string => {
@@ -78,7 +77,8 @@ export function AgentOutfitVisualizer() {
           itemsData.forEach(item => {
             console.log(`מעבד פריט ${item.id}:`, item.product_name, 'תמונה:', item.image);
             
-            const imageUrl = extractZaraImageUrl(item.image);
+            // Cast the Json type to ZaraImageData before passing to extractZaraImageUrl
+            const imageUrl = extractZaraImageUrl(item.image as ZaraImageData);
             
             if (imageUrl && imageUrl !== '/placeholder.svg') {
               images[item.id] = imageUrl;
