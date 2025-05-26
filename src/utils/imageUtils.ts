@@ -1,4 +1,3 @@
-
 export const transformImageUrl = (url: string) => {
   if (!url) return '';
   // Only transform URLs from the review environment
@@ -15,8 +14,8 @@ export const validateImageUrl = (url: string): boolean => {
   );
 };
 
-// Helper type for our image extraction function
-type ZaraImageData = string | string[] | { url?: string } | { [key: string]: any } | null | undefined;
+// Helper type for our image extraction function - now exported
+export type ZaraImageData = string | string[] | { url?: string } | { [key: string]: any } | null | undefined;
 
 /**
  * Extracts a usable image URL from Zara's various image data formats
