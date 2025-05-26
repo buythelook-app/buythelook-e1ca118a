@@ -37,42 +37,40 @@ const agents = [
 ];
 
 // Function to fetch random items by type from zara_cloth table
-async function fetchRandomItemsByType(supabaseClient: any, type: string, count: number = 5) {
+async function fetchRandomItemsByType(supabaseClient: any, type: string, count: number = 10) {
   try {
-    console.log(`Fetching items for type: ${type}`);
+    console.log(`שולף פריטים מסוג: ${type}`);
     
     let query = supabaseClient.from('zara_cloth').select('id, product_name, image, price, colour');
     
-    // Filter by product type based on product_name
+    // Filter by product type based on product_name with better filtering
     if (type === 'top') {
-      query = query.or('product_name.ilike.%shirt%,product_name.ilike.%blouse%,product_name.ilike.%tee%,product_name.ilike.%sweater%,product_name.ilike.%top%,product_name.ilike.%jacket%');
+      query = query.or('product_name.ilike.%shirt%,product_name.ilike.%blouse%,product_name.ilike.%tee%,product_name.ilike.%sweater%,product_name.ilike.%top%');
     } else if (type === 'bottom') {
-      query = query.or('product_name.ilike.%pant%,product_name.ilike.%trouser%,product_name.ilike.%jean%,product_name.ilike.%skirt%,product_name.ilike.%short%,product_name.ilike.%bottom%');
+      query = query.or('product_name.ilike.%pant%,product_name.ilike.%trouser%,product_name.ilike.%jean%,product_name.ilike.%skirt%,product_name.ilike.%short%');
     } else if (type === 'shoes') {
-      query = query.or('product_name.ilike.%shoe%,product_name.ilike.%boot%,product_name.ilike.%sneaker%,product_name.ilike.%sandal%,product_name.ilike.%footwear%');
+      query = query.or('product_name.ilike.%shoe%,product_name.ilike.%boot%,product_name.ilike.%sneaker%,product_name.ilike.%sandal%');
     } else if (type === 'coat') {
-      query = query.or('product_name.ilike.%jacket%,product_name.ilike.%coat%,product_name.ilike.%outerwear%,product_name.ilike.%cardigan%');
+      query = query.or('product_name.ilike.%jacket%,product_name.ilike.%coat%,product_name.ilike.%cardigan%');
     }
     
-    const { data, error } = await query.limit(count * 2);
+    // Limit and execute query
+    const { data, error } = await query.limit(count);
     
     if (error) {
-      console.error(`Error fetching ${type} items:`, error);
+      console.error(`שגיאה בשליפת פריטי ${type}:`, error);
       return [];
     }
     
     if (!data || data.length === 0) {
-      console.log(`No items found for type: ${type}`);
+      console.log(`לא נמצאו פריטים מסוג: ${type}`);
       return [];
     }
     
-    console.log(`Found ${data.length} items for type: ${type}`);
-    
-    // Shuffle and return random items
-    const shuffled = data.sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, count);
+    console.log(`נמצאו ${data.length} פריטים מסוג: ${type}`);
+    return data;
   } catch (error) {
-    console.error(`Error in fetchRandomItemsByType for ${type}:`, error);
+    console.error(`שגיאה ב-fetchRandomItemsByType עבור ${type}:`, error);
     return [];
   }
 }
@@ -82,17 +80,18 @@ async function generateAgentResults(supabaseClient: any): Promise<AgentResult[]>
   const results: AgentResult[] = [];
   
   try {
-    // Fetch real items from the database
-    console.log("Fetching real items from zara_cloth table...");
-    const topItems = await fetchRandomItemsByType(supabaseClient, 'top', 10);
-    const bottomItems = await fetchRandomItemsByType(supabaseClient, 'bottom', 10);
-    const shoeItems = await fetchRandomItemsByType(supabaseClient, 'shoes', 10);
-    const coatItems = await fetchRandomItemsByType(supabaseClient, 'coat', 5);
+    console.log("שולף פריטים אמיתיים מטבלת zara_cloth...");
     
-    console.log(`Found ${topItems.length} tops, ${bottomItems.length} bottoms, ${shoeItems.length} shoes, ${coatItems.length} coats`);
+    // Fetch real items from the database
+    const topItems = await fetchRandomItemsByType(supabaseClient, 'top', 15);
+    const bottomItems = await fetchRandomItemsByType(supabaseClient, 'bottom', 15);
+    const shoeItems = await fetchRandomItemsByType(supabaseClient, 'shoes', 10);
+    const coatItems = await fetchRandomItemsByType(supabaseClient, 'coat', 8);
+    
+    console.log(`נמצאו: ${topItems.length} חולצות, ${bottomItems.length} מכנסיים, ${shoeItems.length} נעליים, ${coatItems.length} מעילים`);
     
     if (topItems.length === 0 || bottomItems.length === 0 || shoeItems.length === 0) {
-      console.log("Not enough items found in database to create outfits");
+      console.log("לא נמצאו מספיק פריטים בדאטהבייס ליצירת תלבושות");
       return [];
     }
     
@@ -108,10 +107,10 @@ async function generateAgentResults(supabaseClient: any): Promise<AgentResult[]>
         ? coatItems[Math.floor(Math.random() * coatItems.length)] 
         : null;
       
-      // Generate a random score - agents would each have their own scoring logic
+      // Generate a random score
       const score = Math.floor(Math.random() * 30) + 70;
       
-      console.log(`Creating outfit for ${agent}:`, {
+      console.log(`יוצר תלבושת עבור ${agent}:`, {
         top: randomTop.id,
         bottom: randomBottom.id,
         shoes: randomShoes.id,
@@ -124,10 +123,10 @@ async function generateAgentResults(supabaseClient: any): Promise<AgentResult[]>
         bottom: randomBottom.id,
         shoes: randomShoes.id,
         score,
-        description: `Curated outfit by ${agent.replace('-', ' ')}`,
+        description: `תלבושת מותאמת על ידי ${agent.replace('-', ' ')}`,
         recommendations: [
-          "This outfit balances your body shape well",
-          "The color palette complements your skin tone"
+          "התלבושת מאזנת היטב את מבנה הגוף שלך",
+          "פלטת הצבעים משלימה את גוון העור שלך"
         ],
         occasion: Math.random() > 0.5 ? 'work' : 'casual'
       };
@@ -144,10 +143,10 @@ async function generateAgentResults(supabaseClient: any): Promise<AgentResult[]>
       });
     }
     
-    console.log(`Generated ${results.length} complete outfits with real items`);
+    console.log(`נוצרו ${results.length} תלבושות שלמות עם פריטים אמיתיים`);
     return results;
   } catch (error) {
-    console.error("Error generating agent results:", error);
+    console.error("שגיאה ביצירת תוצאות אייג'נטים:", error);
     return [];
   }
 }
@@ -160,7 +159,7 @@ Deno.serve(async (req) => {
   }
   
   try {
-    console.log("Starting trainer-agent execution...");
+    console.log("מתחיל להריץ את trainer-agent...");
     
     // Initialize Supabase client
     const supabaseClient = createClient(
@@ -172,6 +171,25 @@ Deno.serve(async (req) => {
     // Generate results using real items from the database
     const agentResults = await generateAgentResults(supabaseClient);
     
+    if (agentResults.length === 0) {
+      console.log("לא נוצרו תוצאות אייג'נטים");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          status: "no_results",
+          results: [],
+          message: "לא נמצאו פריטים מתאימים בדאטהבייס"
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          },
+          status: 200
+        }
+      );
+    }
+    
     // Create response
     const response: TrainerAgentResponse = {
       success: true,
@@ -179,7 +197,7 @@ Deno.serve(async (req) => {
       results: agentResults
     };
     
-    console.log(`Returning ${agentResults.length} agent results`);
+    console.log(`מחזיר ${agentResults.length} תוצאות אייג'נטים`);
     
     // Return the response
     return new Response(
@@ -194,7 +212,7 @@ Deno.serve(async (req) => {
     
   } catch (error) {
     // Handle errors
-    console.error("Error in trainer-agent:", error);
+    console.error("שגיאה ב-trainer-agent:", error);
     
     return new Response(
       JSON.stringify({

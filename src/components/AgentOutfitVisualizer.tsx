@@ -20,7 +20,7 @@ const formatAgentName = (name: string): string => {
 
 export function AgentOutfitVisualizer() {
   const [results, setResults] = useState<AgentResult[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [itemImages, setItemImages] = useState<Record<string, string>>({});
   const [showImagePath, setShowImagePath] = useState<boolean>(false);
@@ -88,6 +88,11 @@ export function AgentOutfitVisualizer() {
               console.log(`משתמש בפלייסהולדר עבור ${item.id}, תמונה מקורית:`, item.image);
             }
           });
+          
+          // If we have fewer images than expected, log this
+          if (itemsData.length < itemIds.length) {
+            console.warn(`נמצאו רק ${itemsData.length} פריטים מתוך ${itemIds.length} מזהים שנבקשו`);
+          }
         } else {
           console.log("לא נמצאו פריטים בדאטהבייס עם המזהים:", itemIds);
         }
@@ -106,6 +111,7 @@ export function AgentOutfitVisualizer() {
   };
 
   useEffect(() => {
+    // Auto-load on component mount
     fetchResults();
   }, []);
 
@@ -246,6 +252,12 @@ export function AgentOutfitVisualizer() {
             <summary className="cursor-pointer">הצג מיפוי תמונות</summary>
             <pre className="mt-2 text-xs overflow-auto">
               {JSON.stringify(itemImages, null, 2)}
+            </pre>
+          </details>
+          <details className="mt-2">
+            <summary className="cursor-pointer">הצג תוצאות אייג'נטים</summary>
+            <pre className="mt-2 text-xs overflow-auto">
+              {JSON.stringify(results, null, 2)}
             </pre>
           </details>
         </div>
