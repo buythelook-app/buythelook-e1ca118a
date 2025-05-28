@@ -1,10 +1,10 @@
 
 // Types for outfit agent results
 export interface AgentOutfit {
-  top?: string;
-  bottom?: string;
-  shoes?: string;
-  coat?: string;
+  top?: any; // Database item from zara_cloth table
+  bottom?: any; // Database item from zara_cloth table
+  shoes?: any; // Database item from zara_cloth table
+  coat?: any; // Database item from zara_cloth table
   score?: number;
   description?: string;
   recommendations?: string[];

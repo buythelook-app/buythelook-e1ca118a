@@ -165,12 +165,31 @@ export function AgentOutfitVisualizer() {
             .map((result, index) => {
               const lookItems = getLookItems(result.output);
               
-              // Create details object for display
+              // Create details object for display with null checks
               const details: Record<string, string> = {};
-              if (result.output.top) details.Top = result.output.top.product_name || result.output.top.id;
-              if (result.output.bottom) details.Bottom = result.output.bottom.product_name || result.output.bottom.id;
-              if (result.output.shoes) details.Shoes = result.output.shoes.product_name || result.output.shoes.id;
-              if (result.output.coat) details.Coat = result.output.coat.product_name || result.output.coat.id;
+              if (result.output.top && result.output.top.product_name) {
+                details.Top = result.output.top.product_name;
+              } else if (result.output.top && result.output.top.id) {
+                details.Top = result.output.top.id;
+              }
+              
+              if (result.output.bottom && result.output.bottom.product_name) {
+                details.Bottom = result.output.bottom.product_name;
+              } else if (result.output.bottom && result.output.bottom.id) {
+                details.Bottom = result.output.bottom.id;
+              }
+              
+              if (result.output.shoes && result.output.shoes.product_name) {
+                details.Shoes = result.output.shoes.product_name;
+              } else if (result.output.shoes && result.output.shoes.id) {
+                details.Shoes = result.output.shoes.id;
+              }
+              
+              if (result.output.coat && result.output.coat.product_name) {
+                details.Coat = result.output.coat.product_name;
+              } else if (result.output.coat && result.output.coat.id) {
+                details.Coat = result.output.coat.id;
+              }
               
               return (
                 <OutfitAgentCard 
