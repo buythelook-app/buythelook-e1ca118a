@@ -13,6 +13,39 @@ interface Agent {
 }
 
 /**
+ * Helper function to check if an image URL ends with the pattern 6_x_1.jpg
+ * This filters out images with models
+ */
+const isValidImagePattern = (imageData: any): boolean => {
+  if (!imageData) return false;
+  
+  // Handle different image data formats
+  let imageUrl = '';
+  
+  if (typeof imageData === 'string') {
+    // Handle JSON string arrays like "[\"https://static.zara.net/photos/...jpg\"]"
+    try {
+      const parsed = JSON.parse(imageData);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        imageUrl = parsed[0];
+      } else {
+        imageUrl = imageData;
+      }
+    } catch {
+      imageUrl = imageData;
+    }
+  } else if (Array.isArray(imageData) && imageData.length > 0) {
+    imageUrl = imageData[0];
+  } else if (typeof imageData === 'object' && imageData.url) {
+    imageUrl = imageData.url;
+  }
+  
+  // Check if the URL ends with the pattern 6_x_1.jpg (where x is any number)
+  const pattern = /6_\d+_1\.jpg$/i;
+  return pattern.test(imageUrl);
+};
+
+/**
  * Styling Generator Agent
  * Generates outfit suggestions using items from the zara_cloth database table
  */
@@ -80,23 +113,42 @@ export const stylingAgent: Agent = {
       console.log("🔍 [DEBUG] Step 3: Fetching clothing items...");
       
       // Get random items from zara_cloth table
-      const { data: topItems, error: topError } = await supabase
+      const { data: allItems, error: fetchError } = await supabase
         .from('zara_cloth')
         .select('*')
-        .limit(10);
+        .limit(50);
 
-      if (topError || !topItems?.length) {
-        console.error('❌ [DEBUG] Error fetching items:', topError);
+      if (fetchError || !allItems?.length) {
+        console.error('❌ [DEBUG] Error fetching items:', fetchError);
         return { 
           success: false, 
-          error: "Failed to fetch items from database: " + (topError?.message || "No items found") 
+          error: "Failed to fetch items from database: " + (fetchError?.message || "No items found") 
         };
       }
 
-      console.log('✅ [DEBUG] Items found:', topItems.length);
+      console.log('✅ [DEBUG] Items fetched:', allItems.length);
 
-      // Randomly select items for the outfit
-      const shuffled = [...topItems].sort(() => Math.random() - 0.5);
+      // Filter items to only include those with valid image patterns (6_x_1.jpg)
+      const validItems = allItems.filter(item => {
+        const isValid = isValidImagePattern(item.image);
+        if (!isValid) {
+          console.log(`🔍 [DEBUG] Filtering out item ${item.id} - invalid image pattern`);
+        }
+        return isValid;
+      });
+
+      console.log(`✅ [DEBUG] Valid items after filtering: ${validItems.length} out of ${allItems.length}`);
+
+      if (validItems.length === 0) {
+        console.error('❌ [DEBUG] No items with valid image patterns found');
+        return { 
+          success: false, 
+          error: "No items with valid image patterns (6_x_1.jpg) found in database" 
+        };
+      }
+
+      // Randomly select items for the outfit from valid items
+      const shuffled = [...validItems].sort(() => Math.random() - 0.5);
       const topItem = shuffled[0];
       const bottomItem = shuffled[1] || shuffled[0]; // Fallback to same item if not enough
       const shoesItem = shuffled[2] || shuffled[0]; // Fallback to same item if not enough
@@ -113,9 +165,10 @@ export const stylingAgent: Agent = {
         bottom: bottomItem,
         shoes: shoesItem,
         score: Math.floor(Math.random() * 30) + 70,
-        description: `Outfit generated using real Zara database items`,
+        description: `Outfit generated using real Zara database items (no model images)`,
         recommendations: [
           "This combination uses actual Zara items from our database",
+          "Images selected to avoid model photos",
           `Perfect for your body shape`
         ],
         occasion: Math.random() > 0.5 ? 'work' : 'casual'
