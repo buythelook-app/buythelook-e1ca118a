@@ -10,13 +10,13 @@ import { LookCanvas } from "@/components/LookCanvas";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { getLocalImagePath, createLocalOutfitItem } from "@/utils/localImageMapper";
+import { extractZaraImageUrl } from "@/utils/imageUtils";
 
 // Types for agent results
 interface AgentOutfit {
-  top?: string;
-  bottom?: string;
-  shoes?: string;
+  top?: any;
+  bottom?: any;
+  shoes?: any;
   score?: number;
 }
 
@@ -78,24 +78,42 @@ export default function AgentResultsPage() {
     fetchTrainerAgentResults();
   }, []);
 
-  // Function to create LookCanvas items from agent output using local images
+  // Function to create LookCanvas items from agent output using database items
   const getLookItems = (agentOutput: AgentOutfit) => {
     const lookItems = [];
     
     if (agentOutput.top) {
-      const topItem = createLocalOutfitItem(agentOutput.top, 'top');
+      const topItem = {
+        id: agentOutput.top.id || 'top-item',
+        image: extractZaraImageUrl(agentOutput.top.image),
+        type: 'top' as const,
+        name: agentOutput.top.product_name || 'Top Item',
+        price: agentOutput.top.price ? `$${agentOutput.top.price}` : '$49.99'
+      };
       lookItems.push(topItem);
       console.log(`Added top item: ${topItem.id} with image: ${topItem.image}`);
     }
     
     if (agentOutput.bottom) {
-      const bottomItem = createLocalOutfitItem(agentOutput.bottom, 'bottom');
+      const bottomItem = {
+        id: agentOutput.bottom.id || 'bottom-item',
+        image: extractZaraImageUrl(agentOutput.bottom.image),
+        type: 'bottom' as const,
+        name: agentOutput.bottom.product_name || 'Bottom Item',
+        price: agentOutput.bottom.price ? `$${agentOutput.bottom.price}` : '$59.99'
+      };
       lookItems.push(bottomItem);
       console.log(`Added bottom item: ${bottomItem.id} with image: ${bottomItem.image}`);
     }
     
     if (agentOutput.shoes) {
-      const shoesItem = createLocalOutfitItem(agentOutput.shoes, 'shoes');
+      const shoesItem = {
+        id: agentOutput.shoes.id || 'shoes-item',
+        image: extractZaraImageUrl(agentOutput.shoes.image),
+        type: 'shoes' as const,
+        name: agentOutput.shoes.product_name || 'Shoes Item',
+        price: agentOutput.shoes.price ? `$${agentOutput.shoes.price}` : '$89.99'
+      };
       lookItems.push(shoesItem);
       console.log(`Added shoes item: ${shoesItem.id} with image: ${shoesItem.image}`);
     }
@@ -159,7 +177,7 @@ export default function AgentResultsPage() {
                       <LookCanvas items={lookItems} width={300} height={480} />
                       {showImagePath && (
                         <div className="bg-gray-50 p-2 text-xs text-gray-500 mt-2 rounded">
-                          <p className="font-semibold mb-1">Local Image Paths:</p>
+                          <p className="font-semibold mb-1">Database Image Paths:</p>
                           {lookItems.map((item, i) => (
                             <div key={i} className="truncate">
                               <TooltipProvider>
@@ -185,9 +203,9 @@ export default function AgentResultsPage() {
                 </CardContent>
                 <CardFooter className="bg-gray-50 flex justify-between">
                   <div className="text-sm text-gray-500">
-                    {result.output.top && <span className="mr-2">Top: {result.output.top}</span>}
-                    {result.output.bottom && <span className="mr-2">Bottom: {result.output.bottom}</span>}
-                    {result.output.shoes && <span>Shoes: {result.output.shoes}</span>}
+                    {result.output.top && <span className="mr-2">Top: {result.output.top.product_name || result.output.top.id}</span>}
+                    {result.output.bottom && <span className="mr-2">Bottom: {result.output.bottom.product_name || result.output.bottom.id}</span>}
+                    {result.output.shoes && <span>Shoes: {result.output.shoes.product_name || result.output.shoes.id}</span>}
                   </div>
                 </CardFooter>
               </Card>

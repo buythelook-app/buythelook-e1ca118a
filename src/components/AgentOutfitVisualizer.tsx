@@ -7,7 +7,7 @@ import { Loader2, RefreshCw, Info } from "lucide-react";
 import { OutfitAgentCard } from "./OutfitAgentCard";
 import { toast } from "sonner";
 import { AgentResult, TrainerAgentResponse } from "@/types/outfitAgentTypes";
-import { createLocalOutfitItem } from "@/utils/localImageMapper";
+import { extractZaraImageUrl } from "@/utils/imageUtils";
 
 // Helper to format agent names nicely
 const formatAgentName = (name: string): string => {
@@ -60,34 +60,58 @@ export function AgentOutfitVisualizer() {
     fetchResults();
   }, []);
 
-  // Function to create LookCanvas items from agent output using local images
+  // Function to create LookCanvas items from agent output using database items
   const getLookItems = (agentOutput: any) => {
     const lookItems = [];
     
     console.log("יוצר פריטי look עבור:", agentOutput);
     
     if (agentOutput.top) {
-      const topItem = createLocalOutfitItem(agentOutput.top, 'top');
+      const topItem = {
+        id: agentOutput.top.id || 'top-item',
+        image: extractZaraImageUrl(agentOutput.top.image),
+        type: 'top' as const,
+        name: agentOutput.top.product_name || 'Top Item',
+        price: agentOutput.top.price ? `$${agentOutput.top.price}` : '$49.99'
+      };
       lookItems.push(topItem);
-      console.log(`מוסיף top: ${agentOutput.top} עם תמונה: ${topItem.image}`);
+      console.log(`מוסיף top: ${agentOutput.top.id} עם תמונה: ${topItem.image}`);
     }
     
     if (agentOutput.bottom) {
-      const bottomItem = createLocalOutfitItem(agentOutput.bottom, 'bottom');
+      const bottomItem = {
+        id: agentOutput.bottom.id || 'bottom-item',
+        image: extractZaraImageUrl(agentOutput.bottom.image),
+        type: 'bottom' as const,
+        name: agentOutput.bottom.product_name || 'Bottom Item',
+        price: agentOutput.bottom.price ? `$${agentOutput.bottom.price}` : '$59.99'
+      };
       lookItems.push(bottomItem);
-      console.log(`מוסיף bottom: ${agentOutput.bottom} עם תמונה: ${bottomItem.image}`);
+      console.log(`מוסיף bottom: ${agentOutput.bottom.id} עם תמונה: ${bottomItem.image}`);
     }
     
     if (agentOutput.shoes) {
-      const shoesItem = createLocalOutfitItem(agentOutput.shoes, 'shoes');
+      const shoesItem = {
+        id: agentOutput.shoes.id || 'shoes-item',
+        image: extractZaraImageUrl(agentOutput.shoes.image),
+        type: 'shoes' as const,
+        name: agentOutput.shoes.product_name || 'Shoes Item',
+        price: agentOutput.shoes.price ? `$${agentOutput.shoes.price}` : '$89.99'
+      };
       lookItems.push(shoesItem);
-      console.log(`מוסיף shoes: ${agentOutput.shoes} עם תמונה: ${shoesItem.image}`);
+      console.log(`מוסיף shoes: ${agentOutput.shoes.id} עם תמונה: ${shoesItem.image}`);
     }
     
     if (agentOutput.coat) {
-      const coatItem = createLocalOutfitItem(agentOutput.coat, 'top'); // Use 'top' type for coats
+      const coatItem = {
+        id: agentOutput.coat.id || 'coat-item',
+        image: extractZaraImageUrl(agentOutput.coat.image),
+        type: 'outerwear' as const,
+        name: agentOutput.coat.product_name || 'Coat Item',
+        price: agentOutput.coat.price ? `$${agentOutput.coat.price}` : '$129.99'
+      };
       lookItems.push(coatItem);
-      console.log(`מוסיף coat: ${agentOutput.coat} עם תמונה: ${coatItem.image}`);
+      console.log(`מוסיף coat: ${agentOutput.coat.id} עם תמונה: ${coatItem.image}`);
     }
     
     console.log(`סה"כ פריטי look שנוצרו:`, lookItems.length);
@@ -143,10 +167,10 @@ export function AgentOutfitVisualizer() {
               
               // Create details object for display
               const details: Record<string, string> = {};
-              if (result.output.top) details.Top = result.output.top;
-              if (result.output.bottom) details.Bottom = result.output.bottom;
-              if (result.output.shoes) details.Shoes = result.output.shoes;
-              if (result.output.coat) details.Coat = result.output.coat;
+              if (result.output.top) details.Top = result.output.top.product_name || result.output.top.id;
+              if (result.output.bottom) details.Bottom = result.output.bottom.product_name || result.output.bottom.id;
+              if (result.output.shoes) details.Shoes = result.output.shoes.product_name || result.output.shoes.id;
+              if (result.output.coat) details.Coat = result.output.coat.product_name || result.output.coat.id;
               
               return (
                 <OutfitAgentCard 
@@ -171,9 +195,9 @@ export function AgentOutfitVisualizer() {
       {/* Debug information */}
       {showImagePath && (
         <div className="mt-8 p-4 bg-gray-100 rounded-lg">
-          <h3 className="text-lg font-semibold mb-2">מידע דיבוג - תמונות מקומיות</h3>
+          <h3 className="text-lg font-semibold mb-2">מידע דיבוג - פריטים מהדאטהבייס</h3>
           <p><strong>מספר תוצאות:</strong> {results.length}</p>
-          <p><strong>שימוש בתמונות מקומיות:</strong> כן</p>
+          <p><strong>שימוש בפריטים מהדאטהבייס:</strong> כן</p>
           <details className="mt-2">
             <summary className="cursor-pointer">הצג תוצאות אייג'נטים</summary>
             <pre className="mt-2 text-xs overflow-auto">
