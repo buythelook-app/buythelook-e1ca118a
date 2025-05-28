@@ -88,6 +88,7 @@ export default function AgentResultsPage() {
               const { data: items, error } = await supabase
                 .from('zara_cloth')
                 .select('id, image')
+                .eq('id', id)
                 .limit(1);
               
               if (error) {
