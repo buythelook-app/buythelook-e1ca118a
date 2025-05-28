@@ -1,5 +1,4 @@
 
-
 import { supabase } from "@/integrations/supabase/client"; // Use the correct client with proper types
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 
@@ -17,7 +16,10 @@ interface Agent {
  * This filters out images with models
  */
 const isValidImagePattern = (imageData: any): boolean => {
-  if (!imageData) return false;
+  if (!imageData) {
+    console.log('🔍 [DEBUG] No image data provided');
+    return false;
+  }
   
   // Handle different image data formats
   let imageUrl = '';
@@ -28,21 +30,33 @@ const isValidImagePattern = (imageData: any): boolean => {
       const parsed = JSON.parse(imageData);
       if (Array.isArray(parsed) && parsed.length > 0) {
         imageUrl = parsed[0];
+        console.log(`🔍 [DEBUG] Parsed JSON array, using first image: ${imageUrl}`);
       } else {
         imageUrl = imageData;
+        console.log(`🔍 [DEBUG] Using string directly: ${imageUrl}`);
       }
     } catch {
       imageUrl = imageData;
+      console.log(`🔍 [DEBUG] Failed to parse JSON, using string directly: ${imageUrl}`);
     }
   } else if (Array.isArray(imageData) && imageData.length > 0) {
     imageUrl = imageData[0];
+    console.log(`🔍 [DEBUG] Using first item from array: ${imageUrl}`);
   } else if (typeof imageData === 'object' && imageData.url) {
     imageUrl = imageData.url;
+    console.log(`🔍 [DEBUG] Using URL from object: ${imageUrl}`);
+  } else {
+    console.log(`🔍 [DEBUG] Unknown image data format:`, typeof imageData, imageData);
+    return false;
   }
   
   // Check if the URL ends with the pattern 6_x_1.jpg (where x is any number)
   const pattern = /6_\d+_1\.jpg$/i;
-  return pattern.test(imageUrl);
+  const isValid = pattern.test(imageUrl);
+  
+  console.log(`🔍 [DEBUG] Image URL: ${imageUrl} | Pattern match: ${isValid}`);
+  
+  return isValid;
 };
 
 /**
@@ -116,7 +130,7 @@ export const stylingAgent: Agent = {
       const { data: allItems, error: fetchError } = await supabase
         .from('zara_cloth')
         .select('*')
-        .limit(50);
+        .limit(100); // Increased limit to have more items to filter from
 
       if (fetchError || !allItems?.length) {
         console.error('❌ [DEBUG] Error fetching items:', fetchError);
@@ -129,10 +143,14 @@ export const stylingAgent: Agent = {
       console.log('✅ [DEBUG] Items fetched:', allItems.length);
 
       // Filter items to only include those with valid image patterns (6_x_1.jpg)
-      const validItems = allItems.filter(item => {
+      console.log('🔍 [DEBUG] Starting image pattern filtering...');
+      const validItems = allItems.filter((item, index) => {
+        console.log(`🔍 [DEBUG] Checking item ${index + 1}/${allItems.length} (ID: ${item.id})`);
         const isValid = isValidImagePattern(item.image);
         if (!isValid) {
-          console.log(`🔍 [DEBUG] Filtering out item ${item.id} - invalid image pattern`);
+          console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - invalid image pattern`);
+        } else {
+          console.log(`✅ [DEBUG] KEEPING item ${item.id} - valid image pattern`);
         }
         return isValid;
       });
@@ -159,6 +177,12 @@ export const stylingAgent: Agent = {
         shoesItem: shoesItem?.id 
       });
 
+      // Log the actual image URLs being used
+      console.log('🔍 [DEBUG] Selected item images:');
+      console.log('Top item image:', topItem?.image);
+      console.log('Bottom item image:', bottomItem?.image);
+      console.log('Shoes item image:', shoesItem?.image);
+
       // Step 4: Create outfit object with database items
       const outfit = {
         top: topItem,
@@ -168,7 +192,7 @@ export const stylingAgent: Agent = {
         description: `Outfit generated using real Zara database items (no model images)`,
         recommendations: [
           "This combination uses actual Zara items from our database",
-          "Images selected to avoid model photos",
+          "Images selected to avoid model photos (6_x_1.jpg pattern only)",
           `Perfect for your body shape`
         ],
         occasion: Math.random() > 0.5 ? 'work' : 'casual'
@@ -186,4 +210,3 @@ export const stylingAgent: Agent = {
     }
   }
 };
-
