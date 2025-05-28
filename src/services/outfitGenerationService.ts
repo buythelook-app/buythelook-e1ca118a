@@ -1,6 +1,5 @@
-import { supabase } from "@/lib/supabaseClient"; // שימוש בלקוח הסופהבייס המרכזי
+import { supabase } from "@/lib/supabaseClient";
 import logger from "@/lib/logger";
-import { OutfitResponse } from "@/types/outfitTypes";
 
 // Define the types for request parameters
 export type BodyStructure = 'X' | 'V' | 'H' | 'O' | 'A';
@@ -13,98 +12,130 @@ interface OutfitGenerationRequest {
   style: StylePreference;
 }
 
+interface OutfitSuggestion {
+  top: string;
+  bottom: string;
+  shoes: string;
+  coat?: string;
+  description: string;
+  recommendations: string[];
+  occasion?: 'work' | 'casual' | 'weekend' | 'date night' | 'general';
+}
+
+interface OutfitGenerationResponse {
+  success: boolean;
+  data?: OutfitSuggestion[];
+  error?: string;
+}
+
+let cachedRecommendations: string[] = [];
+
 /**
  * Generate outfit suggestions using the Fashion Outfit Generator API
  * @param request The outfit generation request containing bodyStructure, mood, and style
  * @returns A promise containing the outfit suggestion response
  */
-export const generateOutfit = async (
-  request: OutfitGenerationRequest
-): Promise<OutfitResponse> => {
+export async function generateOutfit(request: OutfitGenerationRequest): Promise<OutfitGenerationResponse> {
   try {
-    logger.info("Generating outfit recommendations", {
+    logger.info("Generating outfit with API", {
       context: "outfitGenerationService",
       data: request
     });
 
-    // Call the Supabase Edge Function to generate outfit
-    const response = await supabase.functions.invoke('generate-outfit', {
+    const { data, error } = await supabase.functions.invoke<OutfitGenerationResponse>('generate-outfit', {
       body: request
     });
 
-    if (response.error) {
-      logger.error("Error from outfit generator API", {
+    if (error) {
+      logger.error("Error calling generate-outfit function:", {
         context: "outfitGenerationService",
-        data: response.error
+        data: error
       });
-      
       return {
         success: false,
-        error: response.error.message || "Failed to generate outfit"
+        error: error.message
       };
     }
 
-    // Store the generated outfit data for later use
-    if (response.data && response.data.success) {
-      localStorage.setItem('last-outfit-data', JSON.stringify(response.data.data[0] || {}));
-      
-      // Track color palette for easier access
-      const colorData = response.data.data[0];
-      if (colorData) {
-        const colors = {
-          top: colorData.top,
-          bottom: colorData.bottom,
-          shoes: colorData.shoes,
-          coat: colorData.coat
-        };
-        localStorage.setItem('outfit-colors', JSON.stringify(colors));
-      }
+    if (!data) {
+      logger.warn("No data received from generate-outfit function", {
+        context: "outfitGenerationService"
+      });
+      return {
+        success: false,
+        error: "No data received from outfit generation API"
+      };
     }
 
-    logger.info("Outfit generation completed", {
+    if (data.success && data.data && data.data.length > 0) {
+      const firstOutfit = data.data[0];
+      if (firstOutfit.recommendations) {
+        cachedRecommendations = firstOutfit.recommendations;
+        localStorage.setItem('style-recommendations', JSON.stringify(firstOutfit.recommendations));
+      }
+      
+      const colors = {
+        top: firstOutfit.top,
+        bottom: firstOutfit.bottom,
+        shoes: firstOutfit.shoes,
+        coat: firstOutfit.coat
+      };
+      localStorage.setItem('outfit-colors', JSON.stringify(colors));
+      
+      localStorage.setItem('last-outfit-data', JSON.stringify(firstOutfit));
+    }
+
+    logger.info("Outfit generation successful", {
       context: "outfitGenerationService",
-      data: { success: response.data?.success }
+      data: { outfitCount: data.data?.length || 0 }
     });
 
-    return response.data as OutfitResponse;
+    return data;
   } catch (error) {
-    logger.error("Exception generating outfit", {
+    logger.error("Exception in generateOutfit:", {
       context: "outfitGenerationService",
       data: error
     });
-    
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
     };
   }
-};
+}
 
 /**
  * Get style recommendations from the last generated outfit
  * @returns An array of recommendation strings
  */
-export const getStyleRecommendations = (): string[] => {
+export function getStyleRecommendations(): string[] {
+  if (cachedRecommendations.length > 0) {
+    return cachedRecommendations;
+  }
+  
   try {
-    const outfitData = localStorage.getItem('last-outfit-data');
-    if (!outfitData) return [];
-    
-    const parsedData = JSON.parse(outfitData);
-    return parsedData.recommendations || [];
+    const stored = localStorage.getItem('style-recommendations');
+    if (stored) {
+      const recommendations = JSON.parse(stored);
+      if (Array.isArray(recommendations)) {
+        cachedRecommendations = recommendations;
+        return recommendations;
+      }
+    }
   } catch (error) {
-    logger.error("Error retrieving style recommendations", {
+    logger.error("Error retrieving cached recommendations:", {
       context: "outfitGenerationService",
       data: error
     });
-    return [];
   }
-};
+  
+  return [];
+}
 
 /**
  * Get the color palette from the last generated outfit
  * @returns An object containing color hex codes
  */
-export const getOutfitColors = (): Record<string, string> => {
+export function getOutfitColors(): Record<string, string> {
   try {
     const colorsData = localStorage.getItem('outfit-colors');
     if (!colorsData) return {};
@@ -117,14 +148,14 @@ export const getOutfitColors = (): Record<string, string> => {
     });
     return {};
   }
-};
+}
 
 /**
  * Convert a hex color to a human-readable color name
  * @param hex The hex color code
  * @returns A human-readable color name
  */
-export const getColorName = (hex: string): string => {
+export function getColorName(hex: string): string {
   // Basic color mapping (could be expanded)
   const colorMap: Record<string, string> = {
     '#000000': 'שחור',
@@ -154,7 +185,7 @@ export const getColorName = (hex: string): string => {
   
   // Return the mapped color name or the hex code if not found
   return colorMap[normalizedHex] || hex;
-};
+}
 
 /**
  * Debug function to inspect the image JSON structure
@@ -211,7 +242,7 @@ const inspectImageStructure = (imageData: any): string => {
  * @param imageJson The image JSON data from the database
  * @returns The first image URL or a placeholder
  */
-export const extractImageUrl = (imageJson: any): string => {
+export function extractImageUrl(imageJson: any): string {
   try {
     // Case 1: If imageJson is a string (direct URL)
     if (typeof imageJson === 'string') {
@@ -287,14 +318,14 @@ export const extractImageUrl = (imageJson: any): string => {
     });
     return '/placeholder.svg';
   }
-};
+}
 
 /**
  * Find clothing items matching the recommended colors from the agent
  * @param colors Record of item types to hex colors
  * @returns A record of item types to matching clothing items
  */
-export const findMatchingClothingItems = async (colors: Record<string, string>): Promise<Record<string, any[]>> => {
+export async function findMatchingClothingItems(colors: Record<string, string>): Promise<Record<string, any[]>> {
   try {
     logger.info("Finding matching clothing items for colors", {
       context: "outfitGenerationService",
@@ -388,4 +419,4 @@ export const findMatchingClothingItems = async (colors: Record<string, string>):
     });
     return {};
   }
-};
+}
