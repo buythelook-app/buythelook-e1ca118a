@@ -2,7 +2,7 @@ import { QuizFormData } from '../types';
 import { StyleAnalysis } from '../types/styleTypes';
 import { colorPalettes } from '../constants/colorPalettes';
 import { styleRecommendations } from '../constants/styleRecommendations';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabaseClient';
 
 export const loadQuizData = (): QuizFormData => {
   const savedData = localStorage.getItem('style-quiz-data');

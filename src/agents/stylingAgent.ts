@@ -1,5 +1,4 @@
-
-import { supabase } from "@/integrations/supabase/client"; // Use the correct client with proper types
+import { supabase } from "@/lib/supabaseClient";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 
 // Interface defined but not exported to avoid conflicts

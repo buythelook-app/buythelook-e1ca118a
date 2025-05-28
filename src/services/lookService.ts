@@ -191,6 +191,12 @@ export function clearOutfitCache(bodyShape?: string, style?: string, mood?: stri
   logger.info("Outfit cache cleared", { context: "lookService" });
 }
 
+export function clearGlobalItemTrackers(): void {
+  // Clear any global state or trackers used for item selection
+  clearOutfitCache();
+  logger.info("Global item trackers cleared", { context: "lookService" });
+}
+
 export async function matchOutfitToColors(): Promise<Record<string, DashboardItem[]>> {
   try {
     const hasConnection = await verifySupabaseConnection();
