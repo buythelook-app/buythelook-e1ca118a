@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -6,7 +7,7 @@ import { Loader2, RefreshCw, Info } from "lucide-react";
 import { OutfitAgentCard } from "./OutfitAgentCard";
 import { toast } from "sonner";
 import { AgentResult, TrainerAgentResponse } from "@/types/outfitAgentTypes";
-import { extractZaraImageUrl, ZaraImageData } from "@/utils/imageUtils";
+import { createLocalOutfitItem } from "@/utils/localImageMapper";
 
 // Helper to format agent names nicely
 const formatAgentName = (name: string): string => {
@@ -21,7 +22,6 @@ export function AgentOutfitVisualizer() {
   const [results, setResults] = useState<AgentResult[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [itemImages, setItemImages] = useState<Record<string, string>>({});
   const [showImagePath, setShowImagePath] = useState<boolean>(false);
 
   const fetchResults = async () => {
@@ -46,61 +46,6 @@ export function AgentOutfitVisualizer() {
       console.log(`התקבלו ${data.results.length} תוצאות מהאייג'נט`);
       setResults(data.results);
 
-      // Collect all item IDs from results
-      const itemIds: string[] = [];
-      data.results.forEach(result => {
-        if (result.output.top) itemIds.push(result.output.top);
-        if (result.output.bottom) itemIds.push(result.output.bottom);
-        if (result.output.shoes) itemIds.push(result.output.shoes);
-        if (result.output.coat) itemIds.push(result.output.coat);
-      });
-
-      console.log("מזהי פריטים שנאספו:", itemIds);
-
-      // Fetch real item data from zara_cloth table using the actual IDs
-      if (itemIds.length > 0) {
-        const images: Record<string, string> = {};
-        
-        console.log("מחפש פריטים בדאטהבייס עם המזהים:", itemIds);
-        
-        const { data: itemsData, error: queryError } = await supabase
-          .from('zara_cloth')
-          .select('id, image, product_name')
-          .in('id', itemIds);
-          
-        if (queryError) {
-          console.error('שגיאה בשליפת פריטים:', queryError);
-        } else if (itemsData && itemsData.length > 0) {
-          console.log(`נמצאו ${itemsData.length} פריטים בדאטהבייס:`, itemsData);
-          
-          // Map each item ID to its actual image
-          itemsData.forEach(item => {
-            console.log(`מעבד פריט ${item.id}:`, item.product_name, 'תמונה:', item.image);
-            
-            // Cast the Json type to ZaraImageData before passing to extractZaraImageUrl
-            const imageUrl = extractZaraImageUrl(item.image as ZaraImageData);
-            
-            if (imageUrl && imageUrl !== '/placeholder.svg') {
-              images[item.id] = imageUrl;
-              console.log(`מיפוי תמונה עבור ${item.id}: ${imageUrl}`);
-            } else {
-              images[item.id] = '/placeholder.svg';
-              console.log(`משתמש בפלייסהולדר עבור ${item.id}, תמונה מקורית:`, item.image);
-            }
-          });
-          
-          // If we have fewer images than expected, log this
-          if (itemsData.length < itemIds.length) {
-            console.warn(`נמצאו רק ${itemsData.length} פריטים מתוך ${itemIds.length} מזהים שנבקשו`);
-          }
-        } else {
-          console.log("לא נמצאו פריטים בדאטהבייס עם המזהים:", itemIds);
-        }
-        
-        setItemImages(images);
-        console.log("מיפוי תמונות הושלם:", Object.keys(images).length, "פריטים");
-        console.log("מיפוי תמונות מלא:", images);
-      }
     } catch (err: any) {
       console.error('שגיאה בטעינת תוצאות האייג\'נט:', err);
       setError(err.message);
@@ -115,53 +60,34 @@ export function AgentOutfitVisualizer() {
     fetchResults();
   }, []);
 
-  // Function to create LookCanvas items from agent output
+  // Function to create LookCanvas items from agent output using local images
   const getLookItems = (agentOutput: any) => {
     const lookItems = [];
     
     console.log("יוצר פריטי look עבור:", agentOutput);
-    console.log("תמונות זמינות:", itemImages);
     
-    if (agentOutput.top && itemImages[agentOutput.top]) {
-      console.log(`מוסיף top: ${agentOutput.top} עם תמונה: ${itemImages[agentOutput.top]}`);
-      lookItems.push({
-        id: agentOutput.top,
-        image: itemImages[agentOutput.top],
-        type: 'top'
-      });
-    } else {
-      console.log(`לא ניתן להוסיף top: ${agentOutput.top}, תמונה זמינה: ${!!itemImages[agentOutput.top]}`);
+    if (agentOutput.top) {
+      const topItem = createLocalOutfitItem(agentOutput.top, 'top');
+      lookItems.push(topItem);
+      console.log(`מוסיף top: ${agentOutput.top} עם תמונה: ${topItem.image}`);
     }
     
-    if (agentOutput.bottom && itemImages[agentOutput.bottom]) {
-      console.log(`מוסיף bottom: ${agentOutput.bottom} עם תמונה: ${itemImages[agentOutput.bottom]}`);
-      lookItems.push({
-        id: agentOutput.bottom,
-        image: itemImages[agentOutput.bottom],
-        type: 'bottom'
-      });
-    } else {
-      console.log(`לא ניתן להוסיף bottom: ${agentOutput.bottom}, תמונה זמינה: ${!!itemImages[agentOutput.bottom]}`);
+    if (agentOutput.bottom) {
+      const bottomItem = createLocalOutfitItem(agentOutput.bottom, 'bottom');
+      lookItems.push(bottomItem);
+      console.log(`מוסיף bottom: ${agentOutput.bottom} עם תמונה: ${bottomItem.image}`);
     }
     
-    if (agentOutput.shoes && itemImages[agentOutput.shoes]) {
-      console.log(`מוסיף shoes: ${agentOutput.shoes} עם תמונה: ${itemImages[agentOutput.shoes]}`);
-      lookItems.push({
-        id: agentOutput.shoes,
-        image: itemImages[agentOutput.shoes],
-        type: 'shoes'
-      });
-    } else {
-      console.log(`לא ניתן להוסיף shoes: ${agentOutput.shoes}, תמונה זמינה: ${!!itemImages[agentOutput.shoes]}`);
+    if (agentOutput.shoes) {
+      const shoesItem = createLocalOutfitItem(agentOutput.shoes, 'shoes');
+      lookItems.push(shoesItem);
+      console.log(`מוסיף shoes: ${agentOutput.shoes} עם תמונה: ${shoesItem.image}`);
     }
     
-    if (agentOutput.coat && itemImages[agentOutput.coat]) {
-      console.log(`מוסיף coat: ${agentOutput.coat} עם תמונה: ${itemImages[agentOutput.coat]}`);
-      lookItems.push({
-        id: agentOutput.coat,
-        image: itemImages[agentOutput.coat],
-        type: 'coat'
-      });
+    if (agentOutput.coat) {
+      const coatItem = createLocalOutfitItem(agentOutput.coat, 'top'); // Use 'top' type for coats
+      lookItems.push(coatItem);
+      console.log(`מוסיף coat: ${agentOutput.coat} עם תמונה: ${coatItem.image}`);
     }
     
     console.log(`סה"כ פריטי look שנוצרו:`, lookItems.length);
@@ -245,15 +171,9 @@ export function AgentOutfitVisualizer() {
       {/* Debug information */}
       {showImagePath && (
         <div className="mt-8 p-4 bg-gray-100 rounded-lg">
-          <h3 className="text-lg font-semibold mb-2">מידע דיבוג</h3>
+          <h3 className="text-lg font-semibold mb-2">מידע דיבוג - תמונות מקומיות</h3>
           <p><strong>מספר תוצאות:</strong> {results.length}</p>
-          <p><strong>מספר תמונות זמינות:</strong> {Object.keys(itemImages).length}</p>
-          <details className="mt-2">
-            <summary className="cursor-pointer">הצג מיפוי תמונות</summary>
-            <pre className="mt-2 text-xs overflow-auto">
-              {JSON.stringify(itemImages, null, 2)}
-            </pre>
-          </details>
+          <p><strong>שימוש בתמונות מקומיות:</strong> כן</p>
           <details className="mt-2">
             <summary className="cursor-pointer">הצג תוצאות אייג'נטים</summary>
             <pre className="mt-2 text-xs overflow-auto">

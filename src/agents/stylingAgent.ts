@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
+import { LOCAL_IMAGE_MAPPING, getRandomLocalImage } from "../utils/localImageMapper";
 
 // Interface defined but not exported to avoid conflicts
 interface Agent {
@@ -13,121 +14,67 @@ interface Agent {
 
 /**
  * Styling Generator Agent
- * Generates outfit suggestions based on user preferences and logic
+ * Generates outfit suggestions using local images instead of database items
  */
 export const stylingAgent: Agent = {
   role: "Styling Generator",
-  goal: "Generate outfit suggestions based on user preferences and logic",
-  backstory: "Knows how to combine clothing items using mood, style and body type",
+  goal: "Generate outfit suggestions using available local images",
+  backstory: "Knows how to combine clothing items using local image assets",
   tools: [GenerateOutfitTool],
   
   /**
-   * Runs the styling agent to generate a new outfit combination
-   * Filters out outfits used in the last 2 hours
+   * Runs the styling agent to generate a new outfit combination using local images
    * @param userId The ID of the user to generate outfit for
    */
   run: async (userId: string) => {
     console.log("StylingAgent starting for user:", userId);
     
     try {
-      // Step 1: Get user profile data
-      const { data: userProfile, error: profileError } = await supabase
+      // Step 1: Get user profile data (optional for local generation)
+      const { data: userProfile } = await supabase
         .from('style_quiz_results')
         .select('*')
         .eq('user_id', userId)
         .single();
+
+      // Step 2: Generate outfit using local images
+      const topImages = LOCAL_IMAGE_MAPPING.top;
+      const bottomImages = LOCAL_IMAGE_MAPPING.bottom;
+      const shoesImages = LOCAL_IMAGE_MAPPING.shoes;
       
-      if (profileError || !userProfile) {
-        console.error("Failed to fetch user profile:", profileError);
-        return { success: false, error: "Failed to fetch user profile" };
+      if (topImages.length === 0 || bottomImages.length === 0 || shoesImages.length === 0) {
+        return { success: false, error: "No local images available" };
       }
 
-      // Step 2: Get recently used outfits (last 2 hours)
-      const twoHoursAgo = new Date();
-      twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
-      
-      const { data: recentOutfits, error: logError } = await supabase
-        .from('outfit_logs')
-        .select('top_id, bottom_id, shoes_id')
-        .eq('user_id', userId)
-        .gte('created_at', twoHoursAgo.toISOString());
-      
-      if (logError) {
-        console.error("Failed to fetch recent outfits:", logError);
-        return { success: false, error: "Failed to check recent outfits" };
-      }
+      // Step 3: Select random items from local images
+      const topId = topImages[Math.floor(Math.random() * topImages.length)];
+      const bottomId = bottomImages[Math.floor(Math.random() * bottomImages.length)];
+      const shoesId = shoesImages[Math.floor(Math.random() * shoesImages.length)];
 
-      // Step 3: Get available clothing items
-      const { data: clothingItems, error: itemsError } = await supabase
-        .from('items')
-        .select('*');
-      
-      if (itemsError || !clothingItems) {
-        console.error("Failed to fetch clothing items:", itemsError);
-        return { success: false, error: "Failed to fetch clothing items" };
-      }
-
-      // Filter items by type
-      const tops = clothingItems.filter(item => item.type === 'top');
-      const bottoms = clothingItems.filter(item => item.type === 'bottom');
-      const shoes = clothingItems.filter(item => item.type === 'shoes');
-      
-      if (tops.length === 0 || bottoms.length === 0 || shoes.length === 0) {
-        return { success: false, error: "Not enough clothing items available" };
-      }
-
-      // Step 4: Generate a unique outfit combination
-      let topItem, bottomItem, shoesItem;
-      let isUnique = false;
-      let attempts = 0;
-      const maxAttempts = 10;
-
-      while (!isUnique && attempts < maxAttempts) {
-        attempts++;
-        
-        // Randomly select items
-        topItem = tops[Math.floor(Math.random() * tops.length)];
-        bottomItem = bottoms[Math.floor(Math.random() * bottoms.length)];
-        shoesItem = shoes[Math.floor(Math.random() * shoes.length)];
-        
-        // Check if this combination was used recently
-        isUnique = !recentOutfits?.some(outfit => 
-          outfit.top_id === topItem.id && 
-          outfit.bottom_id === bottomItem.id && 
-          outfit.shoes_id === shoesItem.id
-        );
-      }
-
-      if (!isUnique) {
-        console.log("Could not find a unique outfit after", maxAttempts, "attempts");
-      }
-
-      // Step 5: Log the selected outfit
-      const { error: insertError } = await supabase
-        .from('outfit_logs')
-        .insert({
-          user_id: userId,
-          top_id: topItem.id,
-          bottom_id: bottomItem.id,
-          shoes_id: shoesItem.id
-        });
-      
-      if (insertError) {
-        console.error("Failed to log outfit:", insertError);
-        // Continue anyway, this shouldn't fail the whole process
-      }
-
-      // Step 6: Return the outfit
+      // Step 4: Create outfit object with local image paths
       const outfit = {
-        top: topItem,
-        bottom: bottomItem,
-        shoes: shoesItem,
+        top: {
+          id: topId,
+          image: `/lovable-uploads/${topId}.png`,
+          type: 'top'
+        },
+        bottom: {
+          id: bottomId,
+          image: `/lovable-uploads/${bottomId}.png`,
+          type: 'bottom'
+        },
+        shoes: {
+          id: shoesId,
+          image: `/lovable-uploads/${shoesId}.png`,
+          type: 'shoes'
+        },
         tips: [
           "Add accessories to enhance this look",
-          `This outfit works well for ${userProfile.body_shape || 'your body'} shape`
+          `This outfit works well for ${userProfile?.body_shape || 'your body'} shape`
         ]
       };
       
+      console.log("Generated local outfit:", outfit);
       return { success: true, data: outfit };
     } catch (error) {
       console.error("Error in styling agent:", error);

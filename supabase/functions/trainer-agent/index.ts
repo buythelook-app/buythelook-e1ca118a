@@ -27,6 +27,27 @@ interface TrainerAgentResponse {
   message?: string;
 }
 
+// Local image mapping - using available image UUIDs
+const LOCAL_IMAGES = {
+  top: [
+    '028933c6-ec95-471c-804c-0aa31a0e1f15',
+    '97187c5b-b4bd-4ead-a4bf-644148da8924',
+    'b2b5da4b-c967-4791-8832-747541e275be',
+    '160222f3-86e6-41d7-b5c8-ecfc0b63851b'
+  ],
+  bottom: [
+    '386cf438-be54-406f-9dbb-6495a8f8bde9',
+    '6fe5dff3-dfba-447b-986f-7281b45a0703',
+    'a1785297-040b-496d-a2fa-af4ecb55207a',
+    '37542411-4b25-4f10-9cc8-782a286409a1'
+  ],
+  shoes: [
+    '553ba2e6-53fd-46dd-82eb-64121072a826',
+    '68407ade-0be5-4bc3-ab8a-300ad5130380',
+    'c7a32d15-ffe2-4f07-ae82-a943d5128293'
+  ]
+};
+
 // Our agent names
 const agents = [
   'classic-style-agent',
@@ -36,92 +57,39 @@ const agents = [
   'body-shape-expert-agent'
 ];
 
-// Function to fetch random items by type from zara_cloth table
-async function fetchRandomItemsByType(supabaseClient: any, type: string, count: number = 10) {
-  try {
-    console.log(`שולף פריטים מסוג: ${type}`);
-    
-    let query = supabaseClient.from('zara_cloth').select('id, product_name, image, price, colour');
-    
-    // Filter by product type based on product_name with better filtering
-    if (type === 'top') {
-      query = query.or('product_name.ilike.%shirt%,product_name.ilike.%blouse%,product_name.ilike.%tee%,product_name.ilike.%sweater%,product_name.ilike.%top%');
-    } else if (type === 'bottom') {
-      query = query.or('product_name.ilike.%pant%,product_name.ilike.%trouser%,product_name.ilike.%jean%,product_name.ilike.%skirt%,product_name.ilike.%short%');
-    } else if (type === 'shoes') {
-      query = query.or('product_name.ilike.%shoe%,product_name.ilike.%boot%,product_name.ilike.%sneaker%,product_name.ilike.%sandal%');
-    } else if (type === 'coat') {
-      query = query.or('product_name.ilike.%jacket%,product_name.ilike.%coat%,product_name.ilike.%cardigan%');
-    }
-    
-    // Limit and execute query
-    const { data, error } = await query.limit(count);
-    
-    if (error) {
-      console.error(`שגיאה בשליפת פריטי ${type}:`, error);
-      return [];
-    }
-    
-    if (!data || data.length === 0) {
-      console.log(`לא נמצאו פריטים מסוג: ${type}`);
-      return [];
-    }
-    
-    console.log(`נמצאו ${data.length} פריטים מסוג: ${type}`);
-    return data;
-  } catch (error) {
-    console.error(`שגיאה ב-fetchRandomItemsByType עבור ${type}:`, error);
-    return [];
-  }
-}
-
-// Sample outfit data generation function using real items
-async function generateAgentResults(supabaseClient: any): Promise<AgentResult[]> {
+// Generate outfit results using local images
+async function generateAgentResults(): Promise<AgentResult[]> {
   const results: AgentResult[] = [];
   
   try {
-    console.log("שולף פריטים אמיתיים מטבלת zara_cloth...");
+    console.log("יוצר תלבושות באמצעות תמונות מקומיות...");
     
-    // Fetch real items from the database
-    const topItems = await fetchRandomItemsByType(supabaseClient, 'top', 15);
-    const bottomItems = await fetchRandomItemsByType(supabaseClient, 'bottom', 15);
-    const shoeItems = await fetchRandomItemsByType(supabaseClient, 'shoes', 10);
-    const coatItems = await fetchRandomItemsByType(supabaseClient, 'coat', 8);
-    
-    console.log(`נמצאו: ${topItems.length} חולצות, ${bottomItems.length} מכנסיים, ${shoeItems.length} נעליים, ${coatItems.length} מעילים`);
-    
-    if (topItems.length === 0 || bottomItems.length === 0 || shoeItems.length === 0) {
-      console.log("לא נמצאו מספיק פריטים בדאטהבייס ליצירת תלבושות");
+    if (LOCAL_IMAGES.top.length === 0 || LOCAL_IMAGES.bottom.length === 0 || LOCAL_IMAGES.shoes.length === 0) {
+      console.log("לא נמצאו מספיק תמונות מקומיות");
       return [];
     }
     
-    // Generate unique results for each agent
+    // Generate unique results for each agent using local images
     for (const agent of agents) {
-      // Select random real items for outfit
-      const randomTop = topItems[Math.floor(Math.random() * topItems.length)];
-      const randomBottom = bottomItems[Math.floor(Math.random() * bottomItems.length)];
-      const randomShoes = shoeItems[Math.floor(Math.random() * shoeItems.length)];
-      
-      // Maybe add a coat (30% chance)
-      const randomCoat = (Math.random() < 0.3 && coatItems.length > 0) 
-        ? coatItems[Math.floor(Math.random() * coatItems.length)] 
-        : null;
+      // Select random local images for outfit
+      const randomTop = LOCAL_IMAGES.top[Math.floor(Math.random() * LOCAL_IMAGES.top.length)];
+      const randomBottom = LOCAL_IMAGES.bottom[Math.floor(Math.random() * LOCAL_IMAGES.bottom.length)];
+      const randomShoes = LOCAL_IMAGES.shoes[Math.floor(Math.random() * LOCAL_IMAGES.shoes.length)];
       
       // Generate a random score
       const score = Math.floor(Math.random() * 30) + 70;
       
       console.log(`יוצר תלבושת עבור ${agent}:`, {
-        top: randomTop.id,
-        bottom: randomBottom.id,
-        shoes: randomShoes.id,
-        coat: randomCoat?.id || null
+        top: randomTop,
+        bottom: randomBottom,
+        shoes: randomShoes
       });
       
-      // Create outfit with real item IDs
+      // Create outfit with local image IDs
       const outfit: AgentOutfit = {
-        top: randomTop.id,
-        bottom: randomBottom.id,
-        shoes: randomShoes.id,
+        top: randomTop,
+        bottom: randomBottom,
+        shoes: randomShoes,
         score,
         description: `תלבושת מותאמת על ידי ${agent.replace('-', ' ')}`,
         recommendations: [
@@ -131,11 +99,6 @@ async function generateAgentResults(supabaseClient: any): Promise<AgentResult[]>
         occasion: Math.random() > 0.5 ? 'work' : 'casual'
       };
       
-      // Add coat if selected
-      if (randomCoat) {
-        outfit.coat = randomCoat.id;
-      }
-      
       results.push({
         agent,
         output: outfit,
@@ -143,7 +106,7 @@ async function generateAgentResults(supabaseClient: any): Promise<AgentResult[]>
       });
     }
     
-    console.log(`נוצרו ${results.length} תלבושות שלמות עם פריטים אמיתיים`);
+    console.log(`נוצרו ${results.length} תלבושות עם תמונות מקומיות`);
     return results;
   } catch (error) {
     console.error("שגיאה ביצירת תוצאות אייג'נטים:", error);
@@ -159,17 +122,10 @@ Deno.serve(async (req) => {
   }
   
   try {
-    console.log("מתחיל להריץ את trainer-agent...");
+    console.log("מתחיל להריץ את trainer-agent עם תמונות מקומיות...");
     
-    // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
-    );
-    
-    // Generate results using real items from the database
-    const agentResults = await generateAgentResults(supabaseClient);
+    // Generate results using local images
+    const agentResults = await generateAgentResults();
     
     if (agentResults.length === 0) {
       console.log("לא נוצרו תוצאות אייג'נטים");
@@ -178,7 +134,7 @@ Deno.serve(async (req) => {
           success: false,
           status: "no_results",
           results: [],
-          message: "לא נמצאו פריטים מתאימים בדאטהבייס"
+          message: "לא נמצאו תמונות מקומיות זמינות"
         }),
         {
           headers: {
@@ -197,7 +153,7 @@ Deno.serve(async (req) => {
       results: agentResults
     };
     
-    console.log(`מחזיר ${agentResults.length} תוצאות אייג'נטים`);
+    console.log(`מחזיר ${agentResults.length} תוצאות אייג'נטים עם תמונות מקומיות`);
     
     // Return the response
     return new Response(

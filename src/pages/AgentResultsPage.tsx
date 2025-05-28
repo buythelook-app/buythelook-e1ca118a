@@ -10,7 +10,7 @@ import { LookCanvas } from "@/components/LookCanvas";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { extractZaraImageUrl } from "@/utils/imageUtils";
+import { getLocalImagePath, createLocalOutfitItem } from "@/utils/localImageMapper";
 
 // Types for agent results
 interface AgentOutfit {
@@ -45,9 +45,6 @@ export default function AgentResultsPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-
-  // Store mapping between item IDs and image URLs
-  const [itemImages, setItemImages] = useState<Record<string, string>>({});
   const [showImagePath, setShowImagePath] = useState<boolean>(false);
 
   useEffect(() => {
@@ -67,64 +64,7 @@ export default function AgentResultsPage() {
         }
 
         setResults(data.results);
-
-        // Collect all item IDs from results
-        const itemIds: string[] = [];
-        data.results.forEach(result => {
-          if (result.output.top) itemIds.push(result.output.top);
-          if (result.output.bottom) itemIds.push(result.output.bottom);
-          if (result.output.shoes) itemIds.push(result.output.shoes);
-        });
-
-        console.log("Collected item IDs in AgentResultsPage:", itemIds);
-
-        // Fetch real item data from zara_cloth table
-        if (itemIds.length > 0) {
-          const images: Record<string, string> = {};
-          
-          for (const id of itemIds) {
-            try {
-              // Query for items from the zara_cloth table
-              const { data: items, error } = await supabase
-                .from('zara_cloth')
-                .select('id, image')
-                .eq('id', id)
-                .limit(1);
-              
-              if (error) {
-                console.error(`Error fetching items for ${id}:`, error);
-                continue;
-              }
-              
-              if (items && items.length > 0) {
-                // Get image data - properly handling jsonb array format
-                const imageData = items[0].image;
-                console.log(`Raw image data for ${id}:`, typeof imageData, imageData);
-                
-                // Use the updated utility function to extract URL from array or other formats
-                const imageUrl = extractZaraImageUrl(imageData);
-                console.log(`Extracted image URL: ${imageUrl}`);
-                
-                if (!imageUrl || imageUrl === '/placeholder.svg') {
-                  images[id] = `https://placehold.co/400x600/random?text=${id}`;
-                  console.log(`Could not extract image URL, using placeholder`);
-                } else {
-                  images[id] = imageUrl;
-                  console.log(`Image URL for ${id}:`, imageUrl);
-                }
-              } else {
-                // Fallback to placeholder if no match found
-                images[id] = `https://placehold.co/400x600/random?text=${id}`;
-                console.log(`No database item found for ${id}, using placeholder`);
-              }
-            } catch (error) {
-              console.error(`Error processing item ${id}:`, error);
-              images[id] = `https://placehold.co/400x600/random?text=${id}`;
-            }
-          }
-          
-          setItemImages(images);
-        }
+        console.log("Agent results loaded:", data.results.length);
 
       } catch (err: any) {
         console.error('Error fetching trainer agent results:', err);
@@ -138,34 +78,29 @@ export default function AgentResultsPage() {
     fetchTrainerAgentResults();
   }, []);
 
-  // Function to create LookCanvas items from agent output
+  // Function to create LookCanvas items from agent output using local images
   const getLookItems = (agentOutput: AgentOutfit) => {
     const lookItems = [];
     
-    if (agentOutput.top && itemImages[agentOutput.top]) {
-      lookItems.push({
-        id: agentOutput.top,
-        image: itemImages[agentOutput.top],
-        type: 'top'
-      });
+    if (agentOutput.top) {
+      const topItem = createLocalOutfitItem(agentOutput.top, 'top');
+      lookItems.push(topItem);
+      console.log(`Added top item: ${topItem.id} with image: ${topItem.image}`);
     }
     
-    if (agentOutput.bottom && itemImages[agentOutput.bottom]) {
-      lookItems.push({
-        id: agentOutput.bottom,
-        image: itemImages[agentOutput.bottom],
-        type: 'bottom'
-      });
+    if (agentOutput.bottom) {
+      const bottomItem = createLocalOutfitItem(agentOutput.bottom, 'bottom');
+      lookItems.push(bottomItem);
+      console.log(`Added bottom item: ${bottomItem.id} with image: ${bottomItem.image}`);
     }
     
-    if (agentOutput.shoes && itemImages[agentOutput.shoes]) {
-      lookItems.push({
-        id: agentOutput.shoes,
-        image: itemImages[agentOutput.shoes],
-        type: 'shoes'
-      });
+    if (agentOutput.shoes) {
+      const shoesItem = createLocalOutfitItem(agentOutput.shoes, 'shoes');
+      lookItems.push(shoesItem);
+      console.log(`Added shoes item: ${shoesItem.id} with image: ${shoesItem.image}`);
     }
     
+    console.log(`Total look items created: ${lookItems.length}`);
     return lookItems;
   };
 
@@ -224,13 +159,13 @@ export default function AgentResultsPage() {
                       <LookCanvas items={lookItems} width={300} height={480} />
                       {showImagePath && (
                         <div className="bg-gray-50 p-2 text-xs text-gray-500 mt-2 rounded">
-                          <p className="font-semibold mb-1">Image Paths:</p>
+                          <p className="font-semibold mb-1">Local Image Paths:</p>
                           {lookItems.map((item, i) => (
                             <div key={i} className="truncate">
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <span className="cursor-help">{item.type}: {item.image.substring(0, 30)}...</span>
+                                    <span className="cursor-help">{item.type}: {item.image}</span>
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p className="max-w-xs break-all">{item.image}</p>
