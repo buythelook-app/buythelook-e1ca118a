@@ -36,6 +36,54 @@ const agents = [
   'body-shape-expert-agent'
 ];
 
+/**
+ * Helper function to check if an image URL ends with the pattern 6_x_1.jpg
+ * This filters out images with models
+ */
+const isValidImagePattern = (imageData: any): boolean => {
+  if (!imageData) {
+    console.log('🔍 [DEBUG] No image data provided');
+    return false;
+  }
+  
+  // Handle different image data formats
+  let imageUrl = '';
+  
+  if (typeof imageData === 'string') {
+    // Handle JSON string arrays like "[\"https://static.zara.net/photos/...jpg\"]"
+    try {
+      const parsed = JSON.parse(imageData);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        imageUrl = parsed[0];
+        console.log(`🔍 [DEBUG] Parsed JSON array, using first image: ${imageUrl}`);
+      } else {
+        imageUrl = imageData;
+        console.log(`🔍 [DEBUG] Using string directly: ${imageUrl}`);
+      }
+    } catch {
+      imageUrl = imageData;
+      console.log(`🔍 [DEBUG] Failed to parse JSON, using string directly: ${imageUrl}`);
+    }
+  } else if (Array.isArray(imageData) && imageData.length > 0) {
+    imageUrl = imageData[0];
+    console.log(`🔍 [DEBUG] Using first item from array: ${imageUrl}`);
+  } else if (typeof imageData === 'object' && imageData.url) {
+    imageUrl = imageData.url;
+    console.log(`🔍 [DEBUG] Using URL from object: ${imageUrl}`);
+  } else {
+    console.log(`🔍 [DEBUG] Unknown image data format:`, typeof imageData, imageData);
+    return false;
+  }
+  
+  // Check if the URL ends with the pattern 6_x_1.jpg (where x is any number)
+  const pattern = /6_\d+_1\.jpg$/i;
+  const isValid = pattern.test(imageUrl);
+  
+  console.log(`🔍 [DEBUG] Image URL: ${imageUrl} | Pattern match: ${isValid}`);
+  
+  return isValid;
+};
+
 // Generate outfit results using database items
 async function generateAgentResults(): Promise<AgentResult[]> {
   const results: AgentResult[] = [];
@@ -67,13 +115,13 @@ async function generateAgentResults(): Promise<AgentResult[]> {
       return [];
     }
     
-    // Step 2: Fetch items from zara_cloth table
+    // Step 2: Fetch items from zara_cloth table with larger limit for filtering
     console.log("🔍 [DEBUG] Step 2: Fetching items from zara_cloth...");
     
     const { data: allItems, error: allItemsError } = await supabase
       .from('zara_cloth')
       .select('*')
-      .limit(50);
+      .limit(100); // Increased limit to have more items to filter from
     
     if (allItemsError) {
       console.error("❌ [DEBUG] Failed to fetch items:", allItemsError);
@@ -87,10 +135,30 @@ async function generateAgentResults(): Promise<AgentResult[]> {
     
     console.log(`✅ [DEBUG] Found ${allItems.length} total items`);
     
-    // Generate unique results for each agent using database items
+    // Filter items to only include those with valid image patterns (6_x_1.jpg)
+    console.log('🔍 [DEBUG] Starting image pattern filtering...');
+    const validItems = allItems.filter((item, index) => {
+      console.log(`🔍 [DEBUG] Checking item ${index + 1}/${allItems.length} (ID: ${item.id})`);
+      const isValid = isValidImagePattern(item.image);
+      if (!isValid) {
+        console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - invalid image pattern`);
+      } else {
+        console.log(`✅ [DEBUG] KEEPING item ${item.id} - valid image pattern`);
+      }
+      return isValid;
+    });
+
+    console.log(`✅ [DEBUG] Valid items after filtering: ${validItems.length} out of ${allItems.length}`);
+
+    if (validItems.length === 0) {
+      console.error('❌ [DEBUG] No items with valid image patterns found');
+      return [];
+    }
+    
+    // Generate unique results for each agent using filtered database items
     for (const agent of agents) {
       // Shuffle items for each agent to get different combinations
-      const shuffledItems = [...allItems].sort(() => Math.random() - 0.5);
+      const shuffledItems = [...validItems].sort(() => Math.random() - 0.5);
       
       const randomTop = shuffledItems[0];
       const randomBottom = shuffledItems[1] || shuffledItems[0]; // Fallback if not enough items
@@ -103,16 +171,22 @@ async function generateAgentResults(): Promise<AgentResult[]> {
         bottom: randomBottom?.id,
         shoes: randomShoe?.id
       });
+
+      // Log the actual image URLs being used
+      console.log('🔍 [DEBUG] Selected item images for', agent);
+      console.log('Top item image:', randomTop?.image);
+      console.log('Bottom item image:', randomBottom?.image);
+      console.log('Shoes item image:', randomShoe?.image);
       
       const outfit: AgentOutfit = {
         top: randomTop,
         bottom: randomBottom,
         shoes: randomShoe,
         score,
-        description: `Outfit by ${agent.replace('-', ' ')} using real Zara items`,
+        description: `Outfit by ${agent.replace('-', ' ')} using real Zara items (no model images)`,
         recommendations: [
           "Using actual items from Zara database",
-          "Items selected from live inventory"
+          "Images selected to avoid model photos (6_x_1.jpg pattern only)"
         ],
         occasion: Math.random() > 0.5 ? 'work' : 'casual'
       };
@@ -124,7 +198,7 @@ async function generateAgentResults(): Promise<AgentResult[]> {
       });
     }
     
-    console.log(`✅ [DEBUG] Generated ${results.length} outfits with database items`);
+    console.log(`✅ [DEBUG] Generated ${results.length} outfits with filtered database items`);
     return results;
     
   } catch (error) {
