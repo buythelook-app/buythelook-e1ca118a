@@ -1,5 +1,5 @@
 
-import { supabase } from "@/lib/supabaseClient"; // Use the corrected client
+import { supabase } from "@/integrations/supabase/client"; // Use the correct client with proper types
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 
 // Interface defined but not exported to avoid conflicts
@@ -53,24 +53,30 @@ export const stylingAgent: Agent = {
         };
       }
 
-      // Step 2: Get user profile data (optional for generation)
-      console.log("🔍 [DEBUG] Step 2: Fetching user profile...");
-      const { data: userProfile, error: profileError } = await supabase
-        .from('style_quiz_results')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (profileError) {
-        console.log("⚠️ [DEBUG] Profile fetch error:", profileError.message);
-      } else {
-        console.log("✅ [DEBUG] User profile found:", userProfile);
+      // Step 2: Get user profile data (optional for generation) - skip if table doesn't exist
+      console.log("🔍 [DEBUG] Step 2: Attempting to fetch user profile...");
+      let userProfile = null;
+      
+      try {
+        // Try to fetch from style_quiz_results table - this might not exist in current schema
+        const { data: profileData, error: profileError } = await supabase
+          .rpc('get_user_profile', { user_id: userId })
+          .maybeSingle();
+        
+        if (!profileError) {
+          userProfile = profileData;
+          console.log("✅ [DEBUG] User profile found:", userProfile);
+        } else {
+          console.log("⚠️ [DEBUG] Profile fetch error (table might not exist):", profileError.message);
+        }
+      } catch (profileError) {
+        console.log("⚠️ [DEBUG] Profile table not available, continuing without profile data");
       }
 
       // Step 3: Fetch random items from each category
       console.log("🔍 [DEBUG] Step 3: Fetching clothing items...");
       
-      // Get random top item
+      // Get random items from zara_cloth table
       const { data: topItems, error: topError } = await supabase
         .from('zara_cloth')
         .select('*')
@@ -107,7 +113,7 @@ export const stylingAgent: Agent = {
         description: `Outfit generated using real Zara database items`,
         recommendations: [
           "This combination uses actual Zara items from our database",
-          `Perfect for ${userProfile?.body_shape || 'your body'} shape`
+          `Perfect for your body shape`
         ],
         occasion: Math.random() > 0.5 ? 'work' : 'casual'
       };
