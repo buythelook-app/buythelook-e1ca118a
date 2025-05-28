@@ -2,7 +2,6 @@
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { toast } from "sonner";
 import { CartItem } from "./cart/CartItem";
 import { LookCartItem } from "./cart/LookCartItem";
@@ -38,88 +37,80 @@ interface CartStore {
   clearCart: () => Promise<void>;
 }
 
-export const useCartStore = create<CartStore>()(
-  persist(
-    (set, get) => ({
-      items: [],
-      looks: [],
-      addItem: async (item) => {
-        try {
-          // For now, just add to local state since we're having DB issues
-          set(state => ({
-            items: [...state.items, item]
-          }));
-          toast.success('Item added to cart');
-        } catch (err) {
-          console.error('Error in addItem:', err);
-          toast.error('Failed to add item to cart');
-        }
-      },
-      addItems: async (newItems) => {
-        try {
-          set(state => ({
-            items: [...state.items, ...newItems]
-          }));
-          toast.success('Items added to cart');
-        } catch (err) {
-          console.error('Error in addItems:', err);
-          toast.error('Failed to add items to cart');
-        }
-      },
-      addLook: async (look) => {
-        set(state => ({ 
-          looks: [...state.looks, look]
-        }));
-        toast.success('Look added to cart');
-      },
-      removeLook: async (lookId) => {
-        const look = get().looks.find(l => l.id === lookId);
-        if (look) {
-          for (const item of look.items) {
-            await get().removeItem(item.id);
-          }
-        }
-        set(state => ({
-          looks: state.looks.filter(l => l.id !== lookId)
-        }));
-      },
-      removeItem: async (itemId) => {
-        set(state => ({
-          items: state.items.filter(item => item.id !== itemId),
-          looks: state.looks.map(look => ({
-            ...look,
-            items: look.items.filter(item => item.id !== itemId)
-          })).filter(look => look.items.length > 0)
-        }));
-      },
-      removeItemFromLook: async (lookId, itemId) => {
-        await get().removeItem(itemId);
-        set(state => ({
-          looks: state.looks.map(look => {
-            if (look.id === lookId) {
-              const updatedItems = look.items.filter(item => item.id !== itemId);
-              if (updatedItems.length === 0) {
-                return null;
-              }
-              return {
-                ...look,
-                items: updatedItems
-              };
-            }
-            return look;
-          }).filter((look): look is Look => look !== null)
-        }));
-      },
-      clearCart: async () => {
-        set({ items: [], looks: [] });
-        toast.success('Cart cleared');
-      }
-    }),
-    {
-      name: 'cart-storage',
+export const useCartStore = create<CartStore>((set, get) => ({
+  items: [],
+  looks: [],
+  addItem: async (item) => {
+    try {
+      set(state => ({
+        items: [...state.items, item]
+      }));
+      toast.success('Item added to cart');
+    } catch (err) {
+      console.error('Error in addItem:', err);
+      toast.error('Failed to add item to cart');
     }
-  )
-);
+  },
+  addItems: async (newItems) => {
+    try {
+      set(state => ({
+        items: [...state.items, ...newItems]
+      }));
+      toast.success('Items added to cart');
+    } catch (err) {
+      console.error('Error in addItems:', err);
+      toast.error('Failed to add items to cart');
+    }
+  },
+  addLook: async (look) => {
+    set(state => ({ 
+      looks: [...state.looks, look]
+    }));
+    toast.success('Look added to cart');
+  },
+  removeLook: async (lookId) => {
+    const look = get().looks.find(l => l.id === lookId);
+    if (look) {
+      for (const item of look.items) {
+        await get().removeItem(item.id);
+      }
+    }
+    set(state => ({
+      looks: state.looks.filter(l => l.id !== lookId)
+    }));
+  },
+  removeItem: async (itemId) => {
+    set(state => ({
+      items: state.items.filter(item => item.id !== itemId),
+      looks: state.looks.map(look => ({
+        ...look,
+        items: look.items.filter(item => item.id !== itemId)
+      })).filter(look => look.items.length > 0)
+    }));
+  },
+  removeItemFromLook: async (lookId, itemId) => {
+    await get().removeItem(itemId);
+    set(state => ({
+      looks: state.looks.map(look => {
+        if (look.id === lookId) {
+          const updatedItems = look.items.filter(item => item.id !== itemId);
+          if (updatedItems.length === 0) {
+            return null;
+          }
+          return {
+            ...look,
+            items: updatedItems
+          };
+        }
+        return look;
+      }).filter((look): look is Look => look !== null)
+    }));
+  },
+  clearCart: async () => {
+    set({ items: [], looks: [] });
+    toast.success('Cart cleared');
+  }
+}));
 
 export const Cart = () => {
   const navigate = useNavigate();

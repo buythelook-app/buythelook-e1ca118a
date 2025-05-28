@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { QuizContextType, QuizFormData } from "./types";
-import { loadQuizData, saveQuizData, validateQuizStep, analyzeStyleWithAI } from "./quizUtils";
+import { validateQuizStep, analyzeStyleWithAI } from "./utils/quizUtils";
 
 const QuizContext = createContext<QuizContextType | undefined>(undefined);
 
@@ -19,30 +19,17 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState<QuizFormData>(() => {
-    const savedData = loadQuizData();
-    if (Object.keys(savedData).length > 0) {
-      console.log("Loaded saved data:", savedData);
-      return savedData;
-    }
-    return {
-      gender: "",
-      height: "",
-      weight: "",
-      waist: "",
-      chest: "",
-      bodyShape: "",
-      photo: null,
-      colorPreferences: [],
-      stylePreferences: [],
-    };
+  const [formData, setFormData] = useState<QuizFormData>({
+    gender: "",
+    height: "",
+    weight: "",
+    waist: "",
+    chest: "",
+    bodyShape: "",
+    photo: null,
+    colorPreferences: [],
+    stylePreferences: [],
   });
-
-  // Save data whenever it changes
-  useEffect(() => {
-    console.log("Saving form data:", formData);
-    saveQuizData(formData);
-  }, [formData]);
 
   const handleNext = () => {
     if (!validateQuizStep(step, formData)) {
@@ -60,12 +47,9 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const handleSaveForLater = () => {
-    // Save current progress explicitly
-    saveQuizData(formData);
-    
     toast({
-      title: "Progress saved",
-      description: "Your quiz progress has been saved. You can continue later.",
+      title: "Quiz data saved in session",
+      description: "Your quiz progress will be lost when you close the browser.",
     });
     
     navigate('/home');
@@ -86,17 +70,16 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     try {
-      // Create a copy of the data for analysis
-      const dataToAnalyze = { ...formData };
-      
-      console.log("Submitting form data:", dataToAnalyze);
-      const styleAnalysis = await analyzeStyleWithAI(dataToAnalyze);
+      console.log("Submitting form data:", formData);
+      const styleAnalysis = await analyzeStyleWithAI(formData);
       
       toast({
         title: "Analysis complete!",
         description: "We've created your personalized style profile.",
       });
-      localStorage.setItem('styleAnalysis', JSON.stringify(styleAnalysis));
+      
+      // Store analysis in session storage temporarily for the suggestions page
+      sessionStorage.setItem('styleAnalysis', JSON.stringify(styleAnalysis));
       navigate('/suggestions');
     } catch (error) {
       console.error('Style analysis error:', error);

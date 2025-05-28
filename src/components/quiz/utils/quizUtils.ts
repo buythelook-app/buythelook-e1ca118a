@@ -6,10 +6,7 @@ import { styleRecommendations } from '../constants/styleRecommendations';
 import { supabase } from '@/lib/supabaseClient';
 
 export const loadQuizData = (): QuizFormData => {
-  const savedData = localStorage.getItem('style-quiz-data');
-  if (savedData) {
-    return JSON.parse(savedData);
-  }
+  // Return default empty form data - no storage
   return {
     gender: "",
     height: "",
@@ -24,7 +21,8 @@ export const loadQuizData = (): QuizFormData => {
 };
 
 export const saveQuizData = (data: QuizFormData): void => {
-  localStorage.setItem('style-quiz-data', JSON.stringify(data));
+  // No storage - data only exists in memory during session
+  console.log('Quiz data saved to memory');
 };
 
 export const validateQuizStep = (step: number, formData: QuizFormData): boolean => {
@@ -119,7 +117,7 @@ export const analyzeStyleWithAI = async (formData: QuizFormData): Promise<StyleA
           bottom: measurements.waist > 90 ? "comfort" : "fitted",
           shoes: "true to size"
         },
-        bodyShape: formData.bodyShape || 'H' // Adding bodyShape to the analysis
+        bodyShape: formData.bodyShape || 'H'
       },
       recommendations: styleRecs
     };
