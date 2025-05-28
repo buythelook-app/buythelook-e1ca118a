@@ -41,7 +41,7 @@ async function generateAgentResults(): Promise<AgentResult[]> {
   const results: AgentResult[] = [];
   
   try {
-    console.log("יוצר תלבושות באמצעות פריטים מהדאטהבייס...");
+    console.log("🔍 [DEBUG] Trainer Agent: Starting to generate agent results...");
     
     // Initialize Supabase client
     const supabase = createClient(
@@ -49,14 +49,69 @@ async function generateAgentResults(): Promise<AgentResult[]> {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
     
-    // Fetch items from zara_cloth table with better filtering
+    // Step 1: Check if zara_cloth table exists
+    console.log("🔍 [DEBUG] Step 1: Checking if zara_cloth table exists...");
+    const { count: tableCount, error: tableCheckError } = await supabase
+      .from('zara_cloth')
+      .select('id', { count: 'exact', head: true });
+    
+    if (tableCheckError) {
+      console.error("❌ [DEBUG] zara_cloth table check failed:", tableCheckError);
+      console.log("🔄 [DEBUG] Falling back to items table...");
+      
+      // Fallback to items table
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('items')
+        .select('*')
+        .limit(20);
+      
+      if (itemsError) {
+        console.error("❌ [DEBUG] Items table also failed:", itemsError);
+        return [];
+      }
+      
+      console.log("✅ [DEBUG] Found items in fallback table:", itemsData?.length || 0);
+      
+      // Generate results using items table
+      for (const agent of agents) {
+        const randomItems = itemsData?.sort(() => Math.random() - 0.5).slice(0, 3) || [];
+        const score = Math.floor(Math.random() * 30) + 70;
+        
+        const outfit: AgentOutfit = {
+          top: randomItems[0] || null,
+          bottom: randomItems[1] || null,
+          shoes: randomItems[2] || null,
+          score,
+          description: `Outfit by ${agent.replace('-', ' ')} using fallback items`,
+          recommendations: [
+            "Using fallback items table",
+            "Zara database connection needs to be fixed"
+          ],
+          occasion: Math.random() > 0.5 ? 'work' : 'casual'
+        };
+        
+        results.push({
+          agent,
+          output: outfit,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      return results;
+    }
+    
+    console.log("✅ [DEBUG] zara_cloth table exists with", tableCount, "items");
+    
+    // Step 2: Fetch items from zara_cloth table with better filtering
+    console.log("🔍 [DEBUG] Step 2: Fetching items from zara_cloth...");
+    
     const { data: topItems, error: topError } = await supabase
       .from('zara_cloth')
       .select('*')
       .ilike('product_name', '%shirt%')
       .limit(20);
 
-    console.log('Top items query result:', { count: topItems?.length, error: topError });
+    console.log('🔍 [DEBUG] Tops query result:', { count: topItems?.length, error: topError });
 
     const { data: bottomItems, error: bottomError } = await supabase
       .from('zara_cloth')
@@ -64,7 +119,7 @@ async function generateAgentResults(): Promise<AgentResult[]> {
       .or('product_name.ilike.%pant%,product_name.ilike.%trouser%,product_name.ilike.%jean%')
       .limit(20);
 
-    console.log('Bottom items query result:', { count: bottomItems?.length, error: bottomError });
+    console.log('🔍 [DEBUG] Bottoms query result:', { count: bottomItems?.length, error: bottomError });
 
     const { data: shoesItems, error: shoesError } = await supabase
       .from('zara_cloth')
@@ -72,20 +127,25 @@ async function generateAgentResults(): Promise<AgentResult[]> {
       .ilike('product_name', '%shoe%')
       .limit(20);
 
-    console.log('Shoes items query result:', { count: shoesItems?.length, error: shoesError });
+    console.log('🔍 [DEBUG] Shoes query result:', { count: shoesItems?.length, error: shoesError });
     
     // If we don't have enough items, try broader searches
     if (!topItems?.length || !bottomItems?.length || !shoesItems?.length) {
-      console.log("לא נמצאו מספיק פריטים, מנסה חיפוש רחב יותר...");
+      console.log("⚠️ [DEBUG] Not enough specific items found, trying broader search...");
       
       // Try getting any items and categorize them differently
-      const { data: allItems } = await supabase
+      const { data: allItems, error: allItemsError } = await supabase
         .from('zara_cloth')
         .select('*')
         .limit(50);
       
+      if (allItemsError) {
+        console.error("❌ [DEBUG] Failed to fetch any items:", allItemsError);
+        return [];
+      }
+      
       if (allItems && allItems.length > 0) {
-        console.log(`נמצאו ${allItems.length} פריטים כלליים`);
+        console.log(`✅ [DEBUG] Found ${allItems.length} total items for manual categorization`);
         
         // Manually categorize items based on product names
         const tops = allItems.filter(item => 
@@ -111,46 +171,49 @@ async function generateAgentResults(): Promise<AgentResult[]> {
           item.product_name?.toLowerCase().includes('sandal')
         );
         
-        console.log(`מחולק לקטגוריות: tops=${tops.length}, bottoms=${bottoms.length}, shoes=${shoes.length}`);
+        console.log(`🔍 [DEBUG] Manual categorization: tops=${tops.length}, bottoms=${bottoms.length}, shoes=${shoes.length}`);
         
-        // Use the categorized items
-        if (tops.length > 0 && bottoms.length > 0 && shoes.length > 0) {
-          // Generate unique results for each agent using database items
-          for (const agent of agents) {
-            const randomTop = tops[Math.floor(Math.random() * tops.length)];
-            const randomBottom = bottoms[Math.floor(Math.random() * bottoms.length)];
-            const randomShoe = shoes[Math.floor(Math.random() * shoes.length)];
-            
-            const score = Math.floor(Math.random() * 30) + 70;
-            
-            console.log(`יוצר תלבושת עבור ${agent}:`, {
-              top: randomTop.id,
-              bottom: randomBottom.id,
-              shoes: randomShoe.id
-            });
-            
-            const outfit: AgentOutfit = {
-              top: randomTop,
-              bottom: randomBottom,
-              shoes: randomShoe,
-              score,
-              description: `תלבושת מותאמת על ידי ${agent.replace('-', ' ')} מפריטי זארה`,
-              recommendations: [
-                "התלבושת משתמשת בפריטים אמיתיים מדאטהבייס זארה",
-                "השילוב נבחר על פי העדפות הסגנון שלך"
-              ],
-              occasion: Math.random() > 0.5 ? 'work' : 'casual'
-            };
-            
-            results.push({
-              agent,
-              output: outfit,
-              timestamp: new Date().toISOString()
-            });
-          }
+        // Use the categorized items or fall back to any items
+        const finalTops = tops.length > 0 ? tops : allItems.slice(0, 10);
+        const finalBottoms = bottoms.length > 0 ? bottoms : allItems.slice(10, 20);
+        const finalShoes = shoes.length > 0 ? shoes : allItems.slice(20, 30);
+        
+        // Generate unique results for each agent using database items
+        for (const agent of agents) {
+          const randomTop = finalTops[Math.floor(Math.random() * finalTops.length)];
+          const randomBottom = finalBottoms[Math.floor(Math.random() * finalBottoms.length)];
+          const randomShoe = finalShoes[Math.floor(Math.random() * finalShoes.length)];
+          
+          const score = Math.floor(Math.random() * 30) + 70;
+          
+          console.log(`✅ [DEBUG] Creating outfit for ${agent}:`, {
+            top: randomTop?.id,
+            bottom: randomBottom?.id,
+            shoes: randomShoe?.id
+          });
+          
+          const outfit: AgentOutfit = {
+            top: randomTop,
+            bottom: randomBottom,
+            shoes: randomShoe,
+            score,
+            description: `Outfit by ${agent.replace('-', ' ')} using Zara database items`,
+            recommendations: [
+              "Using real items from Zara database",
+              "Items categorized automatically from available data"
+            ],
+            occasion: Math.random() > 0.5 ? 'work' : 'casual'
+          };
+          
+          results.push({
+            agent,
+            output: outfit,
+            timestamp: new Date().toISOString()
+          });
         }
       }
     } else {
+      console.log("✅ [DEBUG] Using specific category items");
       // Generate unique results for each agent using database items
       for (const agent of agents) {
         const randomTop = topItems[Math.floor(Math.random() * topItems.length)];
@@ -159,10 +222,10 @@ async function generateAgentResults(): Promise<AgentResult[]> {
         
         const score = Math.floor(Math.random() * 30) + 70;
         
-        console.log(`יוצר תלבושת עבור ${agent}:`, {
-          top: randomTop.id,
-          bottom: randomBottom.id,
-          shoes: randomShoe.id
+        console.log(`✅ [DEBUG] Creating outfit for ${agent}:`, {
+          top: randomTop?.id,
+          bottom: randomBottom?.id,
+          shoes: randomShoe?.id
         });
         
         const outfit: AgentOutfit = {
@@ -170,10 +233,10 @@ async function generateAgentResults(): Promise<AgentResult[]> {
           bottom: randomBottom,
           shoes: randomShoe,
           score,
-          description: `תלבושת מותאמת על ידי ${agent.replace('-', ' ')} מפריטי זארה`,
+          description: `Outfit by ${agent.replace('-', ' ')} using Zara items`,
           recommendations: [
-            "התלבושת משתמשת בפריטים אמיתיים מדאטהבייס זארה",
-            "השילוב נבחר על פי העדפות הסגנון שלך"
+            "Using real items from Zara database",
+            "Items selected based on style preferences"
           ],
           occasion: Math.random() > 0.5 ? 'work' : 'casual'
         };
@@ -186,10 +249,10 @@ async function generateAgentResults(): Promise<AgentResult[]> {
       }
     }
     
-    console.log(`נוצרו ${results.length} תלבושות עם פריטים מהדאטהבייס`);
+    console.log(`✅ [DEBUG] Generated ${results.length} outfits with database items`);
     return results;
   } catch (error) {
-    console.error("שגיאה ביצירת תוצאות אייג'נטים:", error);
+    console.error("❌ [DEBUG] Error in generateAgentResults:", error);
     return [];
   }
 }
@@ -202,19 +265,19 @@ Deno.serve(async (req) => {
   }
   
   try {
-    console.log("מתחיל להריץ את trainer-agent עם פריטים מהדאטהבייס...");
+    console.log("🔍 [DEBUG] Trainer Agent Edge Function starting...");
     
     // Generate results using database items
     const agentResults = await generateAgentResults();
     
     if (agentResults.length === 0) {
-      console.log("לא נוצרו תוצאות אייג'נטים");
+      console.log("❌ [DEBUG] No agent results generated");
       return new Response(
         JSON.stringify({
           success: false,
           status: "no_results",
           results: [],
-          message: "לא נמצאו פריטים זמינים בדאטהבייס"
+          message: "No items available in database"
         }),
         {
           headers: {
@@ -233,7 +296,7 @@ Deno.serve(async (req) => {
       results: agentResults
     };
     
-    console.log(`מחזיר ${agentResults.length} תוצאות אייג'נטים עם פריטים מהדאטהבייס`);
+    console.log(`✅ [DEBUG] Returning ${agentResults.length} agent results`);
     
     // Return the response
     return new Response(
@@ -248,7 +311,7 @@ Deno.serve(async (req) => {
     
   } catch (error) {
     // Handle errors
-    console.error("שגיאה ב-trainer-agent:", error);
+    console.error("❌ [DEBUG] Error in trainer-agent:", error);
     
     return new Response(
       JSON.stringify({

@@ -29,42 +29,44 @@ export function AgentOutfitVisualizer() {
       setLoading(true);
       setError(null);
       
-      console.log("מתחיל לקרוא לאייג'נט הטריינר...");
+      console.log("🔍 [DEBUG] AgentOutfitVisualizer: Starting to fetch results...");
       
       // Call the trainer-agent Edge Function
+      console.log("🔍 [DEBUG] Calling trainer-agent edge function...");
       const { data, error } = await supabase.functions.invoke<TrainerAgentResponse>('trainer-agent');
       
       if (error) {
-        console.error('שגיאה בקריאה לאייג\'נט הטריינר:', error);
+        console.error('❌ [DEBUG] Error calling trainer agent:', error);
         throw new Error(error.message);
       }
       
       if (!data || !data.results) {
-        throw new Error('תגובה לא תקינה מהאייג\'נט הטריינר');
+        console.error('❌ [DEBUG] Invalid response from trainer agent:', data);
+        throw new Error('Invalid response from trainer agent');
       }
 
-      console.log(`התקבלו ${data.results.length} תוצאות מהאייג'נט`);
+      console.log(`✅ [DEBUG] Received ${data.results.length} results from trainer agent`);
+      console.log("🔍 [DEBUG] Results data:", data.results);
       setResults(data.results);
 
     } catch (err: any) {
-      console.error('שגיאה בטעינת תוצאות האייג\'נט:', err);
+      console.error('❌ [DEBUG] Error in fetchResults:', err);
       setError(err.message);
-      toast.error('שגיאה בטעינת תוצאות האייג\'נט');
+      toast.error('Error loading agent results');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Auto-load on component mount
+    console.log("🔍 [DEBUG] AgentOutfitVisualizer component mounted, auto-loading...");
     fetchResults();
   }, []);
 
   // Function to create LookCanvas items from agent output using database items
   const getLookItems = (agentOutput: any) => {
+    console.log("🔍 [DEBUG] getLookItems: Processing agent output:", agentOutput);
     const lookItems = [];
-    
-    console.log("יוצר פריטי look עבור:", agentOutput);
     
     if (agentOutput.top) {
       const topItem = {
@@ -75,7 +77,7 @@ export function AgentOutfitVisualizer() {
         price: agentOutput.top.price ? `$${agentOutput.top.price}` : '$49.99'
       };
       lookItems.push(topItem);
-      console.log(`מוסיף top: ${agentOutput.top.id} עם תמונה: ${topItem.image}`);
+      console.log(`✅ [DEBUG] Added top: ${agentOutput.top.id} with image: ${topItem.image}`);
     }
     
     if (agentOutput.bottom) {
@@ -87,7 +89,7 @@ export function AgentOutfitVisualizer() {
         price: agentOutput.bottom.price ? `$${agentOutput.bottom.price}` : '$59.99'
       };
       lookItems.push(bottomItem);
-      console.log(`מוסיף bottom: ${agentOutput.bottom.id} עם תמונה: ${bottomItem.image}`);
+      console.log(`✅ [DEBUG] Added bottom: ${agentOutput.bottom.id} with image: ${bottomItem.image}`);
     }
     
     if (agentOutput.shoes) {
@@ -99,7 +101,7 @@ export function AgentOutfitVisualizer() {
         price: agentOutput.shoes.price ? `$${agentOutput.shoes.price}` : '$89.99'
       };
       lookItems.push(shoesItem);
-      console.log(`מוסיף shoes: ${agentOutput.shoes.id} עם תמונה: ${shoesItem.image}`);
+      console.log(`✅ [DEBUG] Added shoes: ${agentOutput.shoes.id} with image: ${shoesItem.image}`);
     }
     
     if (agentOutput.coat) {
@@ -111,17 +113,17 @@ export function AgentOutfitVisualizer() {
         price: agentOutput.coat.price ? `$${agentOutput.coat.price}` : '$129.99'
       };
       lookItems.push(coatItem);
-      console.log(`מוסיף coat: ${agentOutput.coat.id} עם תמונה: ${coatItem.image}`);
+      console.log(`✅ [DEBUG] Added coat: ${agentOutput.coat.id} with image: ${coatItem.image}`);
     }
     
-    console.log(`סה"כ פריטי look שנוצרו:`, lookItems.length);
+    console.log(`✅ [DEBUG] Total look items created: ${lookItems.length}`);
     return lookItems;
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">ויזואליזציה של אייג'נטי אופנה</h2>
+        <h2 className="text-2xl font-bold">Fashion Agent Visualization (Debug Mode)</h2>
         <div className="flex gap-2">
           <Button 
             onClick={() => setShowImagePath(!showImagePath)} 
@@ -130,7 +132,7 @@ export function AgentOutfitVisualizer() {
             className="flex items-center gap-1"
           >
             <Info className="h-4 w-4" />
-            {showImagePath ? "הסתר נתיבים" : "הראה נתיבים"}
+            {showImagePath ? "Hide Debug Info" : "Show Debug Info"}
           </Button>
           <Button 
             onClick={fetchResults} 
@@ -140,7 +142,7 @@ export function AgentOutfitVisualizer() {
             className="flex items-center gap-1"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            רענן
+            Refresh & Debug
           </Button>
         </div>
       </div>
@@ -148,11 +150,11 @@ export function AgentOutfitVisualizer() {
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2 text-lg">טוען תוצאות אייג'נטים...</span>
+          <span className="ml-2 text-lg">Loading agent results...</span>
         </div>
       ) : error ? (
         <Alert variant="destructive">
-          <AlertTitle>שגיאה</AlertTitle>
+          <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : (
@@ -163,31 +165,32 @@ export function AgentOutfitVisualizer() {
               result.output.top || result.output.bottom || result.output.shoes
             ))
             .map((result, index) => {
+              console.log(`🔍 [DEBUG] Rendering result ${index}:`, result);
               const lookItems = getLookItems(result.output);
               
               // Create details object for display with null checks
               const details: Record<string, string> = {};
-              if (result.output.top && result.output.top.product_name) {
+              if (result.output.top && typeof result.output.top === 'object' && result.output.top.product_name) {
                 details.Top = result.output.top.product_name;
-              } else if (result.output.top && result.output.top.id) {
+              } else if (result.output.top && typeof result.output.top === 'object' && result.output.top.id) {
                 details.Top = result.output.top.id;
               }
               
-              if (result.output.bottom && result.output.bottom.product_name) {
+              if (result.output.bottom && typeof result.output.bottom === 'object' && result.output.bottom.product_name) {
                 details.Bottom = result.output.bottom.product_name;
-              } else if (result.output.bottom && result.output.bottom.id) {
+              } else if (result.output.bottom && typeof result.output.bottom === 'object' && result.output.bottom.id) {
                 details.Bottom = result.output.bottom.id;
               }
               
-              if (result.output.shoes && result.output.shoes.product_name) {
+              if (result.output.shoes && typeof result.output.shoes === 'object' && result.output.shoes.product_name) {
                 details.Shoes = result.output.shoes.product_name;
-              } else if (result.output.shoes && result.output.shoes.id) {
+              } else if (result.output.shoes && typeof result.output.shoes === 'object' && result.output.shoes.id) {
                 details.Shoes = result.output.shoes.id;
               }
               
-              if (result.output.coat && result.output.coat.product_name) {
+              if (result.output.coat && typeof result.output.coat === 'object' && result.output.coat.product_name) {
                 details.Coat = result.output.coat.product_name;
-              } else if (result.output.coat && result.output.coat.id) {
+              } else if (result.output.coat && typeof result.output.coat === 'object' && result.output.coat.id) {
                 details.Coat = result.output.coat.id;
               }
               
@@ -207,19 +210,20 @@ export function AgentOutfitVisualizer() {
 
       {results.length === 0 && !loading && !error && (
         <div className="py-10 text-center">
-          <p className="text-gray-500">אין תוצאות אייג'נטים זמינות</p>
+          <p className="text-gray-500">No agent results available</p>
         </div>
       )}
       
-      {/* Debug information */}
+      {/* Enhanced Debug information */}
       {showImagePath && (
         <div className="mt-8 p-4 bg-gray-100 rounded-lg">
-          <h3 className="text-lg font-semibold mb-2">מידע דיבוג - פריטים מהדאטהבייס</h3>
-          <p><strong>מספר תוצאות:</strong> {results.length}</p>
-          <p><strong>שימוש בפריטים מהדאטהבייס:</strong> כן</p>
+          <h3 className="text-lg font-semibold mb-2">🔍 Debug Information</h3>
+          <p><strong>Number of results:</strong> {results.length}</p>
+          <p><strong>Using database items:</strong> {results.length > 0 ? 'Yes' : 'No'}</p>
+          <p><strong>Check browser console for detailed logs</strong></p>
           <details className="mt-2">
-            <summary className="cursor-pointer">הצג תוצאות אייג'נטים</summary>
-            <pre className="mt-2 text-xs overflow-auto">
+            <summary className="cursor-pointer">Show Raw Agent Results</summary>
+            <pre className="mt-2 text-xs overflow-auto bg-white p-2 rounded">
               {JSON.stringify(results, null, 2)}
             </pre>
           </details>
