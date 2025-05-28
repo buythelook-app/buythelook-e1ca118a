@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -31,11 +32,8 @@ const isValidItemType = (type: string): type is AllowedType => {
   return ALLOWED_TYPES.includes(type as AllowedType);
 };
 
-// Track used items to prevent duplication
-const globalUsedItemIds = new Set<string>();
-const globalUsedTopIds = new Set<string>();
-const globalUsedBottomIds = new Set<string>();
-const globalUsedShoeIds = new Set<string>();
+// Track used items to prevent duplication across different occasions
+const globalUsedItemIds = new Map<string, Set<string>>();
 
 export function usePersonalizedLooks() {
   const { toast } = useToast();
@@ -52,16 +50,54 @@ export function usePersonalizedLooks() {
     const result: { [key: string]: DashboardItem[] } = {};
     
     for (const [occasion, items] of Object.entries(fallbackItems)) {
-      // Filter and map to ensure all items have valid types
-      result[occasion] = items
+      // Filter and map to ensure all items have valid types, and ensure variety
+      const validItems = items
         .filter(item => isValidItemType(item.type))
-        .map(item => ({
-          id: item.id,
+        .map((item, index) => ({
+          id: `${item.id}-${occasion}-${index}`, // Ensure unique IDs per occasion
           name: `${item.type.charAt(0).toUpperCase() + item.type.slice(1)} Item`,
           image: item.image,
           type: item.type,
           price: '$49.99'
         }));
+      
+      // Ensure we have at least one of each essential type
+      const hasTop = validItems.some(item => item.type === 'top');
+      const hasBottom = validItems.some(item => item.type === 'bottom');
+      const hasShoes = validItems.some(item => item.type === 'shoes');
+      
+      // Add missing essential types if needed
+      if (!hasTop && validItems.length > 0) {
+        validItems.push({
+          id: `fallback-top-${occasion}`,
+          name: 'Top Item',
+          image: validItems[0].image,
+          type: 'top',
+          price: '$49.99'
+        });
+      }
+      
+      if (!hasBottom && validItems.length > 0) {
+        validItems.push({
+          id: `fallback-bottom-${occasion}`,
+          name: 'Bottom Item', 
+          image: validItems[0].image,
+          type: 'bottom',
+          price: '$49.99'
+        });
+      }
+      
+      if (!hasShoes && validItems.length > 0) {
+        validItems.push({
+          id: `fallback-shoes-${occasion}`,
+          name: 'Shoes Item',
+          image: validItems[0].image,
+          type: 'shoes',
+          price: '$49.99'
+        });
+      }
+      
+      result[occasion] = validItems;
     }
     
     return result;
@@ -86,12 +122,9 @@ export function usePersonalizedLooks() {
   // Memoized query function to prevent unnecessary re-creations
   const queryFn = useCallback(async () => {
     try {
-      // Clear global tracking sets when forced refresh to ensure completely different items
+      // Clear global tracking when forced refresh to ensure completely different items
       if (forceRefresh) {
         globalUsedItemIds.clear();
-        globalUsedTopIds.clear();
-        globalUsedBottomIds.clear();
-        globalUsedShoeIds.clear();
       }
       
       const data = await fetchDashboardItems();
@@ -106,26 +139,59 @@ export function usePersonalizedLooks() {
         return convertedFallbackItems();
       }
       
-      // Merge API data with fallbacks for any missing occasions
+      // Process and diversify API data for each occasion
       const mergedData: {[key: string]: DashboardItem[]} = {};
       
       for (const occasion of occasions) {
         if (data[occasion] && Array.isArray(data[occasion]) && data[occasion].length > 0) {
-          // Validate each item to ensure it has a valid type
-          const validItems = data[occasion]
+          // Validate and ensure diversity for each occasion
+          let validItems = data[occasion]
             .filter(item => item && item.type && isValidItemType(item.type))
-            .map(item => ({
-              id: item.id || `generated-${Math.random().toString(36).substring(7)}`,
-              image: item.image || '/placeholder.svg', // Ensure image is never undefined
+            .map((item, index) => ({
+              id: `${item.id || `generated-${Math.random().toString(36).substring(7)}`}-${occasion}-${index}`,
+              image: item.image || '/placeholder.svg',
               type: item.type as AllowedType,
               price: item.price || '$49.99',
               name: item.name || 'Item'
             }));
           
-          if (validItems.length >= 3) {
-            mergedData[occasion] = validItems;
+          // Ensure we have variety by type for this occasion
+          const typeGroups = validItems.reduce((acc, item) => {
+            if (!acc[item.type]) acc[item.type] = [];
+            acc[item.type].push(item);
+            return acc;
+          }, {} as Record<string, DashboardItem[]>);
+          
+          // Pick diverse items, ensuring at least one of each essential type
+          const diverseItems: DashboardItem[] = [];
+          const essentialTypes = ['top', 'bottom', 'shoes'];
+          
+          essentialTypes.forEach(type => {
+            if (typeGroups[type] && typeGroups[type].length > 0) {
+              const randomItem = typeGroups[type][Math.floor(Math.random() * typeGroups[type].length)];
+              diverseItems.push(randomItem);
+            }
+          });
+          
+          // Add other types to reach a good variety
+          Object.keys(typeGroups).forEach(type => {
+            if (!essentialTypes.includes(type) && typeGroups[type].length > 0) {
+              const randomItem = typeGroups[type][Math.floor(Math.random() * typeGroups[type].length)];
+              diverseItems.push(randomItem);
+            }
+          });
+          
+          // If we still don't have enough variety, add more items
+          while (diverseItems.length < Math.min(10, validItems.length)) {
+            const randomItem = validItems[Math.floor(Math.random() * validItems.length)];
+            if (!diverseItems.find(item => item.id === randomItem.id)) {
+              diverseItems.push(randomItem);
+            }
+          }
+          
+          if (diverseItems.length >= 3) {
+            mergedData[occasion] = diverseItems;
           } else {
-            // Use fallback if we don't have enough valid items
             mergedData[occasion] = convertedFallbackItems()[occasion];
           }
         } else {
@@ -144,7 +210,6 @@ export function usePersonalizedLooks() {
           variant: "default",
         });
       }
-      // Always return fallback data on failure
       console.log("Error fetching data, using fallbacks", err);
       return convertedFallbackItems();
     }
@@ -155,12 +220,10 @@ export function usePersonalizedLooks() {
     queryKey: ['dashboardItems', selectedMood, forceRefresh],
     queryFn,
     enabled: !!userStyle,
-    staleTime: 5000, // Reduced from 30000 to 5000 to refresh more often
+    staleTime: 5000,
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
-    // Use placeholderData instead of keepPreviousData
     placeholderData: convertedFallbackItems(),
-    // Prevent refetching on window focus which can cause flickering
     refetchOnWindowFocus: false,
   });
 
@@ -180,51 +243,45 @@ export function usePersonalizedLooks() {
   }, [occasionOutfits, forceRefresh]);
 
   const createLookFromItems = useCallback((items: any[] = [], occasion: string, index: number): Look | null => {
-    // Ensure we have different items for each outfit component
-    let uniqueItems = items;
+    if (!items || items.length === 0) return null;
     
-    // Filter out items with duplicate types
-    const seenTypes = new Set<string>();
-    uniqueItems = uniqueItems.filter(item => {
-      if (!item || !item.type || seenTypes.has(item.type)) return false;
-      seenTypes.add(item.type);
-      return true;
+    // Ensure we have diverse items by type
+    const typeGroups = items.reduce((acc, item) => {
+      if (!acc[item.type]) acc[item.type] = [];
+      acc[item.type].push(item);
+      return acc;
+    }, {} as Record<string, any[]>);
+    
+    // Create a diverse outfit
+    const outfitItems = [];
+    const essentialTypes = ['top', 'bottom', 'shoes'];
+    
+    essentialTypes.forEach(type => {
+      if (typeGroups[type] && typeGroups[type].length > 0) {
+        const randomItem = typeGroups[type][Math.floor(Math.random() * typeGroups[type].length)];
+        outfitItems.push({
+          id: randomItem.id || `fallback-${type}-${Math.random().toString(36).substring(7)}`,
+          image: randomItem.image || '/placeholder.svg',
+          type: type
+        });
+      }
     });
     
-    // If there are not enough items or they have duplicate types, use fallbacks
-    if (uniqueItems.length < 3 || seenTypes.size < 3) {
-      // Look for more items in the fallback data
-      const fallbacksForOccasion = convertedFallbackItems()[occasion] || [];
-      
-      // Add missing types from fallbacks
-      const requiredTypes = ['top', 'bottom', 'shoes'];
-      requiredTypes.forEach(type => {
-        if (!seenTypes.has(type)) {
-          const fallbackItem = fallbacksForOccasion.find(item => item.type === type);
-          if (fallbackItem) {
-            uniqueItems.push(fallbackItem);
-            seenTypes.add(type);
-          }
-        }
-      });
+    // If we don't have all essential types, use fallbacks
+    while (outfitItems.length < 3 && items.length > 0) {
+      const randomItem = items[Math.floor(Math.random() * items.length)];
+      if (!outfitItems.find(item => item.id === randomItem.id)) {
+        outfitItems.push({
+          id: randomItem.id || `fallback-${Math.random().toString(36).substring(7)}`,
+          image: randomItem.image || '/placeholder.svg',
+          type: randomItem.type
+        });
+      }
     }
     
-    // Filter and map to ensure item types conform to the allowed types
-    const mappedItems = uniqueItems
-      .filter(item => item && item.type && isValidItemType(item.type))
-      .map(item => ({
-        id: item.id || `fallback-${Math.random().toString(36).substring(7)}`,
-        image: item.image || '/placeholder.svg',
-        type: item.type
-      }));
-    
-    // If we filtered out all items, return null
-    if (mappedItems.length === 0) {
-      return null;
-    }
-    
+    // Calculate total price
     let totalPrice = 0;
-    uniqueItems.forEach(item => {
+    items.forEach(item => {
       if (item.price) {
         const price = typeof item.price === 'string' 
           ? parseFloat(item.price.replace(/[^0-9.]/g, '')) 
@@ -239,12 +296,12 @@ export function usePersonalizedLooks() {
     return {
       id: `look-${occasion}-${index}`,
       title: `${occasion} Look`,
-      items: mappedItems,
-      price: totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : '$29.99', // Default price if no price data
+      items: outfitItems,
+      price: totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : '$29.99',
       category: userStyle?.analysis?.styleProfile || "Casual",
       occasion: occasion
     };
-  }, [convertedFallbackItems, userStyle]);
+  }, [userStyle]);
 
   const handleMoodSelect = useCallback((mood: Mood) => {
     setSelectedMood(mood);
@@ -286,7 +343,6 @@ export function usePersonalizedLooks() {
   // Always ensure we have data to return
   const getOutfitData = useCallback(() => {
     if (occasionOutfits) {
-      // Check if each occasion has items, if not, use fallbacks
       const result = { ...occasionOutfits };
       
       for (const occasion of occasions) {
@@ -298,7 +354,6 @@ export function usePersonalizedLooks() {
       return result;
     }
     
-    // If no data at all, return fallbacks
     return convertedFallbackItems();
   }, [occasionOutfits, convertedFallbackItems, occasions]);
 

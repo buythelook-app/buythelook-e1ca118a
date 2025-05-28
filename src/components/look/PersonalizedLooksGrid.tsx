@@ -1,20 +1,20 @@
 
+import { Shuffle, AlertCircle, RefreshCw } from "lucide-react";
+import { Button } from "../ui/button";
 import { PersonalizedLookCard } from "./PersonalizedLookCard";
-import { EmptyLookCard } from "./EmptyLookCard";
-import { AlertCircle, RefreshCw } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Look } from "@/hooks/usePersonalizedLooks";
-import { memo, useMemo } from "react";
+import { LookCanvas } from "../LookCanvas";
+import { memo } from "react";
+import type { Look } from "@/hooks/usePersonalizedLooks";
+import { DashboardItem } from "@/types/lookTypes";
 
 interface PersonalizedLooksGridProps {
   isLoading: boolean;
   isError: boolean;
-  occasionOutfits: Record<string, any[]> | undefined;
+  occasionOutfits: { [key: string]: DashboardItem[] };
   occasions: string[];
   createLookFromItems: (items: any[], occasion: string, index: number) => Look | null;
   handleShuffleLook: (occasion: string) => void;
-  handleAddToCart: (look: Look) => void;
+  handleAddToCart: (look: any) => void;
   resetError: () => void;
   userStyleProfile?: string;
 }
@@ -30,66 +30,155 @@ export const PersonalizedLooksGrid = memo(({
   resetError,
   userStyleProfile
 }: PersonalizedLooksGridProps) => {
-  
-  // Pre-compute looks to prevent recalculation during renders
-  const computedLooks = useMemo(() => {
-    if (!occasionOutfits) return {};
+  // Helper function to create diverse outfit items for canvas
+  const createDiverseOutfitItems = (items: DashboardItem[], occasion: string) => {
+    if (!items || items.length === 0) return [];
     
-    return occasions.reduce((acc, occasion, index) => {
-      const items = occasionOutfits[occasion] || [];
-      const look = createLookFromItems(items, occasion, index);
-      acc[occasion] = look;
-      return acc;
-    }, {} as Record<string, Look | null>);
-  }, [occasions, occasionOutfits, createLookFromItems]);
-  
-  return (
-    <>
-      {isError && (
-        <Alert variant="default" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Using locally stored outfit combinations while we try to reconnect.
-          </AlertDescription>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="mt-2 ml-auto flex items-center gap-1" 
-            onClick={resetError}
-          >
-            <RefreshCw className="h-3 w-3" />
-            Try Again
-          </Button>
-        </Alert>
-      )}
-      
+    // Separate items by type
+    const topItems = items.filter(item => item.type === 'top');
+    const bottomItems = items.filter(item => item.type === 'bottom');
+    const shoeItems = items.filter(item => item.type === 'shoes');
+    const otherItems = items.filter(item => !['top', 'bottom', 'shoes'].includes(item.type));
+    
+    const outfitItems = [];
+    
+    // Add one item of each essential type
+    if (topItems.length > 0) {
+      const randomTop = topItems[Math.floor(Math.random() * topItems.length)];
+      outfitItems.push({
+        id: randomTop.id,
+        image: randomTop.image || '/placeholder.svg',
+        type: 'top' as const
+      });
+    }
+    
+    if (bottomItems.length > 0) {
+      const randomBottom = bottomItems[Math.floor(Math.random() * bottomItems.length)];
+      outfitItems.push({
+        id: randomBottom.id,
+        image: randomBottom.image || '/placeholder.svg',
+        type: 'bottom' as const
+      });
+    }
+    
+    if (shoeItems.length > 0) {
+      const randomShoes = shoeItems[Math.floor(Math.random() * shoeItems.length)];
+      outfitItems.push({
+        id: randomShoes.id,
+        image: randomShoes.image || '/placeholder.svg',
+        type: 'shoes' as const
+      });
+    }
+    
+    // If we don't have enough diverse items, add from other types or duplicates with different IDs
+    while (outfitItems.length < 3) {
+      if (otherItems.length > 0) {
+        const randomOther = otherItems[Math.floor(Math.random() * otherItems.length)];
+        outfitItems.push({
+          id: `${randomOther.id}-${outfitItems.length}`,
+          image: randomOther.image || '/placeholder.svg',
+          type: randomOther.type
+        });
+      } else if (items.length > 0) {
+        // Fallback: use any available item with a unique ID
+        const randomItem = items[Math.floor(Math.random() * items.length)];
+        outfitItems.push({
+          id: `${randomItem.id}-fallback-${outfitItems.length}`,
+          image: randomItem.image || '/placeholder.svg',
+          type: randomItem.type
+        });
+      } else {
+        break;
+      }
+    }
+    
+    return outfitItems;
+  };
+
+  if (isLoading) {
+    return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {occasions.map((occasion, index) => {
-          const look = computedLooks[occasion];
-          
-          if (!look || !look.items || look.items.length === 0) {
-            return (
-              <EmptyLookCard 
-                key={`empty-${occasion}-${index}-${isLoading}`}
-                occasion={occasion}
-                onShuffle={() => handleShuffleLook(occasion)}
-                isLoading={isLoading}
-              />
-            );
-          }
-          
+        {occasions.map((occasion) => (
+          <div key={occasion} className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-netflix-accent">{occasion}</h3>
+            </div>
+            <div className="bg-netflix-card rounded-lg p-6 min-h-[400px] flex items-center justify-center">
+              <div className="text-center space-y-2">
+                <RefreshCw className="h-8 w-8 animate-spin mx-auto text-netflix-accent" />
+                <p className="text-netflix-text">Loading personalized looks...</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Unable to load personalized looks</h3>
+        <p className="text-gray-600 mb-4">There was an issue connecting to our styling service.</p>
+        <Button onClick={resetError} variant="outline">
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      {occasions.map((occasion) => {
+        const occasionItems = occasionOutfits[occasion] || [];
+        const look = createLookFromItems(occasionItems, occasion, 0);
+        const canvasItems = createDiverseOutfitItems(occasionItems, occasion);
+        
+        if (!look) {
           return (
+            <div key={occasion} className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-netflix-accent">{occasion}</h3>
+              </div>
+              <div className="bg-netflix-card rounded-lg p-6 min-h-[400px] flex items-center justify-center">
+                <p className="text-netflix-text">No items available for this occasion</p>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div key={occasion} className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-netflix-accent">{occasion}</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleShuffleLook(occasion)}
+                className="text-netflix-text hover:text-netflix-accent"
+              >
+                <Shuffle className="h-4 w-4 mr-2" />
+                Shuffle
+              </Button>
+            </div>
+            
             <PersonalizedLookCard
-              key={`${look.id}-${isLoading}`}
               look={look}
-              onShuffle={() => handleShuffleLook(occasion)}
               onAddToCart={handleAddToCart}
               userStyleProfile={userStyleProfile}
+              customCanvas={
+                <LookCanvas 
+                  items={canvasItems}
+                  width={300}
+                  height={400}
+                />
+              }
             />
-          );
-        })}
-      </div>
-    </>
+          </div>
+        );
+      })}
+    </div>
   );
 });
 
