@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabaseClient"; // Use the corrected client
+import { supabase } from "@/lib/supabaseClient"; // Use the single client instance
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw, Info } from "lucide-react";

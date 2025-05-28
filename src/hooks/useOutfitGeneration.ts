@@ -1,9 +1,10 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
 import { fetchFirstOutfitSuggestion, clearOutfitCache, matchOutfitToColors } from "@/services/lookService";
 import { DashboardItem } from "@/types/lookTypes";
-import { supabase } from "@/integrations/supabase/client"; // שימוש בלקוח הסופהבייס המרכזי
+import { supabase } from "@/lib/supabaseClient"; // Use the single client instance
 import { generateOutfit as generateOutfitAPI, getStyleRecommendations } from "@/services/outfitGenerationService";
 import logger from "@/lib/logger";
 
