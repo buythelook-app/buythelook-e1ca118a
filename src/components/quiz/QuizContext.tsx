@@ -89,9 +89,6 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
       // Create a copy of the data for analysis
       const dataToAnalyze = { ...formData };
       
-      // Store the weight value in kg for analysis if provided
-      // Value is already stored in pounds in formData, only convert for analysis
-      
       console.log("Submitting form data:", dataToAnalyze);
       const styleAnalysis = await analyzeStyleWithAI(dataToAnalyze);
       
