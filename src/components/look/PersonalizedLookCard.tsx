@@ -7,13 +7,14 @@ import { Look } from "@/hooks/usePersonalizedLooks";
 
 interface LookCardProps {
   look: Look;
-  onShuffle: (occasion: string) => void;
+  onShuffle?: (occasion: string) => void;
   onAddToCart: (look: Look) => void;
   userStyleProfile?: string;
+  customCanvas?: React.ReactElement;
 }
 
 // Use memo to prevent unnecessary re-renders
-export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userStyleProfile }: LookCardProps) => {
+export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userStyleProfile, customCanvas }: LookCardProps) => {
   const navigate = useNavigate();
   
   return (
@@ -25,14 +26,16 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
         <span className="text-sm text-netflix-accent">{look.occasion}</span>
       </div>
       <div className="mb-4 bg-white rounded-lg overflow-hidden relative group">
-        <LookCanvas items={look.items} width={300} height={480} />
-        <button
-          onClick={() => onShuffle(look.occasion)}
-          className="absolute bottom-4 right-4 bg-netflix-accent text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Try different combination"
-        >
-          <Shuffle className="w-4 h-4" />
-        </button>
+        {customCanvas || <LookCanvas items={look.items} width={300} height={480} />}
+        {onShuffle && (
+          <button
+            onClick={() => onShuffle(look.occasion)}
+            className="absolute bottom-4 right-4 bg-netflix-accent text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Try different combination"
+          >
+            <Shuffle className="w-4 h-4" />
+          </button>
+        )}
       </div>
       <div className="flex justify-between items-center">
         <p className="text-netflix-accent font-semibold">{look.price}</p>

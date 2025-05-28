@@ -1,4 +1,3 @@
-
 import { Shuffle, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "../ui/button";
 import { PersonalizedLookCard } from "./PersonalizedLookCard";
@@ -165,6 +164,7 @@ export const PersonalizedLooksGrid = memo(({
             
             <PersonalizedLookCard
               look={look}
+              onShuffle={handleShuffleLook}
               onAddToCart={handleAddToCart}
               userStyleProfile={userStyleProfile}
               customCanvas={
