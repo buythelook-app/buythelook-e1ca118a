@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseClient"; // Use the corrected client
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw, Info } from "lucide-react";
@@ -58,10 +58,11 @@ export function AgentOutfitVisualizer() {
     }
   };
 
+  // Load results only once on mount, not on every render
   useEffect(() => {
     console.log("🔍 [DEBUG] AgentOutfitVisualizer component mounted, auto-loading...");
     fetchResults();
-  }, []);
+  }, []); // Empty dependency array to prevent infinite loops
 
   // Function to create LookCanvas items from agent output using database items
   const getLookItems = (agentOutput: any) => {
@@ -220,6 +221,7 @@ export function AgentOutfitVisualizer() {
           <h3 className="text-lg font-semibold mb-2">🔍 Debug Information</h3>
           <p><strong>Number of results:</strong> {results.length}</p>
           <p><strong>Using database items:</strong> {results.length > 0 ? 'Yes' : 'No'}</p>
+          <p><strong>Project URL:</strong> https://aqkeprwxxsryropnhfvm.supabase.co</p>
           <p><strong>Check browser console for detailed logs</strong></p>
           <details className="mt-2">
             <summary className="cursor-pointer">Show Raw Agent Results</summary>
