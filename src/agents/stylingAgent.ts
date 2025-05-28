@@ -12,8 +12,8 @@ interface Agent {
 }
 
 /**
- * Helper function to check if an image URL ends with the pattern 6_x_1.jpg
- * This filters out images with models
+ * Helper function to check if an image URL is valid for outfit display
+ * More permissive approach - accepts various product image patterns
  */
 const isValidImagePattern = (imageData: any): boolean => {
   if (!imageData) {
@@ -50,9 +50,13 @@ const isValidImagePattern = (imageData: any): boolean => {
     return false;
   }
   
-  // Check if the URL ends with the pattern 6_x_1.jpg (where x is any number)
-  const pattern = /6_\d+_1\.jpg$/i;
-  const isValid = pattern.test(imageUrl);
+  // More permissive validation - accept various product image patterns
+  // Accept images that end with common product image patterns like:
+  // - 6_x_1.jpg (original pattern)
+  // - 2_x_1.jpg, 15_x_1.jpg etc (product variants)
+  // - _1_1_1.jpg (zara product images)
+  const productImagePattern = /(_\d+_\d+_\d+\.jpg|_\d+_1\.jpg|\d_\d+_1\.jpg)$/i;
+  const isValid = productImagePattern.test(imageUrl);
   
   console.log(`🔍 [DEBUG] Image URL: ${imageUrl} | Pattern match: ${isValid}`);
   
@@ -130,7 +134,7 @@ export const stylingAgent: Agent = {
       const { data: allItems, error: fetchError } = await supabase
         .from('zara_cloth')
         .select('*')
-        .limit(100); // Increased limit to have more items to filter from
+        .limit(200); // Increased limit to have more items to filter from
 
       if (fetchError || !allItems?.length) {
         console.error('❌ [DEBUG] Error fetching items:', fetchError);
@@ -142,7 +146,7 @@ export const stylingAgent: Agent = {
 
       console.log('✅ [DEBUG] Items fetched:', allItems.length);
 
-      // Filter items to only include those with valid image patterns (6_x_1.jpg)
+      // Filter items to only include those with valid product image patterns
       console.log('🔍 [DEBUG] Starting image pattern filtering...');
       const validItems = allItems.filter((item, index) => {
         console.log(`🔍 [DEBUG] Checking item ${index + 1}/${allItems.length} (ID: ${item.id})`);
@@ -161,7 +165,7 @@ export const stylingAgent: Agent = {
         console.error('❌ [DEBUG] No items with valid image patterns found');
         return { 
           success: false, 
-          error: "No items with valid image patterns (6_x_1.jpg) found in database" 
+          error: "No items with valid product image patterns found in database" 
         };
       }
 
@@ -189,10 +193,10 @@ export const stylingAgent: Agent = {
         bottom: bottomItem,
         shoes: shoesItem,
         score: Math.floor(Math.random() * 30) + 70,
-        description: `Outfit generated using real Zara database items (no model images)`,
+        description: `Outfit generated using real Zara database items with valid product images`,
         recommendations: [
           "This combination uses actual Zara items from our database",
-          "Images selected to avoid model photos (6_x_1.jpg pattern only)",
+          "Images selected to show product details clearly",
           `Perfect for your body shape`
         ],
         occasion: Math.random() > 0.5 ? 'work' : 'casual'

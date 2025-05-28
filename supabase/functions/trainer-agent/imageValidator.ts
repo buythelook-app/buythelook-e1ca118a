@@ -1,7 +1,7 @@
 
 /**
- * Helper function to check if an image URL ends with the pattern 6_x_1.jpg
- * This filters out images with models
+ * Helper function to check if an image URL has a valid product image pattern
+ * More permissive approach to accept various product image formats
  */
 export const isValidImagePattern = (imageData: any): boolean => {
   if (!imageData) {
@@ -38,9 +38,13 @@ export const isValidImagePattern = (imageData: any): boolean => {
     return false;
   }
   
-  // Check if the URL ends with the pattern 6_x_1.jpg (where x is any number)
-  const pattern = /6_\d+_1\.jpg$/i;
-  const isValid = pattern.test(imageUrl);
+  // More permissive validation - accept various product image patterns
+  // Accept images that end with common product image patterns like:
+  // - 6_x_1.jpg (original pattern)
+  // - 2_x_1.jpg, 15_x_1.jpg etc (product variants)
+  // - _1_1_1.jpg (zara product images)
+  const productImagePattern = /(_\d+_\d+_\d+\.jpg|_\d+_1\.jpg|\d_\d+_1\.jpg)$/i;
+  const isValid = productImagePattern.test(imageUrl);
   
   console.log(`🔍 [DEBUG] Image URL: ${imageUrl} | Pattern match: ${isValid}`);
   

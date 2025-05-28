@@ -46,7 +46,7 @@ export class DatabaseService {
   }
 
   /**
-   * Fetch and filter valid clothing items
+   * Fetch and filter valid clothing items with more permissive image patterns
    */
   async getValidItems(): Promise<{ success: boolean; items?: any[]; error?: string }> {
     try {
@@ -55,7 +55,7 @@ export class DatabaseService {
       const { data: allItems, error: allItemsError } = await this.supabase
         .from('zara_cloth')
         .select('*')
-        .limit(100); // Increased limit to have more items to filter from
+        .limit(200); // Increased limit to have more items to filter from
       
       if (allItemsError) {
         console.error("❌ [DEBUG] Failed to fetch items:", allItemsError);
@@ -69,8 +69,8 @@ export class DatabaseService {
       
       console.log(`✅ [DEBUG] Found ${allItems.length} total items`);
       
-      // Filter items to only include those with valid image patterns (6_x_1.jpg)
-      console.log('🔍 [DEBUG] Starting image pattern filtering...');
+      // Filter items to only include those with valid product image patterns
+      console.log('🔍 [DEBUG] Starting image pattern filtering with more permissive rules...');
       const validItems = allItems.filter((item, index) => {
         console.log(`🔍 [DEBUG] Checking item ${index + 1}/${allItems.length} (ID: ${item.id})`);
         const isValid = isValidImagePattern(item.image);
@@ -86,7 +86,7 @@ export class DatabaseService {
 
       if (validItems.length === 0) {
         console.error('❌ [DEBUG] No items with valid image patterns found');
-        return { success: false, error: 'No items with valid image patterns (6_x_1.jpg) found in database' };
+        return { success: false, error: 'No items with valid product image patterns found in database' };
       }
 
       return { success: true, items: validItems };
