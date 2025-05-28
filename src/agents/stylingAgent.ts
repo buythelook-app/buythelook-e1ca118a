@@ -36,57 +36,56 @@ export const stylingAgent: Agent = {
         .eq('user_id', userId)
         .single();
 
-      // Step 2: Fetch items from zara_cloth table
-      const { data: topItems } = await supabase
+      // Step 2: Fetch items from zara_cloth table with proper filtering
+      const { data: topItems, error: topError } = await supabase
         .from('zara_cloth')
         .select('*')
-        .or('product_name.ilike.%shirt%,product_name.ilike.%blouse%,product_name.ilike.%top%')
-        .limit(5);
+        .ilike('product_name', '%shirt%')
+        .limit(10);
 
-      const { data: bottomItems } = await supabase
+      if (topError) {
+        console.error('Error fetching tops:', topError);
+      }
+
+      const { data: bottomItems, error: bottomError } = await supabase
         .from('zara_cloth')
         .select('*')
-        .or('product_name.ilike.%pant%,product_name.ilike.%trouser%,product_name.ilike.%skirt%')
-        .limit(5);
+        .or('product_name.ilike.%pant%,product_name.ilike.%trouser%,product_name.ilike.%jean%')
+        .limit(10);
 
-      const { data: shoesItems } = await supabase
+      if (bottomError) {
+        console.error('Error fetching bottoms:', bottomError);
+      }
+
+      const { data: shoesItems, error: shoesError } = await supabase
         .from('zara_cloth')
         .select('*')
-        .or('product_name.ilike.%shoe%,product_name.ilike.%boot%,product_name.ilike.%sneaker%')
-        .limit(5);
+        .ilike('product_name', '%shoe%')
+        .limit(10);
 
-      // Step 3: Select random items
+      if (shoesError) {
+        console.error('Error fetching shoes:', shoesError);
+      }
+
+      // Step 3: Select random items from available data
       const topItem = topItems && topItems.length > 0 ? topItems[Math.floor(Math.random() * topItems.length)] : null;
       const bottomItem = bottomItems && bottomItems.length > 0 ? bottomItems[Math.floor(Math.random() * bottomItems.length)] : null;
       const shoesItem = shoesItems && shoesItems.length > 0 ? shoesItems[Math.floor(Math.random() * shoesItems.length)] : null;
 
+      console.log('Selected items:', { topItem: topItem?.id, bottomItem: bottomItem?.id, shoesItem: shoesItem?.id });
+
       // Step 4: Create outfit object with database items
       const outfit = {
-        top: topItem ? {
-          id: topItem.id,
-          name: topItem.product_name,
-          image: topItem.image,
-          type: 'top',
-          price: topItem.price ? `$${topItem.price}` : '$49.99'
-        } : null,
-        bottom: bottomItem ? {
-          id: bottomItem.id,
-          name: bottomItem.product_name,
-          image: bottomItem.image,
-          type: 'bottom',
-          price: bottomItem.price ? `$${bottomItem.price}` : '$59.99'
-        } : null,
-        shoes: shoesItem ? {
-          id: shoesItem.id,
-          name: shoesItem.product_name,
-          image: shoesItem.image,
-          type: 'shoes',
-          price: shoesItem.price ? `$${shoesItem.price}` : '$89.99'
-        } : null,
-        tips: [
-          "Add accessories to enhance this look",
-          `This outfit works well for ${userProfile?.body_shape || 'your body'} shape`
-        ]
+        top: topItem,
+        bottom: bottomItem,
+        shoes: shoesItem,
+        score: Math.floor(Math.random() * 30) + 70, // Random score between 70-100
+        description: `Outfit generated using items from Zara database`,
+        recommendations: [
+          "This combination uses real Zara items from our database",
+          `Perfect for ${userProfile?.body_shape || 'your body'} shape`
+        ],
+        occasion: Math.random() > 0.5 ? 'work' : 'casual'
       };
       
       console.log("Generated database outfit:", outfit);
