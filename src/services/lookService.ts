@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import logger from "@/lib/logger";
@@ -59,6 +60,30 @@ async function verifySupabaseConnection(): Promise<boolean> {
   }
 }
 
+// Define proper product family mappings for different item types
+const getProductFamilyFilters = (itemType: string): string[] => {
+  switch (itemType.toLowerCase()) {
+    case 'top':
+      return [
+        'TOPS Y OTRAS P.', 'CAMISA', 'CAMISETA', 'JERSEY', 'BLAZER', 
+        'CARDIGAN', 'SWEATER', 'BLOUSE', 'T-SHIRT', 'SHIRT',
+        'TOP', 'BLUSA', 'SUDADERA'
+      ];
+    case 'bottom':
+      return [
+        'PANTALON', 'VAQUERO', 'BERMUDA', 'FALDA', 'SHORTS', 
+        'JEANS', 'TROUSERS', 'PANTS', 'SKIRT', 'LEGGINGS'
+      ];
+    case 'shoes':
+      return [
+        'ZAPATO', 'SANDALIA', 'ZAPATILLA', 'BOTA', 'SHOES', 
+        'SANDALS', 'SNEAKERS', 'BOOTS', 'HEELS', 'FLATS'
+      ];
+    default:
+      return [];
+  }
+};
+
 async function fetchItemsFromDatabase(
   itemType: string,
   occasion?: string,
@@ -84,15 +109,29 @@ async function fetchItemsFromDatabase(
   try {
     logger.info(`Fetching ${itemType} items for ${occasion || 'all'} (excluding ${excludeItems.length} items)`, { context: "lookService" });
     
+    // Get product family filters for the specific item type
+    const productFamilies = getProductFamilyFilters(itemType);
+    
+    if (productFamilies.length === 0) {
+      logger.warn(`No product family filters found for item type: ${itemType}`, { context: "lookService" });
+      return [];
+    }
+    
+    // Build the query with proper filtering by product family
     let query = supabase
       .from('zara_cloth')
       .select('*')
-      .eq('availability', true)
-      .limit(1000);
+      .eq('availability', true);
+    
+    // Add product family filtering using OR conditions
+    const familyConditions = productFamilies.map(family => `product_family.ilike.%${family}%`).join(',');
+    query = query.or(familyConditions);
     
     if (excludeItems.length > 0) {
       query = query.not('id', 'in', `(${excludeItems.map(id => `"${id}"`).join(',')})`);
     }
+    
+    query = query.limit(100); // Reduced limit for better performance
     
     const { data: items, error } = await query;
     
@@ -106,8 +145,9 @@ async function fetchItemsFromDatabase(
       return [];
     }
     
-    logger.info(`Retrieved ${items.length} items for ${itemType} from database`, { context: "lookService", data: items.slice(0, 3) });
+    logger.info(`Retrieved ${items.length} items for ${itemType} from database`, { context: "lookService" });
     
+    // Process and validate items
     const processedItems = items
       .filter(item => item && item.product_name && item.price)
       .map(item => ({
@@ -118,9 +158,12 @@ async function fetchItemsFromDatabase(
         price: `$${item.price}`
       }))
       .filter(item => isValidImageUrl(item.image))
-      .slice(0, 5);
+      .slice(0, 10); // Limit to 10 items per type
     
-    logger.info(`Returning ${processedItems.length} ${itemType} items for ${occasion || 'all'}`, { context: "lookService", data: processedItems });
+    logger.info(`Returning ${processedItems.length} ${itemType} items for ${occasion || 'all'}`, { 
+      context: "lookService", 
+      data: processedItems.slice(0, 2) // Log first 2 items for debugging
+    });
     
     outfitCache.set(cacheKey, processedItems);
     cacheTimestamps.set(cacheKey, now);
@@ -137,13 +180,20 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
   const result: { [key: string]: DashboardItem[] } = {};
   
   for (const occasion of occasions) {
+    // Fetch items for each type separately with proper filtering
     const topItems = await fetchItemsFromDatabase('top', occasion);
     const bottomItems = await fetchItemsFromDatabase('bottom', occasion);
     const shoeItems = await fetchItemsFromDatabase('shoes', occasion);
     
+    // Combine all items for this occasion, ensuring we have variety
     const allItems = [...topItems, ...bottomItems, ...shoeItems];
     
-    result[occasion] = allItems;
+    // Shuffle the items to create variety
+    const shuffledItems = allItems.sort(() => Math.random() - 0.5);
+    
+    result[occasion] = shuffledItems;
+    
+    logger.info(`${occasion} total items: ${allItems.length} (tops: ${topItems.length}, bottoms: ${bottomItems.length}, shoes: ${shoeItems.length})`, { context: "lookService" });
   }
   
   return result;
@@ -157,6 +207,7 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       return [];
     }
 
+    // Fetch one item from each category to ensure a complete outfit
     const topItems = await fetchItemsFromDatabase('top');
     const bottomItems = await fetchItemsFromDatabase('bottom');
     const shoeItems = await fetchItemsFromDatabase('shoes');
@@ -178,6 +229,8 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       outfit.push(randomShoes);
     }
     
+    logger.info(`Generated outfit with ${outfit.length} items`, { context: "lookService" });
+    
     return outfit;
   } catch (error) {
     logger.error("Error fetching outfit suggestion:", { context: "lookService", data: error });
@@ -192,7 +245,6 @@ export function clearOutfitCache(bodyShape?: string, style?: string, mood?: stri
 }
 
 export function clearGlobalItemTrackers(): void {
-  // Clear any global state or trackers used for item selection
   clearOutfitCache();
   logger.info("Global item trackers cleared", { context: "lookService" });
 }
