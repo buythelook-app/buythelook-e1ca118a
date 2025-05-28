@@ -131,7 +131,8 @@ async function fetchItemsFromDatabase(
       query = query.not('id', 'in', `(${excludeItems.map(id => `"${id}"`).join(',')})`);
     }
     
-    query = query.limit(100); // Reduced limit for better performance
+    // Limit to a reasonable number for each type to avoid overwhelming the UI
+    query = query.limit(20);
     
     const { data: items, error } = await query;
     
@@ -147,7 +148,7 @@ async function fetchItemsFromDatabase(
     
     logger.info(`Retrieved ${items.length} items for ${itemType} from database`, { context: "lookService" });
     
-    // Process and validate items
+    // Process and validate items - limit to 3-5 items for canvas display
     const processedItems = items
       .filter(item => item && item.product_name && item.price)
       .map(item => ({
@@ -158,7 +159,7 @@ async function fetchItemsFromDatabase(
         price: `$${item.price}`
       }))
       .filter(item => isValidImageUrl(item.image))
-      .slice(0, 10); // Limit to 10 items per type
+      .slice(0, 5); // Limit to maximum 5 items per type for better performance
     
     logger.info(`Returning ${processedItems.length} ${itemType} items for ${occasion || 'all'}`, { 
       context: "lookService", 
@@ -188,12 +189,12 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
     // Combine all items for this occasion, ensuring we have variety
     const allItems = [...topItems, ...bottomItems, ...shoeItems];
     
-    // Shuffle the items to create variety
-    const shuffledItems = allItems.sort(() => Math.random() - 0.5);
+    // Shuffle the items to create variety and limit total items per occasion
+    const shuffledItems = allItems.sort(() => Math.random() - 0.5).slice(0, 15);
     
     result[occasion] = shuffledItems;
     
-    logger.info(`${occasion} total items: ${allItems.length} (tops: ${topItems.length}, bottoms: ${bottomItems.length}, shoes: ${shoeItems.length})`, { context: "lookService" });
+    logger.info(`${occasion} total items: ${shuffledItems.length} (tops: ${topItems.length}, bottoms: ${bottomItems.length}, shoes: ${shoeItems.length})`, { context: "lookService" });
   }
   
   return result;

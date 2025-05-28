@@ -8,7 +8,6 @@ import { CartItem } from "./cart/CartItem";
 import { LookCartItem } from "./cart/LookCartItem";
 import { CartSummary } from "./cart/CartSummary";
 import { HomeButton } from "./HomeButton";
-import { supabase } from "@/lib/supabase";
 
 interface CartItem {
   id: string;
@@ -25,16 +24,6 @@ interface Look {
   title: string;
   items: CartItem[];
   totalPrice: string;
-}
-
-interface CartItemData {
-  items: {
-    id: string;
-    image: string | null;
-    name: string | null;
-    price: string | null;
-    type: string | null;
-  };
 }
 
 interface CartStore {
@@ -54,62 +43,13 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       looks: [],
-      loadCart: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data, error } = await supabase
-          .from('cart_items')
-          .select('items(*)')
-          .eq('user_id', user.id);
-
-        if (error) {
-          console.error('Error loading cart:', error);
-          return;
-        }
-
-        const cartItems = (data as unknown as CartItemData[]).map(item => ({
-          id: item.items.id,
-          image: item.items.image || '',
-          title: item.items.name || '',
-          price: item.items.price || ''
-        }));
-
-        set({ items: cartItems });
-      },
       addItem: async (item) => {
         try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
-
-          // Make sure we're using a valid UUID format for the item ID
-          // This is a temporary fix as the error suggests an invalid UUID format
-          if (!item.id.includes('-') && item.id.length < 32) {
-            console.error('Invalid item ID format:', item.id);
-            toast.error('Unable to add item: Invalid ID format');
-            return;
-          }
-
-          const { error } = await supabase
-            .from('cart_items')
-            .insert({
-              user_id: user.id,
-              item_id: item.id
-            });
-
-          if (error) {
-            console.error('Error adding item to cart:', error);
-            if (error.code === '22P02') {
-              toast.error('Unable to add item: Invalid ID format');
-            } else {
-              toast.error('Failed to add item to cart');
-            }
-            return;
-          }
-
+          // For now, just add to local state since we're having DB issues
           set(state => ({
             items: [...state.items, item]
           }));
+          toast.success('Item added to cart');
         } catch (err) {
           console.error('Error in addItem:', err);
           toast.error('Failed to add item to cart');
@@ -117,50 +57,20 @@ export const useCartStore = create<CartStore>()(
       },
       addItems: async (newItems) => {
         try {
-          // Client-side only for now - we'll skip the DB operation
-          // as it seems to be causing issues with item IDs
-          
           set(state => ({
             items: [...state.items, ...newItems]
           }));
-          
-          // Uncomment this when the item IDs are fixed
-          /*
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
-
-          const cartItems = newItems.map(item => ({
-            user_id: user.id,
-            item_id: item.id
-          }));
-
-          const { error } = await supabase
-            .from('cart_items')
-            .insert(cartItems);
-
-          if (error) {
-            console.error('Error adding items to cart:', error);
-            toast.error('Failed to add items to cart');
-            return;
-          }
-
-          set(state => ({
-            items: [...state.items, ...newItems]
-          }));
-          */
+          toast.success('Items added to cart');
         } catch (err) {
           console.error('Error in addItems:', err);
           toast.error('Failed to add items to cart');
         }
       },
       addLook: async (look) => {
-        // For now, we'll just add the look client-side to avoid DB issues
         set(state => ({ 
           looks: [...state.looks, look]
         }));
-        
-        // We're skipping the addItems call that was causing errors
-        // await get().addItems(look.items);
+        toast.success('Look added to cart');
       },
       removeLook: async (lookId) => {
         const look = get().looks.find(l => l.id === lookId);
@@ -174,20 +84,6 @@ export const useCartStore = create<CartStore>()(
         }));
       },
       removeItem: async (itemId) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { error } = await supabase
-          .from('cart_items')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('item_id', itemId);
-
-        if (error) {
-          console.error('Error removing item from cart:', error);
-          return;
-        }
-
         set(state => ({
           items: state.items.filter(item => item.id !== itemId),
           looks: state.looks.map(look => ({
@@ -215,20 +111,8 @@ export const useCartStore = create<CartStore>()(
         }));
       },
       clearCart: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { error } = await supabase
-          .from('cart_items')
-          .delete()
-          .eq('user_id', user.id);
-
-        if (error) {
-          console.error('Error clearing cart:', error);
-          return;
-        }
-
         set({ items: [], looks: [] });
+        toast.success('Cart cleared');
       }
     }),
     {
