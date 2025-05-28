@@ -46,7 +46,7 @@ export class DatabaseService {
   }
 
   /**
-   * Fetch and filter valid clothing items with more permissive image patterns
+   * Fetch and filter valid clothing items with _6_x_1.jpg pattern only
    */
   async getValidItems(): Promise<{ success: boolean; items?: any[]; error?: string }> {
     try {
@@ -69,24 +69,24 @@ export class DatabaseService {
       
       console.log(`✅ [DEBUG] Found ${allItems.length} total items`);
       
-      // Filter items to only include those with valid product image patterns
-      console.log('🔍 [DEBUG] Starting image pattern filtering with more permissive rules...');
+      // Filter items to only include those with _6_x_1.jpg pattern
+      console.log('🔍 [DEBUG] Starting _6_x_1.jpg pattern filtering...');
       const validItems = allItems.filter((item, index) => {
         console.log(`🔍 [DEBUG] Checking item ${index + 1}/${allItems.length} (ID: ${item.id})`);
         const isValid = isValidImagePattern(item.image);
         if (!isValid) {
-          console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - invalid image pattern`);
+          console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - no _6_x_1.jpg pattern`);
         } else {
-          console.log(`✅ [DEBUG] KEEPING item ${item.id} - valid image pattern`);
+          console.log(`✅ [DEBUG] KEEPING item ${item.id} - has _6_x_1.jpg pattern`);
         }
         return isValid;
       });
 
-      console.log(`✅ [DEBUG] Valid items after filtering: ${validItems.length} out of ${allItems.length}`);
+      console.log(`✅ [DEBUG] Valid items after _6_x_1.jpg filtering: ${validItems.length} out of ${allItems.length}`);
 
       if (validItems.length === 0) {
-        console.error('❌ [DEBUG] No items with valid image patterns found');
-        return { success: false, error: 'No items with valid product image patterns found in database' };
+        console.error('❌ [DEBUG] No items with _6_x_1.jpg pattern found');
+        return { success: false, error: 'No items with _6_x_1.jpg main product images found in database' };
       }
 
       return { success: true, items: validItems };

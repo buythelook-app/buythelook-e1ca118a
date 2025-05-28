@@ -12,8 +12,8 @@ interface Agent {
 }
 
 /**
- * Helper function to check if an image URL is valid for outfit display
- * More permissive approach - accepts various product image patterns
+ * Helper function to check if an image URL contains the specific _6_x_1.jpg pattern
+ * Only accepts Zara main product photos with this specific pattern
  */
 const isValidImagePattern = (imageData: any): boolean => {
   if (!imageData) {
@@ -22,45 +22,76 @@ const isValidImagePattern = (imageData: any): boolean => {
   }
   
   // Handle different image data formats
-  let imageUrl = '';
+  let imageUrls: string[] = [];
   
   if (typeof imageData === 'string') {
     // Handle JSON string arrays like "[\"https://static.zara.net/photos/...jpg\"]"
     try {
       const parsed = JSON.parse(imageData);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        imageUrl = parsed[0];
-        console.log(`🔍 [DEBUG] Parsed JSON array, using first image: ${imageUrl}`);
+      if (Array.isArray(parsed)) {
+        imageUrls = parsed.filter(url => typeof url === 'string');
+        console.log(`🔍 [DEBUG] Parsed JSON array with ${imageUrls.length} URLs`);
       } else {
-        imageUrl = imageData;
-        console.log(`🔍 [DEBUG] Using string directly: ${imageUrl}`);
+        imageUrls = [imageData];
+        console.log(`🔍 [DEBUG] Using string directly: ${imageData}`);
       }
     } catch {
-      imageUrl = imageData;
-      console.log(`🔍 [DEBUG] Failed to parse JSON, using string directly: ${imageUrl}`);
+      imageUrls = [imageData];
+      console.log(`🔍 [DEBUG] Failed to parse JSON, using string directly: ${imageData}`);
     }
-  } else if (Array.isArray(imageData) && imageData.length > 0) {
-    imageUrl = imageData[0];
-    console.log(`🔍 [DEBUG] Using first item from array: ${imageUrl}`);
+  } else if (Array.isArray(imageData)) {
+    imageUrls = imageData.filter(url => typeof url === 'string');
+    console.log(`🔍 [DEBUG] Using array with ${imageUrls.length} URLs`);
   } else if (typeof imageData === 'object' && imageData.url) {
-    imageUrl = imageData.url;
-    console.log(`🔍 [DEBUG] Using URL from object: ${imageUrl}`);
+    imageUrls = [imageData.url];
+    console.log(`🔍 [DEBUG] Using URL from object: ${imageData.url}`);
   } else {
     console.log(`🔍 [DEBUG] Unknown image data format:`, typeof imageData, imageData);
     return false;
   }
   
-  // More permissive validation - accept various product image patterns
-  // Accept images that end with common product image patterns like:
-  // - 6_x_1.jpg (original pattern)
-  // - 2_x_1.jpg, 15_x_1.jpg etc (product variants)
-  // - _1_1_1.jpg (zara product images)
-  const productImagePattern = /(_\d+_\d+_\d+\.jpg|_\d+_1\.jpg|\d_\d+_1\.jpg)$/i;
-  const isValid = productImagePattern.test(imageUrl);
+  // Check if any URL contains the _6_x_1.jpg pattern (main product photos)
+  const hasValidPattern = imageUrls.some(url => /_6_\d+_1\.jpg/.test(url));
   
-  console.log(`🔍 [DEBUG] Image URL: ${imageUrl} | Pattern match: ${isValid}`);
+  console.log(`🔍 [DEBUG] Found ${imageUrls.length} URLs, has _6_x_1.jpg pattern: ${hasValidPattern}`);
+  if (hasValidPattern) {
+    const validUrl = imageUrls.find(url => /_6_\d+_1\.jpg/.test(url));
+    console.log(`🔍 [DEBUG] Valid URL found: ${validUrl}`);
+  }
   
-  return isValid;
+  return hasValidPattern;
+};
+
+/**
+ * Helper function to extract the main product image URL (_6_x_1.jpg pattern)
+ */
+const extractMainProductImage = (imageData: any): string => {
+  if (!imageData) {
+    return '/placeholder.svg';
+  }
+  
+  let imageUrls: string[] = [];
+  
+  if (typeof imageData === 'string') {
+    try {
+      const parsed = JSON.parse(imageData);
+      if (Array.isArray(parsed)) {
+        imageUrls = parsed.filter(url => typeof url === 'string');
+      } else {
+        imageUrls = [imageData];
+      }
+    } catch {
+      imageUrls = [imageData];
+    }
+  } else if (Array.isArray(imageData)) {
+    imageUrls = imageData.filter(url => typeof url === 'string');
+  } else if (typeof imageData === 'object' && imageData.url) {
+    imageUrls = [imageData.url];
+  }
+  
+  // Find the first URL with _6_x_1.jpg pattern
+  const mainImage = imageUrls.find(url => /_6_\d+_1\.jpg/.test(url));
+  return mainImage || '/placeholder.svg';
 };
 
 /**
@@ -146,26 +177,26 @@ export const stylingAgent: Agent = {
 
       console.log('✅ [DEBUG] Items fetched:', allItems.length);
 
-      // Filter items to only include those with valid product image patterns
-      console.log('🔍 [DEBUG] Starting image pattern filtering...');
+      // Filter items to only include those with valid _6_x_1.jpg pattern
+      console.log('🔍 [DEBUG] Starting _6_x_1.jpg pattern filtering...');
       const validItems = allItems.filter((item, index) => {
         console.log(`🔍 [DEBUG] Checking item ${index + 1}/${allItems.length} (ID: ${item.id})`);
         const isValid = isValidImagePattern(item.image);
         if (!isValid) {
-          console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - invalid image pattern`);
+          console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - no _6_x_1.jpg pattern`);
         } else {
-          console.log(`✅ [DEBUG] KEEPING item ${item.id} - valid image pattern`);
+          console.log(`✅ [DEBUG] KEEPING item ${item.id} - has _6_x_1.jpg pattern`);
         }
         return isValid;
       });
 
-      console.log(`✅ [DEBUG] Valid items after filtering: ${validItems.length} out of ${allItems.length}`);
+      console.log(`✅ [DEBUG] Valid items after _6_x_1.jpg filtering: ${validItems.length} out of ${allItems.length}`);
 
       if (validItems.length === 0) {
-        console.error('❌ [DEBUG] No items with valid image patterns found');
+        console.error('❌ [DEBUG] No items with _6_x_1.jpg pattern found');
         return { 
           success: false, 
-          error: "No items with valid product image patterns found in database" 
+          error: "No items with _6_x_1.jpg main product images found in database" 
         };
       }
 
@@ -181,22 +212,31 @@ export const stylingAgent: Agent = {
         shoesItem: shoesItem?.id 
       });
 
-      // Log the actual image URLs being used
-      console.log('🔍 [DEBUG] Selected item images:');
-      console.log('Top item image:', topItem?.image);
-      console.log('Bottom item image:', bottomItem?.image);
-      console.log('Shoes item image:', shoesItem?.image);
+      // Log the actual image URLs being used (extract main product images)
+      console.log('🔍 [DEBUG] Selected item main product images:');
+      console.log('Top item image:', extractMainProductImage(topItem?.image));
+      console.log('Bottom item image:', extractMainProductImage(bottomItem?.image));
+      console.log('Shoes item image:', extractMainProductImage(shoesItem?.image));
 
-      // Step 4: Create outfit object with database items
+      // Step 4: Create outfit object with database items and main product images
       const outfit = {
-        top: topItem,
-        bottom: bottomItem,
-        shoes: shoesItem,
+        top: {
+          ...topItem,
+          image: extractMainProductImage(topItem?.image)
+        },
+        bottom: {
+          ...bottomItem,
+          image: extractMainProductImage(bottomItem?.image)
+        },
+        shoes: {
+          ...shoesItem,
+          image: extractMainProductImage(shoesItem?.image)
+        },
         score: Math.floor(Math.random() * 30) + 70,
-        description: `Outfit generated using real Zara database items with valid product images`,
+        description: `Outfit generated using real Zara database items with main product images (_6_x_1.jpg)`,
         recommendations: [
           "This combination uses actual Zara items from our database",
-          "Images selected to show product details clearly",
+          "Images selected to show main product photos clearly",
           `Perfect for your body shape`
         ],
         occasion: Math.random() > 0.5 ? 'work' : 'casual'

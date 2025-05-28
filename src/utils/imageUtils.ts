@@ -1,3 +1,4 @@
+
 export const transformImageUrl = (url: string) => {
   if (!url) return '';
   // Only transform URLs from the review environment
@@ -19,6 +20,7 @@ export type ZaraImageData = string | string[] | { url?: string } | { [key: strin
 
 /**
  * Extracts a usable image URL from Zara's various image data formats
+ * Now specifically looks for _6_x_1.jpg pattern (main product photos)
  * @param imageData - The image data from Zara API or database
  * @returns A usable image URL or placeholder
  */
@@ -30,63 +32,65 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
       return '/placeholder.svg';
     }
     
+    let imageUrls: string[] = [];
+    
     // Direct handling for arrays (jsonb arrays from zara_cloth table)
     if (Array.isArray(imageData) && imageData.length > 0) {
-      const firstImage = imageData[0];
-      if (typeof firstImage === 'string') {
-        return firstImage;
-      }
+      imageUrls = imageData.filter(url => typeof url === 'string');
     }
     
     // Handle string URL directly
-    if (typeof imageData === 'string') {
-      // If it's already a URL, return it directly
+    else if (typeof imageData === 'string') {
+      // If it's already a URL, check if it's the main product image
       if (imageData.startsWith('https://') || imageData.startsWith('http://')) {
-        return imageData;
+        // If it contains _6_x_1.jpg pattern, use it directly
+        if (/_6_\d+_1\.jpg/.test(imageData)) {
+          return imageData;
+        }
+        imageUrls = [imageData];
       }
       
       // IMPORTANT: Handle JSON string arrays like "[\"https://static.zara.net/photos/...jpg\"]"
-      try {
-        const parsed = JSON.parse(imageData);
-        
-        // If parsed into array, get first item
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const firstItem = parsed[0];
-          if (typeof firstItem === 'string') {
-            console.log(`Successfully parsed JSON string array and extracted URL: ${firstItem}`);
-            return firstItem;
-          }
-        }
-        
-        // If parsed into object, look for URL
-        if (parsed && typeof parsed === 'object') {
-          if (typeof parsed.url === 'string') {
-            return parsed.url;
+      else {
+        try {
+          const parsed = JSON.parse(imageData);
+          
+          // If parsed into array, get all items
+          if (Array.isArray(parsed)) {
+            imageUrls = parsed.filter(url => typeof url === 'string');
+            console.log(`Successfully parsed JSON string array with ${imageUrls.length} URLs`);
           }
           
-          // Search for URL-like strings in object properties
-          for (const key in parsed) {
-            if (Object.prototype.hasOwnProperty.call(parsed, key)) {
-              const value = parsed[key];
-              if (typeof value === 'string' && (value.startsWith('https://') || value.startsWith('http://'))) {
-                return value;
+          // If parsed into object, look for URL
+          else if (parsed && typeof parsed === 'object') {
+            if (typeof parsed.url === 'string') {
+              imageUrls = [parsed.url];
+            }
+            
+            // Search for URL-like strings in object properties
+            for (const key in parsed) {
+              if (Object.prototype.hasOwnProperty.call(parsed, key)) {
+                const value = parsed[key];
+                if (typeof value === 'string' && (value.startsWith('https://') || value.startsWith('http://'))) {
+                  imageUrls.push(value);
+                }
               }
             }
           }
+        } catch (e) {
+          console.warn('JSON parsing failed for image data:', imageData, e);
+          // If parsing fails, return the string as-is (might be a URL)
+          imageUrls = [imageData];
         }
-      } catch (e) {
-        console.warn('JSON parsing failed for image data:', imageData, e);
-        // If parsing fails, return the string as-is (might be a URL)
-        return imageData;
       }
     }
     
     // Handle object with URL property
-    if (typeof imageData === 'object' && imageData !== null && !Array.isArray(imageData)) {
+    else if (typeof imageData === 'object' && imageData !== null) {
       const objData = imageData as { url?: string; [key: string]: any };
       
       if (typeof objData.url === 'string') {
-        return objData.url;
+        imageUrls = [objData.url];
       }
       
       // Search for URL-like strings in object properties
@@ -94,18 +98,32 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
         if (Object.prototype.hasOwnProperty.call(objData, key)) {
           const value = objData[key];
           if (typeof value === 'string' && (value.startsWith('https://') || value.startsWith('http://'))) {
-            return value;
+            imageUrls.push(value);
           }
           
           // Check for arrays that might contain URLs
           if (Array.isArray(value) && value.length > 0) {
-            const firstInArray = value[0];
-            if (typeof firstInArray === 'string' && (firstInArray.startsWith('https://') || firstInArray.startsWith('http://'))) {
-              return firstInArray;
-            }
+            const urlsInArray = value.filter(item => 
+              typeof item === 'string' && (item.startsWith('https://') || item.startsWith('http://'))
+            );
+            imageUrls.push(...urlsInArray);
           }
         }
       }
+    }
+    
+    // Now find the main product image with _6_x_1.jpg pattern
+    const mainProductImage = imageUrls.find(url => /_6_\d+_1\.jpg/.test(url));
+    
+    if (mainProductImage) {
+      console.log(`Found main product image with _6_x_1.jpg pattern: ${mainProductImage}`);
+      return mainProductImage;
+    }
+    
+    // Fallback to first image if no main product image found
+    if (imageUrls.length > 0) {
+      console.log(`No _6_x_1.jpg pattern found, using first available image: ${imageUrls[0]}`);
+      return imageUrls[0];
     }
     
     console.log('No suitable image URL found in data', imageData);
