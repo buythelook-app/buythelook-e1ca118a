@@ -20,9 +20,9 @@ export type ZaraImageData = string | string[] | { url?: string } | { [key: strin
 
 /**
  * Extracts a usable image URL from Zara's various image data formats
- * Now specifically looks for _6_x_1.jpg pattern (main product photos)
+ * STRICTLY looks for _6_x_1.jpg pattern (main product photos) ONLY
  * @param imageData - The image data from Zara API or database
- * @returns A usable image URL or placeholder
+ * @returns A usable image URL with _6_x_1.jpg pattern or placeholder
  */
 export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
   try {
@@ -43,8 +43,9 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
     else if (typeof imageData === 'string') {
       // If it's already a URL, check if it's the main product image
       if (imageData.startsWith('https://') || imageData.startsWith('http://')) {
-        // If it contains _6_x_1.jpg pattern, use it directly
+        // STRICTLY check for _6_x_1.jpg pattern
         if (/_6_\d+_1\.jpg/.test(imageData)) {
+          console.log(`Found direct _6_x_1.jpg URL: ${imageData}`);
           return imageData;
         }
         imageUrls = [imageData];
@@ -112,7 +113,7 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
       }
     }
     
-    // Now find the main product image with _6_x_1.jpg pattern
+    // STRICTLY find the main product image with _6_x_1.jpg pattern - NO FALLBACK
     const mainProductImage = imageUrls.find(url => /_6_\d+_1\.jpg/.test(url));
     
     if (mainProductImage) {
@@ -120,14 +121,10 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
       return mainProductImage;
     }
     
-    // Fallback to first image if no main product image found
-    if (imageUrls.length > 0) {
-      console.log(`No _6_x_1.jpg pattern found, using first available image: ${imageUrls[0]}`);
-      return imageUrls[0];
-    }
-    
-    console.log('No suitable image URL found in data', imageData);
+    // NO FALLBACK - return placeholder if no _6_x_1.jpg pattern found
+    console.log('No _6_x_1.jpg pattern found, using placeholder. Available URLs:', imageUrls);
     return '/placeholder.svg';
+    
   } catch (error) {
     console.error('Error extracting image URL:', error);
     return '/placeholder.svg';

@@ -38,13 +38,15 @@ export const isValidImagePattern = (imageData: any): boolean => {
     return false;
   }
   
-  // Check if any URL contains the _6_x_1.jpg pattern (main product photos)
+  // STRICTLY check if any URL contains the _6_x_1.jpg pattern (main product photos)
   const hasValidPattern = imageUrls.some(url => /_6_\d+_1\.jpg/.test(url));
   
   console.log(`🔍 [DEBUG] Found ${imageUrls.length} URLs, has _6_x_1.jpg pattern: ${hasValidPattern}`);
   if (hasValidPattern) {
     const validUrl = imageUrls.find(url => /_6_\d+_1\.jpg/.test(url));
     console.log(`🔍 [DEBUG] Valid URL found: ${validUrl}`);
+  } else {
+    console.log(`🔍 [DEBUG] NO _6_x_1.jpg pattern found in URLs:`, imageUrls);
   }
   
   return hasValidPattern;
@@ -52,6 +54,7 @@ export const isValidImagePattern = (imageData: any): boolean => {
 
 /**
  * Helper function to extract the main product image URL (_6_x_1.jpg pattern)
+ * Returns placeholder if no _6_x_1.jpg pattern is found
  */
 export const extractMainProductImage = (imageData: any): string => {
   if (!imageData) {
@@ -77,7 +80,14 @@ export const extractMainProductImage = (imageData: any): string => {
     imageUrls = [imageData.url];
   }
   
-  // Find the first URL with _6_x_1.jpg pattern
+  // STRICTLY find the first URL with _6_x_1.jpg pattern - NO FALLBACK
   const mainImage = imageUrls.find(url => /_6_\d+_1\.jpg/.test(url));
-  return mainImage || '/placeholder.svg';
+  
+  if (mainImage) {
+    console.log(`🔍 [DEBUG] Found _6_x_1.jpg image: ${mainImage}`);
+    return mainImage;
+  } else {
+    console.log(`🔍 [DEBUG] NO _6_x_1.jpg image found, using placeholder`);
+    return '/placeholder.svg';
+  }
 };
