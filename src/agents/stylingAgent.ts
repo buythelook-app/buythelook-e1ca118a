@@ -1,4 +1,5 @@
 
+
 import { supabase } from "@/integrations/supabase/client"; // Use the correct client with proper types
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 
@@ -58,16 +59,18 @@ export const stylingAgent: Agent = {
       let userProfile = null;
       
       try {
-        // Try to fetch from style_quiz_results table - this might not exist in current schema
+        // Try to fetch from style_quiz_results table directly
         const { data: profileData, error: profileError } = await supabase
-          .rpc('get_user_profile', { user_id: userId })
+          .from('style_quiz_results')
+          .select('*')
+          .eq('user_id', userId)
           .maybeSingle();
         
-        if (!profileError) {
+        if (!profileError && profileData) {
           userProfile = profileData;
           console.log("✅ [DEBUG] User profile found:", userProfile);
         } else {
-          console.log("⚠️ [DEBUG] Profile fetch error (table might not exist):", profileError.message);
+          console.log("⚠️ [DEBUG] Profile fetch error or no profile found:", profileError?.message || "No profile data");
         }
       } catch (profileError) {
         console.log("⚠️ [DEBUG] Profile table not available, continuing without profile data");
@@ -130,3 +133,4 @@ export const stylingAgent: Agent = {
     }
   }
 };
+
