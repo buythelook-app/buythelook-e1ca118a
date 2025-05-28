@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 
@@ -105,8 +106,8 @@ export const stylingAgent: Agent = {
       let userProfile = null;
       
       try {
-        // Try to fetch from style_quiz_results table directly
-        const { data: profileData, error: profileError } = await supabase
+        // Try to fetch from style_quiz_results table directly using type assertion
+        const { data: profileData, error: profileError } = await (supabase as any)
           .from('style_quiz_results')
           .select('*')
           .eq('user_id', userId)

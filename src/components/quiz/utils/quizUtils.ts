@@ -1,3 +1,4 @@
+
 import { QuizFormData } from '../types';
 import { StyleAnalysis } from '../types/styleTypes';
 import { colorPalettes } from '../constants/colorPalettes';
@@ -67,27 +68,32 @@ export const analyzeStyleWithAI = async (formData: QuizFormData): Promise<StyleA
       weightInKg = Math.round(parseInt(weightInKg) / 2.2).toString();
     }
 
-    // If user is authenticated, save to Supabase
+    // If user is authenticated, save to Supabase using type assertion
     if (user) {
-      const { error: upsertError } = await supabase
-        .from('style_quiz_results')
-        .upsert({
-          user_id: user.id,
-          gender: formData.gender,
-          height: formData.height,
-          weight: weightInKg,
-          waist: formData.waist,
-          chest: formData.chest,
-          body_shape: formData.bodyShape,
-          photo_url: null,
-          color_preferences: formData.colorPreferences,
-          style_preferences: formData.stylePreferences,
-          updated_at: new Date().toISOString()
-        });
+      try {
+        const { error: upsertError } = await (supabase as any)
+          .from('style_quiz_results')
+          .upsert({
+            user_id: user.id,
+            gender: formData.gender,
+            height: formData.height,
+            weight: weightInKg,
+            waist: formData.waist,
+            chest: formData.chest,
+            body_shape: formData.bodyShape,
+            photo_url: null,
+            color_preferences: formData.colorPreferences,
+            style_preferences: formData.stylePreferences,
+            updated_at: new Date().toISOString()
+          });
 
-      if (upsertError) {
-        console.error('Error saving to Supabase:', upsertError);
-        // Continue with local analysis even if Supabase save fails
+        if (upsertError) {
+          console.error('Error saving to Supabase:', upsertError);
+          // Continue with local analysis even if Supabase save fails
+        }
+      } catch (saveError) {
+        console.error('Error saving quiz results:', saveError);
+        // Continue with analysis even if save fails
       }
     }
 
@@ -130,7 +136,8 @@ export const loadStoredQuizData = async (): Promise<QuizFormData | null> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    const { data, error } = await supabase
+    // Use type assertion to access style_quiz_results table
+    const { data, error } = await (supabase as any)
       .from('style_quiz_results')
       .select('*')
       .eq('user_id', user.id)
