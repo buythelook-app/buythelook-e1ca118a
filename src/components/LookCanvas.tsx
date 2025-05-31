@@ -1,5 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
+import { removeBackground, loadImageFromUrl } from "@/utils/backgroundRemoval";
 
 interface OutfitItem {
   id: string;
@@ -23,6 +24,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [loadingState, setLoadingState] = useState<'loading' | 'success' | 'error'>('loading');
   const [loadedCount, setLoadedCount] = useState(0);
+  const [processingCount, setProcessingCount] = useState(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -34,6 +36,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     // Reset loading state when items change
     setLoadingState('loading');
     setLoadedCount(0);
+    setProcessingCount(0);
 
     // Set up canvas with device pixel ratio
     const scale = window.devicePixelRatio || 1;
@@ -70,7 +73,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       top: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
       bottom: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
       dress: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.9 },
-      shoes: { x: width * 0.2, y: height * 0.6, width: width * 0.6, height: height * 0.3 }, // Adjusted position and size for shoes
+      shoes: { x: width * 0.2, y: height * 0.6, width: width * 0.6, height: height * 0.3 },
       accessory: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
       sunglasses: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
       cart: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 }
@@ -80,107 +83,52 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     ctx.font = '16px Arial';
     ctx.fillStyle = '#666666';
     ctx.textAlign = 'center';
-    ctx.fillText('Loading outfit items...', width / 2, height / 2);
+    ctx.fillText('Loading and processing outfit items...', width / 2, height / 2);
 
     const loadImages = async () => {
       try {
         let successCount = 0;
         let errorCount = 0;
         
-        console.log('Loading images for items:', sortedItems);
+        console.log('Loading and processing images for items:', sortedItems);
         
         for (const item of sortedItems) {
-          console.log('Loading image for item:', item.id, item.type, item.image);
+          console.log('Processing item:', item.id, item.type, item.image);
           
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          
-          const timestamp = new Date().getTime();
-          const imageUrl = item.image.includes('?') 
-            ? `${item.image}&t=${timestamp}` 
-            : `${item.image}?t=${timestamp}`;
-          
-          img.src = imageUrl;
-
           try {
+            setProcessingCount(prev => prev + 1);
+            
+            // Load the original image
+            const originalImg = await loadImageFromUrl(item.image);
+            console.log('Original image loaded:', item.image);
+
+            // Remove background from the image
+            console.log('Removing background for item:', item.id);
+            const processedBlob = await removeBackground(originalImg);
+            
+            // Create a new image from the processed blob
+            const processedImageUrl = URL.createObjectURL(processedBlob);
+            const processedImg = new Image();
+            
             await new Promise((resolve, reject) => {
-              img.onload = () => {
-                console.log('Image loaded successfully:', imageUrl);
+              processedImg.onload = () => {
+                console.log('Processed image loaded successfully:', item.id);
                 successCount++;
                 setLoadedCount(prev => prev + 1);
                 resolve(null);
               };
-              img.onerror = (e) => {
-                console.error('Error loading image:', imageUrl, e);
+              processedImg.onerror = (e) => {
+                console.error('Error loading processed image:', item.id, e);
                 errorCount++;
                 setLoadedCount(prev => prev + 1);
                 reject(e);
               };
+              processedImg.src = processedImageUrl;
             });
 
             const position = item.position || defaultPositions[item.type];
             if (position) {
-              const offscreenCanvas = document.createElement('canvas');
-              const offscreenCtx = offscreenCanvas.getContext('2d');
-              if (!offscreenCtx) continue;
-
-              offscreenCanvas.width = img.width;
-              offscreenCanvas.height = img.height;
-
-              // Special handling for shoes - more aggressive cropping and background removal
-              if (item.type === 'shoes') {
-                // Crop more aggressively for shoes to focus on the item
-                const cropX = img.width * 0.2;
-                const cropWidth = img.width * 0.6;
-                const cropY = img.height * 0.2;
-                const cropHeight = img.height * 0.6;
-                
-                offscreenCtx.drawImage(
-                  img,
-                  cropX, cropY, cropWidth, cropHeight,
-                  0, 0, img.width, img.height
-                );
-
-                // Enhanced background removal for shoes
-                const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-                const data = imageData.data;
-
-                for (let i = 0; i < data.length; i += 4) {
-                  const r = data[i];
-                  const g = data[i + 1];
-                  const b = data[i + 2];
-                  
-                  // More aggressive background removal for shoes
-                  const brightness = (r + g + b) / 3;
-                  const whiteness = Math.abs(r - g) + Math.abs(g - b) + Math.abs(r - b);
-                  
-                  if (brightness > 240 || (brightness > 200 && whiteness < 15)) {
-                    data[i + 3] = 0; // Make pixel transparent
-                  }
-                }
-
-                offscreenCtx.putImageData(imageData, 0, 0);
-              } else {
-                // Normal handling for other items
-                offscreenCtx.drawImage(img, 0, 0);
-                const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-                const data = imageData.data;
-                
-                for (let i = 0; i < data.length; i += 4) {
-                  const r = data[i];
-                  const g = data[i + 1];
-                  const b = data[i + 2];
-                  
-                  const avgColor = (r + g + b) / 3;
-                  if (avgColor > 180 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15 && Math.abs(r - b) < 15) {
-                    data[i + 3] = 0;
-                  }
-                }
-                
-                offscreenCtx.putImageData(imageData, 0, 0);
-              }
-
-              const aspectRatio = img.width / img.height;
+              const aspectRatio = processedImg.width / processedImg.height;
               let drawWidth = position.width;
               let drawHeight = position.height;
 
@@ -195,7 +143,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
               ctx.save();
               ctx.drawImage(
-                offscreenCanvas,
+                processedImg,
                 centerX,
                 centerY,
                 drawWidth,
@@ -203,8 +151,14 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               );
               ctx.restore();
             }
+
+            // Clean up the blob URL
+            URL.revokeObjectURL(processedImageUrl);
+
           } catch (imgError) {
-            console.error('Error processing image:', imgError);
+            console.error('Error processing item:', item.id, imgError);
+            errorCount++;
+            setLoadedCount(prev => prev + 1);
           }
         }
 
@@ -219,7 +173,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
           ctx.font = '16px Arial';
           ctx.fillStyle = '#ff0000';
           ctx.textAlign = 'center';
-          ctx.fillText('Failed to load outfit images', width / 2, height / 2);
+          ctx.fillText('Failed to process outfit images', width / 2, height / 2);
         } else if (successCount > 0) {
           setLoadingState('success');
         } else {
@@ -248,15 +202,16 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       />
       {loadingState === 'loading' && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 rounded-lg">
-          <div className="bg-white p-2 rounded shadow">
-            טוען... {loadedCount}/{items.length}
+          <div className="bg-white p-3 rounded shadow text-center">
+            <p>עיבוד תמונות... {loadedCount}/{items.length}</p>
+            <p className="text-xs text-gray-600">מסיר רקע מהפריטים</p>
           </div>
         </div>
       )}
       {loadingState === 'error' && items.length > 0 && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-10 rounded-lg">
           <div className="bg-white p-3 rounded shadow text-center">
-            <p className="text-red-500 mb-1">שגיאה בטעינת התמונות</p>
+            <p className="text-red-500 mb-1">שגיאה בעיבוד התמונות</p>
             <p className="text-xs text-gray-600">נסה לרענן את העמוד</p>
           </div>
         </div>
