@@ -20,9 +20,9 @@ export type ZaraImageData = string | string[] | { url?: string } | { [key: strin
 
 /**
  * Extracts a usable image URL from Zara's various image data formats
- * STRICTLY looks for _6_x_1.jpg pattern (main product photos) ONLY
+ * STRICTLY looks for _6_1_1.jpg pattern (6th image without model) ONLY
  * @param imageData - The image data from Zara API or database
- * @returns A usable image URL with _6_x_1.jpg pattern or placeholder
+ * @returns A usable image URL with _6_1_1.jpg pattern or placeholder
  */
 export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
   try {
@@ -41,11 +41,11 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
     
     // Handle string URL directly
     else if (typeof imageData === 'string') {
-      // If it's already a URL, check if it's the main product image
+      // If it's already a URL, check if it's the 6th image
       if (imageData.startsWith('https://') || imageData.startsWith('http://')) {
-        // STRICTLY check for _6_x_1.jpg pattern
-        if (/_6_\d+_1\.jpg/.test(imageData)) {
-          console.log(`Found direct _6_x_1.jpg URL: ${imageData}`);
+        // STRICTLY check for _6_1_1.jpg pattern
+        if (/_6_1_1\.jpg/.test(imageData)) {
+          console.log(`Found direct _6_1_1.jpg URL: ${imageData}`);
           return imageData;
         }
         imageUrls = [imageData];
@@ -113,16 +113,16 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
       }
     }
     
-    // STRICTLY find the main product image with _6_x_1.jpg pattern - NO FALLBACK
-    const mainProductImage = imageUrls.find(url => /_6_\d+_1\.jpg/.test(url));
+    // STRICTLY find the 6th image with _6_1_1.jpg pattern - NO FALLBACK
+    const sixthImage = imageUrls.find(url => /_6_1_1\.jpg/.test(url));
     
-    if (mainProductImage) {
-      console.log(`Found main product image with _6_x_1.jpg pattern: ${mainProductImage}`);
-      return mainProductImage;
+    if (sixthImage) {
+      console.log(`Found 6th image with _6_1_1.jpg pattern: ${sixthImage}`);
+      return sixthImage;
     }
     
-    // NO FALLBACK - return placeholder if no _6_x_1.jpg pattern found
-    console.log('No _6_x_1.jpg pattern found, using placeholder. Available URLs:', imageUrls);
+    // NO FALLBACK - return placeholder if no _6_1_1.jpg pattern found
+    console.log('No _6_1_1.jpg pattern found, using placeholder. Available URLs:', imageUrls);
     return '/placeholder.svg';
     
   } catch (error) {

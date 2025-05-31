@@ -11,8 +11,8 @@ interface Agent {
 }
 
 /**
- * Helper function to check if an image URL contains the specific _6_x_1.jpg pattern
- * Only accepts Zara main product photos with this specific pattern
+ * Helper function to check if an image URL contains the specific _6_1_1.jpg pattern
+ * Only accepts Zara 6th product photos (without model) with this specific pattern
  */
 const isValidImagePattern = (imageData: any): boolean => {
   if (!imageData) {
@@ -49,23 +49,23 @@ const isValidImagePattern = (imageData: any): boolean => {
     return false;
   }
   
-  // STRICTLY check if any URL contains the _6_x_1.jpg pattern (main product photos)
-  const hasValidPattern = imageUrls.some(url => /_6_\d+_1\.jpg/.test(url));
+  // STRICTLY check if any URL contains the _6_1_1.jpg pattern (6th image without model)
+  const hasValidPattern = imageUrls.some(url => /_6_1_1\.jpg/.test(url));
   
-  console.log(`🔍 [DEBUG] Found ${imageUrls.length} URLs, has _6_x_1.jpg pattern: ${hasValidPattern}`);
+  console.log(`🔍 [DEBUG] Found ${imageUrls.length} URLs, has _6_1_1.jpg pattern: ${hasValidPattern}`);
   if (hasValidPattern) {
-    const validUrl = imageUrls.find(url => /_6_\d+_1\.jpg/.test(url));
+    const validUrl = imageUrls.find(url => /_6_1_1\.jpg/.test(url));
     console.log(`🔍 [DEBUG] Valid URL found: ${validUrl}`);
   } else {
-    console.log(`🔍 [DEBUG] NO _6_x_1.jpg pattern found in URLs:`, imageUrls);
+    console.log(`🔍 [DEBUG] NO _6_1_1.jpg pattern found in URLs:`, imageUrls);
   }
   
   return hasValidPattern;
 };
 
 /**
- * Helper function to extract the main product image URL (_6_x_1.jpg pattern)
- * Returns placeholder if no _6_x_1.jpg pattern is found
+ * Helper function to extract the 6th product image URL (_6_1_1.jpg pattern)
+ * Returns placeholder if no _6_1_1.jpg pattern is found
  */
 const extractMainProductImage = (imageData: any): string => {
   if (!imageData) {
@@ -91,14 +91,14 @@ const extractMainProductImage = (imageData: any): string => {
     imageUrls = [imageData.url];
   }
   
-  // STRICTLY find the first URL with _6_x_1.jpg pattern - NO FALLBACK
-  const mainImage = imageUrls.find(url => /_6_\d+_1\.jpg/.test(url));
+  // STRICTLY find the first URL with _6_1_1.jpg pattern - NO FALLBACK
+  const sixthImage = imageUrls.find(url => /_6_1_1\.jpg/.test(url));
   
-  if (mainImage) {
-    console.log(`🔍 [DEBUG] Found _6_x_1.jpg image: ${mainImage}`);
-    return mainImage;
+  if (sixthImage) {
+    console.log(`🔍 [DEBUG] Found _6_1_1.jpg image: ${sixthImage}`);
+    return sixthImage;
   } else {
-    console.log(`🔍 [DEBUG] NO _6_x_1.jpg image found, using placeholder`);
+    console.log(`🔍 [DEBUG] NO _6_1_1.jpg image found, using placeholder`);
     return '/placeholder.svg';
   }
 };
@@ -186,26 +186,26 @@ export const stylingAgent: Agent = {
 
       console.log('✅ [DEBUG] Items fetched:', allItems.length);
 
-      // Filter items to only include those with valid _6_x_1.jpg pattern
-      console.log('🔍 [DEBUG] Starting _6_x_1.jpg pattern filtering...');
+      // Filter items to only include those with valid _6_1_1.jpg pattern
+      console.log('🔍 [DEBUG] Starting _6_1_1.jpg pattern filtering...');
       const validItems = allItems.filter((item, index) => {
         console.log(`🔍 [DEBUG] Checking item ${index + 1}/${allItems.length} (ID: ${item.id})`);
         const isValid = isValidImagePattern(item.image);
         if (!isValid) {
-          console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - no _6_x_1.jpg pattern`);
+          console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - no _6_1_1.jpg pattern`);
         } else {
-          console.log(`✅ [DEBUG] KEEPING item ${item.id} - has _6_x_1.jpg pattern`);
+          console.log(`✅ [DEBUG] KEEPING item ${item.id} - has _6_1_1.jpg pattern`);
         }
         return isValid;
       });
 
-      console.log(`✅ [DEBUG] Valid items after _6_x_1.jpg filtering: ${validItems.length} out of ${allItems.length}`);
+      console.log(`✅ [DEBUG] Valid items after _6_1_1.jpg filtering: ${validItems.length} out of ${allItems.length}`);
 
       if (validItems.length === 0) {
-        console.error('❌ [DEBUG] No items with _6_x_1.jpg pattern found');
+        console.error('❌ [DEBUG] No items with _6_1_1.jpg pattern found');
         return { 
           success: false, 
-          error: "No items with _6_x_1.jpg main product images found in database" 
+          error: "No items with _6_1_1.jpg main product images found in database" 
         };
       }
 
@@ -242,7 +242,7 @@ export const stylingAgent: Agent = {
           image: extractMainProductImage(shoesItem?.image)
         },
         score: Math.floor(Math.random() * 30) + 70,
-        description: `Outfit generated using real Zara database items with main product images (_6_x_1.jpg)`,
+        description: `Outfit generated using real Zara database items with main product images (_6_1_1.jpg)`,
         recommendations: [
           "This combination uses actual Zara items from our database",
           "Images selected to show main product photos clearly",

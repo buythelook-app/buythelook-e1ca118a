@@ -1,7 +1,7 @@
 
 /**
- * Helper function to check if an image URL has the specific _6_x_1.jpg pattern
- * Only accepts Zara main product photos with this specific pattern
+ * Helper function to check if an image URL has the specific _6_1_1.jpg pattern
+ * Only accepts Zara 6th product photos (without model) with this specific pattern
  */
 export const isValidImagePattern = (imageData: any): boolean => {
   if (!imageData) {
@@ -38,23 +38,23 @@ export const isValidImagePattern = (imageData: any): boolean => {
     return false;
   }
   
-  // STRICTLY check if any URL contains the _6_x_1.jpg pattern (main product photos)
-  const hasValidPattern = imageUrls.some(url => /_6_\d+_1\.jpg/.test(url));
+  // STRICTLY check if any URL contains the _6_1_1.jpg pattern (6th image without model)
+  const hasValidPattern = imageUrls.some(url => /_6_1_1\.jpg/.test(url));
   
-  console.log(`🔍 [DEBUG] Found ${imageUrls.length} URLs, has _6_x_1.jpg pattern: ${hasValidPattern}`);
+  console.log(`🔍 [DEBUG] Found ${imageUrls.length} URLs, has _6_1_1.jpg pattern: ${hasValidPattern}`);
   if (hasValidPattern) {
-    const validUrl = imageUrls.find(url => /_6_\d+_1\.jpg/.test(url));
+    const validUrl = imageUrls.find(url => /_6_1_1\.jpg/.test(url));
     console.log(`🔍 [DEBUG] Valid URL found: ${validUrl}`);
   } else {
-    console.log(`🔍 [DEBUG] NO _6_x_1.jpg pattern found in URLs:`, imageUrls);
+    console.log(`🔍 [DEBUG] NO _6_1_1.jpg pattern found in URLs:`, imageUrls);
   }
   
   return hasValidPattern;
 };
 
 /**
- * Helper function to extract the main product image URL (_6_x_1.jpg pattern)
- * Returns placeholder if no _6_x_1.jpg pattern is found
+ * Helper function to extract the 6th product image URL (_6_1_1.jpg pattern)
+ * Returns placeholder if no _6_1_1.jpg pattern is found
  */
 export const extractMainProductImage = (imageData: any): string => {
   if (!imageData) {
@@ -80,14 +80,14 @@ export const extractMainProductImage = (imageData: any): string => {
     imageUrls = [imageData.url];
   }
   
-  // STRICTLY find the first URL with _6_x_1.jpg pattern - NO FALLBACK
-  const mainImage = imageUrls.find(url => /_6_\d+_1\.jpg/.test(url));
+  // STRICTLY find the first URL with _6_1_1.jpg pattern - NO FALLBACK
+  const sixthImage = imageUrls.find(url => /_6_1_1\.jpg/.test(url));
   
-  if (mainImage) {
-    console.log(`🔍 [DEBUG] Found _6_x_1.jpg image: ${mainImage}`);
-    return mainImage;
+  if (sixthImage) {
+    console.log(`🔍 [DEBUG] Found _6_1_1.jpg image: ${sixthImage}`);
+    return sixthImage;
   } else {
-    console.log(`🔍 [DEBUG] NO _6_x_1.jpg image found, using placeholder`);
+    console.log(`🔍 [DEBUG] NO _6_1_1.jpg image found, using placeholder`);
     return '/placeholder.svg';
   }
 };
