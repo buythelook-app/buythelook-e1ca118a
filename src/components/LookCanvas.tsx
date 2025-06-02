@@ -148,13 +148,18 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
 
     console.log('🔍 [LookCanvas] Final display order:', items.map((item, i) => `${i}. ${item.type} (${item.id})`));
 
-    // Enhanced layout for better fitting and visibility
-    const padding = 5; // Reduced padding
-    const itemSpacing = 5; // Reduced spacing between items
+    // Improved layout to ensure all items are visible
+    const padding = 10;
+    const itemSpacing = 8;
     const availableHeight = height - (padding * 2);
-    const itemHeight = Math.max(200, (availableHeight - (itemSpacing * 2)) / 3); // Larger item height
-    const itemWidth = width * 0.9; // Increased width usage
+    
+    // Calculate item height to fit exactly 3 items with spacing
+    const totalSpacing = itemSpacing * 2; // 2 gaps between 3 items
+    const itemHeight = Math.floor((availableHeight - totalSpacing) / 3);
+    const itemWidth = width * 0.85;
     const centerX = (width - itemWidth) / 2;
+    
+    console.log(`🔍 [LookCanvas] Layout: height=${height}, availableHeight=${availableHeight}, itemHeight=${itemHeight}, itemWidth=${itemWidth}`);
     
     // Show loading state
     ctx.font = '16px Arial';
@@ -204,49 +209,38 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
               img.src = imageUrl;
             });
 
-            // Calculate position for this item - tighter spacing, larger items
+            // Calculate position for this item
             const yPosition = padding + (i * (itemHeight + itemSpacing));
             
-            // Calculate proper aspect ratio and fit within designated area
+            // Calculate proper aspect ratio while ensuring it fits
             const aspectRatio = img.width / img.height;
-            let drawWidth = itemWidth;
-            let drawHeight = itemHeight;
+            let drawWidth = itemWidth * 0.9; // Use 90% of available width
+            let drawHeight = drawWidth / aspectRatio;
 
-            // Maintain aspect ratio while fitting in the designated area
-            if (drawWidth / drawHeight > aspectRatio) {
-              drawWidth = drawHeight * aspectRatio;
-            } else {
-              drawHeight = drawWidth / aspectRatio;
-            }
-
-            // Ensure items are large enough but fit within bounds
-            const minSize = 150;
-            const maxWidth = itemWidth * 0.95;
-            const maxHeight = itemHeight * 0.95;
-            
-            if (drawWidth < minSize || drawHeight < minSize) {
-              if (drawWidth < drawHeight) {
-                drawWidth = minSize;
-                drawHeight = minSize / aspectRatio;
-              } else {
-                drawHeight = minSize;
-                drawWidth = minSize * aspectRatio;
-              }
-            }
-            
-            // Ensure we don't exceed the available space
-            if (drawWidth > maxWidth) {
-              drawWidth = maxWidth;
-              drawHeight = maxWidth / aspectRatio;
-            }
+            // If height is too large, constrain by height instead
+            const maxHeight = itemHeight * 0.9; // Use 90% of available height
             if (drawHeight > maxHeight) {
               drawHeight = maxHeight;
-              drawWidth = maxHeight * aspectRatio;
+              drawWidth = drawHeight * aspectRatio;
+            }
+
+            // Ensure minimum size but don't exceed bounds
+            const minSize = 100;
+            if (drawWidth < minSize && drawHeight < minSize) {
+              if (aspectRatio >= 1) {
+                drawWidth = Math.min(minSize, itemWidth * 0.9);
+                drawHeight = drawWidth / aspectRatio;
+              } else {
+                drawHeight = Math.min(minSize, maxHeight);
+                drawWidth = drawHeight * aspectRatio;
+              }
             }
 
             // Center the item horizontally and vertically within its allocated space
             const drawX = centerX + (itemWidth - drawWidth) / 2;
             const drawY = yPosition + (itemHeight - drawHeight) / 2;
+
+            console.log(`🔍 [LookCanvas] Drawing ${itemPosition}: pos=${i}, y=${Math.round(yPosition)}, drawY=${Math.round(drawY)}, h=${Math.round(drawHeight)}, maxY=${Math.round(drawY + drawHeight)}, canvasH=${height}`);
 
             ctx.save();
             
