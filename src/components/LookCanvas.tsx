@@ -155,26 +155,28 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       return;
     }
 
-    // Sort items in logical outfit order: top first, bottom second, shoes last
+    // Sort items in outfit order: חלק עליון, חלק תחתון, נעליים
     const renderOrder = { 
-      top: 1, 
-      outerwear: 2, // jackets after tops
-      dress: 3, // dresses in the middle 
-      bottom: 4, 
-      shoes: 5, 
-      accessory: 6, 
-      sunglasses: 7 
+      top: 1,           // חלק עליון - קודם
+      outerwear: 2,     // ז'קטים אחרי חלק עליון
+      dress: 1,         // שמלות כמו חלק עליון
+      bottom: 3,        // חלק תחתון - באמצע
+      shoes: 4,         // נעליים - בסוף
+      accessory: 5,     // אביזרים - אחרונים
+      sunglasses: 6,    // משקפיים - אחרונים
+      cart: 7           // עגלה - אחרון
     };
+    
     const sortedItems = [...items].sort((a, b) => {
       const orderA = renderOrder[a.type] ?? 999;
       const orderB = renderOrder[b.type] ?? 999;
       return orderA - orderB;
     });
 
-    // Define larger layout positions with increased image size
-    const padding = 25;
+    // Define layout with proper spacing for outfit categories
+    const padding = 20;
     const itemWidth = width * 0.85; // 85% of canvas width
-    const itemHeight = Math.max(140, (height - (padding * (sortedItems.length + 1))) / sortedItems.length); // Increased from 120px to 140px
+    const itemHeight = Math.max(140, (height - (padding * (sortedItems.length + 1))) / sortedItems.length);
     const centerX = (width - itemWidth) / 2;
     
     // Show loading state
@@ -188,7 +190,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         let successCount = 0;
         let errorCount = 0;
         
-        console.log('🔍 Loading product-only images for items in logical order:', sortedItems.map(item => `${item.type} (${item.id})`));
+        console.log('🔍 Loading product-only images in outfit order:', sortedItems.map(item => `${item.type} (${item.id})`));
         
         // Clear the canvas for clean rendering
         ctx.clearRect(0, 0, width, height);
@@ -197,7 +199,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         
         for (let i = 0; i < sortedItems.length; i++) {
           const item = sortedItems[i];
-          console.log(`🔍 Processing item ${i + 1}/${sortedItems.length}: ${item.id} (${item.type})`);
+          console.log(`🔍 Processing ${item.type} item ${i + 1}/${sortedItems.length}: ${item.id}`);
           
           try {
             // Get product-only image (enhanced with AI selection)
@@ -217,7 +219,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             
             await new Promise((resolve, reject) => {
               img.onload = () => {
-                console.log(`✅ Product image loaded: ${item.id}`);
+                console.log(`✅ Product image loaded: ${item.id} (${item.type})`);
                 successCount++;
                 setLoadedCount(prev => prev + 1);
                 resolve(null);
@@ -231,8 +233,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
               img.src = productImageUrl;
             });
 
-            // Calculate position for this item in vertical layout with reduced spacing
-            const yPosition = padding + (i * (itemHeight + (padding * 0.3))); // Reduced spacing between items
+            // Calculate position for this item in vertical layout
+            const yPosition = padding + (i * (itemHeight + (padding * 0.5)));
             
             // Calculate proper aspect ratio and fit within designated area
             const aspectRatio = img.width / img.height;
@@ -246,8 +248,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
               drawHeight = drawWidth / aspectRatio;
             }
 
-            // Ensure minimum size for better visibility - increased size
-            const minSize = 120; // Increased from 100 to 120
+            // Ensure minimum size for better visibility
+            const minSize = 120;
             if (drawWidth < minSize || drawHeight < minSize) {
               if (drawWidth < drawHeight) {
                 drawWidth = minSize;
@@ -281,7 +283,19 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             
             ctx.restore();
             
-            console.log(`✅ Drew ${item.type} (product-only) at position ${i + 1}: x=${Math.round(drawX)}, y=${Math.round(drawY)}, w=${Math.round(drawWidth)}, h=${Math.round(drawHeight)}`);
+            // Add category label for debugging
+            ctx.save();
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#888888';
+            ctx.textAlign = 'left';
+            const categoryLabel = item.type === 'top' ? 'חלק עליון' : 
+                                item.type === 'bottom' ? 'חלק תחתון' : 
+                                item.type === 'shoes' ? 'נעליים' : 
+                                item.type === 'dress' ? 'שמלה' : item.type;
+            ctx.fillText(categoryLabel, drawX, drawY - 5);
+            ctx.restore();
+            
+            console.log(`✅ Drew ${item.type} (${categoryLabel}) at position ${i + 1}: x=${Math.round(drawX)}, y=${Math.round(drawY)}, w=${Math.round(drawWidth)}, h=${Math.round(drawHeight)}`);
 
           } catch (imgError) {
             console.error(`❌ Error processing item: ${item.id}`, imgError);
