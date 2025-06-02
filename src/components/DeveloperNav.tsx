@@ -1,21 +1,28 @@
-import React from "react";
-import { Link } from "react-router-dom";
 
-export const DeveloperNav = () => {
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import AgentResultsButton from "./AgentResultsButton";
+
+export function DeveloperNav() {
+  const location = useLocation();
+  
+  // Don't show nav on certain pages
+  if (location.pathname === "/auth" || location.pathname === "/entrance") {
+    return null;
+  }
+
   return (
-    <div className="bg-gray-100 border-b p-2">
-      <div className="container mx-auto flex items-center gap-4">
-        <span className="text-sm font-medium text-gray-600">Developer Tools:</span>
-        <Link to="/agent-simulation" className="text-blue-600 hover:text-blue-800 text-sm">
-          Agent Simulation
-        </Link>
-        <Link to="/agent-training" className="text-blue-600 hover:text-blue-800 text-sm">
-          Agent Training
-        </Link>
-        <Link to="/developer-tools" className="text-blue-600 hover:text-blue-800 text-sm">
-          Tools
-        </Link>
+    <div className="fixed top-0 left-0 right-0 z-50 bg-purple-800 py-1 px-4 flex items-center justify-between text-white text-xs">
+      <div className="flex items-center space-x-2">
+        <Link to="/home" className="hover:underline">Home</Link>
+        <Link to="/dev" className="hover:underline">DevTools</Link>
+        <Link to="/test/recommendation" className="hover:underline">Test Rec</Link>
+        <Link to="/agent-results" className="hover:underline">Agent Results</Link>
+        <Link to="/outfit-generation" className="hover:underline">Outfit Generation</Link>
+      </div>
+      <div>
+        <span>DEV MODE</span>
       </div>
     </div>
   );
-};
+}
