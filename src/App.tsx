@@ -1,4 +1,5 @@
 
+
 import React, { Suspense, useEffect, useState } from "react";
 import {
   BrowserRouter as Router,
@@ -31,6 +32,20 @@ import AgentTrainingPage from "./pages/AgentTrainingPage";
 const AuthPage = () => <div>Auth Page</div>;
 const HomePage = () => <div>Home Page</div>;
 
+// Wrapper component for ShippingAddress to handle standalone page usage
+const ShippingAddressPage = () => {
+  const [isOpen, setIsOpen] = useState(true);
+  
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <ShippingAddress 
+        isOpen={isOpen} 
+        onClose={() => setIsOpen(false)} 
+      />
+    </div>
+  );
+};
+
 const App = () => {
   return (
     <>
@@ -43,7 +58,7 @@ const App = () => {
           <Route path="/style-guide" element={<StyleGuide />} />
           <Route path="/looks/:id" element={<LookDetail />} />
           <Route path="/checkout" element={<Checkout />} />
-          <Route path="/shipping" element={<ShippingAddress />} />
+          <Route path="/shipping" element={<ShippingAddressPage />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/wishlist" element={<WishList />} />
           <Route path="/my-list" element={<MyList />} />
@@ -65,3 +80,4 @@ const App = () => {
 };
 
 export default App;
+
