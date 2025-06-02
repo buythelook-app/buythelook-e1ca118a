@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
 
@@ -123,43 +122,96 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     }
   };
 
+  // Function to find a fallback item of a specific type from available items
+  const findFallbackItem = (requiredType: 'top' | 'bottom' | 'shoes', availableItems: OutfitItem[]): OutfitItem | null => {
+    console.log(`🔍 Finding fallback ${requiredType} from ${availableItems.length} available items`);
+    
+    // First try to find an exact type match
+    const exactMatch = availableItems.find(item => item.type === requiredType);
+    if (exactMatch) {
+      console.log(`✅ Found exact match for ${requiredType}: ${exactMatch.id}`);
+      return exactMatch;
+    }
+    
+    // If no exact match, use compatibility rules based on agent logic
+    let compatibleTypes: string[] = [];
+    
+    switch (requiredType) {
+      case 'top':
+        // For tops, also accept dresses or outerwear as fallbacks
+        compatibleTypes = ['dress', 'outerwear'];
+        break;
+      case 'bottom':
+        // For bottoms, dresses can work as they cover the bottom part
+        compatibleTypes = ['dress'];
+        break;
+      case 'shoes':
+        // For shoes, only shoes work - no fallbacks
+        compatibleTypes = [];
+        break;
+    }
+    
+    // Try to find compatible type
+    for (const compatibleType of compatibleTypes) {
+      const compatibleItem = availableItems.find(item => item.type === compatibleType);
+      if (compatibleItem) {
+        console.log(`✅ Found compatible ${compatibleType} for ${requiredType}: ${compatibleItem.id}`);
+        return {
+          ...compatibleItem,
+          type: requiredType // Override type to match requirement
+        };
+      }
+    }
+    
+    // Last resort: create a placeholder item
+    console.log(`⚠️ No fallback found for ${requiredType}, creating placeholder`);
+    return {
+      id: `placeholder-${requiredType}-${Date.now()}`,
+      image: '/placeholder.svg',
+      type: requiredType
+    };
+  };
+
   // Create complete outfit with exactly 3 essential items: top, bottom, shoes
   const createCompleteOutfit = (items: OutfitItem[]): OutfitItem[] => {
     const outfit: OutfitItem[] = [];
     
     console.log('🔍 Creating complete outfit from items:', items.map(item => `${item.type} (${item.id})`));
     
-    // Step 1: Find and add TOP item (required)
-    const top = items.find(item => item.type === 'top');
+    // Step 1: Find TOP item (required)
+    let top = items.find(item => item.type === 'top');
+    if (!top) {
+      console.log('❌ No top item found - searching for fallback');
+      top = findFallbackItem('top', items);
+    }
     if (top) {
       outfit.push(top);
       console.log('✅ Added top to outfit:', top.id);
-    } else {
-      console.log('❌ No top item found - incomplete outfit');
-      return []; // Cannot create outfit without top
     }
     
-    // Step 2: Find and add BOTTOM item (required)
-    const bottom = items.find(item => item.type === 'bottom');
+    // Step 2: Find BOTTOM item (required)
+    let bottom = items.find(item => item.type === 'bottom');
+    if (!bottom) {
+      console.log('❌ No bottom item found - searching for fallback');
+      bottom = findFallbackItem('bottom', items);
+    }
     if (bottom) {
       outfit.push(bottom);
       console.log('✅ Added bottom to outfit:', bottom.id);
-    } else {
-      console.log('❌ No bottom item found - incomplete outfit');
-      return []; // Cannot create outfit without bottom
     }
     
-    // Step 3: Find and add SHOES (required)
-    const shoes = items.find(item => item.type === 'shoes');
+    // Step 3: Find SHOES (required)
+    let shoes = items.find(item => item.type === 'shoes');
+    if (!shoes) {
+      console.log('❌ No shoes found - searching for fallback');
+      shoes = findFallbackItem('shoes', items);
+    }
     if (shoes) {
       outfit.push(shoes);
       console.log('✅ Added shoes to outfit:', shoes.id);
-    } else {
-      console.log('❌ No shoes found - incomplete outfit');
-      return []; // Cannot create outfit without shoes
     }
     
-    console.log(`✅ Complete outfit created with ${outfit.length} essential items: TOP + BOTTOM + SHOES`);
+    console.log(`✅ Complete outfit created with ${outfit.length} items: TOP + BOTTOM + SHOES`);
     return outfit;
   };
 
@@ -195,14 +247,14 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       return;
     }
 
-    // Create complete outfit with exactly 3 essential items
+    // Create complete outfit with exactly 3 essential items (including fallbacks)
     const completeOutfit = createCompleteOutfit(items);
     
     if (completeOutfit.length !== 3) {
       ctx.font = '16px Arial';
       ctx.fillStyle = '#666666';
       ctx.textAlign = 'center';
-      ctx.fillText('תלבושת לא שלמה - חסרים פריטים חיוניים', width / 2, height / 2);
+      ctx.fillText('שגיאה ביצירת תלבושת שלמה', width / 2, height /2);
       setLoadingState('error');
       return;
     }
@@ -386,8 +438,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       {loadingState === 'error' && items.length > 0 && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white bg-opacity-95 rounded-lg">
           <div className="bg-white p-4 rounded-lg shadow-md text-center border border-red-200">
-            <p className="text-red-500 mb-1 font-medium">תלבושת לא שלמה</p>
-            <p className="text-xs text-gray-600">חסר חלק עליון, חלק תחתון או נעליים</p>
+            <p className="text-red-500 mb-1 font-medium">שגיאה בטעינת התמונות</p>
+            <p className="text-xs text-gray-600">נסה לרענן את הדף</p>
           </div>
         </div>
       )}
