@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
 
@@ -234,7 +233,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       return;
     }
 
-    // Sort outfit items in correct display order: top/dress, outerwear, bottom, shoes
+    // Sort outfit items in correct display order: top/dress first, then bottom, then shoes
     const renderOrder = { 
       top: 1,           // חלק עליון - בראש
       dress: 1,         // שמלות כמו חלק עליון - בראש
@@ -253,9 +252,11 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     });
 
     // Define layout with proper spacing for outfit categories
-    const padding = 20;
+    const padding = 15;
+    const itemSpacing = 10;
+    const availableHeight = height - (padding * 2);
+    const itemHeight = Math.max(150, (availableHeight - (itemSpacing * (sortedOutfitItems.length - 1))) / sortedOutfitItems.length);
     const itemWidth = width * 0.85; // 85% of canvas width
-    const itemHeight = Math.max(140, (height - (padding * (sortedOutfitItems.length + 1))) / sortedOutfitItems.length);
     const centerX = (width - itemWidth) / 2;
     
     // Show loading state
@@ -313,7 +314,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             });
 
             // Calculate position for this item in vertical layout - מלמעלה למטה
-            const yPosition = padding + (i * (itemHeight + (padding * 0.5)));
+            const yPosition = padding + (i * (itemHeight + itemSpacing));
             
             // Calculate proper aspect ratio and fit within designated area
             const aspectRatio = img.width / img.height;
@@ -362,20 +363,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             
             ctx.restore();
             
-            // Add category label - תוויות בעברית בסדר הנכון
-            ctx.save();
-            ctx.font = '12px Arial';
-            ctx.fillStyle = '#888888';
-            ctx.textAlign = 'left';
-            const categoryLabel = item.type === 'top' ? 'חלק עליון' : 
-                                item.type === 'bottom' ? 'חלק תחתון' : 
-                                item.type === 'shoes' ? 'נעליים' : 
-                                item.type === 'dress' ? 'שמלה' : 
-                                item.type === 'outerwear' ? 'ז\'קט' : item.type;
-            ctx.fillText(categoryLabel, drawX, drawY - 5);
-            ctx.restore();
-            
-            console.log(`✅ Drew ${item.type} (${categoryLabel}) at position ${i + 1}: x=${Math.round(drawX)}, y=${Math.round(drawY)}, w=${Math.round(drawWidth)}, h=${Math.round(drawHeight)}`);
+            console.log(`✅ Drew ${item.type} at position ${i + 1}: x=${Math.round(drawX)}, y=${Math.round(drawY)}, w=${Math.round(drawWidth)}, h=${Math.round(drawHeight)}`);
 
           } catch (imgError) {
             console.error(`❌ Error processing item: ${item.id}`, imgError);
