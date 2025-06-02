@@ -155,13 +155,13 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       return;
     }
 
-    // Sort items in outfit order: חלק עליון, חלק תחתון, נעליים
+    // Sort items in correct outfit order: חלק עליון למעלה, חלק תחתון באמצע, נעליים למטה
     const renderOrder = { 
-      top: 1,           // חלק עליון - קודם
+      top: 1,           // חלק עליון - בראש
+      dress: 1,         // שמלות כמו חלק עליון - בראש
       outerwear: 2,     // ז'קטים אחרי חלק עליון
-      dress: 1,         // שמלות כמו חלק עליון
       bottom: 3,        // חלק תחתון - באמצע
-      shoes: 4,         // נעליים - בסוף
+      shoes: 4,         // נעליים - בתחתית
       accessory: 5,     // אביזרים - אחרונים
       sunglasses: 6,    // משקפיים - אחרונים
       cart: 7           // עגלה - אחרון
@@ -190,7 +190,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         let successCount = 0;
         let errorCount = 0;
         
-        console.log('🔍 Loading product-only images in outfit order:', sortedItems.map(item => `${item.type} (${item.id})`));
+        console.log('🔍 Loading product-only images in correct outfit order:', sortedItems.map(item => `${item.type} (${item.id})`));
         
         // Clear the canvas for clean rendering
         ctx.clearRect(0, 0, width, height);
@@ -233,7 +233,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
               img.src = productImageUrl;
             });
 
-            // Calculate position for this item in vertical layout
+            // Calculate position for this item in vertical layout - מלמעלה למטה
             const yPosition = padding + (i * (itemHeight + (padding * 0.5)));
             
             // Calculate proper aspect ratio and fit within designated area
@@ -283,7 +283,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             
             ctx.restore();
             
-            // Add category label for debugging
+            // Add category label - תוויות בעברית בסדר הנכון
             ctx.save();
             ctx.font = '12px Arial';
             ctx.fillStyle = '#888888';
@@ -291,7 +291,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             const categoryLabel = item.type === 'top' ? 'חלק עליון' : 
                                 item.type === 'bottom' ? 'חלק תחתון' : 
                                 item.type === 'shoes' ? 'נעליים' : 
-                                item.type === 'dress' ? 'שמלה' : item.type;
+                                item.type === 'dress' ? 'שמלה' : 
+                                item.type === 'outerwear' ? 'ז\'קט' : item.type;
             ctx.fillText(categoryLabel, drawX, drawY - 5);
             ctx.restore();
             
