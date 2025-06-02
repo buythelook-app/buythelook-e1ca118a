@@ -1,3 +1,4 @@
+
 import { Shuffle, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "../ui/button";
 import { PersonalizedLookCard } from "./PersonalizedLookCard";
@@ -29,70 +30,6 @@ export const PersonalizedLooksGrid = memo(({
   resetError,
   userStyleProfile
 }: PersonalizedLooksGridProps) => {
-  // Helper function to create diverse outfit items for canvas
-  const createDiverseOutfitItems = (items: DashboardItem[], occasion: string) => {
-    if (!items || items.length === 0) return [];
-    
-    // Separate items by type
-    const topItems = items.filter(item => item.type === 'top');
-    const bottomItems = items.filter(item => item.type === 'bottom');
-    const shoeItems = items.filter(item => item.type === 'shoes');
-    const otherItems = items.filter(item => !['top', 'bottom', 'shoes'].includes(item.type));
-    
-    const outfitItems = [];
-    
-    // Add one item of each essential type
-    if (topItems.length > 0) {
-      const randomTop = topItems[Math.floor(Math.random() * topItems.length)];
-      outfitItems.push({
-        id: randomTop.id,
-        image: randomTop.image || '/placeholder.svg',
-        type: 'top' as const
-      });
-    }
-    
-    if (bottomItems.length > 0) {
-      const randomBottom = bottomItems[Math.floor(Math.random() * bottomItems.length)];
-      outfitItems.push({
-        id: randomBottom.id,
-        image: randomBottom.image || '/placeholder.svg',
-        type: 'bottom' as const
-      });
-    }
-    
-    if (shoeItems.length > 0) {
-      const randomShoes = shoeItems[Math.floor(Math.random() * shoeItems.length)];
-      outfitItems.push({
-        id: randomShoes.id,
-        image: randomShoes.image || '/placeholder.svg',
-        type: 'shoes' as const
-      });
-    }
-    
-    // If we don't have enough diverse items, add from other types or duplicates with different IDs
-    while (outfitItems.length < 3) {
-      if (otherItems.length > 0) {
-        const randomOther = otherItems[Math.floor(Math.random() * otherItems.length)];
-        outfitItems.push({
-          id: `${randomOther.id}-${outfitItems.length}`,
-          image: randomOther.image || '/placeholder.svg',
-          type: randomOther.type
-        });
-      } else if (items.length > 0) {
-        // Fallback: use any available item with a unique ID
-        const randomItem = items[Math.floor(Math.random() * items.length)];
-        outfitItems.push({
-          id: `${randomItem.id}-fallback-${outfitItems.length}`,
-          image: randomItem.image || '/placeholder.svg',
-          type: randomItem.type
-        });
-      } else {
-        break;
-      }
-    }
-    
-    return outfitItems;
-  };
 
   if (isLoading) {
     return (
@@ -131,8 +68,14 @@ export const PersonalizedLooksGrid = memo(({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       {occasions.map((occasion) => {
         const occasionItems = occasionOutfits[occasion] || [];
+        console.log(`🔍 [PersonalizedLooksGrid] ${occasion} items:`, occasionItems.map(item => ({
+          id: item.id,
+          type: item.type,
+          name: item.name,
+          image: item.image
+        })));
+        
         const look = createLookFromItems(occasionItems, occasion, 0);
-        const canvasItems = createDiverseOutfitItems(occasionItems, occasion);
         
         if (!look) {
           return (
@@ -146,6 +89,16 @@ export const PersonalizedLooksGrid = memo(({
             </div>
           );
         }
+
+        // Convert DashboardItems to canvas items format
+        const canvasItems = occasionItems.map(item => ({
+          id: item.id,
+          image: item.image || '/placeholder.svg',
+          type: item.type,
+          name: item.name
+        }));
+
+        console.log(`🔍 [PersonalizedLooksGrid] ${occasion} canvas items:`, canvasItems);
 
         return (
           <div key={occasion} className="space-y-4">

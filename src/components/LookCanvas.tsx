@@ -1,6 +1,4 @@
-
 import { useEffect, useRef, useState } from "react";
-import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
 
 interface OutfitItem {
   id: string;
@@ -8,12 +6,6 @@ interface OutfitItem {
   type: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' | 'cart';
   name?: string;
   product_subfamily?: string;
-  position?: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
 }
 
 interface LookCanvasProps {
