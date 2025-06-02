@@ -123,7 +123,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     }
   };
 
-  // Filter items to ensure complete outfit with one item per category
+  // Filter items to ensure complete outfit with one item per category - ensuring at least 3 items
   const createCompleteOutfit = (items: OutfitItem[]): OutfitItem[] => {
     const outfit: OutfitItem[] = [];
     
@@ -135,7 +135,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       outfit.push(dress);
       console.log('✅ Added dress to outfit:', dress.id);
     } else {
-      // If no dress, find one top and one bottom
+      // If no dress, we MUST have both top and bottom for a complete outfit
       const top = items.find(item => item.type === 'top');
       const bottom = items.find(item => item.type === 'bottom');
       
@@ -148,13 +148,21 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         outfit.push(bottom);
         console.log('✅ Added bottom to outfit:', bottom.id);
       }
+      
+      // If we don't have both top and bottom, this is not a complete outfit
+      if (!top || !bottom) {
+        console.log('⚠️ Incomplete outfit - missing top or bottom');
+        // Still add what we have, but mark as incomplete
+      }
     }
     
-    // Always add one pair of shoes
+    // Always try to add shoes - this is essential for a complete outfit
     const shoes = items.find(item => item.type === 'shoes');
     if (shoes) {
       outfit.push(shoes);
       console.log('✅ Added shoes to outfit:', shoes.id);
+    } else {
+      console.log('⚠️ No shoes found for outfit');
     }
     
     // Optionally add one outerwear item (jacket, coat, etc.)
@@ -162,6 +170,20 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     if (outerwear) {
       outfit.push(outerwear);
       console.log('✅ Added outerwear to outfit:', outerwear.id);
+    }
+    
+    // Ensure we have at least 3 items for a meaningful outfit display
+    if (outfit.length < 3) {
+      console.log(`⚠️ Outfit has only ${outfit.length} items, adding more items if available`);
+      
+      // Add any remaining items that we haven't used yet
+      const remainingItems = items.filter(item => !outfit.find(outfitItem => outfitItem.id === item.id));
+      const additionalItems = remainingItems.slice(0, 3 - outfit.length);
+      
+      additionalItems.forEach(item => {
+        outfit.push(item);
+        console.log(`✅ Added additional ${item.type} to complete outfit:`, item.id);
+      });
     }
     
     console.log(`📦 Complete outfit created with ${outfit.length} items:`, outfit.map(item => `${item.type} (${item.id})`));
@@ -200,14 +222,14 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       return;
     }
 
-    // Create complete outfit with one item per category
+    // Create complete outfit with multiple items
     const completeOutfit = createCompleteOutfit(items);
     
     if (completeOutfit.length === 0) {
       ctx.font = '16px Arial';
       ctx.fillStyle = '#666666';
       ctx.textAlign = 'center';
-      ctx.fillText('לא ניתן להרכיב תלבושת שלמה', width / 2, height / 2);
+      ctx.fillText('לא ניתן להרכיב תלבושת', width / 2, height / 2);
       setLoadingState('error');
       return;
     }
