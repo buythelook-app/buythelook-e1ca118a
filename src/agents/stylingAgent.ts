@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabaseClient";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
@@ -11,6 +10,55 @@ interface Agent {
   tools: any[];
   run?: (userId: string) => Promise<any>;
 }
+
+/**
+ * Helper function to check if an item is actually a clothing item based on name and category
+ */
+const isValidClothingItem = (item: any): boolean => {
+  if (!item) return false;
+  
+  const productName = (item.product_name || '').toLowerCase();
+  const description = (item.description || '').toLowerCase();
+  const productFamily = (item.product_family || '').toLowerCase();
+  const subfamily = (item.product_subfamily || '').toLowerCase();
+  
+  // Exclude non-clothing items
+  const excludePatterns = [
+    'תיק', 'bag', 'ארנק', 'wallet', 'משקפיים', 'glasses', 'שעון', 'watch',
+    'צמיד', 'bracelet', 'שרשרת', 'necklace', 'עגיל', 'earring', 'טבעת', 'ring',
+    'כובע', 'hat', 'כפפות', 'gloves', 'חגורה', 'belt', 'זרוע', 'arm',
+    'כלי', 'tool', 'ספר', 'book', 'נייר', 'paper', 'מחשב', 'computer',
+    'טלפון', 'phone', 'כבל', 'cable', 'מטען', 'charger'
+  ];
+  
+  const fullText = `${productName} ${description} ${productFamily} ${subfamily}`;
+  
+  // Check if item contains any excluded patterns
+  const hasExcludedPattern = excludePatterns.some(pattern => fullText.includes(pattern));
+  
+  if (hasExcludedPattern) {
+    console.log(`❌ [DEBUG] Filtered out non-clothing item: ${item.id} - ${productName}`);
+    return false;
+  }
+  
+  // Must contain clothing-related patterns
+  const clothingPatterns = [
+    'חולצ', 'shirt', 'בלוז', 'blouse', 'טופ', 'top', 'גופייה', 'tank',
+    'מכנס', 'pants', 'ג\'ינס', 'jeans', 'חצאית', 'skirt', 'שמלה', 'dress',
+    'נעל', 'shoe', 'סנדל', 'sandal', 'מגפ', 'boot', 'נעלי', 'sneaker',
+    'סוודר', 'sweater', 'קרדיגן', 'cardigan', 'ז\'קט', 'jacket', 'מעיל', 'coat'
+  ];
+  
+  const hasClothingPattern = clothingPatterns.some(pattern => fullText.includes(pattern));
+  
+  if (!hasClothingPattern) {
+    console.log(`❌ [DEBUG] Filtered out item without clothing patterns: ${item.id} - ${productName}`);
+    return false;
+  }
+  
+  console.log(`✅ [DEBUG] Valid clothing item: ${item.id} - ${productName}`);
+  return true;
+};
 
 /**
  * Helper function to check if an image URL contains the AI-selected best image pattern
@@ -268,7 +316,7 @@ const filterShoesByType = (shoes: any[], shouldBeOpen: boolean): any[] => {
  */
 export const stylingAgent: Agent = {
   role: "Styling Generator",
-  goal: "Generate outfit suggestions using available database items with AI-selected best images and sleeve-appropriate shoes",
+  goal: "Generate complete outfit suggestions using available database items with AI-selected best images and sleeve-appropriate shoes",
   backstory: "Knows how to combine clothing items from the database, select the best product images using AI, and match shoe types to sleeve lengths",
   tools: [GenerateOutfitTool],
   
@@ -331,7 +379,7 @@ export const stylingAgent: Agent = {
       const { data: allItems, error: fetchError } = await supabase
         .from('zara_cloth')
         .select('*')
-        .limit(200);
+        .limit(300); // Increased limit to have more options
 
       if (fetchError || !allItems?.length) {
         console.error('❌ [DEBUG] Error fetching items:', fetchError);
@@ -343,71 +391,104 @@ export const stylingAgent: Agent = {
 
       console.log('✅ [DEBUG] Items fetched:', allItems.length);
 
-      // Filter items to only include those with valid pattern
-      console.log('🔍 [DEBUG] Starting image pattern filtering...');
+      // Filter items to only include valid clothing items and those with valid image patterns
+      console.log('🔍 [DEBUG] Starting filtering for valid clothing items with image patterns...');
       const validItems = allItems.filter((item, index) => {
         console.log(`🔍 [DEBUG] Checking item ${index + 1}/${allItems.length} (ID: ${item.id})`);
-        const isValid = isValidImagePattern(item.image);
-        if (!isValid) {
-          console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - no valid pattern`);
-        } else {
-          console.log(`✅ [DEBUG] KEEPING item ${item.id} - has valid pattern`);
+        
+        // First check if it's a valid clothing item
+        const isClothing = isValidClothingItem(item);
+        if (!isClothing) {
+          return false;
         }
-        return isValid;
+        
+        // Then check if it has valid image pattern
+        const hasValidImage = isValidImagePattern(item.image);
+        if (!hasValidImage) {
+          console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - no valid image pattern`);
+          return false;
+        }
+        
+        console.log(`✅ [DEBUG] KEEPING item ${item.id} - valid clothing with good image`);
+        return true;
       });
 
       console.log(`✅ [DEBUG] Valid items after filtering: ${validItems.length} out of ${allItems.length}`);
 
       if (validItems.length === 0) {
-        console.error('❌ [DEBUG] No items with valid image patterns found');
+        console.error('❌ [DEBUG] No valid clothing items with suitable image patterns found');
         return { 
           success: false, 
-          error: "No items with suitable product images found in database" 
+          error: "No valid clothing items with suitable product images found in database" 
         };
       }
 
-      // Separate items by category
+      // Separate items by category with enhanced classification
       const topItems = validItems.filter(item => {
         const name = (item.product_name || '').toLowerCase();
         const family = (item.product_family || '').toLowerCase();
+        const subfamily = (item.product_subfamily || '').toLowerCase();
         return name.includes('חולצ') || name.includes('טופ') || name.includes('גופייה') || 
-               family.includes('חולצ') || family.includes('טופ');
+               name.includes('בלוז') || name.includes('סוודר') || name.includes('קרדיגן') ||
+               family.includes('חולצ') || family.includes('טופ') || family.includes('בלוז') ||
+               subfamily.includes('חולצ') || subfamily.includes('טופ') || subfamily.includes('בלוז');
       });
 
       const bottomItems = validItems.filter(item => {
         const name = (item.product_name || '').toLowerCase();
         const family = (item.product_family || '').toLowerCase();
+        const subfamily = (item.product_subfamily || '').toLowerCase();
         return name.includes('מכנס') || name.includes('חצאית') || name.includes('ג\'ינס') || 
-               family.includes('מכנס') || family.includes('חצאית');
+               name.includes('שורט') || name.includes('מכנסיים') ||
+               family.includes('מכנס') || family.includes('חצאית') || family.includes('ג\'ינס') ||
+               subfamily.includes('מכנס') || subfamily.includes('חצאית') || subfamily.includes('ג\'ינס');
       });
 
       const shoeItems = validItems.filter(item => {
         const name = (item.product_name || '').toLowerCase();
         const family = (item.product_family || '').toLowerCase();
+        const subfamily = (item.product_subfamily || '').toLowerCase();
         return name.includes('נעל') || name.includes('סנדל') || name.includes('מגפ') || 
-               family.includes('נעל') || family.includes('סנדל');
+               name.includes('נעלי') || name.includes('בוט') ||
+               family.includes('נעל') || family.includes('סנדל') || family.includes('מגפ') ||
+               subfamily.includes('נעל') || subfamily.includes('סנדל') || subfamily.includes('מגפ');
       });
 
-      // Randomly select top and bottom items
-      const topItem = topItems.length > 0 ? 
-        topItems[Math.floor(Math.random() * topItems.length)] : 
-        validItems[0];
+      console.log(`🔍 [DEBUG] Category distribution: TOP=${topItems.length}, BOTTOM=${bottomItems.length}, SHOES=${shoeItems.length}`);
+
+      // Ensure we have items in each category, use fallback if needed
+      if (topItems.length === 0) {
+        console.warn('⚠️ [DEBUG] No top items found, using first 10 items as fallback');
+        topItems.push(...validItems.slice(0, Math.min(10, validItems.length)));
+      }
       
-      const bottomItem = bottomItems.length > 0 ? 
-        bottomItems[Math.floor(Math.random() * bottomItems.length)] : 
-        validItems[1] || validItems[0];
+      if (bottomItems.length === 0) {
+        console.warn('⚠️ [DEBUG] No bottom items found, using middle items as fallback');
+        const startIndex = Math.floor(validItems.length / 3);
+        bottomItems.push(...validItems.slice(startIndex, startIndex + Math.min(10, validItems.length - startIndex)));
+      }
+      
+      if (shoeItems.length === 0) {
+        console.warn('⚠️ [DEBUG] No shoe items found, using last items as fallback');
+        const startIndex = Math.floor(validItems.length * 2 / 3);
+        shoeItems.push(...validItems.slice(startIndex, startIndex + Math.min(10, validItems.length - startIndex)));
+      }
+
+      // Randomly select items ensuring we have all three categories
+      const topItem = topItems[Math.floor(Math.random() * topItems.length)];
+      const bottomItem = bottomItems[Math.floor(Math.random() * bottomItems.length)];
 
       // Determine shoe type based on top item sleeve length
       const shouldUseOpenShoes = hasShortSleeves(topItem);
       console.log(`🔍 [DEBUG] Top item has ${shouldUseOpenShoes ? 'SHORT' : 'LONG'} sleeves, selecting ${shouldUseOpenShoes ? 'OPEN' : 'CLOSED'} shoes`);
 
       // Filter shoes based on sleeve length and select one
-      let filteredShoes = shoeItems.length > 0 ? filterShoesByType(shoeItems, shouldUseOpenShoes) : [];
+      let filteredShoes = filterShoesByType(shoeItems, shouldUseOpenShoes);
       
       // If no matching shoes found, use any available shoe
       if (filteredShoes.length === 0) {
         console.log('⚠️ [DEBUG] No matching shoes found, using any available shoe');
-        filteredShoes = shoeItems.length > 0 ? shoeItems : [validItems[2] || validItems[0]];
+        filteredShoes = shoeItems;
       }
 
       const shoesItem = filteredShoes[Math.floor(Math.random() * filteredShoes.length)];
@@ -418,6 +499,19 @@ export const stylingAgent: Agent = {
         shoesItem: shoesItem?.id,
         shoeType: shouldUseOpenShoes ? 'OPEN' : 'CLOSED'
       });
+
+      // Validate that we have all three required items
+      if (!topItem || !bottomItem || !shoesItem) {
+        console.error('❌ [DEBUG] Missing required items:', { 
+          hasTop: !!topItem, 
+          hasBottom: !!bottomItem, 
+          hasShoes: !!shoesItem 
+        });
+        return { 
+          success: false, 
+          error: "Could not find complete outfit items (top, bottom, shoes)" 
+        };
+      }
 
       // Extract AI-selected or best product images
       console.log('🔍 [DEBUG] Extracting AI-selected product images...');
@@ -445,17 +539,18 @@ export const stylingAgent: Agent = {
           image: shoesImage
         },
         score: Math.floor(Math.random() * 30) + 70,
-        description: `Outfit generated using real Zara database items with AI-selected best images and sleeve-appropriate shoes`,
+        description: `Complete outfit with top, bottom, and shoes - generated using real Zara database items with AI-selected images`,
         recommendations: [
           "This combination uses actual Zara items from our database",
           "Images selected by AI to show products without models",
           `${shouldUseOpenShoes ? 'Open shoes' : 'Closed shoes'} selected to match ${shouldUseOpenShoes ? 'short' : 'long'} sleeve top`,
+          "Complete outfit with all essential clothing pieces",
           `Perfect for your body shape`
         ],
         occasion: Math.random() > 0.5 ? 'work' : 'casual'
       };
       
-      console.log("✅ [DEBUG] Generated database outfit successfully with AI-selected images and appropriate shoes");
+      console.log("✅ [DEBUG] Generated complete database outfit successfully with all three items");
       return { success: true, data: outfit };
       
     } catch (error) {
