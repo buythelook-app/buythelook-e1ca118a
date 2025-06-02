@@ -17,6 +17,42 @@ const globalItemTracker = {
 };
 
 /**
+ * Helper function to safely map subfamily to item type
+ */
+const mapSubfamilyToType = (subfamily: string | null | undefined): DashboardItem['type'] => {
+  if (!subfamily) return 'top';
+  
+  const lowerSubfamily = subfamily.toLowerCase();
+  
+  if (['shirt', 'blouse', 't-shirt', 'top', 'sweater', 'cardigan', 'jacket'].some(type => 
+    lowerSubfamily.includes(type)
+  )) {
+    return 'top';
+  }
+  
+  if (['pants', 'skirt', 'shorts', 'jeans', 'trousers', 'leggings'].some(type => 
+    lowerSubfamily.includes(type)
+  )) {
+    return 'bottom';
+  }
+  
+  if (['shoes', 'heel', 'sneakers', 'boots', 'sandals', 'flats'].some(type => 
+    lowerSubfamily.includes(type)
+  )) {
+    return 'shoes';
+  }
+  
+  if (['dress', 'gown', 'jumpsuit'].some(type => 
+    lowerSubfamily.includes(type)
+  )) {
+    return 'dress';
+  }
+  
+  // Default to top if we can't determine
+  return 'top';
+};
+
+/**
  * Enhanced function to get the best image for an item using AI analysis
  */
 const getAISelectedImage = async (item: any): Promise<string> => {
@@ -42,40 +78,6 @@ const getAISelectedImage = async (item: any): Promise<string> => {
  * Enhanced mapZaraItemToDashboardItem with AI image selection
  */
 const mapZaraItemToDashboardItem = async (item: any, targetType?: string): Promise<DashboardItem> => {
-  // Helper function to safely map subfamily to item type
-  const mapSubfamilyToType = (subfamily: string | null | undefined): DashboardItem['type'] => {
-    if (!subfamily) return 'top';
-    
-    const lowerSubfamily = subfamily.toLowerCase();
-    
-    if (['shirt', 'blouse', 't-shirt', 'top', 'sweater', 'cardigan', 'jacket'].some(type => 
-      lowerSubfamily.includes(type)
-    )) {
-      return 'top';
-    }
-    
-    if (['pants', 'skirt', 'shorts', 'jeans', 'trousers', 'leggings'].some(type => 
-      lowerSubfamily.includes(type)
-    )) {
-      return 'bottom';
-    }
-    
-    if (['shoes', 'heel', 'sneakers', 'boots', 'sandals', 'flats'].some(type => 
-      lowerSubfamily.includes(type)
-    )) {
-      return 'shoes';
-    }
-    
-    if (['dress', 'gown', 'jumpsuit'].some(type => 
-      lowerSubfamily.includes(type)
-    )) {
-      return 'dress';
-    }
-    
-    // Default to top if we can't determine
-    return 'top';
-  };
-
   const type = targetType || mapSubfamilyToType(item.product_subfamily);
   
   // Use AI-selected image
