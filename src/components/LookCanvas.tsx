@@ -20,6 +20,62 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
   const [loadingState, setLoadingState] = useState<'loading' | 'success' | 'error'>('loading');
   const [loadedCount, setLoadedCount] = useState(0);
 
+  // Ensure we always have exactly 3 items in the correct order: top, bottom, shoes
+  const validateAndOrderItems = (inputItems: OutfitItem[]): OutfitItem[] => {
+    console.log('🔍 [LookCanvas] Validating and ordering items:', inputItems.map(item => ({
+      id: item.id,
+      type: item.type,
+      name: item.name || 'Unknown'
+    })));
+
+    // Find one item of each required type
+    const topItem = inputItems.find(item => item.type === 'top');
+    const bottomItem = inputItems.find(item => item.type === 'bottom');
+    const shoesItem = inputItems.find(item => item.type === 'shoes');
+
+    // Create the ordered array with exactly 3 items
+    const orderedItems: OutfitItem[] = [];
+    
+    if (topItem) {
+      orderedItems.push(topItem);
+    } else {
+      console.warn('❌ [LookCanvas] No top item found, using placeholder');
+      orderedItems.push({
+        id: 'placeholder-top',
+        image: '/placeholder.svg',
+        type: 'top',
+        name: 'Top Item'
+      });
+    }
+
+    if (bottomItem) {
+      orderedItems.push(bottomItem);
+    } else {
+      console.warn('❌ [LookCanvas] No bottom item found, using placeholder');
+      orderedItems.push({
+        id: 'placeholder-bottom',
+        image: '/placeholder.svg',
+        type: 'bottom',
+        name: 'Bottom Item'
+      });
+    }
+
+    if (shoesItem) {
+      orderedItems.push(shoesItem);
+    } else {
+      console.warn('❌ [LookCanvas] No shoes item found, using placeholder');
+      orderedItems.push({
+        id: 'placeholder-shoes',
+        image: '/placeholder.svg',
+        type: 'shoes',
+        name: 'Shoes'
+      });
+    }
+
+    console.log('✅ [LookCanvas] Final ordered items:', orderedItems.map((item, i) => `${i}. ${item.type} (${item.id})`));
+    return orderedItems;
+  };
+
   // Enhanced function to extract product-only images (no models)
   const extractProductOnlyImage = (imageData: any): string => {
     if (!imageData) {
@@ -134,42 +190,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
-    // Render a loading message if no items
-    if (!items || items.length === 0) {
-      console.log('❌ [LookCanvas] No items provided');
-      ctx.font = '16px Arial';
-      ctx.fillStyle = '#666666';
-      ctx.textAlign = 'center';
-      ctx.fillText('אין פריטי תלבושת להצגה', width / 2, height / 2);
-      setLoadingState('error');
-      return;
-    }
-
-    // Validate we have exactly 3 items in the right order
-    if (items.length !== 3) {
-      console.error(`❌ [LookCanvas] Expected 3 items but got ${items.length}`);
-      ctx.font = '16px Arial';
-      ctx.fillStyle = '#ff0000';
-      ctx.textAlign = 'center';
-      ctx.fillText(`שגיאה: נדרשים 3 פריטים, קיבלתי ${items.length}`, width / 2, height / 2);
-      setLoadingState('error');
-      return;
-    }
-
-    // Verify item types are correct
-    const expectedTypes = ['top', 'bottom', 'shoes'];
-    const actualTypes = items.map(item => item.type);
-    
-    console.log('🔍 [LookCanvas] Expected types:', expectedTypes);
-    console.log('🔍 [LookCanvas] Actual types:', actualTypes);
-    
-    for (let i = 0; i < 3; i++) {
-      if (actualTypes[i] !== expectedTypes[i]) {
-        console.error(`❌ [LookCanvas] Position ${i}: expected ${expectedTypes[i]}, got ${actualTypes[i]}`);
-      }
-    }
-
-    console.log('🔍 [LookCanvas] Final display order:', items.map((item, i) => `${i}. ${item.type} (${item.id})`));
+    // Validate and ensure we have exactly 3 items in correct order
+    const validatedItems = validateAndOrderItems(items);
 
     // Smart layout to ensure all items are visible with smart cropping
     const padding = 15;
@@ -195,17 +217,17 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         let successCount = 0;
         let errorCount = 0;
         
-        console.log(`🔍 [LookCanvas] Loading exactly ${items.length} items for display`);
+        console.log(`🔍 [LookCanvas] Loading exactly ${validatedItems.length} items for display`);
         
         // Clear the canvas for clean rendering
         ctx.clearRect(0, 0, width, height);
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, width, height);
         
-        // Process all items (should be exactly 3)
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i];
-          const itemPosition = ['TOP', 'BOTTOM', 'SHOES'][i] || `ITEM_${i}`;
+        // Process all validated items (always exactly 3)
+        for (let i = 0; i < validatedItems.length; i++) {
+          const item = validatedItems[i];
+          const itemPosition = ['TOP', 'BOTTOM', 'SHOES'][i];
           console.log(`🔍 [LookCanvas] Processing ${itemPosition} item: ${item.id} (${item.type}) at position ${i}`);
           
           try {
@@ -278,7 +300,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         // Update loading state based on success/error count
         if (successCount > 0) {
           setLoadingState('success');
-          console.log(`✅ [LookCanvas] Successfully loaded ${successCount} out of ${items.length} items`);
+          console.log(`✅ [LookCanvas] Successfully loaded ${successCount} out of ${validatedItems.length} items`);
         } else {
           setLoadingState('error');
           
@@ -321,7 +343,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
           </div>
         </div>
       )}
-      {loadingState === 'error' && items.length > 0 && (
+      {loadingState === 'error' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white bg-opacity-95 rounded-lg">
           <div className="bg-white p-4 rounded-lg shadow-md text-center border border-red-200">
             <p className="text-red-500 mb-1 font-medium">שגיאה בטעינת התמונות</p>

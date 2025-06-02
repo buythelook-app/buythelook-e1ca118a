@@ -27,6 +27,7 @@ import { DeveloperNav } from "@/components/DeveloperNav";
 import RecommendationTest from "./pages/RecommendationTest";
 import AgentResultsPage from "./pages/AgentResultsPage";
 import OutfitGenerationPage from "./pages/OutfitGenerationPage";
+import AgentTrainingPage from "./pages/AgentTrainingPage";
 import { testSupabaseConnection } from "./lib/supabaseConnectionTest";
 import { supabaseHealth } from "./lib/supabaseHealthCheck";
 import { useEffect } from "react";
@@ -133,6 +134,7 @@ function App() {
             <Route path="/test/recommendation" element={<RecommendationTest />} />
             <Route path="/agent-results" element={<AgentResultsPage />} />
             <Route path="/outfit-generation" element={<OutfitGenerationPage />} />
+            <Route path="/agent-training" element={<AgentTrainingPage />} />
           </Routes>
         </HashRouter>
       </TooltipProvider>
