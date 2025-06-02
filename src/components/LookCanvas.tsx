@@ -127,71 +127,93 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
   const createCompleteOutfit = (items: OutfitItem[]): OutfitItem[] => {
     console.log('🔍 Creating complete outfit from items:', items.map(item => `${item.type} (${item.id})`));
     
-    // Separate items by type
+    if (!items || items.length === 0) {
+      console.log('❌ No items provided');
+      return [];
+    }
+    
+    // Create exactly 3 display items in the correct order
+    const outfit: OutfitItem[] = [];
+    
+    // 1. TOP item (position 0)
     const topItems = items.filter(item => item.type === 'top');
-    const bottomItems = items.filter(item => item.type === 'bottom');
-    const shoeItems = items.filter(item => item.type === 'shoes');
     const dressItems = items.filter(item => item.type === 'dress');
     const outerwearItems = items.filter(item => item.type === 'outerwear');
     
-    let selectedTop: OutfitItem | null = null;
-    let selectedBottom: OutfitItem | null = null;
-    let selectedShoes: OutfitItem | null = null;
-    
-    // Step 1: Select TOP item
     if (topItems.length > 0) {
-      selectedTop = topItems[0];
-      console.log('✅ Selected top item:', selectedTop.id);
+      outfit.push({
+        ...topItems[0],
+        type: 'top'
+      });
+      console.log('✅ Added TOP item:', topItems[0].id);
     } else if (dressItems.length > 0) {
-      // Don't modify the original item, just use it as top
-      selectedTop = dressItems[0];
-      console.log('✅ Using dress as top:', selectedTop.id);
+      outfit.push({
+        ...dressItems[0],
+        type: 'top' // Display dress as top item
+      });
+      console.log('✅ Added DRESS as TOP:', dressItems[0].id);
     } else if (outerwearItems.length > 0) {
-      selectedTop = outerwearItems[0];
-      console.log('✅ Using outerwear as top:', selectedTop.id);
+      outfit.push({
+        ...outerwearItems[0],
+        type: 'top'
+      });
+      console.log('✅ Added OUTERWEAR as TOP:', outerwearItems[0].id);
+    } else {
+      // Create placeholder top
+      outfit.push({
+        id: 'placeholder-top',
+        image: '/placeholder.svg',
+        type: 'top'
+      });
+      console.log('📦 Added placeholder TOP');
     }
     
-    // Step 2: Select BOTTOM item  
+    // 2. BOTTOM item (position 1)
+    const bottomItems = items.filter(item => item.type === 'bottom');
+    
     if (bottomItems.length > 0) {
-      selectedBottom = bottomItems[0];
-      console.log('✅ Selected bottom item:', selectedBottom.id);
-    } else if (dressItems.length > 0 && (!selectedTop || selectedTop.id !== dressItems[0].id)) {
-      // Use a different dress or the same dress if no top was found
-      selectedBottom = dressItems[0];
-      console.log('✅ Using dress as bottom:', selectedBottom.id);
+      outfit.push({
+        ...bottomItems[0],
+        type: 'bottom'
+      });
+      console.log('✅ Added BOTTOM item:', bottomItems[0].id);
+    } else if (dressItems.length > 0 && outfit.length === 1 && outfit[0].type === 'top') {
+      // Only add dress as bottom if we used something else for top
+      outfit.push({
+        ...dressItems[0],
+        type: 'bottom'
+      });
+      console.log('✅ Added DRESS as BOTTOM:', dressItems[0].id);
+    } else {
+      // Create placeholder bottom
+      outfit.push({
+        id: 'placeholder-bottom',
+        image: '/placeholder.svg',
+        type: 'bottom'
+      });
+      console.log('📦 Added placeholder BOTTOM');
     }
     
-    // Step 3: Select SHOES
+    // 3. SHOES item (position 2)
+    const shoeItems = items.filter(item => item.type === 'shoes');
+    
     if (shoeItems.length > 0) {
-      selectedShoes = shoeItems[0];
-      console.log('✅ Selected shoes:', selectedShoes.id);
-    }
-    
-    // Build final outfit array - only include valid items
-    const outfit: OutfitItem[] = [];
-    
-    if (selectedTop) {
       outfit.push({
-        ...selectedTop,
-        type: 'top' // Ensure type is correct for positioning
+        ...shoeItems[0],
+        type: 'shoes'
       });
-    }
-    
-    if (selectedBottom) {
+      console.log('✅ Added SHOES item:', shoeItems[0].id);
+    } else {
+      // Create placeholder shoes
       outfit.push({
-        ...selectedBottom,
-        type: 'bottom' // Ensure type is correct for positioning
+        id: 'placeholder-shoes',
+        image: '/placeholder.svg',
+        type: 'shoes'
       });
+      console.log('📦 Added placeholder SHOES');
     }
     
-    if (selectedShoes) {
-      outfit.push({
-        ...selectedShoes,
-        type: 'shoes' // Ensure type is correct for positioning
-      });
-    }
-    
-    console.log(`✅ Complete outfit created with ${outfit.length} items:`, outfit.map(item => `${item.type} (${item.id})`));
+    console.log(`✅ Complete outfit created with exactly 3 items:`, outfit.map((item, i) => `${i}. ${item.type} (${item.id})`));
     return outfit;
   };
 
@@ -227,10 +249,9 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       return;
     }
 
-    // Create complete outfit
+    // Create complete outfit with exactly 3 items
     const completeOutfit = createCompleteOutfit(items);
     
-    // Must have at least one item to display
     if (completeOutfit.length === 0) {
       ctx.font = '16px Arial';
       ctx.fillStyle = '#666666';
@@ -240,25 +261,13 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       return;
     }
 
-    // Sort items for display: TOP (0), BOTTOM (1), SHOES (2)
-    const displayItems: OutfitItem[] = [];
-    
-    // Add items in the correct order for display
-    const topItem = completeOutfit.find(item => item.type === 'top');
-    const bottomItem = completeOutfit.find(item => item.type === 'bottom');
-    const shoesItem = completeOutfit.find(item => item.type === 'shoes');
-    
-    if (topItem) displayItems.push(topItem);
-    if (bottomItem) displayItems.push(bottomItem);
-    if (shoesItem) displayItems.push(shoesItem);
-
-    console.log('📐 Display items in order:', displayItems.map((item, i) => `${i}. ${item.type} (${item.id})`));
+    console.log('📐 Final display order:', completeOutfit.map((item, i) => `${i}. ${item.type} (${item.id})`));
 
     // Define layout for items in vertical arrangement
     const padding = 15;
     const itemSpacing = 10;
     const availableHeight = height - (padding * 2);
-    const itemHeight = Math.max(150, (availableHeight - (itemSpacing * (displayItems.length - 1))) / displayItems.length);
+    const itemHeight = Math.max(150, (availableHeight - (itemSpacing * 2)) / 3); // Always 3 items
     const itemWidth = width * 0.85;
     const centerX = (width - itemWidth) / 2;
     
@@ -273,16 +282,17 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         let successCount = 0;
         let errorCount = 0;
         
-        console.log(`🔍 Loading ${displayItems.length} items for display`);
+        console.log(`🔍 Loading exactly 3 items for display`);
         
         // Clear the canvas for clean rendering
         ctx.clearRect(0, 0, width, height);
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, width, height);
         
-        for (let i = 0; i < displayItems.length; i++) {
-          const item = displayItems[i];
-          const itemPosition = item.type.toUpperCase();
+        // Process exactly 3 items in order: TOP, BOTTOM, SHOES
+        for (let i = 0; i < 3; i++) {
+          const item = completeOutfit[i];
+          const itemPosition = ['TOP', 'BOTTOM', 'SHOES'][i];
           console.log(`🔍 Processing ${itemPosition} item: ${item.id} (${item.type}) at position ${i}`);
           
           try {
@@ -309,7 +319,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
               img.src = productImageUrl;
             });
 
-            // Calculate position for this item
+            // Calculate position for this item - fixed positions
             const yPosition = padding + (i * (itemHeight + itemSpacing));
             
             // Calculate proper aspect ratio and fit within designated area
@@ -371,7 +381,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         // Update loading state based on success/error count
         if (successCount > 0) {
           setLoadingState('success');
-          console.log(`✅ Successfully loaded ${successCount} out of ${displayItems.length} items`);
+          console.log(`✅ Successfully loaded ${successCount} out of 3 items`);
         } else {
           setLoadingState('error');
           
