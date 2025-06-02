@@ -1,3 +1,4 @@
+
 import React, { Suspense, useEffect, useState } from "react";
 import {
   BrowserRouter as Router,
@@ -7,36 +8,33 @@ import {
 } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
-import { ScrollToTop } from "@/components/ScrollToTop";
-import { Auth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { supabase } from "./lib/supabaseClient";
-import { Profile } from "./pages/Profile";
-import { AuthPage } from "./pages/AuthPage";
-import { HomePage } from "./pages/HomePage";
-import { Cart } from "./pages/Cart";
-import { StyleGuide } from "./pages/StyleGuide";
-import { LookDetail } from "./pages/LookDetail";
-import { Checkout } from "./pages/Checkout";
-import { ShippingAddress } from "./pages/ShippingAddress";
-import { Orders } from "./pages/Orders";
-import { WishList } from "./pages/WishList";
-import { MyList } from "./pages/MyList";
-import { Contact } from "./pages/Contact";
-import { FAQ } from "./pages/FAQ";
-import { AboutApp } from "./pages/AboutApp";
-import { OurRules } from "./pages/OurRules";
-import { StyleQuiz } from "./pages/StyleQuiz";
+import { Profile } from "./components/Profile";
+import { Cart } from "./components/Cart";
+import { StyleGuide } from "./components/StyleGuide";
+import { LookDetail } from "./components/LookDetail";
+import { Checkout } from "./components/Checkout";
+import { ShippingAddress } from "./components/ShippingAddress";
+import { Orders } from "./components/Orders";
+import { WishList } from "./components/WishList";
+import { MyList } from "./components/MyList";
+import { Contact } from "./components/Contact";
+import { FAQ } from "./components/FAQ";
+import { AboutApp } from "./components/AboutApp";
+import { OurRules } from "./components/OurRules";
+import { StyleQuiz } from "./components/StyleQuiz";
 import { PersonalizedLooksPage } from "./pages/PersonalizedLooksPage";
-import { AgentSimulationPage } from "./pages/AgentSimulationPage";
+import AgentSimulationPage from "./pages/AgentSimulationPage";
 import { DeveloperTools } from "./components/DeveloperTools";
 import AgentTrainingPage from "./pages/AgentTrainingPage";
+
+// Create placeholder components for missing pages
+const AuthPage = () => <div>Auth Page</div>;
+const HomePage = () => <div>Home Page</div>;
 
 const App = () => {
   return (
     <>
       <Router>
-        <ScrollToTop />
         <Routes>
           <Route path="/" element={<AuthPage />} />
           <Route path="/home" element={<HomePage />} />
