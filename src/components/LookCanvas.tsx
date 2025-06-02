@@ -123,6 +123,51 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     }
   };
 
+  // Filter items to ensure complete outfit with one item per category
+  const createCompleteOutfit = (items: OutfitItem[]): OutfitItem[] => {
+    const outfit: OutfitItem[] = [];
+    
+    // First, check if we have a dress (dress replaces top + bottom)
+    const dress = items.find(item => item.type === 'dress');
+    
+    if (dress) {
+      // If we have a dress, use it instead of top + bottom
+      outfit.push(dress);
+      console.log('✅ Added dress to outfit:', dress.id);
+    } else {
+      // If no dress, find one top and one bottom
+      const top = items.find(item => item.type === 'top');
+      const bottom = items.find(item => item.type === 'bottom');
+      
+      if (top) {
+        outfit.push(top);
+        console.log('✅ Added top to outfit:', top.id);
+      }
+      
+      if (bottom) {
+        outfit.push(bottom);
+        console.log('✅ Added bottom to outfit:', bottom.id);
+      }
+    }
+    
+    // Always add one pair of shoes
+    const shoes = items.find(item => item.type === 'shoes');
+    if (shoes) {
+      outfit.push(shoes);
+      console.log('✅ Added shoes to outfit:', shoes.id);
+    }
+    
+    // Optionally add one outerwear item (jacket, coat, etc.)
+    const outerwear = items.find(item => item.type === 'outerwear');
+    if (outerwear) {
+      outfit.push(outerwear);
+      console.log('✅ Added outerwear to outfit:', outerwear.id);
+    }
+    
+    console.log(`📦 Complete outfit created with ${outfit.length} items:`, outfit.map(item => `${item.type} (${item.id})`));
+    return outfit;
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -155,7 +200,19 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       return;
     }
 
-    // Sort items in correct outfit order: חלק עליון למעלה, חלק תחתון באמצע, נעליים למטה
+    // Create complete outfit with one item per category
+    const completeOutfit = createCompleteOutfit(items);
+    
+    if (completeOutfit.length === 0) {
+      ctx.font = '16px Arial';
+      ctx.fillStyle = '#666666';
+      ctx.textAlign = 'center';
+      ctx.fillText('לא ניתן להרכיב תלבושת שלמה', width / 2, height / 2);
+      setLoadingState('error');
+      return;
+    }
+
+    // Sort outfit items in correct display order: top/dress, outerwear, bottom, shoes
     const renderOrder = { 
       top: 1,           // חלק עליון - בראש
       dress: 1,         // שמלות כמו חלק עליון - בראש
@@ -167,7 +224,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       cart: 7           // עגלה - אחרון
     };
     
-    const sortedItems = [...items].sort((a, b) => {
+    const sortedOutfitItems = [...completeOutfit].sort((a, b) => {
       const orderA = renderOrder[a.type] ?? 999;
       const orderB = renderOrder[b.type] ?? 999;
       return orderA - orderB;
@@ -176,7 +233,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     // Define layout with proper spacing for outfit categories
     const padding = 20;
     const itemWidth = width * 0.85; // 85% of canvas width
-    const itemHeight = Math.max(140, (height - (padding * (sortedItems.length + 1))) / sortedItems.length);
+    const itemHeight = Math.max(140, (height - (padding * (sortedOutfitItems.length + 1))) / sortedOutfitItems.length);
     const centerX = (width - itemWidth) / 2;
     
     // Show loading state
@@ -190,16 +247,16 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         let successCount = 0;
         let errorCount = 0;
         
-        console.log('🔍 Loading product-only images in correct outfit order:', sortedItems.map(item => `${item.type} (${item.id})`));
+        console.log('🔍 Loading complete outfit in correct order:', sortedOutfitItems.map(item => `${item.type} (${item.id})`));
         
         // Clear the canvas for clean rendering
         ctx.clearRect(0, 0, width, height);
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, width, height);
         
-        for (let i = 0; i < sortedItems.length; i++) {
-          const item = sortedItems[i];
-          console.log(`🔍 Processing ${item.type} item ${i + 1}/${sortedItems.length}: ${item.id}`);
+        for (let i = 0; i < sortedOutfitItems.length; i++) {
+          const item = sortedOutfitItems[i];
+          console.log(`🔍 Processing ${item.type} item ${i + 1}/${sortedOutfitItems.length}: ${item.id}`);
           
           try {
             // Get product-only image (enhanced with AI selection)
@@ -306,7 +363,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         }
 
         // Update loading state based on success/error count
-        if (errorCount === sortedItems.length) {
+        if (errorCount === sortedOutfitItems.length) {
           setLoadingState('error');
           
           // Draw error message
