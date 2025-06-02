@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
 
@@ -122,96 +123,77 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     }
   };
 
-  // Function to find a fallback item of a specific type from available items
-  const findFallbackItem = (requiredType: 'top' | 'bottom' | 'shoes', availableItems: OutfitItem[]): OutfitItem | null => {
-    console.log(`🔍 Finding fallback ${requiredType} from ${availableItems.length} available items`);
-    
-    // First try to find an exact type match
-    const exactMatch = availableItems.find(item => item.type === requiredType);
-    if (exactMatch) {
-      console.log(`✅ Found exact match for ${requiredType}: ${exactMatch.id}`);
-      return exactMatch;
-    }
-    
-    // If no exact match, use compatibility rules based on agent logic
-    let compatibleTypes: string[] = [];
-    
-    switch (requiredType) {
-      case 'top':
-        // For tops, also accept dresses or outerwear as fallbacks
-        compatibleTypes = ['dress', 'outerwear'];
-        break;
-      case 'bottom':
-        // For bottoms, dresses can work as they cover the bottom part
-        compatibleTypes = ['dress'];
-        break;
-      case 'shoes':
-        // For shoes, only shoes work - no fallbacks
-        compatibleTypes = [];
-        break;
-    }
-    
-    // Try to find compatible type
-    for (const compatibleType of compatibleTypes) {
-      const compatibleItem = availableItems.find(item => item.type === compatibleType);
-      if (compatibleItem) {
-        console.log(`✅ Found compatible ${compatibleType} for ${requiredType}: ${compatibleItem.id}`);
-        return {
-          ...compatibleItem,
-          type: requiredType // Override type to match requirement
-        };
-      }
-    }
-    
-    // Last resort: create a placeholder item
-    console.log(`⚠️ No fallback found for ${requiredType}, creating placeholder`);
-    return {
-      id: `placeholder-${requiredType}-${Date.now()}`,
-      image: '/placeholder.svg',
-      type: requiredType
-    };
-  };
-
   // Create complete outfit with exactly 3 essential items: top, bottom, shoes
   const createCompleteOutfit = (items: OutfitItem[]): OutfitItem[] => {
     const outfit: OutfitItem[] = [];
     
     console.log('🔍 Creating complete outfit from items:', items.map(item => `${item.type} (${item.id})`));
     
+    // Find available items by type
+    const topItems = items.filter(item => item.type === 'top');
+    const bottomItems = items.filter(item => item.type === 'bottom');
+    const shoeItems = items.filter(item => item.type === 'shoes');
+    const dressItems = items.filter(item => item.type === 'dress');
+    const outerwearItems = items.filter(item => item.type === 'outerwear');
+    
     // Step 1: Find TOP item (required)
-    let top = items.find(item => item.type === 'top');
+    let top = topItems.length > 0 ? topItems[0] : null;
+    if (!top && dressItems.length > 0) {
+      // Dress can substitute for top
+      top = { ...dressItems[0], type: 'top' as const };
+      console.log('✅ Using dress as top fallback');
+    }
+    if (!top && outerwearItems.length > 0) {
+      // Outerwear can substitute for top
+      top = { ...outerwearItems[0], type: 'top' as const };
+      console.log('✅ Using outerwear as top fallback');
+    }
     if (!top) {
-      console.log('❌ No top item found - searching for fallback');
-      top = findFallbackItem('top', items);
+      // Create placeholder top
+      top = {
+        id: `placeholder-top-${Date.now()}`,
+        image: '/placeholder.svg',
+        type: 'top' as const
+      };
+      console.log('⚠️ Created placeholder top');
     }
-    if (top) {
-      outfit.push(top);
-      console.log('✅ Added top to outfit:', top.id);
-    }
+    outfit.push(top);
     
     // Step 2: Find BOTTOM item (required)
-    let bottom = items.find(item => item.type === 'bottom');
+    let bottom = bottomItems.length > 0 ? bottomItems[0] : null;
+    if (!bottom && dressItems.length > 0) {
+      // Dress can substitute for bottom (if not already used for top)
+      const availableDress = dressItems.find(dress => dress.id !== top.id);
+      if (availableDress) {
+        bottom = { ...availableDress, type: 'bottom' as const };
+        console.log('✅ Using dress as bottom fallback');
+      }
+    }
     if (!bottom) {
-      console.log('❌ No bottom item found - searching for fallback');
-      bottom = findFallbackItem('bottom', items);
+      // Create placeholder bottom
+      bottom = {
+        id: `placeholder-bottom-${Date.now()}`,
+        image: '/placeholder.svg',
+        type: 'bottom' as const
+      };
+      console.log('⚠️ Created placeholder bottom');
     }
-    if (bottom) {
-      outfit.push(bottom);
-      console.log('✅ Added bottom to outfit:', bottom.id);
-    }
+    outfit.push(bottom);
     
     // Step 3: Find SHOES (required)
-    let shoes = items.find(item => item.type === 'shoes');
+    let shoes = shoeItems.length > 0 ? shoeItems[0] : null;
     if (!shoes) {
-      console.log('❌ No shoes found - searching for fallback');
-      shoes = findFallbackItem('shoes', items);
+      // Create placeholder shoes
+      shoes = {
+        id: `placeholder-shoes-${Date.now()}`,
+        image: '/placeholder.svg',
+        type: 'shoes' as const
+      };
+      console.log('⚠️ Created placeholder shoes');
     }
-    if (shoes) {
-      outfit.push(shoes);
-      console.log('✅ Added shoes to outfit:', shoes.id);
-    }
+    outfit.push(shoes);
     
-    console.log(`✅ Complete outfit created with ${outfit.length} items: TOP + BOTTOM + SHOES`);
+    console.log(`✅ Complete outfit created with ${outfit.length} items:`, outfit.map(item => `${item.type} (${item.id})`));
     return outfit;
   };
 
@@ -250,7 +232,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     // Create complete outfit with exactly 3 essential items (including fallbacks)
     const completeOutfit = createCompleteOutfit(items);
     
-    if (completeOutfit.length !== 3) {
+    // Ensure we always have exactly 3 items
+    if (completeOutfit.length < 3) {
       ctx.font = '16px Arial';
       ctx.fillStyle = '#666666';
       ctx.textAlign = 'center';
@@ -266,6 +249,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       completeOutfit.find(item => item.type === 'shoes')!
     ];
 
+    console.log('📐 Sorted outfit items for display:', sortedOutfitItems.map((item, i) => `${i + 1}. ${item.type} (${item.id})`));
+
     // Define layout for exactly 3 items in vertical arrangement
     const padding = 15;
     const itemSpacing = 10;
@@ -278,7 +263,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     ctx.font = '16px Arial';
     ctx.fillStyle = '#666666';
     ctx.textAlign = 'center';
-    ctx.fillText('טוען תמונות מוצרים בלבד (ללא דוגמניות)...', width / 2, height / 2);
+    ctx.fillText('טוען תמונות מוצרים...', width / 2, height / 2);
 
     const loadImages = async () => {
       try {
@@ -295,7 +280,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         for (let i = 0; i < sortedOutfitItems.length; i++) {
           const item = sortedOutfitItems[i];
           const itemPosition = i === 0 ? 'TOP' : i === 1 ? 'BOTTOM' : 'SHOES';
-          console.log(`🔍 Processing ${itemPosition} item: ${item.id}`);
+          console.log(`🔍 Processing ${itemPosition} item: ${item.id} (${item.type})`);
           
           try {
             // Get product-only image (enhanced with AI selection)
@@ -303,10 +288,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             
             // Skip if no suitable image found
             if (productImageUrl === '/placeholder.svg') {
-              console.log(`⚠️ Skipping item ${item.id} - no suitable product image available`);
-              errorCount++;
-              setLoadedCount(prev => prev + 1);
-              continue;
+              console.log(`⚠️ Using placeholder for item ${item.id} - no suitable product image available`);
+              // Still count as processed but use placeholder
             }
             
             // Load the product-only image
@@ -389,7 +372,10 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         }
 
         // Update loading state based on success/error count
-        if (errorCount === sortedOutfitItems.length) {
+        if (successCount > 0) {
+          setLoadingState('success');
+          console.log(`✅ Successfully loaded ${successCount} out of 3 items`);
+        } else {
           setLoadingState('error');
           
           // Draw error message
@@ -399,11 +385,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
           ctx.font = '16px Arial';
           ctx.fillStyle = '#ff0000';
           ctx.textAlign = 'center';
-          ctx.fillText('לא נמצאו תמונות מתאימות של מוצרים בלבד', width / 2, height / 2);
-        } else if (successCount > 0) {
-          setLoadingState('success');
-        } else {
-          setLoadingState('error');
+          ctx.fillText('לא נמצאו תמונות מתאימות', width / 2, height / 2);
         }
 
       } catch (error) {
@@ -430,8 +412,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 rounded-lg">
           <div className="bg-white p-4 rounded-lg shadow-md text-center border">
             <div className="animate-spin w-6 h-6 border-2 border-gray-300 border-t-blue-500 rounded-full mx-auto mb-2"></div>
-            <p className="text-sm text-gray-700">מחפש תמונות מוצרים בלבד...</p>
-            <p className="text-xs text-gray-500 mt-1">{loadedCount}/3 - חלק עליון + חלק תחתון + נעליים</p>
+            <p className="text-sm text-gray-700">טוען 3 פריטים לתלבושת...</p>
+            <p className="text-xs text-gray-500 mt-1">{loadedCount}/3 פריטים נטענו</p>
           </div>
         </div>
       )}
