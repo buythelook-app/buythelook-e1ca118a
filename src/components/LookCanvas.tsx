@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
 
@@ -6,6 +5,8 @@ interface OutfitItem {
   id: string;
   image: string;
   type: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' | 'cart';
+  name?: string;
+  product_subfamily?: string;
   position?: {
     x: number;
     y: number;
@@ -125,39 +126,66 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
 
   // Create complete outfit ensuring proper item selection and positioning
   const createCompleteOutfit = (items: OutfitItem[]): OutfitItem[] => {
-    console.log('🔍 Creating complete outfit from items:', items.map(item => `${item.type} (${item.id})`));
+    console.log('🔍 ===== DEBUGGING WEEKEND CANVAS =====');
+    console.log('🔍 Raw items received:', items.map(item => ({
+      id: item.id,
+      type: item.type,
+      name: item.name || 'Unknown',
+      product_subfamily: item.product_subfamily || 'Unknown subfamily'
+    })));
     
     if (!items || items.length === 0) {
       console.log('❌ No items provided');
       return [];
     }
     
+    // Debug each item type classification
+    items.forEach((item, index) => {
+      console.log(`🔍 Item ${index + 1}:`, {
+        id: item.id,
+        originalType: item.type,
+        name: item.name,
+        product_subfamily: item.product_subfamily,
+        shouldBeClassifiedAs: item.product_subfamily ? 
+          (item.product_subfamily.toLowerCase().includes('pants') || 
+           item.product_subfamily.toLowerCase().includes('skirt') || 
+           item.product_subfamily.toLowerCase().includes('shorts') ? 'bottom' :
+           item.product_subfamily.toLowerCase().includes('shoes') || 
+           item.product_subfamily.toLowerCase().includes('heel') || 
+           item.product_subfamily.toLowerCase().includes('sneakers') ? 'shoes' : 'top') : 'unknown'
+      });
+    });
+    
     // Create exactly 3 display items in the correct order
     const outfit: OutfitItem[] = [];
     
-    // 1. TOP item (position 0)
+    // 1. TOP item (position 0) - חולצות, חולצות פולו, סוודרים וכו'
     const topItems = items.filter(item => item.type === 'top');
     const dressItems = items.filter(item => item.type === 'dress');
     const outerwearItems = items.filter(item => item.type === 'outerwear');
+    
+    console.log('🔍 Available TOP items:', topItems.length);
+    console.log('🔍 Available DRESS items:', dressItems.length);
+    console.log('🔍 Available OUTERWEAR items:', outerwearItems.length);
     
     if (topItems.length > 0) {
       outfit.push({
         ...topItems[0],
         type: 'top'
       });
-      console.log('✅ Added TOP item:', topItems[0].id);
+      console.log('✅ Added TOP item:', topItems[0].id, topItems[0].name);
     } else if (dressItems.length > 0) {
       outfit.push({
         ...dressItems[0],
         type: 'top' // Display dress as top item
       });
-      console.log('✅ Added DRESS as TOP:', dressItems[0].id);
+      console.log('✅ Added DRESS as TOP:', dressItems[0].id, dressItems[0].name);
     } else if (outerwearItems.length > 0) {
       outfit.push({
         ...outerwearItems[0],
         type: 'top'
       });
-      console.log('✅ Added OUTERWEAR as TOP:', outerwearItems[0].id);
+      console.log('✅ Added OUTERWEAR as TOP:', outerwearItems[0].id, outerwearItems[0].name);
     } else {
       // Create placeholder top
       outfit.push({
@@ -168,22 +196,31 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       console.log('📦 Added placeholder TOP');
     }
     
-    // 2. BOTTOM item (position 1)
+    // 2. BOTTOM item (position 1) - מכנסיים, חצאיות, מכנסיים קצרים
     const bottomItems = items.filter(item => item.type === 'bottom');
+    
+    console.log('🔍 Available BOTTOM items:', bottomItems.length);
+    bottomItems.forEach(item => {
+      console.log('🔍 Bottom item details:', {
+        id: item.id,
+        name: item.name,
+        product_subfamily: item.product_subfamily
+      });
+    });
     
     if (bottomItems.length > 0) {
       outfit.push({
         ...bottomItems[0],
         type: 'bottom'
       });
-      console.log('✅ Added BOTTOM item:', bottomItems[0].id);
+      console.log('✅ Added BOTTOM item:', bottomItems[0].id, bottomItems[0].name);
     } else if (dressItems.length > 0 && outfit.length === 1 && outfit[0].type === 'top') {
       // Only add dress as bottom if we used something else for top
       outfit.push({
         ...dressItems[0],
         type: 'bottom'
       });
-      console.log('✅ Added DRESS as BOTTOM:', dressItems[0].id);
+      console.log('✅ Added DRESS as BOTTOM:', dressItems[0].id, dressItems[0].name);
     } else {
       // Create placeholder bottom
       outfit.push({
@@ -194,15 +231,17 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       console.log('📦 Added placeholder BOTTOM');
     }
     
-    // 3. SHOES item (position 2)
+    // 3. SHOES item (position 2) - נעליים
     const shoeItems = items.filter(item => item.type === 'shoes');
+    
+    console.log('🔍 Available SHOES items:', shoeItems.length);
     
     if (shoeItems.length > 0) {
       outfit.push({
         ...shoeItems[0],
         type: 'shoes'
       });
-      console.log('✅ Added SHOES item:', shoeItems[0].id);
+      console.log('✅ Added SHOES item:', shoeItems[0].id, shoeItems[0].name);
     } else {
       // Create placeholder shoes
       outfit.push({
@@ -213,7 +252,12 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       console.log('📦 Added placeholder SHOES');
     }
     
-    console.log(`✅ Complete outfit created with exactly 3 items:`, outfit.map((item, i) => `${i}. ${item.type} (${item.id})`));
+    console.log(`✅ Final outfit created with exactly 3 items:`);
+    outfit.forEach((item, i) => {
+      console.log(`${i + 1}. ${item.type.toUpperCase()}: ${item.id} (${item.name || 'Unknown'})`);
+    });
+    console.log('🔍 ===== END DEBUGGING =====');
+    
     return outfit;
   };
 
