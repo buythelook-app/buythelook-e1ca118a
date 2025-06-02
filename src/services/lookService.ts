@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { isValidImagePattern } from "../../supabase/functions/trainer-agent/imageValidator";
@@ -15,6 +16,22 @@ const globalItemTracker = {
   shownShoes: new Set<string>(),
   maxRepetitions: 2 // Allow an item to appear this many times max
 };
+
+// Type for Zara database items
+interface ZaraItem {
+  id: string;
+  product_name: string;
+  product_subfamily?: string;
+  price: number;
+  colour: string;
+  description: string;
+  image: any;
+  availability: boolean;
+  size: string;
+  materials?: string[];
+  created_at: string;
+  [key: string]: any; // For other properties
+}
 
 /**
  * Helper function to safely map subfamily to item type
@@ -55,7 +72,7 @@ const mapSubfamilyToType = (subfamily: string | null | undefined): DashboardItem
 /**
  * Enhanced function to get the best image for an item using AI analysis
  */
-const getAISelectedImage = async (item: any): Promise<string> => {
+const getAISelectedImage = async (item: ZaraItem): Promise<string> => {
   try {
     // Try AI analysis first
     const aiResult = await analyzeImagesWithAI(item.id, 1);
@@ -77,7 +94,7 @@ const getAISelectedImage = async (item: any): Promise<string> => {
 /**
  * Enhanced mapZaraItemToDashboardItem with AI image selection
  */
-const mapZaraItemToDashboardItem = async (item: any, targetType?: string): Promise<DashboardItem> => {
+const mapZaraItemToDashboardItem = async (item: ZaraItem, targetType?: string): Promise<DashboardItem> => {
   const type = targetType || mapSubfamilyToType(item.product_subfamily);
   
   // Use AI-selected image
@@ -129,15 +146,18 @@ export const matchOutfitToColors = async () => {
       return { top: [], bottom: [], shoes: [] };
     }
 
+    // Type assertion for the items array
+    const typedItems = allItems as ZaraItem[];
+
     // Filter items with valid image patterns (6th+ images without models)
-    const validItems = allItems.filter(item => isValidImagePattern(item.image));
+    const validItems = typedItems.filter(item => isValidImagePattern(item.image));
     
     console.log(`✅ [DEBUG] Valid items with no-model patterns: ${validItems.length} out of ${allItems.length}`);
     
     // Group items by type using safe property access
     const result = {
       top: validItems.filter(item => {
-        const subfamily = (item as any).product_subfamily;
+        const subfamily = item.product_subfamily;
         return mapSubfamilyToType(subfamily) === 'top';
       }).map(item => ({
         id: item.id,
@@ -147,7 +167,7 @@ export const matchOutfitToColors = async () => {
         price: item.price ? `$${item.price}` : '$49.99'
       })),
       bottom: validItems.filter(item => {
-        const subfamily = (item as any).product_subfamily;
+        const subfamily = item.product_subfamily;
         return mapSubfamilyToType(subfamily) === 'bottom';
       }).map(item => ({
         id: item.id,
@@ -157,7 +177,7 @@ export const matchOutfitToColors = async () => {
         price: item.price ? `$${item.price}` : '$49.99'
       })),
       shoes: validItems.filter(item => {
-        const subfamily = (item as any).product_subfamily;
+        const subfamily = item.product_subfamily;
         return mapSubfamilyToType(subfamily) === 'shoes';
       }).map(item => ({
         id: item.id,
@@ -199,8 +219,11 @@ export const fetchDashboardItems = async (): Promise<{ [key: string]: DashboardI
 
     console.log(`✅ [DEBUG] Fetched ${allItems.length} items from zara_cloth`);
 
+    // Type assertion for the items array
+    const typedItems = allItems as ZaraItem[];
+
     // Filter items to only include those with valid image patterns (6th+ images without models)
-    const validItems = allItems.filter(item => {
+    const validItems = typedItems.filter(item => {
       const isValid = isValidImagePattern(item.image);
       if (!isValid) {
         console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - no suitable no-model image pattern`);
@@ -228,7 +251,7 @@ export const fetchDashboardItems = async (): Promise<{ [key: string]: DashboardI
         id: item.id,
         name: item.product_name || 'Fashion Item',
         image: item.image,
-        type: mapSubfamilyToType((item as any).product_subfamily),
+        type: mapSubfamilyToType(item.product_subfamily),
         price: item.price ? `$${item.price}` : '$49.99'
       }));
     });
@@ -288,8 +311,11 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
 
     console.log(`📊 Fetched ${allItems.length} total items from database`);
 
+    // Type assertion for the items array
+    const typedItems = allItems as ZaraItem[];
+
     // Enhanced filtering with AI-compatible items (items that have 6th+ image patterns)
-    const validItems = allItems.filter(item => {
+    const validItems = typedItems.filter(item => {
       // Check if item has valid image data
       if (!item.image) return false;
       
@@ -349,7 +375,7 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
     console.log(`📊 Item distribution: tops=${topItems.length}, bottoms=${bottomItems.length}, shoes=${shoesItems.length}`);
 
     // Select random items from each category or fallback to any valid items
-    const getRandomItem = (items: any[], fallbackItems: any[]) => {
+    const getRandomItem = (items: ZaraItem[], fallbackItems: ZaraItem[]) => {
       const sourceItems = items.length > 0 ? items : fallbackItems;
       return sourceItems[Math.floor(Math.random() * sourceItems.length)];
     };
