@@ -64,8 +64,8 @@ const classifyItemType = (item: any): 'top' | 'bottom' | 'shoes' => {
   return 'top';
 };
 
-// Helper function to create a complete outfit from database items
-const createCompleteOutfitFromItems = (items: any[], occasion: string): LookItem[] => {
+// Helper function to create a complete outfit from database items - returns DashboardItem[]
+const createCompleteOutfitFromItems = (items: any[], occasion: string): DashboardItem[] => {
   console.log(`🔍 [usePersonalizedLooks] Creating complete outfit for ${occasion} from ${items.length} items`);
   
   if (!items || items.length === 0) {
@@ -87,27 +87,27 @@ const createCompleteOutfitFromItems = (items: any[], occasion: string): LookItem
   console.log(`🔍 [usePersonalizedLooks] ${occasion} - Grouped: TOP=${topItems.length}, BOTTOM=${bottomItems.length}, SHOES=${shoeItems.length}`);
   
   // Create exactly 3 items - always in this order: TOP, BOTTOM, SHOES
-  const outfit: LookItem[] = [];
+  const outfit: DashboardItem[] = [];
   
   // 1. TOP item (position 0)
   if (topItems.length > 0) {
     const topItem = topItems[Math.floor(Math.random() * topItems.length)];
     outfit.push({
       id: topItem.id,
+      name: topItem.product_name || topItem.name || 'חלק עליון',
+      description: topItem.description,
       image: topItem.image,
       type: 'top',
-      name: topItem.product_name || topItem.name || 'חלק עליון',
-      product_subfamily: topItem.product_subfamily,
       price: topItem.price
     });
     console.log(`✅ [usePersonalizedLooks] ${occasion} - Added TOP: ${topItem.id}`);
   } else {
     outfit.push({
       id: `placeholder-top-${occasion}`,
-      image: '/placeholder.svg',
-      type: 'top',
       name: 'חלק עליון',
-      product_subfamily: 'top'
+      description: 'Placeholder top item',
+      image: '/placeholder.svg',
+      type: 'top'
     });
     console.log(`📦 [usePersonalizedLooks] ${occasion} - Added placeholder TOP`);
   }
@@ -117,20 +117,20 @@ const createCompleteOutfitFromItems = (items: any[], occasion: string): LookItem
     const bottomItem = bottomItems[Math.floor(Math.random() * bottomItems.length)];
     outfit.push({
       id: bottomItem.id,
+      name: bottomItem.product_name || bottomItem.name || 'חלק תחתון',
+      description: bottomItem.description,
       image: bottomItem.image,
       type: 'bottom',
-      name: bottomItem.product_name || bottomItem.name || 'חלק תחתון',
-      product_subfamily: bottomItem.product_subfamily,
       price: bottomItem.price
     });
     console.log(`✅ [usePersonalizedLooks] ${occasion} - Added BOTTOM: ${bottomItem.id}`);
   } else {
     outfit.push({
       id: `placeholder-bottom-${occasion}`,
-      image: '/placeholder.svg',
-      type: 'bottom',
       name: 'חלק תחתון',
-      product_subfamily: 'bottom'
+      description: 'Placeholder bottom item',
+      image: '/placeholder.svg',
+      type: 'bottom'
     });
     console.log(`📦 [usePersonalizedLooks] ${occasion} - Added placeholder BOTTOM`);
   }
@@ -140,20 +140,20 @@ const createCompleteOutfitFromItems = (items: any[], occasion: string): LookItem
     const shoeItem = shoeItems[Math.floor(Math.random() * shoeItems.length)];
     outfit.push({
       id: shoeItem.id,
+      name: shoeItem.product_name || shoeItem.name || 'נעליים',
+      description: shoeItem.description,
       image: shoeItem.image,
       type: 'shoes',
-      name: shoeItem.product_name || shoeItem.name || 'נעליים',
-      product_subfamily: shoeItem.product_subfamily,
       price: shoeItem.price
     });
     console.log(`✅ [usePersonalizedLooks] ${occasion} - Added SHOES: ${shoeItem.id}`);
   } else {
     outfit.push({
       id: `placeholder-shoes-${occasion}`,
-      image: '/placeholder.svg',
-      type: 'shoes',
       name: 'נעליים',
-      product_subfamily: 'shoes'
+      description: 'Placeholder shoes item',
+      image: '/placeholder.svg',
+      type: 'shoes'
     });
     console.log(`📦 [usePersonalizedLooks] ${occasion} - Added placeholder SHOES`);
   }
@@ -202,7 +202,7 @@ export function usePersonalizedLooks() {
       console.log('🔍 [usePersonalizedLooks] Raw data received:', data);
       
       // Transform the data to ensure each occasion has a complete outfit
-      const transformedData: { [key: string]: LookItem[] } = {};
+      const transformedData: { [key: string]: DashboardItem[] } = {};
       
       occasions.forEach(occasion => {
         const occasionItems = data[occasion] || [];
@@ -221,7 +221,7 @@ export function usePersonalizedLooks() {
     } catch (err) {
       console.error("❌ [usePersonalizedLooks] Error fetching data:", err);
       // Return empty outfits instead of fallbacks
-      const emptyData: { [key: string]: LookItem[] } = {};
+      const emptyData: { [key: string]: DashboardItem[] } = {};
       occasions.forEach(occasion => {
         emptyData[occasion] = [];
       });
@@ -255,13 +255,22 @@ export function usePersonalizedLooks() {
     }
   }, [occasionOutfits, forceRefresh]);
 
-  const createLookFromItems = useCallback((items: LookItem[] = [], occasion: string, index: number): Look | null => {
+  const createLookFromItems = useCallback((items: DashboardItem[] = [], occasion: string, index: number): Look | null => {
     console.log(`🔍 [usePersonalizedLooks] Creating look from ${items.length} items for ${occasion}`);
     
     if (!items || items.length === 0) {
       console.log(`❌ [usePersonalizedLooks] No items for ${occasion} look`);
       return null;
     }
+    
+    // Convert DashboardItem[] to LookItem[] for the Look interface
+    const lookItems: LookItem[] = items.map(item => ({
+      id: item.id,
+      image: item.image || '/placeholder.svg',
+      type: item.type,
+      name: item.name,
+      price: item.price
+    }));
     
     // Calculate total price
     let totalPrice = 0;
@@ -280,7 +289,7 @@ export function usePersonalizedLooks() {
     const look = {
       id: `look-${occasion}-${index}`,
       title: `${occasion} Look`,
-      items: items, // Use the complete outfit items as-is
+      items: lookItems,
       price: totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : '$29.99',
       category: userStyle?.analysis?.styleProfile || "Casual",
       occasion: occasion
