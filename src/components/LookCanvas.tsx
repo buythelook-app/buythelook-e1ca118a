@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
 
@@ -193,10 +194,10 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     console.log(`  - BOTTOM items: ${bottomItems.length}`, bottomItems.map(i => i.id));
     console.log(`  - SHOES items: ${shoeItems.length}`, shoeItems.map(i => i.id));
     
-    // Create exactly 3 display items in the correct order
+    // Create exactly 3 display items in the correct order - ALWAYS 3 ITEMS
     const outfit: OutfitItem[] = [];
     
-    // 1. TOP item (position 0)
+    // 1. TOP item (position 0) - MANDATORY
     if (topItems.length > 0) {
       outfit.push({
         ...topItems[0],
@@ -204,16 +205,18 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       });
       console.log('✅ Added TOP item:', topItems[0].id, topItems[0].name);
     } else {
-      // Create placeholder top
+      // Create placeholder top - ALWAYS ADD A TOP
       outfit.push({
         id: 'placeholder-top',
         image: '/placeholder.svg',
-        type: 'top'
+        type: 'top',
+        name: 'חלק עליון',
+        product_subfamily: 'top'
       });
       console.log('📦 Added placeholder TOP');
     }
     
-    // 2. BOTTOM item (position 1)
+    // 2. BOTTOM item (position 1) - MANDATORY
     if (bottomItems.length > 0) {
       outfit.push({
         ...bottomItems[0],
@@ -221,16 +224,18 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       });
       console.log('✅ Added BOTTOM item:', bottomItems[0].id, bottomItems[0].name);
     } else {
-      // Create placeholder bottom
+      // Create placeholder bottom - ALWAYS ADD A BOTTOM
       outfit.push({
         id: 'placeholder-bottom',
         image: '/placeholder.svg',
-        type: 'bottom'
+        type: 'bottom',
+        name: 'חלק תחתון',
+        product_subfamily: 'bottom'
       });
       console.log('📦 Added placeholder BOTTOM');
     }
     
-    // 3. SHOES item (position 2)
+    // 3. SHOES item (position 2) - MANDATORY
     if (shoeItems.length > 0) {
       outfit.push({
         ...shoeItems[0],
@@ -238,16 +243,33 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       });
       console.log('✅ Added SHOES item:', shoeItems[0].id, shoeItems[0].name);
     } else {
-      // Create placeholder shoes
+      // Create placeholder shoes - ALWAYS ADD SHOES
       outfit.push({
         id: 'placeholder-shoes',
         image: '/placeholder.svg',
-        type: 'shoes'
+        type: 'shoes',
+        name: 'נעליים',
+        product_subfamily: 'shoes'
       });
       console.log('📦 Added placeholder SHOES');
     }
     
-    console.log(`✅ Final outfit created with exactly 3 items:`);
+    // VERIFY WE ALWAYS HAVE EXACTLY 3 ITEMS
+    if (outfit.length !== 3) {
+      console.error(`❌ ERROR: Expected 3 items but got ${outfit.length}`);
+      // Force 3 items if something went wrong
+      while (outfit.length < 3) {
+        outfit.push({
+          id: `force-placeholder-${outfit.length}`,
+          image: '/placeholder.svg',
+          type: outfit.length === 1 ? 'bottom' : 'shoes',
+          name: `פריט ${outfit.length + 1}`,
+          product_subfamily: 'placeholder'
+        });
+      }
+    }
+    
+    console.log(`✅ Final outfit created with exactly ${outfit.length} items:`);
     outfit.forEach((item, i) => {
       console.log(`${i + 1}. ${item.type.toUpperCase()}: ${item.id} (${item.name || 'Unknown'})`);
     });
@@ -321,17 +343,17 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         let successCount = 0;
         let errorCount = 0;
         
-        console.log(`🔍 Loading exactly 3 items for display`);
+        console.log(`🔍 Loading exactly ${completeOutfit.length} items for display (should be 3)`);
         
         // Clear the canvas for clean rendering
         ctx.clearRect(0, 0, width, height);
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, width, height);
         
-        // Process exactly 3 items in order: TOP, BOTTOM, SHOES
-        for (let i = 0; i < 3; i++) {
+        // Process all items in the outfit (should be exactly 3)
+        for (let i = 0; i < completeOutfit.length; i++) {
           const item = completeOutfit[i];
-          const itemPosition = ['TOP', 'BOTTOM', 'SHOES'][i];
+          const itemPosition = ['TOP', 'BOTTOM', 'SHOES'][i] || `ITEM_${i}`;
           console.log(`🔍 Processing ${itemPosition} item: ${item.id} (${item.type}) at position ${i}`);
           
           try {
@@ -358,7 +380,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
               img.src = productImageUrl;
             });
 
-            // Calculate position for this item - fixed positions
+            // Calculate position for this item - fixed positions for 3 items
             const yPosition = padding + (i * (itemHeight + itemSpacing));
             
             // Calculate proper aspect ratio and fit within designated area
@@ -420,7 +442,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         // Update loading state based on success/error count
         if (successCount > 0) {
           setLoadingState('success');
-          console.log(`✅ Successfully loaded ${successCount} out of 3 items`);
+          console.log(`✅ Successfully loaded ${successCount} out of ${completeOutfit.length} items`);
         } else {
           setLoadingState('error');
           
