@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 
 interface OutfitItem {
@@ -20,7 +19,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
   const [loadingState, setLoadingState] = useState<'loading' | 'success' | 'error'>('loading');
   const [loadedCount, setLoadedCount] = useState(0);
 
-  // Ensure we always have exactly 3 items in the correct order: top, bottom, shoes
+  // Ensure we always have the right items based on outfit type
   const validateAndOrderItems = (inputItems: OutfitItem[]): OutfitItem[] => {
     console.log('🔍 [LookCanvas] Validating and ordering items:', inputItems.map(item => ({
       id: item.id,
@@ -28,48 +27,84 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       name: item.name || 'Unknown'
     })));
 
-    // Find one item of each required type
+    // Check if we have a dress
+    const dressItem = inputItems.find(item => item.type === 'dress');
     const topItem = inputItems.find(item => item.type === 'top');
     const bottomItem = inputItems.find(item => item.type === 'bottom');
     const shoesItem = inputItems.find(item => item.type === 'shoes');
 
-    // Create the ordered array with exactly 3 items
     const orderedItems: OutfitItem[] = [];
     
-    if (topItem) {
-      orderedItems.push(topItem);
+    if (dressItem) {
+      // For dress outfits: dress + optional hosiery/tights + shoes
+      console.log('✅ [LookCanvas] Dress outfit detected');
+      
+      // Add the dress
+      orderedItems.push(dressItem);
+      
+      // Check if bottom item is hosiery/tights (צמוד)
+      if (bottomItem && (
+        bottomItem.name?.includes('גרביון') || 
+        bottomItem.name?.includes('טייץ') ||
+        bottomItem.name?.includes('גרב') ||
+        bottomItem.product_subfamily?.includes('גרביון') ||
+        bottomItem.product_subfamily?.includes('טייץ')
+      )) {
+        console.log('✅ [LookCanvas] Adding hosiery/tights with dress');
+        orderedItems.push(bottomItem);
+      }
+      
+      // Add shoes
+      if (shoesItem) {
+        orderedItems.push(shoesItem);
+      } else {
+        console.warn('❌ [LookCanvas] No shoes item found, using default shoes image');
+        orderedItems.push({
+          id: 'placeholder-shoes',
+          image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=400&fit=crop',
+          type: 'shoes',
+          name: 'נעליים'
+        });
+      }
     } else {
-      console.warn('❌ [LookCanvas] No top item found, using placeholder');
-      orderedItems.push({
-        id: 'placeholder-top',
-        image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=400&fit=crop',
-        type: 'top',
-        name: 'Top Item'
-      });
-    }
+      // For regular outfits: top + bottom + shoes
+      console.log('✅ [LookCanvas] Regular outfit (top + bottom + shoes)');
+      
+      if (topItem) {
+        orderedItems.push(topItem);
+      } else {
+        console.warn('❌ [LookCanvas] No top item found, using placeholder');
+        orderedItems.push({
+          id: 'placeholder-top',
+          image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=400&fit=crop',
+          type: 'top',
+          name: 'חולצה'
+        });
+      }
 
-    if (bottomItem) {
-      orderedItems.push(bottomItem);
-    } else {
-      console.warn('❌ [LookCanvas] No bottom item found, using placeholder');
-      orderedItems.push({
-        id: 'placeholder-bottom',
-        image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop',
-        type: 'bottom',
-        name: 'Bottom Item'
-      });
-    }
+      if (bottomItem) {
+        orderedItems.push(bottomItem);
+      } else {
+        console.warn('❌ [LookCanvas] No bottom item found, using placeholder');
+        orderedItems.push({
+          id: 'placeholder-bottom',
+          image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop',
+          type: 'bottom',
+          name: 'מכנסיים'
+        });
+      }
 
-    if (shoesItem) {
-      orderedItems.push(shoesItem);
-    } else {
-      console.warn('❌ [LookCanvas] No shoes item found, using default shoes image');
-      orderedItems.push({
-        id: 'placeholder-shoes',
-        image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=400&fit=crop',
-        type: 'shoes',
-        name: 'נעליים'
-      });
+      if (shoesItem) {
+        orderedItems.push(shoesItem);
+      } else {
+        console.warn('❌ [LookCanvas] No shoes item found, using default shoes image');
+        orderedItems.push({
+          id: 'placeholder-shoes',
+          image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=400&fit=crop',
+          type: 'shoes',
+          name: 'נעליים'
+        });
+      }
     }
 
     console.log('✅ [LookCanvas] Final ordered items:', orderedItems.map((item, i) => `${i}. ${item.type} (${item.id})`));
@@ -196,21 +231,24 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
-    // Validate and ensure we have exactly 3 items in correct order
+    // Validate and ensure we have the right items
     const validatedItems = validateAndOrderItems(items);
 
-    // Smart layout to ensure all items are visible with smart cropping
+    // Determine if this is a dress outfit for layout purposes
+    const isDressOutfit = validatedItems.some(item => item.type === 'dress');
+    
+    // Smart layout based on outfit type
     const padding = 15;
     const itemSpacing = 12;
     const availableHeight = height - (padding * 2);
     
-    // Calculate item height to fit exactly 3 items with spacing
-    const totalSpacing = itemSpacing * 2; // 2 gaps between 3 items
-    const itemHeight = Math.floor((availableHeight - totalSpacing) / 3);
-    const itemWidth = width * 0.8; // Use 80% of canvas width
+    // Calculate layout based on number of items
+    const totalSpacing = (validatedItems.length - 1) * itemSpacing;
+    const itemHeight = Math.floor((availableHeight - totalSpacing) / validatedItems.length);
+    const itemWidth = width * 0.8;
     const centerX = (width - itemWidth) / 2;
     
-    console.log(`🔍 [LookCanvas] Layout: height=${height}, availableHeight=${availableHeight}, itemHeight=${itemHeight}, itemWidth=${itemWidth}`);
+    console.log(`🔍 [LookCanvas] Layout: ${isDressOutfit ? 'DRESS' : 'REGULAR'} outfit, ${validatedItems.length} items, itemHeight=${itemHeight}`);
     
     // Show loading state
     ctx.font = '16px Arial';
@@ -230,10 +268,13 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, width, height);
         
-        // Process all validated items (always exactly 3)
+        // Process all validated items
         for (let i = 0; i < validatedItems.length; i++) {
           const item = validatedItems[i];
-          const itemPosition = ['TOP', 'BOTTOM', 'SHOES'][i];
+          const itemPosition = isDressOutfit ? 
+            ['DRESS', 'HOSIERY/TIGHTS', 'SHOES'][i] || `ITEM_${i}` :
+            ['TOP', 'BOTTOM', 'SHOES'][i] || `ITEM_${i}`;
+          
           console.log(`🔍 [LookCanvas] Processing ${itemPosition} item: ${item.id} (${item.type}) at position ${i}`);
           
           try {
@@ -322,7 +363,10 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             ctx.font = '14px Arial';
             ctx.fillStyle = '#666666';
             ctx.textAlign = 'center';
-            ctx.fillText(`שגיאה בטעינת ${['חולצה', 'מכנסיים', 'נעליים'][i]}`, drawX + itemWidth / 2, drawY + 25);
+            const errorTexts = isDressOutfit ? 
+              ['שגיאה בטעינת שמלה', 'שגיאה בטעינת גרביון', 'שגיאה בטעינת נעליים'] :
+              ['שגיאה בטעינת חולצה', 'שגיאה בטעינת מכנסיים', 'שגיאה בטעינת נעליים'];
+            ctx.fillText(errorTexts[i] || `שגיאה בטעינת פריט ${i + 1}`, drawX + itemWidth / 2, drawY + 25);
             ctx.restore();
           }
         }
