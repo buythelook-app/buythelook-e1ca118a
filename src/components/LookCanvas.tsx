@@ -59,24 +59,30 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       return;
     }
 
-    // Sort items in correct rendering order
-    const renderOrder = { outerwear: 0, top: 1, bottom: 2, shoes: 3 };
+    // Sort items in correct rendering order (top to bottom)
+    const renderOrder = { top: 0, outerwear: 1, bottom: 2, dress: 2, shoes: 3 };
     const sortedItems = [...items].sort((a, b) => {
       const orderA = renderOrder[a.type] ?? 999;
       const orderB = renderOrder[b.type] ?? 999;
       return orderA - orderB;
     });
 
-    // Define positions with enhanced shoe positioning and cropping
+    // Define positions in thirds - no overlap
+    const thirdHeight = height / 3;
     const defaultPositions = {
-      outerwear: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
-      top: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
-      bottom: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
-      dress: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.9 },
-      shoes: { x: width * 0.2, y: height * 0.6, width: width * 0.6, height: height * 0.3 },
-      accessory: { x: width * 0.02, y: height * 0.25, width: width * 0.96, height: height * 0.5 },
-      sunglasses: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 },
-      cart: { x: width * 0.02, y: height * 0.02, width: width * 0.96, height: height * 0.5 }
+      // Top third - for tops and outerwear
+      top: { x: width * 0.1, y: 0, width: width * 0.8, height: thirdHeight * 0.9 },
+      outerwear: { x: width * 0.05, y: 0, width: width * 0.9, height: thirdHeight * 0.9 },
+      
+      // Middle third - for bottoms and dresses
+      bottom: { x: width * 0.1, y: thirdHeight, width: width * 0.8, height: thirdHeight * 0.9 },
+      dress: { x: width * 0.1, y: thirdHeight * 0.5, width: width * 0.8, height: thirdHeight * 1.4 },
+      
+      // Bottom third - for shoes and accessories
+      shoes: { x: width * 0.2, y: thirdHeight * 2, width: width * 0.6, height: thirdHeight * 0.9 },
+      accessory: { x: width * 0.15, y: thirdHeight, width: width * 0.7, height: thirdHeight * 0.8 },
+      sunglasses: { x: width * 0.25, y: thirdHeight * 0.1, width: width * 0.5, height: thirdHeight * 0.3 },
+      cart: { x: width * 0.1, y: thirdHeight, width: width * 0.8, height: thirdHeight * 0.9 }
     };
 
     // Show loading state
@@ -132,16 +138,20 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               let drawWidth = position.width;
               let drawHeight = position.height;
 
+              // Maintain aspect ratio while fitting in the designated area
               if (drawWidth / drawHeight > aspectRatio) {
                 drawWidth = drawHeight * aspectRatio;
               } else {
                 drawHeight = drawWidth / aspectRatio;
               }
 
+              // Center the item within its designated area
               const centerX = position.x + (position.width - drawWidth) / 2;
               const centerY = position.y + (position.height - drawHeight) / 2;
 
               ctx.save();
+              
+              // Draw with proper positioning in thirds
               ctx.drawImage(
                 processedImg,
                 centerX,
@@ -149,7 +159,10 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
                 drawWidth,
                 drawHeight
               );
+              
               ctx.restore();
+              
+              console.log(`✅ Drew ${item.type} at position: x=${centerX}, y=${centerY}, w=${drawWidth}, h=${drawHeight}`);
             }
 
             // Clean up the blob URL
@@ -204,7 +217,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 rounded-lg">
           <div className="bg-white p-3 rounded shadow text-center">
             <p>עיבוד תמונות... {loadedCount}/{items.length}</p>
-            <p className="text-xs text-gray-600">מסיר רקע מהפריטים</p>
+            <p className="text-xs text-gray-600">מסיר רקע ומציב בשלישים</p>
           </div>
         </div>
       )}

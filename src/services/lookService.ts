@@ -1,7 +1,8 @@
-
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { isValidImagePattern } from "../../supabase/functions/trainer-agent/imageValidator";
+import { extractZaraImageUrl } from "@/utils/imageUtils";
+import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
 
 // Cache for outfit data
 const outfitCache = new Map<string, any>();
@@ -13,6 +14,81 @@ const globalItemTracker = {
   shownBottoms: new Set<string>(),
   shownShoes: new Set<string>(),
   maxRepetitions: 2 // Allow an item to appear this many times max
+};
+
+/**
+ * Enhanced function to get the best image for an item using AI analysis
+ */
+const getAISelectedImage = async (item: any): Promise<string> => {
+  try {
+    // Try AI analysis first
+    const aiResult = await analyzeImagesWithAI(item.id, 1);
+    if (aiResult.success && aiResult.results && aiResult.results.length > 0) {
+      const selectedImage = aiResult.results[0].selectedImage;
+      if (selectedImage && selectedImage !== '/placeholder.svg') {
+        console.log(`🤖 Using AI-selected image for item ${item.id}: ${selectedImage}`);
+        return selectedImage;
+      }
+    }
+  } catch (error) {
+    console.warn(`⚠️ AI analysis failed for item ${item.id}, using fallback:`, error);
+  }
+  
+  // Fallback to existing image extraction
+  return extractZaraImageUrl(item.image);
+};
+
+/**
+ * Enhanced mapZaraItemToDashboardItem with AI image selection
+ */
+const mapZaraItemToDashboardItem = async (item: any, targetType?: string): Promise<DashboardItem> => {
+  // Helper function to safely map subfamily to item type
+  const mapSubfamilyToType = (subfamily: string | null | undefined): DashboardItem['type'] => {
+    if (!subfamily) return 'top';
+    
+    const lowerSubfamily = subfamily.toLowerCase();
+    
+    if (['shirt', 'blouse', 't-shirt', 'top', 'sweater', 'cardigan', 'jacket'].some(type => 
+      lowerSubfamily.includes(type)
+    )) {
+      return 'top';
+    }
+    
+    if (['pants', 'skirt', 'shorts', 'jeans', 'trousers', 'leggings'].some(type => 
+      lowerSubfamily.includes(type)
+    )) {
+      return 'bottom';
+    }
+    
+    if (['shoes', 'heel', 'sneakers', 'boots', 'sandals', 'flats'].some(type => 
+      lowerSubfamily.includes(type)
+    )) {
+      return 'shoes';
+    }
+    
+    if (['dress', 'gown', 'jumpsuit'].some(type => 
+      lowerSubfamily.includes(type)
+    )) {
+      return 'dress';
+    }
+    
+    // Default to top if we can't determine
+    return 'top';
+  };
+
+  const type = targetType || mapSubfamilyToType(item.product_subfamily);
+  
+  // Use AI-selected image
+  const aiSelectedImage = await getAISelectedImage(item);
+  
+  return {
+    id: item.id,
+    name: item.product_name || 'Unknown Item',
+    image: aiSelectedImage,
+    type: type as DashboardItem['type'],
+    price: typeof item.price === 'number' ? `$${item.price.toFixed(2)}` : '$0.00',
+    description: item.description || `${item.colour} ${item.product_name}`
+  };
 };
 
 export const clearOutfitCache = (bodyShape?: string, style?: string, mood?: string) => {
@@ -29,40 +105,6 @@ export const clearGlobalItemTrackers = () => {
   globalItemTracker.shownTops.clear();
   globalItemTracker.shownBottoms.clear();
   globalItemTracker.shownShoes.clear();
-};
-
-// Helper function to safely map subfamily to item type
-const mapSubfamilyToType = (subfamily: string | null | undefined): DashboardItem['type'] => {
-  if (!subfamily) return 'top';
-  
-  const lowerSubfamily = subfamily.toLowerCase();
-  
-  if (['shirt', 'blouse', 't-shirt', 'top', 'sweater', 'cardigan', 'jacket'].some(type => 
-    lowerSubfamily.includes(type)
-  )) {
-    return 'top';
-  }
-  
-  if (['pants', 'skirt', 'shorts', 'jeans', 'trousers', 'leggings'].some(type => 
-    lowerSubfamily.includes(type)
-  )) {
-    return 'bottom';
-  }
-  
-  if (['shoes', 'heel', 'sneakers', 'boots', 'sandals', 'flats'].some(type => 
-    lowerSubfamily.includes(type)
-  )) {
-    return 'shoes';
-  }
-  
-  if (['dress', 'gown', 'jumpsuit'].some(type => 
-    lowerSubfamily.includes(type)
-  )) {
-    return 'dress';
-  }
-  
-  // Default to top if we can't determine
-  return 'top';
 };
 
 export const matchOutfitToColors = async () => {
@@ -199,26 +241,89 @@ export const fetchDashboardItems = async (): Promise<{ [key: string]: DashboardI
   }
 };
 
-export const fetchFirstOutfitSuggestion = async (forceRefresh = false): Promise<DashboardItem[]> => {
+/**
+ * Enhanced fetchFirstOutfitSuggestion with AI image integration
+ */
+export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false): Promise<DashboardItem[]> => {
   try {
-    console.log("🔍 [DEBUG] fetchFirstOutfitSuggestion: Getting first outfit");
+    console.log('🎯 fetchFirstOutfitSuggestion called with forceRefresh:', forceRefresh);
     
-    const dashboardData = await fetchDashboardItems();
-    
-    // Get items from the first available occasion
-    const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
-    for (const occasion of occasions) {
-      if (dashboardData[occasion] && dashboardData[occasion].length >= 3) {
-        console.log(`✅ [DEBUG] Using items from ${occasion} occasion`);
-        return dashboardData[occasion].slice(0, 3);
-      }
+    const styleData = localStorage.getItem('styleAnalysis');
+    if (!styleData) {
+      throw new Error('Style analysis not found');
     }
+
+    const parsedData = JSON.parse(styleData);
+    const bodyShape = parsedData?.analysis?.bodyShape || 'H';
+    const style = parsedData?.analysis?.styleProfile || 'classic';
+    const mood = localStorage.getItem('current-mood') || 'energized';
+
+    const cacheKey = `${bodyShape}-${style}-${mood}`;
     
-    console.log('❌ [DEBUG] No sufficient items found for any occasion');
-    return [];
+    // Check cache first
+    if (!forceRefresh && outfitCache[cacheKey]) {
+      console.log('📦 Returning cached outfit for:', cacheKey);
+      return outfitCache[cacheKey];
+    }
+
+    // Clear cache if forcing refresh
+    if (forceRefresh) {
+      clearOutfitCache(bodyShape, style, mood);
+      clearGlobalItemTrackers();
+    }
+
+    console.log('🔍 Generating new outfit combination with AI images...');
+
+    // Fetch more items to ensure variety
+    const { data: allItems, error } = await supabase
+      .from('zara_cloth')
+      .select('*')
+      .limit(500);
+
+    if (error || !allItems?.length) {
+      throw new Error('Failed to fetch items from database');
+    }
+
+    console.log(`📊 Fetched ${allItems.length} total items from database`);
+
+    // Enhanced filtering with AI-compatible items
+    const validItems = allItems.filter(item => {
+      const hasValidImage = extractZaraImageUrl(item.image) !== '/placeholder.svg';
+      const hasValidData = item.product_name && item.price;
+      return hasValidImage && hasValidData;
+    });
+
+    console.log(`✅ ${validItems.length} items passed validation`);
+
+    if (validItems.length < 3) {
+      throw new Error('Not enough valid items available');
+    }
+
+    // Randomly select and map items with AI image selection
+    const shuffled = [...validItems].sort(() => Math.random() - 0.5);
+    const selectedItems = shuffled.slice(0, 3);
+
+    // Map items with AI-selected images
+    const outfitItems: DashboardItem[] = [];
+    const topItem = await mapZaraItemToDashboardItem(selectedItems[0], 'top');
+    const bottomItem = await mapZaraItemToDashboardItem(selectedItems[1], 'bottom');
+    const shoesItem = await mapZaraItemToDashboardItem(selectedItems[2], 'shoes');
+
+    outfitItems.push(topItem, bottomItem, shoesItem);
+
+    // Cache the result
+    outfitCache[cacheKey] = outfitItems;
     
+    console.log('✅ Generated new outfit with AI-selected images:', outfitItems.map(item => ({
+      id: item.id,
+      type: item.type,
+      hasValidImage: item.image !== '/placeholder.svg'
+    })));
+
+    return outfitItems;
+
   } catch (error) {
-    console.error('❌ [DEBUG] Error in fetchFirstOutfitSuggestion:', error);
-    return [];
+    console.error('❌ Error in fetchFirstOutfitSuggestion:', error);
+    throw error;
   }
 };

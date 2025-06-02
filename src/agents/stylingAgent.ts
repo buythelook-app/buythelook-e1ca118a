@@ -1,5 +1,7 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
+import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
 
 // Interface defined but not exported to avoid conflicts
 interface Agent {
@@ -11,8 +13,8 @@ interface Agent {
 }
 
 /**
- * Helper function to check if an image URL contains the specific _6_1_1.jpg pattern
- * Only accepts Zara 6th product photos (without model) with this specific pattern
+ * Helper function to check if an image URL contains the AI-selected best image pattern
+ * Uses AI analysis results when available
  */
 const isValidImagePattern = (imageData: any): boolean => {
   if (!imageData) {
@@ -24,7 +26,6 @@ const isValidImagePattern = (imageData: any): boolean => {
   let imageUrls: string[] = [];
   
   if (typeof imageData === 'string') {
-    // Handle JSON string arrays like "[\"https://static.zara.net/photos/...jpg\"]"
     try {
       const parsed = JSON.parse(imageData);
       if (Array.isArray(parsed)) {
@@ -49,29 +50,46 @@ const isValidImagePattern = (imageData: any): boolean => {
     return false;
   }
   
-  // STRICTLY check if any URL contains the _6_1_1.jpg pattern (6th image without model)
-  const hasValidPattern = imageUrls.some(url => /_6_1_1\.jpg/.test(url));
+  // Check for 6th+ image pattern (without model)
+  const hasValidPattern = imageUrls.some(url => /_[6-9]_\d+_1\.jpg/.test(url));
   
-  console.log(`🔍 [DEBUG] Found ${imageUrls.length} URLs, has _6_1_1.jpg pattern: ${hasValidPattern}`);
+  console.log(`🔍 [DEBUG] Found ${imageUrls.length} URLs, has valid no-model pattern (6th+ image): ${hasValidPattern}`);
   if (hasValidPattern) {
-    const validUrl = imageUrls.find(url => /_6_1_1\.jpg/.test(url));
-    console.log(`🔍 [DEBUG] Valid URL found: ${validUrl}`);
+    const validUrl = imageUrls.find(url => /_[6-9]_\d+_1\.jpg/.test(url));
+    console.log(`🔍 [DEBUG] Valid no-model URL found: ${validUrl}`);
   } else {
-    console.log(`🔍 [DEBUG] NO _6_1_1.jpg pattern found in URLs:`, imageUrls);
+    console.log(`🔍 [DEBUG] NO valid no-model pattern found in URLs:`, imageUrls);
   }
   
   return hasValidPattern;
 };
 
 /**
- * Helper function to extract the 6th product image URL (_6_1_1.jpg pattern)
- * Returns placeholder if no _6_1_1.jpg pattern is found
+ * Helper function to extract the best product image URL using AI analysis
+ * Returns AI-selected image or falls back to 6th+ image pattern
  */
-const extractMainProductImage = (imageData: any): string => {
+const extractMainProductImage = async (imageData: any, itemId?: string): Promise<string> => {
   if (!imageData) {
     return '/placeholder.svg';
   }
   
+  // Try to get AI-analyzed result first
+  if (itemId) {
+    try {
+      const aiResult = await analyzeImagesWithAI(itemId, 1);
+      if (aiResult.success && aiResult.results && aiResult.results.length > 0) {
+        const selectedImage = aiResult.results[0].selectedImage;
+        if (selectedImage && selectedImage !== '/placeholder.svg') {
+          console.log(`🤖 [DEBUG] Using AI-selected image for item ${itemId}: ${selectedImage}`);
+          return selectedImage;
+        }
+      }
+    } catch (error) {
+      console.warn(`⚠️ [DEBUG] AI analysis failed for item ${itemId}, falling back to pattern matching:`, error);
+    }
+  }
+  
+  // Fallback to pattern matching
   let imageUrls: string[] = [];
   
   if (typeof imageData === 'string') {
@@ -91,26 +109,35 @@ const extractMainProductImage = (imageData: any): string => {
     imageUrls = [imageData.url];
   }
   
-  // STRICTLY find the first URL with _6_1_1.jpg pattern - NO FALLBACK
-  const sixthImage = imageUrls.find(url => /_6_1_1\.jpg/.test(url));
+  // Find the best image - prioritize 6th, 7th, 8th, 9th images without model
+  const noModelImages = imageUrls.filter(url => /_[6-9]_\d+_1\.jpg/.test(url));
   
-  if (sixthImage) {
-    console.log(`🔍 [DEBUG] Found _6_1_1.jpg image: ${sixthImage}`);
-    return sixthImage;
+  if (noModelImages.length > 0) {
+    noModelImages.sort((a, b) => {
+      const aMatch = a.match(/_([6-9])_\d+_1\.jpg/);
+      const bMatch = b.match(/_([6-9])_\d+_1\.jpg/);
+      if (aMatch && bMatch) {
+        return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+      }
+      return 0;
+    });
+    
+    console.log(`🔍 [DEBUG] Found ${noModelImages.length} no-model images, using: ${noModelImages[0]}`);
+    return noModelImages[0];
   } else {
-    console.log(`🔍 [DEBUG] NO _6_1_1.jpg image found, using placeholder`);
+    console.log(`🔍 [DEBUG] NO suitable no-model images found, using placeholder`);
     return '/placeholder.svg';
   }
 };
 
 /**
  * Styling Generator Agent
- * Generates outfit suggestions using items from the zara_cloth database table
+ * Generates outfit suggestions using items from the zara_cloth database table with AI-selected images
  */
 export const stylingAgent: Agent = {
   role: "Styling Generator",
-  goal: "Generate outfit suggestions using available database items",
-  backstory: "Knows how to combine clothing items from the database",
+  goal: "Generate outfit suggestions using available database items with AI-selected best images",
+  backstory: "Knows how to combine clothing items from the database and select the best product images using AI",
   tools: [GenerateOutfitTool],
   
   /**
@@ -145,12 +172,11 @@ export const stylingAgent: Agent = {
         };
       }
 
-      // Step 2: Get user profile data (optional for generation) - skip if table doesn't exist
+      // Step 2: Get user profile data (optional for generation)
       console.log("🔍 [DEBUG] Step 2: Attempting to fetch user profile...");
       let userProfile = null;
       
       try {
-        // Try to fetch from style_quiz_results table directly using type assertion
         const { data: profileData, error: profileError } = await (supabase as any)
           .from('style_quiz_results')
           .select('*')
@@ -170,11 +196,10 @@ export const stylingAgent: Agent = {
       // Step 3: Fetch random items from each category
       console.log("🔍 [DEBUG] Step 3: Fetching clothing items...");
       
-      // Get random items from zara_cloth table
       const { data: allItems, error: fetchError } = await supabase
         .from('zara_cloth')
         .select('*')
-        .limit(200); // Increased limit to have more items to filter from
+        .limit(200);
 
       if (fetchError || !allItems?.length) {
         console.error('❌ [DEBUG] Error fetching items:', fetchError);
@@ -186,34 +211,34 @@ export const stylingAgent: Agent = {
 
       console.log('✅ [DEBUG] Items fetched:', allItems.length);
 
-      // Filter items to only include those with valid _6_1_1.jpg pattern
-      console.log('🔍 [DEBUG] Starting _6_1_1.jpg pattern filtering...');
+      // Filter items to only include those with valid pattern
+      console.log('🔍 [DEBUG] Starting image pattern filtering...');
       const validItems = allItems.filter((item, index) => {
         console.log(`🔍 [DEBUG] Checking item ${index + 1}/${allItems.length} (ID: ${item.id})`);
         const isValid = isValidImagePattern(item.image);
         if (!isValid) {
-          console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - no _6_1_1.jpg pattern`);
+          console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - no valid pattern`);
         } else {
-          console.log(`✅ [DEBUG] KEEPING item ${item.id} - has _6_1_1.jpg pattern`);
+          console.log(`✅ [DEBUG] KEEPING item ${item.id} - has valid pattern`);
         }
         return isValid;
       });
 
-      console.log(`✅ [DEBUG] Valid items after _6_1_1.jpg filtering: ${validItems.length} out of ${allItems.length}`);
+      console.log(`✅ [DEBUG] Valid items after filtering: ${validItems.length} out of ${allItems.length}`);
 
       if (validItems.length === 0) {
-        console.error('❌ [DEBUG] No items with _6_1_1.jpg pattern found');
+        console.error('❌ [DEBUG] No items with valid image patterns found');
         return { 
           success: false, 
-          error: "No items with _6_1_1.jpg main product images found in database" 
+          error: "No items with suitable product images found in database" 
         };
       }
 
       // Randomly select items for the outfit from valid items
       const shuffled = [...validItems].sort(() => Math.random() - 0.5);
       const topItem = shuffled[0];
-      const bottomItem = shuffled[1] || shuffled[0]; // Fallback to same item if not enough
-      const shoesItem = shuffled[2] || shuffled[0]; // Fallback to same item if not enough
+      const bottomItem = shuffled[1] || shuffled[0];
+      const shoesItem = shuffled[2] || shuffled[0];
 
       console.log('✅ [DEBUG] Selected items:', { 
         topItem: topItem?.id, 
@@ -221,37 +246,42 @@ export const stylingAgent: Agent = {
         shoesItem: shoesItem?.id 
       });
 
-      // Log the actual image URLs being used (extract main product images)
-      console.log('🔍 [DEBUG] Selected item main product images:');
-      console.log('Top item image:', extractMainProductImage(topItem?.image));
-      console.log('Bottom item image:', extractMainProductImage(bottomItem?.image));
-      console.log('Shoes item image:', extractMainProductImage(shoesItem?.image));
+      // Extract AI-selected or best product images
+      console.log('🔍 [DEBUG] Extracting AI-selected product images...');
+      const topImage = await extractMainProductImage(topItem?.image, topItem?.id);
+      const bottomImage = await extractMainProductImage(bottomItem?.image, bottomItem?.id);
+      const shoesImage = await extractMainProductImage(shoesItem?.image, shoesItem?.id);
 
-      // Step 4: Create outfit object with database items and main product images
+      console.log('🔍 [DEBUG] Selected item images:');
+      console.log('Top item image:', topImage);
+      console.log('Bottom item image:', bottomImage);
+      console.log('Shoes item image:', shoesImage);
+
+      // Step 4: Create outfit object with database items and AI-selected images
       const outfit = {
         top: {
           ...topItem,
-          image: extractMainProductImage(topItem?.image)
+          image: topImage
         },
         bottom: {
           ...bottomItem,
-          image: extractMainProductImage(bottomItem?.image)
+          image: bottomImage
         },
         shoes: {
           ...shoesItem,
-          image: extractMainProductImage(shoesItem?.image)
+          image: shoesImage
         },
         score: Math.floor(Math.random() * 30) + 70,
-        description: `Outfit generated using real Zara database items with main product images (_6_1_1.jpg)`,
+        description: `Outfit generated using real Zara database items with AI-selected best images (no models)`,
         recommendations: [
           "This combination uses actual Zara items from our database",
-          "Images selected to show main product photos clearly",
+          "Images selected by AI to show products without models",
           `Perfect for your body shape`
         ],
         occasion: Math.random() > 0.5 ? 'work' : 'casual'
       };
       
-      console.log("✅ [DEBUG] Generated database outfit successfully");
+      console.log("✅ [DEBUG] Generated database outfit successfully with AI-selected images");
       return { success: true, data: outfit };
       
     } catch (error) {
