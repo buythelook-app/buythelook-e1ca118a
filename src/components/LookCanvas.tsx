@@ -1,6 +1,5 @@
 
 import { useEffect, useRef, useState } from "react";
-import { removeBackground, loadImageFromUrl } from "../utils/backgroundRemoval";
 
 interface OutfitItem {
   id: string;
@@ -83,54 +82,26 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     return fallbackImage;
   };
 
-  // Process image with background removal
-  const processImageWithBackgroundRemoval = async (imageUrl: string): Promise<HTMLImageElement> => {
+  // Load image without background removal
+  const loadImageForCanvas = async (imageUrl: string): Promise<HTMLImageElement> => {
     try {
-      if (imageUrl === '/placeholder.svg') {
-        // Don't process placeholder images
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        await new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = reject;
-          img.src = imageUrl;
-        });
-        return img;
-      }
-
-      console.log(`🔍 [LookCanvas] Starting background removal for: ${imageUrl}`);
+      console.log(`🔍 [LookCanvas] Loading image: ${imageUrl}`);
       
-      // Load the original image
-      const originalImage = await loadImageFromUrl(imageUrl);
-      
-      // Remove background
-      const processedBlob = await removeBackground(originalImage);
-      
-      // Create new image from processed blob
-      const processedImage = new Image();
-      processedImage.crossOrigin = 'anonymous';
-      
-      await new Promise((resolve, reject) => {
-        processedImage.onload = resolve;
-        processedImage.onerror = reject;
-        processedImage.src = URL.createObjectURL(processedBlob);
-      });
-      
-      console.log(`✅ [LookCanvas] Background removed successfully for: ${imageUrl}`);
-      return processedImage;
-      
-    } catch (error) {
-      console.error(`❌ [LookCanvas] Background removal failed for: ${imageUrl}`, error);
-      
-      // Fallback to original image
       const img = new Image();
       img.crossOrigin = 'anonymous';
+      
       await new Promise((resolve, reject) => {
         img.onload = resolve;
         img.onerror = reject;
         img.src = imageUrl;
       });
+      
+      console.log(`✅ [LookCanvas] Image loaded successfully: ${imageUrl}`);
       return img;
+      
+    } catch (error) {
+      console.error(`❌ [LookCanvas] Image loading failed for: ${imageUrl}`, error);
+      throw error;
     }
   };
 
@@ -200,15 +171,15 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
 
     console.log('🔍 [LookCanvas] Final display order:', items.map((item, i) => `${i}. ${item.type} (${item.id})`));
 
-    // Improved layout to ensure all items are visible
-    const padding = 10;
-    const itemSpacing = 8;
+    // Smart layout to ensure all items are visible with smart cropping
+    const padding = 15;
+    const itemSpacing = 12;
     const availableHeight = height - (padding * 2);
     
     // Calculate item height to fit exactly 3 items with spacing
     const totalSpacing = itemSpacing * 2; // 2 gaps between 3 items
     const itemHeight = Math.floor((availableHeight - totalSpacing) / 3);
-    const itemWidth = width * 0.85;
+    const itemWidth = width * 0.8; // Use 80% of canvas width
     const centerX = (width - itemWidth) / 2;
     
     console.log(`🔍 [LookCanvas] Layout: height=${height}, availableHeight=${availableHeight}, itemHeight=${itemHeight}, itemWidth=${itemWidth}`);
@@ -217,7 +188,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     ctx.font = '16px Arial';
     ctx.fillStyle = '#666666';
     ctx.textAlign = 'center';
-    ctx.fillText('מעבד תמונות ומסיר רקעים...', width / 2, height / 2);
+    ctx.fillText('טוען תמונות...', width / 2, height / 2);
 
     const loadImages = async () => {
       try {
@@ -241,38 +212,35 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             // Get best available image
             const imageUrl = getBestImage(item);
             
-            // Process image with background removal
-            const img = await processImageWithBackgroundRemoval(imageUrl);
+            // Load image without background removal
+            const img = await loadImageForCanvas(imageUrl);
             
-            console.log(`✅ [LookCanvas] Image processed: ${item.id} (${itemPosition})`);
+            console.log(`✅ [LookCanvas] Image loaded: ${item.id} (${itemPosition})`);
             successCount++;
             setLoadedCount(prev => prev + 1);
 
             // Calculate position for this item
             const yPosition = padding + (i * (itemHeight + itemSpacing));
             
-            // Calculate proper aspect ratio while ensuring it fits - increased size by 15%
-            const aspectRatio = img.width / img.height;
-            let drawWidth = itemWidth * 1.05; // Increased from 0.9 to 1.05 (15% bigger)
+            // Smart cropping: crop top and bottom to focus on the clothing item
+            const sourceWidth = img.width;
+            const sourceHeight = img.height;
+            
+            // For cropping, remove 20% from top and 15% from bottom to focus on the item
+            const cropTop = sourceHeight * 0.2;
+            const cropBottom = sourceHeight * 0.15;
+            const croppedHeight = sourceHeight - cropTop - cropBottom;
+            
+            // Calculate proper aspect ratio with cropped dimensions
+            const aspectRatio = sourceWidth / croppedHeight;
+            let drawWidth = itemWidth;
             let drawHeight = drawWidth / aspectRatio;
 
-            // If height is too large, constrain by height instead
-            const maxHeight = itemHeight * 1.05; // Increased from 0.9 to 1.05 (15% bigger)
+            // If height is too large, constrain by height
+            const maxHeight = itemHeight * 0.95;
             if (drawHeight > maxHeight) {
               drawHeight = maxHeight;
               drawWidth = drawHeight * aspectRatio;
-            }
-
-            // Ensure minimum size but don't exceed bounds
-            const minSize = 120; // Increased from 100 to 120
-            if (drawWidth < minSize && drawHeight < minSize) {
-              if (aspectRatio >= 1) {
-                drawWidth = Math.min(minSize, itemWidth * 1.05);
-                drawHeight = drawWidth / aspectRatio;
-              } else {
-                drawHeight = Math.min(minSize, maxHeight);
-                drawWidth = drawHeight * aspectRatio;
-              }
             }
 
             // Center the item horizontally and vertically within its allocated space
@@ -284,18 +252,16 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             ctx.save();
             
             // Add subtle shadow effect for depth
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
-            ctx.shadowBlur = 8;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
+            ctx.shadowBlur = 6;
             ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 4;
+            ctx.shadowOffsetY = 3;
             
-            // Draw the item image
+            // Draw the cropped item image
             ctx.drawImage(
               img,
-              drawX,
-              drawY,
-              drawWidth,
-              drawHeight
+              0, cropTop, sourceWidth, croppedHeight, // Source crop (x, y, width, height)
+              drawX, drawY, drawWidth, drawHeight      // Destination (x, y, width, height)
             );
             
             ctx.restore();
@@ -350,15 +316,15 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 rounded-lg">
           <div className="bg-white p-4 rounded-lg shadow-md text-center border">
             <div className="animate-spin w-6 h-6 border-2 border-gray-300 border-t-blue-500 rounded-full mx-auto mb-2"></div>
-            <p className="text-sm text-gray-700">מעבד תמונות ומסיר רקעים...</p>
-            <p className="text-xs text-gray-500 mt-1">{loadedCount} פריטים עובדו</p>
+            <p className="text-sm text-gray-700">טוען תמונות...</p>
+            <p className="text-xs text-gray-500 mt-1">{loadedCount} פריטים נטענו</p>
           </div>
         </div>
       )}
       {loadingState === 'error' && items.length > 0 && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white bg-opacity-95 rounded-lg">
           <div className="bg-white p-4 rounded-lg shadow-md text-center border border-red-200">
-            <p className="text-red-500 mb-1 font-medium">שגיאה בעיבוד התמונות</p>
+            <p className="text-red-500 mb-1 font-medium">שגיאה בטעינת התמונות</p>
             <p className="text-xs text-gray-600">נסה לרענן את הדף</p>
           </div>
         </div>
