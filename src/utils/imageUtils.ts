@@ -20,9 +20,9 @@ export type ZaraImageData = string | string[] | { url?: string } | { [key: strin
 
 /**
  * Extracts a usable image URL from Zara's various image data formats
- * STRICTLY looks for _6_1_1.jpg pattern (6th image without model) ONLY
+ * Looks for images 6th and higher without models (_6_x_1.jpg and up)
  * @param imageData - The image data from Zara API or database
- * @returns A usable image URL with _6_1_1.jpg pattern or placeholder
+ * @returns A usable image URL with suitable pattern or placeholder
  */
 export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
   try {
@@ -41,17 +41,17 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
     
     // Handle string URL directly
     else if (typeof imageData === 'string') {
-      // If it's already a URL, check if it's the 6th image
+      // If it's already a URL, check if it's a suitable no-model image
       if (imageData.startsWith('https://') || imageData.startsWith('http://')) {
-        // STRICTLY check for _6_1_1.jpg pattern
-        if (/_6_1_1\.jpg/.test(imageData)) {
-          console.log(`Found direct _6_1_1.jpg URL: ${imageData}`);
+        // Check for 6th+ image without model pattern
+        if (/_[6-9]_\d+_1\.jpg/.test(imageData)) {
+          console.log(`Found direct no-model URL: ${imageData}`);
           return imageData;
         }
         imageUrls = [imageData];
       }
       
-      // IMPORTANT: Handle JSON string arrays like "[\"https://static.zara.net/photos/...jpg\"]"
+      // Handle JSON string arrays like "[\"https://static.zara.net/photos/...jpg\"]"
       else {
         try {
           const parsed = JSON.parse(imageData);
@@ -113,16 +113,26 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
       }
     }
     
-    // STRICTLY find the 6th image with _6_1_1.jpg pattern - NO FALLBACK
-    const sixthImage = imageUrls.find(url => /_6_1_1\.jpg/.test(url));
+    // Find the best no-model image (6th and higher without model)
+    const noModelImages = imageUrls.filter(url => /_[6-9]_\d+_1\.jpg/.test(url));
     
-    if (sixthImage) {
-      console.log(`Found 6th image with _6_1_1.jpg pattern: ${sixthImage}`);
-      return sixthImage;
+    if (noModelImages.length > 0) {
+      // Sort by image number to get the best one (prefer 6th, then 7th, etc.)
+      noModelImages.sort((a, b) => {
+        const aMatch = a.match(/_([6-9])_\d+_1\.jpg/);
+        const bMatch = b.match(/_([6-9])_\d+_1\.jpg/);
+        if (aMatch && bMatch) {
+          return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+        }
+        return 0;
+      });
+      
+      console.log(`Found ${noModelImages.length} no-model images, using: ${noModelImages[0]}`);
+      return noModelImages[0];
     }
     
-    // NO FALLBACK - return placeholder if no _6_1_1.jpg pattern found
-    console.log('No _6_1_1.jpg pattern found, using placeholder. Available URLs:', imageUrls);
+    // NO FALLBACK - return placeholder if no suitable images found
+    console.log('No suitable no-model images found, using placeholder. Available URLs:', imageUrls);
     return '/placeholder.svg';
     
   } catch (error) {

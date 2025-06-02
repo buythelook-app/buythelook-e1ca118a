@@ -1,7 +1,7 @@
 
 /**
- * Helper function to check if an image URL has the specific _6_1_1.jpg pattern
- * Only accepts Zara 6th product photos (without model) with this specific pattern
+ * Helper function to check if an image URL has the specific _6_1_1.jpg pattern or higher (6th image and up)
+ * Only accepts Zara product photos without models (6th image and higher)
  */
 export const isValidImagePattern = (imageData: any): boolean => {
   if (!imageData) {
@@ -38,23 +38,23 @@ export const isValidImagePattern = (imageData: any): boolean => {
     return false;
   }
   
-  // STRICTLY check if any URL contains the _6_1_1.jpg pattern (6th image without model)
-  const hasValidPattern = imageUrls.some(url => /_6_1_1\.jpg/.test(url));
+  // Check if any URL contains pattern _6_x_1.jpg or higher (6th image and up, without model)
+  const hasValidPattern = imageUrls.some(url => /_[6-9]_\d+_1\.jpg/.test(url));
   
-  console.log(`🔍 [DEBUG] Found ${imageUrls.length} URLs, has _6_1_1.jpg pattern: ${hasValidPattern}`);
+  console.log(`🔍 [DEBUG] Found ${imageUrls.length} URLs, has valid no-model pattern (6th+ image): ${hasValidPattern}`);
   if (hasValidPattern) {
-    const validUrl = imageUrls.find(url => /_6_1_1\.jpg/.test(url));
-    console.log(`🔍 [DEBUG] Valid URL found: ${validUrl}`);
+    const validUrl = imageUrls.find(url => /_[6-9]_\d+_1\.jpg/.test(url));
+    console.log(`🔍 [DEBUG] Valid no-model URL found: ${validUrl}`);
   } else {
-    console.log(`🔍 [DEBUG] NO _6_1_1.jpg pattern found in URLs:`, imageUrls);
+    console.log(`🔍 [DEBUG] NO valid no-model pattern found in URLs:`, imageUrls);
   }
   
   return hasValidPattern;
 };
 
 /**
- * Helper function to extract the 6th product image URL (_6_1_1.jpg pattern)
- * Returns placeholder if no _6_1_1.jpg pattern is found
+ * Helper function to extract the best product image URL (6th image and up, without model)
+ * Returns placeholder if no suitable pattern is found
  */
 export const extractMainProductImage = (imageData: any): string => {
   if (!imageData) {
@@ -80,14 +80,24 @@ export const extractMainProductImage = (imageData: any): string => {
     imageUrls = [imageData.url];
   }
   
-  // STRICTLY find the first URL with _6_1_1.jpg pattern - NO FALLBACK
-  const sixthImage = imageUrls.find(url => /_6_1_1\.jpg/.test(url));
+  // Find the best image - prioritize 6th, 7th, 8th, 9th images without model
+  const noModelImages = imageUrls.filter(url => /_[6-9]_\d+_1\.jpg/.test(url));
   
-  if (sixthImage) {
-    console.log(`🔍 [DEBUG] Found _6_1_1.jpg image: ${sixthImage}`);
-    return sixthImage;
+  if (noModelImages.length > 0) {
+    // Sort by image number to get the best one (prefer 6th, then 7th, etc.)
+    noModelImages.sort((a, b) => {
+      const aMatch = a.match(/_([6-9])_\d+_1\.jpg/);
+      const bMatch = b.match(/_([6-9])_\d+_1\.jpg/);
+      if (aMatch && bMatch) {
+        return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+      }
+      return 0;
+    });
+    
+    console.log(`🔍 [DEBUG] Found ${noModelImages.length} no-model images, using: ${noModelImages[0]}`);
+    return noModelImages[0];
   } else {
-    console.log(`🔍 [DEBUG] NO _6_1_1.jpg image found, using placeholder`);
+    console.log(`🔍 [DEBUG] NO suitable no-model images found, using placeholder`);
     return '/placeholder.svg';
   }
 };

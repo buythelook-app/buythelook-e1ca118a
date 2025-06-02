@@ -31,8 +31,8 @@ export const clearGlobalItemTrackers = () => {
   globalItemTracker.shownShoes.clear();
 };
 
-// Helper function to determine item type from product subfamily
-const getItemTypeFromSubfamily = (subfamily: string | null): DashboardItem['type'] => {
+// Helper function to safely map subfamily to item type
+const mapSubfamilyToType = (subfamily: string | null | undefined): DashboardItem['type'] => {
   if (!subfamily) return 'top';
   
   const lowerSubfamily = subfamily.toLowerCase();
@@ -73,7 +73,7 @@ export const matchOutfitToColors = async () => {
     const { data: allItems, error } = await supabase
       .from('zara_cloth')
       .select('*')
-      .limit(50);
+      .limit(100);
 
     if (error) {
       console.error('❌ [DEBUG] Error fetching from zara_cloth:', error);
@@ -85,14 +85,16 @@ export const matchOutfitToColors = async () => {
       return { top: [], bottom: [], shoes: [] };
     }
 
-    // Filter items with valid image patterns
+    // Filter items with valid image patterns (6th+ images without models)
     const validItems = allItems.filter(item => isValidImagePattern(item.image));
+    
+    console.log(`✅ [DEBUG] Valid items with no-model patterns: ${validItems.length} out of ${allItems.length}`);
     
     // Group items by type using safe property access
     const result = {
       top: validItems.filter(item => {
         const subfamily = (item as any).product_subfamily;
-        return subfamily && getItemTypeFromSubfamily(subfamily) === 'top';
+        return mapSubfamilyToType(subfamily) === 'top';
       }).map(item => ({
         id: item.id,
         name: item.product_name || 'Fashion Item',
@@ -102,7 +104,7 @@ export const matchOutfitToColors = async () => {
       })),
       bottom: validItems.filter(item => {
         const subfamily = (item as any).product_subfamily;
-        return subfamily && getItemTypeFromSubfamily(subfamily) === 'bottom';
+        return mapSubfamilyToType(subfamily) === 'bottom';
       }).map(item => ({
         id: item.id,
         name: item.product_name || 'Fashion Item',
@@ -112,7 +114,7 @@ export const matchOutfitToColors = async () => {
       })),
       shoes: validItems.filter(item => {
         const subfamily = (item as any).product_subfamily;
-        return subfamily && getItemTypeFromSubfamily(subfamily) === 'shoes';
+        return mapSubfamilyToType(subfamily) === 'shoes';
       }).map(item => ({
         id: item.id,
         name: item.product_name || 'Fashion Item',
@@ -139,7 +141,7 @@ export const fetchDashboardItems = async (): Promise<{ [key: string]: DashboardI
     const { data: allItems, error } = await supabase
       .from('zara_cloth')
       .select('*')
-      .limit(100);
+      .limit(200);
 
     if (error) {
       console.error('❌ [DEBUG] Error fetching from zara_cloth:', error);
@@ -153,19 +155,19 @@ export const fetchDashboardItems = async (): Promise<{ [key: string]: DashboardI
 
     console.log(`✅ [DEBUG] Fetched ${allItems.length} items from zara_cloth`);
 
-    // Filter items to only include those with _6_1_1.jpg pattern
+    // Filter items to only include those with valid image patterns (6th+ images without models)
     const validItems = allItems.filter(item => {
       const isValid = isValidImagePattern(item.image);
       if (!isValid) {
-        console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - no _6_1_1.jpg pattern`);
+        console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - no suitable no-model image pattern`);
       }
       return isValid;
     });
 
-    console.log(`✅ [DEBUG] Valid items with _6_1_1.jpg pattern: ${validItems.length}`);
+    console.log(`✅ [DEBUG] Valid items with no-model patterns: ${validItems.length}`);
 
     if (validItems.length === 0) {
-      console.log('❌ [DEBUG] No items with _6_1_1.jpg pattern found');
+      console.log('❌ [DEBUG] No items with suitable no-model patterns found');
       return { Work: [], Casual: [], Evening: [], Weekend: [] };
     }
 
@@ -182,7 +184,7 @@ export const fetchDashboardItems = async (): Promise<{ [key: string]: DashboardI
         id: item.id,
         name: item.product_name || 'Fashion Item',
         image: item.image,
-        type: getItemTypeFromSubfamily((item as any).product_subfamily),
+        type: mapSubfamilyToType((item as any).product_subfamily),
         price: item.price ? `$${item.price}` : '$49.99'
       }));
     });
