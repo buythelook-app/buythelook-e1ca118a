@@ -155,7 +155,15 @@ export function useOutfitGeneration() {
       for (const [type, matchedItems] of Object.entries(colorMatches)) {
         if (Array.isArray(matchedItems) && matchedItems.length > 0) {
           const randomIndex = Math.floor(Math.random() * matchedItems.length);
-          items.push(matchedItems[randomIndex]);
+          const item = matchedItems[randomIndex];
+          // Ensure the item conforms to DashboardItem type
+          items.push({
+            id: item.id,
+            name: item.name,
+            image: item.image,
+            type: item.type, // This is already properly typed from the service
+            price: item.price
+          });
         }
       }
       
@@ -279,7 +287,7 @@ export function useOutfitGeneration() {
         items: outfitItems.map(item => ({
           ...item,
           // Ensure each item has a type property for proper look assembly
-          type: item.type || 'unknown'
+          type: item.type || 'top'
         }))
       };
     } catch (error) {
