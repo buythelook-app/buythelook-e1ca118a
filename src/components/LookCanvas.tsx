@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
 
@@ -112,10 +111,10 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       return orderA - orderB;
     });
 
-    // Define clean layout positions - vertical arrangement with proper spacing
-    const padding = 30;
-    const itemWidth = width * 0.7; // 70% of canvas width
-    const itemHeight = (height - (padding * (sortedItems.length + 1))) / sortedItems.length;
+    // Define larger layout positions with increased image size
+    const padding = 25;
+    const itemWidth = width * 0.85; // Increased from 0.7 to 0.85 (85% of canvas width)
+    const itemHeight = Math.max(120, (height - (padding * (sortedItems.length + 1))) / sortedItems.length); // Minimum height of 120px
     const centerX = (width - itemWidth) / 2;
     
     // Show loading state
@@ -164,8 +163,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
               img.src = aiSelectedImageUrl;
             });
 
-            // Calculate position for this item in vertical layout
-            const yPosition = padding + (i * (itemHeight + (padding / 2)));
+            // Calculate position for this item in vertical layout with reduced spacing
+            const yPosition = padding + (i * (itemHeight + (padding * 0.3))); // Reduced spacing between items
             
             // Calculate proper aspect ratio and fit within designated area
             const aspectRatio = img.width / img.height;
@@ -179,6 +178,18 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
               drawHeight = drawWidth / aspectRatio;
             }
 
+            // Ensure minimum size for better visibility
+            const minSize = 100;
+            if (drawWidth < minSize || drawHeight < minSize) {
+              if (drawWidth < drawHeight) {
+                drawWidth = minSize;
+                drawHeight = minSize / aspectRatio;
+              } else {
+                drawHeight = minSize;
+                drawWidth = minSize * aspectRatio;
+              }
+            }
+
             // Center the item horizontally
             const drawX = centerX + (itemWidth - drawWidth) / 2;
             const drawY = yPosition + (itemHeight - drawHeight) / 2;
@@ -186,10 +197,10 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             ctx.save();
             
             // Add subtle shadow effect for depth
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
-            ctx.shadowBlur = 8;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+            ctx.shadowBlur = 12;
             ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 4;
+            ctx.shadowOffsetY = 6;
             
             // Draw the item image
             ctx.drawImage(
