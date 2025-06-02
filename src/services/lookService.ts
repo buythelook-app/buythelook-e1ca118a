@@ -32,6 +32,27 @@ interface ZaraItem {
   [key: string]: any; // For other properties
 }
 
+// Function to check if an item is underwear/intimate apparel
+const isUnderwearItem = (item: ZaraItem): boolean => {
+  const subfamily = item.product_subfamily?.toLowerCase() || '';
+  const name = item.product_name?.toLowerCase() || '';
+  const family = item.product_family?.toLowerCase() || '';
+  
+  // List of underwear/intimate keywords to filter out
+  const underwearKeywords = [
+    'underwear', 'bra', 'panties', 'lingerie', 'brief', 'boxer',
+    'intimate', 'undershirt', 'camisole', 'slip', 'thong',
+    'bikini', 'swimsuit', 'swimwear', 'bathing suit',
+    'תחתונים', 'חזייה', 'תחתון', 'לבוש תחתון'
+  ];
+  
+  return underwearKeywords.some(keyword => 
+    subfamily.includes(keyword) || 
+    name.includes(keyword) || 
+    family.includes(keyword)
+  );
+};
+
 /**
  * Helper function to safely map subfamily to item type
  */
@@ -148,10 +169,19 @@ export const matchOutfitToColors = async () => {
     // Use 'as any[]' to avoid type conversion issues and handle each item individually
     const typedItems = allItems as any[];
 
-    // Filter items with valid image patterns (6th+ images without models)
-    const validItems = typedItems.filter(item => isValidImagePattern(item.image));
+    // Filter items with valid image patterns (6th+ images without models) AND exclude underwear
+    const validItems = typedItems.filter(item => {
+      // First check if it's underwear
+      if (isUnderwearItem(item)) {
+        console.log(`❌ [DEBUG] FILTERED OUT underwear item: ${item.id} - ${item.product_name}`);
+        return false;
+      }
+      
+      // Then check for valid image patterns
+      return isValidImagePattern(item.image);
+    });
     
-    console.log(`✅ [DEBUG] Valid items with no-model patterns: ${validItems.length} out of ${allItems.length}`);
+    console.log(`✅ [DEBUG] Valid non-underwear items with no-model patterns: ${validItems.length} out of ${allItems.length}`);
     
     // Group items by type using safe property access
     const result = {
@@ -221,8 +251,14 @@ export const fetchDashboardItems = async (): Promise<{ [key: string]: DashboardI
     // Use 'as any[]' to avoid type conversion issues
     const typedItems = allItems as any[];
 
-    // Filter items to only include those with valid image patterns (6th+ images without models)
+    // Filter items to only include those with valid image patterns (6th+ images without models) AND exclude underwear
     const validItems = typedItems.filter(item => {
+      // First check if it's underwear
+      if (isUnderwearItem(item)) {
+        console.log(`❌ [DEBUG] FILTERED OUT underwear item: ${item.id} - ${item.product_name}`);
+        return false;
+      }
+      
       const isValid = isValidImagePattern(item.image);
       if (!isValid) {
         console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - no suitable no-model image pattern`);
@@ -230,10 +266,10 @@ export const fetchDashboardItems = async (): Promise<{ [key: string]: DashboardI
       return isValid;
     });
 
-    console.log(`✅ [DEBUG] Valid items with no-model patterns: ${validItems.length}`);
+    console.log(`✅ [DEBUG] Valid non-underwear items with no-model patterns: ${validItems.length}`);
 
     if (validItems.length === 0) {
-      console.log('❌ [DEBUG] No items with suitable no-model patterns found');
+      console.log('❌ [DEBUG] No valid non-underwear items with suitable no-model patterns found');
       return { Work: [], Casual: [], Evening: [], Weekend: [] };
     }
 
@@ -255,7 +291,7 @@ export const fetchDashboardItems = async (): Promise<{ [key: string]: DashboardI
       }));
     });
 
-    console.log(`✅ [DEBUG] Distributed items across occasions:`, Object.keys(result).map(k => `${k}: ${result[k].length}`));
+    console.log(`✅ [DEBUG] Distributed non-underwear items across occasions:`, Object.keys(result).map(k => `${k}: ${result[k].length}`));
     return result;
 
   } catch (error) {
@@ -296,7 +332,7 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
       clearGlobalItemTrackers();
     }
 
-    console.log('🔍 Generating new outfit combination with AI-selected images (no models)...');
+    console.log('🔍 Generating new outfit combination with AI-selected images (no models, no underwear)...');
 
     // Fetch items from zara_cloth table with valid image patterns
     const { data: allItems, error } = await supabase
@@ -313,10 +349,16 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
     // Use 'as any[]' to avoid type conversion issues
     const typedItems = allItems as any[];
 
-    // Enhanced filtering with AI-compatible items (items that have 6th+ image patterns)
+    // Enhanced filtering with AI-compatible items (items that have 6th+ image patterns) AND exclude underwear
     const validItems = typedItems.filter(item => {
       // Check if item has valid image data
       if (!item.image) return false;
+      
+      // First check if it's underwear
+      if (isUnderwearItem(item)) {
+        console.log(`❌ FILTERED OUT underwear item: ${item.id} - ${item.product_name}`);
+        return false;
+      }
       
       // Check for valid image pattern (6th+ images without models)
       let imageUrls: string[] = [];
@@ -349,10 +391,10 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
       return hasValidData;
     });
 
-    console.log(`✅ ${validItems.length} items passed AI-compatible validation`);
+    console.log(`✅ ${validItems.length} non-underwear items passed AI-compatible validation`);
 
     if (validItems.length < 3) {
-      throw new Error('Not enough valid items with no-model images available');
+      throw new Error('Not enough valid non-underwear items with no-model images available');
     }
 
     // Group items by type for proper outfit composition
@@ -371,7 +413,7 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
       return type === 'shoes';
     });
 
-    console.log(`📊 Item distribution: tops=${topItems.length}, bottoms=${bottomItems.length}, shoes=${shoesItems.length}`);
+    console.log(`📊 Non-underwear item distribution: tops=${topItems.length}, bottoms=${bottomItems.length}, shoes=${shoesItems.length}`);
 
     // Select random items from each category or fallback to any valid items
     const getRandomItem = (items: any[], fallbackItems: any[]) => {
@@ -393,7 +435,7 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
     // Cache the result
     outfitCache[cacheKey] = outfitItems;
     
-    console.log('✅ Generated new outfit with AI-compatible items:', outfitItems.map(item => ({
+    console.log('✅ Generated new outfit with AI-compatible non-underwear items:', outfitItems.map(item => ({
       id: item.id,
       type: item.type,
       name: item.name
