@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 
 interface OutfitItem {
@@ -18,7 +19,6 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [loadingState, setLoadingState] = useState<'loading' | 'success' | 'error'>('loading');
   const [loadedCount, setLoadedCount] = useState(0);
-  const [aiProcessedImages, setAiProcessedImages] = useState<{ [key: string]: string }>({});
 
   // Enhanced function to extract product-only images (no models)
   const extractProductOnlyImage = (imageData: any): string => {
@@ -65,56 +65,21 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     return '/placeholder.svg';
   };
 
-  // Get AI-selected image for an item with enhanced filtering
-  const getAISelectedImage = async (item: OutfitItem): Promise<string> => {
-    try {
-      console.log(`🔍 [LookCanvas] Getting AI-selected image for item ${item.id}`);
-      
-      // Check if we already have the AI result cached
-      if (aiProcessedImages[item.id]) {
-        console.log(`🔍 [LookCanvas] Using cached AI image for ${item.id}: ${aiProcessedImages[item.id]}`);
-        return aiProcessedImages[item.id];
-      }
-
-      // First try to extract product-only image directly
-      const directProductImage = extractProductOnlyImage(item.image);
-      if (directProductImage !== '/placeholder.svg') {
-        console.log(`✅ [LookCanvas] Found direct product-only image for ${item.id}: ${directProductImage}`);
-        
-        // Cache the result
-        setAiProcessedImages(prev => ({
-          ...prev,
-          [item.id]: directProductImage
-        }));
-        
-        return directProductImage;
-      }
-
-      // If no direct product image found, try AI analysis
-      const aiResult = await analyzeImagesWithAI(item.id, 1);
-      
-      if (aiResult.success && aiResult.results && aiResult.results.length > 0) {
-        const selectedImage = aiResult.results[0].selectedImage;
-        if (selectedImage && selectedImage !== '/placeholder.svg') {
-          console.log(`✅ [LookCanvas] AI selected image for ${item.id}: ${selectedImage}`);
-          
-          // Cache the result
-          setAiProcessedImages(prev => ({
-            ...prev,
-            [item.id]: selectedImage
-          }));
-          
-          return selectedImage;
-        }
-      }
-      
-      console.log(`⚠️ [LookCanvas] No suitable product image found for ${item.id}, using placeholder`);
-      return '/placeholder.svg';
-      
-    } catch (error) {
-      console.error(`❌ [LookCanvas] Error getting product image for ${item.id}:`, error);
-      return '/placeholder.svg';
+  // Get best available image for an item
+  const getBestImage = (item: OutfitItem): string => {
+    console.log(`🔍 [LookCanvas] Getting best image for item ${item.id}`);
+    
+    // First try to extract product-only image directly
+    const directProductImage = extractProductOnlyImage(item.image);
+    if (directProductImage !== '/placeholder.svg') {
+      console.log(`✅ [LookCanvas] Found direct product image for ${item.id}: ${directProductImage}`);
+      return directProductImage;
     }
+
+    // Fallback to original image or placeholder
+    const fallbackImage = item.image || '/placeholder.svg';
+    console.log(`📦 [LookCanvas] Using fallback image for ${item.id}: ${fallbackImage}`);
+    return fallbackImage;
   };
 
   useEffect(() => {
@@ -216,8 +181,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
           console.log(`🔍 [LookCanvas] Processing ${itemPosition} item: ${item.id} (${item.type}) at position ${i}`);
           
           try {
-            // Get product-only image
-            const productImageUrl = await getAISelectedImage(item);
+            // Get best available image
+            const imageUrl = getBestImage(item);
             
             // Load the image
             const img = new Image();
@@ -225,18 +190,18 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             
             await new Promise((resolve, reject) => {
               img.onload = () => {
-                console.log(`✅ [LookCanvas] Product image loaded: ${item.id} (${itemPosition})`);
+                console.log(`✅ [LookCanvas] Image loaded: ${item.id} (${itemPosition})`);
                 successCount++;
                 setLoadedCount(prev => prev + 1);
                 resolve(null);
               };
               img.onerror = (e) => {
-                console.error(`❌ [LookCanvas] Error loading product image: ${item.id}`, e);
+                console.error(`❌ [LookCanvas] Error loading image: ${item.id}`, e);
                 errorCount++;
                 setLoadedCount(prev => prev + 1);
                 reject(e);
               };
-              img.src = productImageUrl;
+              img.src = imageUrl;
             });
 
             // Calculate position for this item - fixed positions for 3 items
