@@ -72,6 +72,36 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     return '/placeholder.svg';
   };
 
+  // Function to classify item type based on product_subfamily
+  const classifyItemType = (item: OutfitItem): 'top' | 'bottom' | 'shoes' => {
+    const subfamily = item.product_subfamily?.toLowerCase() || '';
+    const name = item.name?.toLowerCase() || '';
+    
+    console.log(`🔍 Classifying item ${item.id}: subfamily="${subfamily}", name="${name}"`);
+    
+    // Bottom items
+    if (subfamily.includes('pants') || subfamily.includes('trousers') || 
+        subfamily.includes('jeans') || subfamily.includes('shorts') || 
+        subfamily.includes('skirt') || subfamily.includes('leggings') ||
+        name.includes('pants') || name.includes('jeans') || name.includes('shorts') || name.includes('skirt')) {
+      console.log(`✅ Classified as BOTTOM: ${item.id}`);
+      return 'bottom';
+    }
+    
+    // Shoes
+    if (subfamily.includes('shoes') || subfamily.includes('sneakers') || 
+        subfamily.includes('boots') || subfamily.includes('sandals') || 
+        subfamily.includes('heels') || subfamily.includes('flats') ||
+        name.includes('shoes') || name.includes('sneakers') || name.includes('boots')) {
+      console.log(`✅ Classified as SHOES: ${item.id}`);
+      return 'shoes';
+    }
+    
+    // Default to top for everything else (shirts, blouses, sweaters, etc.)
+    console.log(`✅ Classified as TOP: ${item.id}`);
+    return 'top';
+  };
+
   // Get AI-selected image for an item with enhanced filtering
   const getAISelectedImage = async (item: OutfitItem): Promise<string> => {
     try {
@@ -126,10 +156,10 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
 
   // Create complete outfit ensuring proper item selection and positioning
   const createCompleteOutfit = (items: OutfitItem[]): OutfitItem[] => {
-    console.log('🔍 ===== DEBUGGING WEEKEND CANVAS =====');
+    console.log('🔍 ===== DEBUGGING CANVAS ITEM CLASSIFICATION =====');
     console.log('🔍 Raw items received:', items.map(item => ({
       id: item.id,
-      type: item.type,
+      originalType: item.type,
       name: item.name || 'Unknown',
       product_subfamily: item.product_subfamily || 'Unknown subfamily'
     })));
@@ -139,53 +169,40 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       return [];
     }
     
-    // Debug each item type classification
-    items.forEach((item, index) => {
-      console.log(`🔍 Item ${index + 1}:`, {
-        id: item.id,
-        originalType: item.type,
-        name: item.name,
-        product_subfamily: item.product_subfamily,
-        shouldBeClassifiedAs: item.product_subfamily ? 
-          (item.product_subfamily.toLowerCase().includes('pants') || 
-           item.product_subfamily.toLowerCase().includes('skirt') || 
-           item.product_subfamily.toLowerCase().includes('shorts') ? 'bottom' :
-           item.product_subfamily.toLowerCase().includes('shoes') || 
-           item.product_subfamily.toLowerCase().includes('heel') || 
-           item.product_subfamily.toLowerCase().includes('sneakers') ? 'shoes' : 'top') : 'unknown'
-      });
-    });
+    // Classify all items properly based on their subfamily
+    const classifiedItems = items.map(item => ({
+      ...item,
+      classifiedType: classifyItemType(item)
+    }));
+    
+    console.log('🔍 Items after classification:', classifiedItems.map(item => ({
+      id: item.id,
+      originalType: item.type,
+      classifiedType: item.classifiedType,
+      name: item.name,
+      subfamily: item.product_subfamily
+    })));
+    
+    // Group items by classified type
+    const topItems = classifiedItems.filter(item => item.classifiedType === 'top');
+    const bottomItems = classifiedItems.filter(item => item.classifiedType === 'bottom');
+    const shoeItems = classifiedItems.filter(item => item.classifiedType === 'shoes');
+    
+    console.log('🔍 Grouped items:');
+    console.log(`  - TOP items: ${topItems.length}`, topItems.map(i => i.id));
+    console.log(`  - BOTTOM items: ${bottomItems.length}`, bottomItems.map(i => i.id));
+    console.log(`  - SHOES items: ${shoeItems.length}`, shoeItems.map(i => i.id));
     
     // Create exactly 3 display items in the correct order
     const outfit: OutfitItem[] = [];
     
-    // 1. TOP item (position 0) - חולצות, חולצות פולו, סוודרים וכו'
-    const topItems = items.filter(item => item.type === 'top');
-    const dressItems = items.filter(item => item.type === 'dress');
-    const outerwearItems = items.filter(item => item.type === 'outerwear');
-    
-    console.log('🔍 Available TOP items:', topItems.length);
-    console.log('🔍 Available DRESS items:', dressItems.length);
-    console.log('🔍 Available OUTERWEAR items:', outerwearItems.length);
-    
+    // 1. TOP item (position 0)
     if (topItems.length > 0) {
       outfit.push({
         ...topItems[0],
         type: 'top'
       });
       console.log('✅ Added TOP item:', topItems[0].id, topItems[0].name);
-    } else if (dressItems.length > 0) {
-      outfit.push({
-        ...dressItems[0],
-        type: 'top' // Display dress as top item
-      });
-      console.log('✅ Added DRESS as TOP:', dressItems[0].id, dressItems[0].name);
-    } else if (outerwearItems.length > 0) {
-      outfit.push({
-        ...outerwearItems[0],
-        type: 'top'
-      });
-      console.log('✅ Added OUTERWEAR as TOP:', outerwearItems[0].id, outerwearItems[0].name);
     } else {
       // Create placeholder top
       outfit.push({
@@ -196,31 +213,13 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       console.log('📦 Added placeholder TOP');
     }
     
-    // 2. BOTTOM item (position 1) - מכנסיים, חצאיות, מכנסיים קצרים
-    const bottomItems = items.filter(item => item.type === 'bottom');
-    
-    console.log('🔍 Available BOTTOM items:', bottomItems.length);
-    bottomItems.forEach(item => {
-      console.log('🔍 Bottom item details:', {
-        id: item.id,
-        name: item.name,
-        product_subfamily: item.product_subfamily
-      });
-    });
-    
+    // 2. BOTTOM item (position 1)
     if (bottomItems.length > 0) {
       outfit.push({
         ...bottomItems[0],
         type: 'bottom'
       });
       console.log('✅ Added BOTTOM item:', bottomItems[0].id, bottomItems[0].name);
-    } else if (dressItems.length > 0 && outfit.length === 1 && outfit[0].type === 'top') {
-      // Only add dress as bottom if we used something else for top
-      outfit.push({
-        ...dressItems[0],
-        type: 'bottom'
-      });
-      console.log('✅ Added DRESS as BOTTOM:', dressItems[0].id, dressItems[0].name);
     } else {
       // Create placeholder bottom
       outfit.push({
@@ -231,11 +230,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       console.log('📦 Added placeholder BOTTOM');
     }
     
-    // 3. SHOES item (position 2) - נעליים
-    const shoeItems = items.filter(item => item.type === 'shoes');
-    
-    console.log('🔍 Available SHOES items:', shoeItems.length);
-    
+    // 3. SHOES item (position 2)
     if (shoeItems.length > 0) {
       outfit.push({
         ...shoeItems[0],
