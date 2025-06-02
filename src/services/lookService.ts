@@ -6,12 +6,100 @@ import { isValidImagePattern } from "../../supabase/functions/trainer-agent/imag
 // Cache for outfit data
 const outfitCache = new Map<string, any>();
 
+// Global cache to track shown items and prevent repetition
+const globalItemTracker = {
+  shownItems: new Map<string, number>(), // id -> times shown
+  shownTops: new Set<string>(),
+  shownBottoms: new Set<string>(),
+  shownShoes: new Set<string>(),
+  maxRepetitions: 2 // Allow an item to appear this many times max
+};
+
 export const clearOutfitCache = (bodyShape?: string, style?: string, mood?: string) => {
   if (bodyShape && style && mood) {
     const cacheKey = `${bodyShape}-${style}-${mood}`;
     outfitCache.delete(cacheKey);
   } else {
     outfitCache.clear();
+  }
+};
+
+export const clearGlobalItemTrackers = () => {
+  globalItemTracker.shownItems.clear();
+  globalItemTracker.shownTops.clear();
+  globalItemTracker.shownBottoms.clear();
+  globalItemTracker.shownShoes.clear();
+};
+
+export const matchOutfitToColors = async () => {
+  try {
+    console.log("🔍 [DEBUG] matchOutfitToColors: Fetching items for color matching");
+    
+    // Fetch items from zara_cloth table
+    const { data: allItems, error } = await supabase
+      .from('zara_cloth')
+      .select('*')
+      .limit(50);
+
+    if (error) {
+      console.error('❌ [DEBUG] Error fetching from zara_cloth:', error);
+      return { top: [], bottom: [], shoes: [] };
+    }
+
+    if (!allItems || allItems.length === 0) {
+      console.log('❌ [DEBUG] No items found in zara_cloth table');
+      return { top: [], bottom: [], shoes: [] };
+    }
+
+    // Filter items with valid image patterns
+    const validItems = allItems.filter(item => isValidImagePattern(item.image));
+    
+    // Group items by type
+    const result = {
+      top: validItems.filter(item => 
+        item.product_subfamily && 
+        ['shirt', 'blouse', 't-shirt', 'top'].some(type => 
+          item.product_subfamily.toLowerCase().includes(type)
+        )
+      ).map(item => ({
+        id: item.id,
+        name: item.product_name || 'Fashion Item',
+        image: item.image,
+        type: 'top',
+        price: item.price ? `$${item.price}` : '$49.99'
+      })),
+      bottom: validItems.filter(item => 
+        item.product_subfamily && 
+        ['pants', 'skirt', 'shorts', 'jeans', 'trousers'].some(type => 
+          item.product_subfamily.toLowerCase().includes(type)
+        )
+      ).map(item => ({
+        id: item.id,
+        name: item.product_name || 'Fashion Item',
+        image: item.image,
+        type: 'bottom',
+        price: item.price ? `$${item.price}` : '$49.99'
+      })),
+      shoes: validItems.filter(item => 
+        item.product_subfamily && 
+        ['shoes', 'heel', 'sneakers', 'boots'].some(type => 
+          item.product_subfamily.toLowerCase().includes(type)
+        )
+      ).map(item => ({
+        id: item.id,
+        name: item.product_name || 'Fashion Item',
+        image: item.image,
+        type: 'shoes',
+        price: item.price ? `$${item.price}` : '$49.99'
+      }))
+    };
+
+    console.log("✅ [DEBUG] Color matching result:", Object.keys(result).map(k => `${k}: ${result[k].length}`));
+    return result;
+
+  } catch (error) {
+    console.error('❌ [DEBUG] Error in matchOutfitToColors:', error);
+    return { top: [], bottom: [], shoes: [] };
   }
 };
 

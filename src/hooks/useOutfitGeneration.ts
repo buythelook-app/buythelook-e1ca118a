@@ -1,8 +1,7 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
-import { fetchFirstOutfitSuggestion, clearOutfitCache, matchOutfitToColors } from "@/services/lookService";
+import { fetchFirstOutfitSuggestion, clearOutfitCache, matchOutfitToColors, clearGlobalItemTrackers } from "@/services/lookService";
 import { DashboardItem } from "@/types/lookTypes";
 import { supabase } from "@/lib/supabaseClient"; // Use the single client instance
 import { generateOutfit as generateOutfitAPI, getStyleRecommendations } from "@/services/outfitGenerationService";
@@ -19,15 +18,6 @@ interface StyleRecommendation {
   description: string;
   recommendations: string[];
 }
-
-// Global cache to track shown items and prevent repetition
-const globalItemTracker = {
-  shownItems: new Map<string, number>(), // id -> times shown
-  shownTops: new Set<string>(),
-  shownBottoms: new Set<string>(),
-  shownShoes: new Set<string>(),
-  maxRepetitions: 2 // Allow an item to appear this many times max
-};
 
 // Track user preferences for color combinations and styles
 const userPreferences = {
@@ -163,7 +153,7 @@ export function useOutfitGeneration() {
       // Populate items array with one item from each matched category
       const items: DashboardItem[] = [];
       for (const [type, matchedItems] of Object.entries(colorMatches)) {
-        if (matchedItems.length > 0) {
+        if (Array.isArray(matchedItems) && matchedItems.length > 0) {
           const randomIndex = Math.floor(Math.random() * matchedItems.length);
           items.push(matchedItems[randomIndex]);
         }
@@ -240,52 +230,6 @@ export function useOutfitGeneration() {
         data: outfitItems.length 
       });
       
-      // Check repetition of items
-      const hasTooManyRepeats = outfitItems.some(item => {
-        const timesShown = globalItemTracker.shownItems.get(item.id) || 0;
-        return timesShown >= globalItemTracker.maxRepetitions;
-      });
-      
-      // Check for repeats by type
-      const top = outfitItems.find(item => item.type === 'top');
-      const bottom = outfitItems.find(item => item.type === 'bottom');
-      const shoes = outfitItems.find(item => item.type === 'shoes');
-      
-      const hasRepeatedTypes = (
-        (top && globalItemTracker.shownTops.has(top.id)) ||
-        (bottom && globalItemTracker.shownBottoms.has(bottom.id)) ||
-        (shoes && globalItemTracker.shownShoes.has(shoes.id))
-      );
-      
-      // If we've shown these items too many times, try again
-      if (hasTooManyRepeats || hasRepeatedTypes) {
-        logger.debug('Found too many repeated items in outfit, regenerating...', {
-          context: "useOutfitGeneration",
-          data: hasTooManyRepeats ? 'Items shown too many times' : 'Type repetition'
-        });
-        
-        // Try with a different mood to get different results
-        const moods = ['elegant', 'energized', 'casual', 'relaxed', 'unique', 'powerful', 'mysterious'];
-        const currentMood = localStorage.getItem('current-mood') || 'energized';
-        const nextMoodIndex = moods.indexOf(currentMood) + 1;
-        const newMood = moods[nextMoodIndex % moods.length];
-        localStorage.setItem('current-mood', newMood);
-        logger.debug(`Trying with different mood: ${newMood}`, {
-          context: "useOutfitGeneration"
-        });
-        
-        return generateOutfitFromItems(true);
-      }
-      
-      // Check if this is a disliked combination (to avoid showing disliked outfits)
-      const outfitKey = `${top?.id || ''}-${bottom?.id || ''}-${shoes?.id || ''}`;
-      if (userPreferences.dislikedCombinations.has(outfitKey)) {
-        logger.debug('This combination was previously disliked, regenerating...', {
-          context: "useOutfitGeneration"
-        });
-        return generateOutfitFromItems(true);
-      }
-      
       // Validate that we have exactly one of each required item type
       const itemTypes = outfitItems.map(item => item.type);
       const hasTop = itemTypes.includes('top');
@@ -304,48 +248,6 @@ export function useOutfitGeneration() {
         // Try one more time if the outfit is incomplete
         return generateOutfitFromItems(true);
       }
-      
-      // Add items to the trackers
-      outfitItems.forEach(item => {
-        // Track by ID
-        const timesShown = globalItemTracker.shownItems.get(item.id) || 0;
-        globalItemTracker.shownItems.set(item.id, timesShown + 1);
-        
-        // Track by type
-        if (item.type === 'top') {
-          globalItemTracker.shownTops.add(item.id);
-        } else if (item.type === 'bottom') {
-          globalItemTracker.shownBottoms.add(item.id);
-        } else if (item.type === 'shoes') {
-          globalItemTracker.shownShoes.add(item.id);
-        }
-      });
-      
-      // Clean up trackers if they get too large
-      if (globalItemTracker.shownItems.size > 50) {
-        // Remove least recently shown items
-        const entries = Array.from(globalItemTracker.shownItems.entries());
-        entries.sort((a, b) => a[1] - b[1]);
-        for (let i = 0; i < 10; i++) {
-          if (i < entries.length) {
-            globalItemTracker.shownItems.delete(entries[i][0]);
-          }
-        }
-      }
-      
-      // Limit the type tracking sets
-      const cleanupTrackingSet = (set: Set<string>, maxSize: number) => {
-        if (set.size > maxSize) {
-          const items = Array.from(set);
-          for (let i = 0; i < Math.min(5, items.length); i++) {
-            set.delete(items[i]);
-          }
-        }
-      };
-      
-      cleanupTrackingSet(globalItemTracker.shownTops, 20);
-      cleanupTrackingSet(globalItemTracker.shownBottoms, 20);
-      cleanupTrackingSet(globalItemTracker.shownShoes, 20);
       
       // Store any recommendations in localStorage if they exist
       const outfitData = localStorage.getItem('last-outfit-data');
@@ -419,6 +321,7 @@ export function useOutfitGeneration() {
     isGenerating,
     generateOutfit,
     recordUserFeedback,
-    recommendations
+    recommendations,
+    clearGlobalItemTrackers
   };
 }
