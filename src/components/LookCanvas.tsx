@@ -42,7 +42,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       console.warn('❌ [LookCanvas] No top item found, using placeholder');
       orderedItems.push({
         id: 'placeholder-top',
-        image: '/placeholder.svg',
+        image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=400&fit=crop',
         type: 'top',
         name: 'Top Item'
       });
@@ -54,7 +54,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       console.warn('❌ [LookCanvas] No bottom item found, using placeholder');
       orderedItems.push({
         id: 'placeholder-bottom',
-        image: '/placeholder.svg',
+        image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop',
         type: 'bottom',
         name: 'Bottom Item'
       });
@@ -63,12 +63,12 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     if (shoesItem) {
       orderedItems.push(shoesItem);
     } else {
-      console.warn('❌ [LookCanvas] No shoes item found, using placeholder');
+      console.warn('❌ [LookCanvas] No shoes item found, using default shoes image');
       orderedItems.push({
         id: 'placeholder-shoes',
-        image: '/placeholder.svg',
+        image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=400&fit=crop',
         type: 'shoes',
-        name: 'Shoes'
+        name: 'נעליים'
       });
     }
 
@@ -80,7 +80,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
   const extractProductOnlyImage = (imageData: any): string => {
     if (!imageData) {
       console.log('🔍 [LookCanvas] No image data provided');
-      return '/placeholder.svg';
+      return 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop';
     }
     
     let imageUrls: string[] = [];
@@ -117,23 +117,29 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       }
     }
     
-    console.log('🔍 [LookCanvas] No suitable product-only images found, using placeholder');
-    return '/placeholder.svg';
+    console.log('🔍 [LookCanvas] No suitable product-only images found, using fallback');
+    return 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop';
   };
 
   // Get best available image for an item
   const getBestImage = (item: OutfitItem): string => {
     console.log(`🔍 [LookCanvas] Getting best image for item ${item.id}`);
     
+    // If it's a placeholder, return the image directly
+    if (item.id.startsWith('placeholder-')) {
+      console.log(`✅ [LookCanvas] Using placeholder image for ${item.id}: ${item.image}`);
+      return item.image;
+    }
+    
     // First try to extract product-only image directly
     const directProductImage = extractProductOnlyImage(item.image);
-    if (directProductImage !== '/placeholder.svg') {
+    if (directProductImage !== 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop') {
       console.log(`✅ [LookCanvas] Found direct product image for ${item.id}: ${directProductImage}`);
       return directProductImage;
     }
 
     // Fallback to original image or placeholder
-    const fallbackImage = item.image || '/placeholder.svg';
+    const fallbackImage = item.image || 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop';
     console.log(`📦 [LookCanvas] Using fallback image for ${item.id}: ${fallbackImage}`);
     return fallbackImage;
   };
@@ -288,12 +294,36 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             
             ctx.restore();
             
+            // Add label for placeholders to make them clear
+            if (item.id.startsWith('placeholder-')) {
+              ctx.save();
+              ctx.font = '14px Arial';
+              ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+              ctx.textAlign = 'center';
+              ctx.fillText(item.name || item.type, drawX + drawWidth / 2, drawY + drawHeight + 20);
+              ctx.restore();
+            }
+            
             console.log(`✅ [LookCanvas] Drew ${itemPosition} at position ${i}: x=${Math.round(drawX)}, y=${Math.round(drawY)}, w=${Math.round(drawWidth)}, h=${Math.round(drawHeight)}`);
 
           } catch (imgError) {
             console.error(`❌ [LookCanvas] Error processing item: ${item.id}`, imgError);
             errorCount++;
             setLoadedCount(prev => prev + 1);
+            
+            // Draw error placeholder for failed items
+            const yPosition = padding + (i * (itemHeight + itemSpacing));
+            const drawX = centerX;
+            const drawY = yPosition + (itemHeight - 40) / 2;
+            
+            ctx.save();
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(drawX, drawY, itemWidth, 40);
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#666666';
+            ctx.textAlign = 'center';
+            ctx.fillText(`שגיאה בטעינת ${['חולצה', 'מכנסיים', 'נעליים'][i]}`, drawX + itemWidth / 2, drawY + 25);
+            ctx.restore();
           }
         }
 
