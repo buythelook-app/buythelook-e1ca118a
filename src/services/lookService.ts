@@ -274,9 +274,9 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
       clearGlobalItemTrackers();
     }
 
-    console.log('🔍 Generating new outfit combination with AI images...');
+    console.log('🔍 Generating new outfit combination with AI-selected images (no models)...');
 
-    // Fetch more items to ensure variety
+    // Fetch items from zara_cloth table with valid image patterns
     const { data: allItems, error } = await supabase
       .from('zara_cloth')
       .select('*')
@@ -288,38 +288,90 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
 
     console.log(`📊 Fetched ${allItems.length} total items from database`);
 
-    // Enhanced filtering with AI-compatible items
+    // Enhanced filtering with AI-compatible items (items that have 6th+ image patterns)
     const validItems = allItems.filter(item => {
-      const hasValidImage = extractZaraImageUrl(item.image) !== '/placeholder.svg';
+      // Check if item has valid image data
+      if (!item.image) return false;
+      
+      // Check for valid image pattern (6th+ images without models)
+      let imageUrls: string[] = [];
+      
+      if (typeof item.image === 'string') {
+        try {
+          const parsed = JSON.parse(item.image);
+          if (Array.isArray(parsed)) {
+            imageUrls = parsed.filter(url => typeof url === 'string');
+          } else {
+            imageUrls = [item.image];
+          }
+        } catch {
+          imageUrls = [item.image];
+        }
+      } else if (Array.isArray(item.image)) {
+        imageUrls = item.image.filter(url => typeof url === 'string');
+      }
+      
+      // Look for 6th+ image pattern (without models)
+      const hasNoModelImage = imageUrls.some(url => /_[6-9]_\d+_1\.jpg/.test(url));
+      
+      if (!hasNoModelImage) {
+        console.log(`❌ FILTERED OUT item ${item.id} - no suitable no-model image pattern`);
+        return false;
+      }
+      
       const hasValidData = item.product_name && item.price;
-      return hasValidImage && hasValidData;
+      console.log(`✅ KEEPING item ${item.id} - has no-model image pattern and valid data`);
+      return hasValidData;
     });
 
-    console.log(`✅ ${validItems.length} items passed validation`);
+    console.log(`✅ ${validItems.length} items passed AI-compatible validation`);
 
     if (validItems.length < 3) {
-      throw new Error('Not enough valid items available');
+      throw new Error('Not enough valid items with no-model images available');
     }
 
-    // Randomly select and map items with AI image selection
-    const shuffled = [...validItems].sort(() => Math.random() - 0.5);
-    const selectedItems = shuffled.slice(0, 3);
+    // Group items by type for proper outfit composition
+    const topItems = validItems.filter(item => {
+      const type = mapSubfamilyToType(item.product_subfamily);
+      return type === 'top';
+    });
+    
+    const bottomItems = validItems.filter(item => {
+      const type = mapSubfamilyToType(item.product_subfamily);
+      return type === 'bottom';
+    });
+    
+    const shoesItems = validItems.filter(item => {
+      const type = mapSubfamilyToType(item.product_subfamily);
+      return type === 'shoes';
+    });
 
-    // Map items with AI-selected images
-    const outfitItems: DashboardItem[] = [];
-    const topItem = await mapZaraItemToDashboardItem(selectedItems[0], 'top');
-    const bottomItem = await mapZaraItemToDashboardItem(selectedItems[1], 'bottom');
-    const shoesItem = await mapZaraItemToDashboardItem(selectedItems[2], 'shoes');
+    console.log(`📊 Item distribution: tops=${topItems.length}, bottoms=${bottomItems.length}, shoes=${shoesItems.length}`);
 
-    outfitItems.push(topItem, bottomItem, shoesItem);
+    // Select random items from each category or fallback to any valid items
+    const getRandomItem = (items: any[], fallbackItems: any[]) => {
+      const sourceItems = items.length > 0 ? items : fallbackItems;
+      return sourceItems[Math.floor(Math.random() * sourceItems.length)];
+    };
+
+    const selectedTop = getRandomItem(topItems, validItems);
+    const selectedBottom = getRandomItem(bottomItems, validItems);
+    const selectedShoes = getRandomItem(shoesItems, validItems);
+
+    // Map items with AI-selected images (the Canvas will handle AI image selection)
+    const outfitItems: DashboardItem[] = [
+      await mapZaraItemToDashboardItem(selectedTop, 'top'),
+      await mapZaraItemToDashboardItem(selectedBottom, 'bottom'),
+      await mapZaraItemToDashboardItem(selectedShoes, 'shoes')
+    ];
 
     // Cache the result
     outfitCache[cacheKey] = outfitItems;
     
-    console.log('✅ Generated new outfit with AI-selected images:', outfitItems.map(item => ({
+    console.log('✅ Generated new outfit with AI-compatible items:', outfitItems.map(item => ({
       id: item.id,
       type: item.type,
-      hasValidImage: item.image !== '/placeholder.svg'
+      name: item.name
     })));
 
     return outfitItems;

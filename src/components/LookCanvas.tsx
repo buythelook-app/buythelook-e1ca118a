@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
-import { removeBackground, loadImageFromUrl } from "@/utils/backgroundRemoval";
+import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
 
 interface OutfitItem {
   id: string;
@@ -24,7 +24,45 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [loadingState, setLoadingState] = useState<'loading' | 'success' | 'error'>('loading');
   const [loadedCount, setLoadedCount] = useState(0);
-  const [processingCount, setProcessingCount] = useState(0);
+  const [aiProcessedImages, setAiProcessedImages] = useState<{ [key: string]: string }>({});
+
+  // Get AI-selected image for an item
+  const getAISelectedImage = async (item: OutfitItem): Promise<string> => {
+    try {
+      console.log(`🤖 Getting AI-selected image for item ${item.id}`);
+      
+      // Check if we already have the AI result cached
+      if (aiProcessedImages[item.id]) {
+        console.log(`📦 Using cached AI image for ${item.id}: ${aiProcessedImages[item.id]}`);
+        return aiProcessedImages[item.id];
+      }
+
+      // Get AI analysis for this specific item
+      const aiResult = await analyzeImagesWithAI(item.id, 1);
+      
+      if (aiResult.success && aiResult.results && aiResult.results.length > 0) {
+        const selectedImage = aiResult.results[0].selectedImage;
+        if (selectedImage && selectedImage !== '/placeholder.svg') {
+          console.log(`✅ AI selected image for ${item.id}: ${selectedImage}`);
+          
+          // Cache the result
+          setAiProcessedImages(prev => ({
+            ...prev,
+            [item.id]: selectedImage
+          }));
+          
+          return selectedImage;
+        }
+      }
+      
+      console.log(`⚠️ AI analysis failed for ${item.id}, using original image`);
+      return item.image;
+      
+    } catch (error) {
+      console.error(`❌ Error getting AI image for ${item.id}:`, error);
+      return item.image;
+    }
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -36,7 +74,6 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
     // Reset loading state when items change
     setLoadingState('loading');
     setLoadedCount(0);
-    setProcessingCount(0);
 
     // Set up canvas with device pixel ratio
     const scale = window.devicePixelRatio || 1;
@@ -46,7 +83,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
     // Clear and set background
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#f8f9fa';
     ctx.fillRect(0, 0, width, height);
 
     // Render a loading message if no items
@@ -54,12 +91,12 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       ctx.font = '16px Arial';
       ctx.fillStyle = '#666666';
       ctx.textAlign = 'center';
-      ctx.fillText('No outfit items to display', width / 2, height / 2);
+      ctx.fillText('אין פריטי תלבושת להצגה', width / 2, height / 2);
       setLoadingState('error');
       return;
     }
 
-    // Sort items in correct rendering order (top to bottom)
+    // Sort items in correct rendering order
     const renderOrder = { top: 0, outerwear: 1, bottom: 2, dress: 2, shoes: 3 };
     const sortedItems = [...items].sort((a, b) => {
       const orderA = renderOrder[a.type] ?? 999;
@@ -67,74 +104,111 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       return orderA - orderB;
     });
 
-    // Define positions in thirds - no overlap
+    // Define positions in thirds with proper spacing
     const thirdHeight = height / 3;
+    const itemSpacing = 20; // Space between items
+    
     const defaultPositions = {
-      // Top third - for tops and outerwear
-      top: { x: width * 0.1, y: 0, width: width * 0.8, height: thirdHeight * 0.9 },
-      outerwear: { x: width * 0.05, y: 0, width: width * 0.9, height: thirdHeight * 0.9 },
+      // Top third - for tops and outerwear, distributed horizontally
+      top: { 
+        x: width * 0.1, 
+        y: itemSpacing, 
+        width: width * 0.35, 
+        height: thirdHeight - (itemSpacing * 2) 
+      },
+      outerwear: { 
+        x: width * 0.55, 
+        y: itemSpacing, 
+        width: width * 0.35, 
+        height: thirdHeight - (itemSpacing * 2) 
+      },
       
-      // Middle third - for bottoms and dresses
-      bottom: { x: width * 0.1, y: thirdHeight, width: width * 0.8, height: thirdHeight * 0.9 },
-      dress: { x: width * 0.1, y: thirdHeight * 0.5, width: width * 0.8, height: thirdHeight * 1.4 },
+      // Middle third - for bottoms and dresses, distributed horizontally
+      bottom: { 
+        x: width * 0.1, 
+        y: thirdHeight + itemSpacing, 
+        width: width * 0.35, 
+        height: thirdHeight - (itemSpacing * 2) 
+      },
+      dress: { 
+        x: width * 0.55, 
+        y: thirdHeight + itemSpacing, 
+        width: width * 0.35, 
+        height: thirdHeight - (itemSpacing * 2) 
+      },
       
-      // Bottom third - for shoes and accessories
-      shoes: { x: width * 0.2, y: thirdHeight * 2, width: width * 0.6, height: thirdHeight * 0.9 },
-      accessory: { x: width * 0.15, y: thirdHeight, width: width * 0.7, height: thirdHeight * 0.8 },
-      sunglasses: { x: width * 0.25, y: thirdHeight * 0.1, width: width * 0.5, height: thirdHeight * 0.3 },
-      cart: { x: width * 0.1, y: thirdHeight, width: width * 0.8, height: thirdHeight * 0.9 }
+      // Bottom third - for shoes and accessories, distributed horizontally
+      shoes: { 
+        x: width * 0.1, 
+        y: (thirdHeight * 2) + itemSpacing, 
+        width: width * 0.35, 
+        height: thirdHeight - (itemSpacing * 2) 
+      },
+      accessory: { 
+        x: width * 0.55, 
+        y: (thirdHeight * 2) + itemSpacing, 
+        width: width * 0.35, 
+        height: thirdHeight - (itemSpacing * 2) 
+      },
+      sunglasses: { 
+        x: width * 0.25, 
+        y: itemSpacing, 
+        width: width * 0.5, 
+        height: thirdHeight * 0.3 
+      },
+      cart: { 
+        x: width * 0.1, 
+        y: thirdHeight + itemSpacing, 
+        width: width * 0.8, 
+        height: thirdHeight - (itemSpacing * 2) 
+      }
     };
 
     // Show loading state
     ctx.font = '16px Arial';
     ctx.fillStyle = '#666666';
     ctx.textAlign = 'center';
-    ctx.fillText('Loading and processing outfit items...', width / 2, height / 2);
+    ctx.fillText('טוען ומעבד תמונות ללא דוגמניות...', width / 2, height / 2);
 
     const loadImages = async () => {
       try {
         let successCount = 0;
         let errorCount = 0;
         
-        console.log('Loading and processing images for items:', sortedItems);
+        console.log('🔍 Loading AI-selected images for items:', sortedItems);
         
-        for (const item of sortedItems) {
-          console.log('Processing item:', item.id, item.type, item.image);
+        for (let i = 0; i < sortedItems.length; i++) {
+          const item = sortedItems[i];
+          console.log(`🔍 Processing item ${i + 1}/${sortedItems.length}: ${item.id} (${item.type})`);
           
           try {
-            setProcessingCount(prev => prev + 1);
+            // Get AI-selected image without model
+            const aiSelectedImageUrl = await getAISelectedImage(item);
             
-            // Load the original image
-            const originalImg = await loadImageFromUrl(item.image);
-            console.log('Original image loaded:', item.image);
-
-            // Remove background from the image
-            console.log('Removing background for item:', item.id);
-            const processedBlob = await removeBackground(originalImg);
-            
-            // Create a new image from the processed blob
-            const processedImageUrl = URL.createObjectURL(processedBlob);
-            const processedImg = new Image();
+            // Load the AI-selected image
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
             
             await new Promise((resolve, reject) => {
-              processedImg.onload = () => {
-                console.log('Processed image loaded successfully:', item.id);
+              img.onload = () => {
+                console.log(`✅ AI-selected image loaded: ${item.id}`);
                 successCount++;
                 setLoadedCount(prev => prev + 1);
                 resolve(null);
               };
-              processedImg.onerror = (e) => {
-                console.error('Error loading processed image:', item.id, e);
+              img.onerror = (e) => {
+                console.error(`❌ Error loading AI-selected image: ${item.id}`, e);
                 errorCount++;
                 setLoadedCount(prev => prev + 1);
                 reject(e);
               };
-              processedImg.src = processedImageUrl;
+              img.src = aiSelectedImageUrl;
             });
 
             const position = item.position || defaultPositions[item.type];
             if (position) {
-              const aspectRatio = processedImg.width / processedImg.height;
+              // Calculate proper aspect ratio and fit within designated area
+              const aspectRatio = img.width / img.height;
               let drawWidth = position.width;
               let drawHeight = position.height;
 
@@ -151,9 +225,14 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
 
               ctx.save();
               
-              // Draw with proper positioning in thirds
+              // Add subtle border for each item
+              ctx.strokeStyle = '#e0e0e0';
+              ctx.lineWidth = 1;
+              ctx.strokeRect(centerX - 2, centerY - 2, drawWidth + 4, drawHeight + 4);
+              
+              // Draw the item image
               ctx.drawImage(
-                processedImg,
+                img,
                 centerX,
                 centerY,
                 drawWidth,
@@ -162,14 +241,11 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
               
               ctx.restore();
               
-              console.log(`✅ Drew ${item.type} at position: x=${centerX}, y=${centerY}, w=${drawWidth}, h=${drawHeight}`);
+              console.log(`✅ Drew ${item.type} (AI-selected) at: x=${Math.round(centerX)}, y=${Math.round(centerY)}, w=${Math.round(drawWidth)}, h=${Math.round(drawHeight)}`);
             }
 
-            // Clean up the blob URL
-            URL.revokeObjectURL(processedImageUrl);
-
           } catch (imgError) {
-            console.error('Error processing item:', item.id, imgError);
+            console.error(`❌ Error processing item: ${item.id}`, imgError);
             errorCount++;
             setLoadedCount(prev => prev + 1);
           }
@@ -181,12 +257,12 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
           
           // Draw error message
           ctx.clearRect(0, 0, width, height);
-          ctx.fillStyle = '#ffffff';
+          ctx.fillStyle = '#f8f9fa';
           ctx.fillRect(0, 0, width, height);
           ctx.font = '16px Arial';
           ctx.fillStyle = '#ff0000';
           ctx.textAlign = 'center';
-          ctx.fillText('Failed to process outfit images', width / 2, height / 2);
+          ctx.fillText('שגיאה בעיבוד תמונות ללא דוגמניות', width / 2, height / 2);
         } else if (successCount > 0) {
           setLoadingState('success');
         } else {
@@ -194,7 +270,7 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
         }
 
       } catch (error) {
-        console.error('Error in loadImages:', error);
+        console.error('❌ Error in loadImages:', error);
         setLoadingState('error');
       }
     };
@@ -216,8 +292,8 @@ export const LookCanvas = ({ items, width = 600, height = 800 }: LookCanvasProps
       {loadingState === 'loading' && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 rounded-lg">
           <div className="bg-white p-3 rounded shadow text-center">
-            <p>עיבוד תמונות... {loadedCount}/{items.length}</p>
-            <p className="text-xs text-gray-600">מסיר רקע ומציב בשלישים</p>
+            <p>מעבד תמונות ללא דוגמניות... {loadedCount}/{items.length}</p>
+            <p className="text-xs text-gray-600">סוכן AI בוחר תמונות מתאימות</p>
           </div>
         </div>
       )}
