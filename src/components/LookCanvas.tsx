@@ -31,7 +31,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
   // Enhanced function to extract product-only images (no models)
   const extractProductOnlyImage = (imageData: any): string => {
     if (!imageData) {
-      console.log('No image data provided');
+      console.log('🔍 [LookCanvas] No image data provided');
       return '/placeholder.svg';
     }
     
@@ -64,60 +64,30 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     for (const pattern of productOnlyPatterns) {
       const matchingImage = imageUrls.find(url => pattern.test(url));
       if (matchingImage) {
-        console.log(`Found product-only image with pattern ${pattern}:`, matchingImage);
+        console.log(`🔍 [LookCanvas] Found product-only image with pattern ${pattern}:`, matchingImage);
         return matchingImage;
       }
     }
     
-    console.log('No suitable product-only images found, using placeholder');
+    console.log('🔍 [LookCanvas] No suitable product-only images found, using placeholder');
     return '/placeholder.svg';
-  };
-
-  // Function to classify item type based on product_subfamily
-  const classifyItemType = (item: OutfitItem): 'top' | 'bottom' | 'shoes' => {
-    const subfamily = item.product_subfamily?.toLowerCase() || '';
-    const name = item.name?.toLowerCase() || '';
-    
-    console.log(`🔍 Classifying item ${item.id}: subfamily="${subfamily}", name="${name}"`);
-    
-    // Bottom items
-    if (subfamily.includes('pants') || subfamily.includes('trousers') || 
-        subfamily.includes('jeans') || subfamily.includes('shorts') || 
-        subfamily.includes('skirt') || subfamily.includes('leggings') ||
-        name.includes('pants') || name.includes('jeans') || name.includes('shorts') || name.includes('skirt')) {
-      console.log(`✅ Classified as BOTTOM: ${item.id}`);
-      return 'bottom';
-    }
-    
-    // Shoes
-    if (subfamily.includes('shoes') || subfamily.includes('sneakers') || 
-        subfamily.includes('boots') || subfamily.includes('sandals') || 
-        subfamily.includes('heels') || subfamily.includes('flats') ||
-        name.includes('shoes') || name.includes('sneakers') || name.includes('boots')) {
-      console.log(`✅ Classified as SHOES: ${item.id}`);
-      return 'shoes';
-    }
-    
-    // Default to top for everything else (shirts, blouses, sweaters, etc.)
-    console.log(`✅ Classified as TOP: ${item.id}`);
-    return 'top';
   };
 
   // Get AI-selected image for an item with enhanced filtering
   const getAISelectedImage = async (item: OutfitItem): Promise<string> => {
     try {
-      console.log(`🤖 Getting AI-selected image for item ${item.id}`);
+      console.log(`🔍 [LookCanvas] Getting AI-selected image for item ${item.id}`);
       
       // Check if we already have the AI result cached
       if (aiProcessedImages[item.id]) {
-        console.log(`📦 Using cached AI image for ${item.id}: ${aiProcessedImages[item.id]}`);
+        console.log(`🔍 [LookCanvas] Using cached AI image for ${item.id}: ${aiProcessedImages[item.id]}`);
         return aiProcessedImages[item.id];
       }
 
       // First try to extract product-only image directly
       const directProductImage = extractProductOnlyImage(item.image);
       if (directProductImage !== '/placeholder.svg') {
-        console.log(`✅ Found direct product-only image for ${item.id}: ${directProductImage}`);
+        console.log(`✅ [LookCanvas] Found direct product-only image for ${item.id}: ${directProductImage}`);
         
         // Cache the result
         setAiProcessedImages(prev => ({
@@ -134,7 +104,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       if (aiResult.success && aiResult.results && aiResult.results.length > 0) {
         const selectedImage = aiResult.results[0].selectedImage;
         if (selectedImage && selectedImage !== '/placeholder.svg') {
-          console.log(`✅ AI selected image for ${item.id}: ${selectedImage}`);
+          console.log(`✅ [LookCanvas] AI selected image for ${item.id}: ${selectedImage}`);
           
           // Cache the result
           setAiProcessedImages(prev => ({
@@ -146,136 +116,13 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         }
       }
       
-      console.log(`⚠️ No suitable product image found for ${item.id}, using placeholder`);
+      console.log(`⚠️ [LookCanvas] No suitable product image found for ${item.id}, using placeholder`);
       return '/placeholder.svg';
       
     } catch (error) {
-      console.error(`❌ Error getting product image for ${item.id}:`, error);
+      console.error(`❌ [LookCanvas] Error getting product image for ${item.id}:`, error);
       return '/placeholder.svg';
     }
-  };
-
-  // Create complete outfit ensuring proper item selection and positioning
-  const createCompleteOutfit = (items: OutfitItem[]): OutfitItem[] => {
-    console.log('🔍 ===== DEBUGGING CANVAS ITEM CLASSIFICATION =====');
-    console.log('🔍 Raw items received:', items.map(item => ({
-      id: item.id,
-      originalType: item.type,
-      name: item.name || 'Unknown',
-      product_subfamily: item.product_subfamily || 'Unknown subfamily'
-    })));
-    
-    if (!items || items.length === 0) {
-      console.log('❌ No items provided');
-      return [];
-    }
-    
-    // Classify all items properly based on their subfamily
-    const classifiedItems = items.map(item => ({
-      ...item,
-      classifiedType: classifyItemType(item)
-    }));
-    
-    console.log('🔍 Items after classification:', classifiedItems.map(item => ({
-      id: item.id,
-      originalType: item.type,
-      classifiedType: item.classifiedType,
-      name: item.name,
-      subfamily: item.product_subfamily
-    })));
-    
-    // Group items by classified type
-    const topItems = classifiedItems.filter(item => item.classifiedType === 'top');
-    const bottomItems = classifiedItems.filter(item => item.classifiedType === 'bottom');
-    const shoeItems = classifiedItems.filter(item => item.classifiedType === 'shoes');
-    
-    console.log('🔍 Grouped items:');
-    console.log(`  - TOP items: ${topItems.length}`, topItems.map(i => i.id));
-    console.log(`  - BOTTOM items: ${bottomItems.length}`, bottomItems.map(i => i.id));
-    console.log(`  - SHOES items: ${shoeItems.length}`, shoeItems.map(i => i.id));
-    
-    // Create exactly 3 display items in the correct order - ALWAYS 3 ITEMS
-    const outfit: OutfitItem[] = [];
-    
-    // 1. TOP item (position 0) - MANDATORY
-    if (topItems.length > 0) {
-      outfit.push({
-        ...topItems[0],
-        type: 'top'
-      });
-      console.log('✅ Added TOP item:', topItems[0].id, topItems[0].name);
-    } else {
-      // Create placeholder top - ALWAYS ADD A TOP
-      outfit.push({
-        id: 'placeholder-top',
-        image: '/placeholder.svg',
-        type: 'top',
-        name: 'חלק עליון',
-        product_subfamily: 'top'
-      });
-      console.log('📦 Added placeholder TOP');
-    }
-    
-    // 2. BOTTOM item (position 1) - MANDATORY
-    if (bottomItems.length > 0) {
-      outfit.push({
-        ...bottomItems[0],
-        type: 'bottom'
-      });
-      console.log('✅ Added BOTTOM item:', bottomItems[0].id, bottomItems[0].name);
-    } else {
-      // Create placeholder bottom - ALWAYS ADD A BOTTOM
-      outfit.push({
-        id: 'placeholder-bottom',
-        image: '/placeholder.svg',
-        type: 'bottom',
-        name: 'חלק תחתון',
-        product_subfamily: 'bottom'
-      });
-      console.log('📦 Added placeholder BOTTOM');
-    }
-    
-    // 3. SHOES item (position 2) - MANDATORY
-    if (shoeItems.length > 0) {
-      outfit.push({
-        ...shoeItems[0],
-        type: 'shoes'
-      });
-      console.log('✅ Added SHOES item:', shoeItems[0].id, shoeItems[0].name);
-    } else {
-      // Create placeholder shoes - ALWAYS ADD SHOES
-      outfit.push({
-        id: 'placeholder-shoes',
-        image: '/placeholder.svg',
-        type: 'shoes',
-        name: 'נעליים',
-        product_subfamily: 'shoes'
-      });
-      console.log('📦 Added placeholder SHOES');
-    }
-    
-    // VERIFY WE ALWAYS HAVE EXACTLY 3 ITEMS
-    if (outfit.length !== 3) {
-      console.error(`❌ ERROR: Expected 3 items but got ${outfit.length}`);
-      // Force 3 items if something went wrong
-      while (outfit.length < 3) {
-        outfit.push({
-          id: `force-placeholder-${outfit.length}`,
-          image: '/placeholder.svg',
-          type: outfit.length === 1 ? 'bottom' : 'shoes',
-          name: `פריט ${outfit.length + 1}`,
-          product_subfamily: 'placeholder'
-        });
-      }
-    }
-    
-    console.log(`✅ Final outfit created with exactly ${outfit.length} items:`);
-    outfit.forEach((item, i) => {
-      console.log(`${i + 1}. ${item.type.toUpperCase()}: ${item.id} (${item.name || 'Unknown'})`);
-    });
-    console.log('🔍 ===== END DEBUGGING =====');
-    
-    return outfit;
   };
 
   useEffect(() => {
@@ -284,6 +131,13 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    console.log('🔍 [LookCanvas] ===== STARTING CANVAS RENDER =====');
+    console.log('🔍 [LookCanvas] Received items:', items.map(item => ({
+      id: item.id,
+      type: item.type,
+      name: item.name || 'Unknown'
+    })));
 
     // Reset loading state when items change
     setLoadingState('loading');
@@ -301,7 +155,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     ctx.fillRect(0, 0, width, height);
 
     // Render a loading message if no items
-    if (items.length === 0) {
+    if (!items || items.length === 0) {
+      console.log('❌ [LookCanvas] No items provided');
       ctx.font = '16px Arial';
       ctx.fillStyle = '#666666';
       ctx.textAlign = 'center';
@@ -310,19 +165,31 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       return;
     }
 
-    // Create complete outfit with exactly 3 items
-    const completeOutfit = createCompleteOutfit(items);
-    
-    if (completeOutfit.length === 0) {
+    // Validate we have exactly 3 items in the right order
+    if (items.length !== 3) {
+      console.error(`❌ [LookCanvas] Expected 3 items but got ${items.length}`);
       ctx.font = '16px Arial';
-      ctx.fillStyle = '#666666';
+      ctx.fillStyle = '#ff0000';
       ctx.textAlign = 'center';
-      ctx.fillText('לא נמצאו פריטים מתאימים', width / 2, height / 2);
+      ctx.fillText(`שגיאה: נדרשים 3 פריטים, קיבלתי ${items.length}`, width / 2, height / 2);
       setLoadingState('error');
       return;
     }
 
-    console.log('📐 Final display order:', completeOutfit.map((item, i) => `${i}. ${item.type} (${item.id})`));
+    // Verify item types are correct
+    const expectedTypes = ['top', 'bottom', 'shoes'];
+    const actualTypes = items.map(item => item.type);
+    
+    console.log('🔍 [LookCanvas] Expected types:', expectedTypes);
+    console.log('🔍 [LookCanvas] Actual types:', actualTypes);
+    
+    for (let i = 0; i < 3; i++) {
+      if (actualTypes[i] !== expectedTypes[i]) {
+        console.error(`❌ [LookCanvas] Position ${i}: expected ${expectedTypes[i]}, got ${actualTypes[i]}`);
+      }
+    }
+
+    console.log('🔍 [LookCanvas] Final display order:', items.map((item, i) => `${i}. ${item.type} (${item.id})`));
 
     // Define layout for items in vertical arrangement
     const padding = 15;
@@ -343,18 +210,18 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         let successCount = 0;
         let errorCount = 0;
         
-        console.log(`🔍 Loading exactly ${completeOutfit.length} items for display (should be 3)`);
+        console.log(`🔍 [LookCanvas] Loading exactly ${items.length} items for display`);
         
         // Clear the canvas for clean rendering
         ctx.clearRect(0, 0, width, height);
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, width, height);
         
-        // Process all items in the outfit (should be exactly 3)
-        for (let i = 0; i < completeOutfit.length; i++) {
-          const item = completeOutfit[i];
+        // Process all items (should be exactly 3)
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
           const itemPosition = ['TOP', 'BOTTOM', 'SHOES'][i] || `ITEM_${i}`;
-          console.log(`🔍 Processing ${itemPosition} item: ${item.id} (${item.type}) at position ${i}`);
+          console.log(`🔍 [LookCanvas] Processing ${itemPosition} item: ${item.id} (${item.type}) at position ${i}`);
           
           try {
             // Get product-only image
@@ -366,13 +233,13 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             
             await new Promise((resolve, reject) => {
               img.onload = () => {
-                console.log(`✅ Product image loaded: ${item.id} (${itemPosition})`);
+                console.log(`✅ [LookCanvas] Product image loaded: ${item.id} (${itemPosition})`);
                 successCount++;
                 setLoadedCount(prev => prev + 1);
                 resolve(null);
               };
               img.onerror = (e) => {
-                console.error(`❌ Error loading product image: ${item.id}`, e);
+                console.error(`❌ [LookCanvas] Error loading product image: ${item.id}`, e);
                 errorCount++;
                 setLoadedCount(prev => prev + 1);
                 reject(e);
@@ -430,10 +297,10 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             
             ctx.restore();
             
-            console.log(`✅ Drew ${itemPosition} at position ${i}: x=${Math.round(drawX)}, y=${Math.round(drawY)}, w=${Math.round(drawWidth)}, h=${Math.round(drawHeight)}`);
+            console.log(`✅ [LookCanvas] Drew ${itemPosition} at position ${i}: x=${Math.round(drawX)}, y=${Math.round(drawY)}, w=${Math.round(drawWidth)}, h=${Math.round(drawHeight)}`);
 
           } catch (imgError) {
-            console.error(`❌ Error processing item: ${item.id}`, imgError);
+            console.error(`❌ [LookCanvas] Error processing item: ${item.id}`, imgError);
             errorCount++;
             setLoadedCount(prev => prev + 1);
           }
@@ -442,7 +309,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         // Update loading state based on success/error count
         if (successCount > 0) {
           setLoadingState('success');
-          console.log(`✅ Successfully loaded ${successCount} out of ${completeOutfit.length} items`);
+          console.log(`✅ [LookCanvas] Successfully loaded ${successCount} out of ${items.length} items`);
         } else {
           setLoadingState('error');
           
@@ -457,7 +324,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         }
 
       } catch (error) {
-        console.error('❌ Error in loadImages:', error);
+        console.error('❌ [LookCanvas] Error in loadImages:', error);
         setLoadingState('error');
       }
     };

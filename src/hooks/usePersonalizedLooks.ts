@@ -11,6 +11,9 @@ export interface LookItem {
   id: string;
   image: string;
   type: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' | 'cart';
+  name?: string;
+  product_subfamily?: string;
+  price?: string;
 }
 
 export interface Look {
@@ -29,6 +32,135 @@ type AllowedType = typeof ALLOWED_TYPES[number];
 // Helper function to check if a type is valid
 const isValidItemType = (type: string): type is AllowedType => {
   return ALLOWED_TYPES.includes(type as AllowedType);
+};
+
+// Helper function to classify item type based on product_subfamily
+const classifyItemType = (item: any): 'top' | 'bottom' | 'shoes' => {
+  const subfamily = item.product_subfamily?.toLowerCase() || '';
+  const name = item.product_name?.toLowerCase() || item.name?.toLowerCase() || '';
+  
+  console.log(`🔍 [usePersonalizedLooks] Classifying item ${item.id}: subfamily="${subfamily}", name="${name}"`);
+  
+  // Bottom items
+  if (subfamily.includes('pants') || subfamily.includes('trousers') || 
+      subfamily.includes('jeans') || subfamily.includes('shorts') || 
+      subfamily.includes('skirt') || subfamily.includes('leggings') ||
+      name.includes('pants') || name.includes('jeans') || name.includes('shorts') || name.includes('skirt')) {
+    console.log(`✅ [usePersonalizedLooks] Classified as BOTTOM: ${item.id}`);
+    return 'bottom';
+  }
+  
+  // Shoes
+  if (subfamily.includes('shoes') || subfamily.includes('sneakers') || 
+      subfamily.includes('boots') || subfamily.includes('sandals') || 
+      subfamily.includes('heels') || subfamily.includes('flats') ||
+      name.includes('shoes') || name.includes('sneakers') || name.includes('boots')) {
+    console.log(`✅ [usePersonalizedLooks] Classified as SHOES: ${item.id}`);
+    return 'shoes';
+  }
+  
+  // Default to top for everything else
+  console.log(`✅ [usePersonalizedLooks] Classified as TOP: ${item.id}`);
+  return 'top';
+};
+
+// Helper function to create a complete outfit from database items
+const createCompleteOutfitFromItems = (items: any[], occasion: string): LookItem[] => {
+  console.log(`🔍 [usePersonalizedLooks] Creating complete outfit for ${occasion} from ${items.length} items`);
+  
+  if (!items || items.length === 0) {
+    console.log(`❌ [usePersonalizedLooks] No items provided for ${occasion}`);
+    return [];
+  }
+  
+  // Classify all items
+  const classifiedItems = items.map(item => ({
+    ...item,
+    classifiedType: classifyItemType(item)
+  }));
+  
+  // Group by type
+  const topItems = classifiedItems.filter(item => item.classifiedType === 'top');
+  const bottomItems = classifiedItems.filter(item => item.classifiedType === 'bottom');
+  const shoeItems = classifiedItems.filter(item => item.classifiedType === 'shoes');
+  
+  console.log(`🔍 [usePersonalizedLooks] ${occasion} - Grouped: TOP=${topItems.length}, BOTTOM=${bottomItems.length}, SHOES=${shoeItems.length}`);
+  
+  // Create exactly 3 items - always in this order: TOP, BOTTOM, SHOES
+  const outfit: LookItem[] = [];
+  
+  // 1. TOP item (position 0)
+  if (topItems.length > 0) {
+    const topItem = topItems[Math.floor(Math.random() * topItems.length)];
+    outfit.push({
+      id: topItem.id,
+      image: topItem.image,
+      type: 'top',
+      name: topItem.product_name || topItem.name || 'חלק עליון',
+      product_subfamily: topItem.product_subfamily,
+      price: topItem.price
+    });
+    console.log(`✅ [usePersonalizedLooks] ${occasion} - Added TOP: ${topItem.id}`);
+  } else {
+    outfit.push({
+      id: `placeholder-top-${occasion}`,
+      image: '/placeholder.svg',
+      type: 'top',
+      name: 'חלק עליון',
+      product_subfamily: 'top'
+    });
+    console.log(`📦 [usePersonalizedLooks] ${occasion} - Added placeholder TOP`);
+  }
+  
+  // 2. BOTTOM item (position 1)
+  if (bottomItems.length > 0) {
+    const bottomItem = bottomItems[Math.floor(Math.random() * bottomItems.length)];
+    outfit.push({
+      id: bottomItem.id,
+      image: bottomItem.image,
+      type: 'bottom',
+      name: bottomItem.product_name || bottomItem.name || 'חלק תחתון',
+      product_subfamily: bottomItem.product_subfamily,
+      price: bottomItem.price
+    });
+    console.log(`✅ [usePersonalizedLooks] ${occasion} - Added BOTTOM: ${bottomItem.id}`);
+  } else {
+    outfit.push({
+      id: `placeholder-bottom-${occasion}`,
+      image: '/placeholder.svg',
+      type: 'bottom',
+      name: 'חלק תחתון',
+      product_subfamily: 'bottom'
+    });
+    console.log(`📦 [usePersonalizedLooks] ${occasion} - Added placeholder BOTTOM`);
+  }
+  
+  // 3. SHOES item (position 2)
+  if (shoeItems.length > 0) {
+    const shoeItem = shoeItems[Math.floor(Math.random() * shoeItems.length)];
+    outfit.push({
+      id: shoeItem.id,
+      image: shoeItem.image,
+      type: 'shoes',
+      name: shoeItem.product_name || shoeItem.name || 'נעליים',
+      product_subfamily: shoeItem.product_subfamily,
+      price: shoeItem.price
+    });
+    console.log(`✅ [usePersonalizedLooks] ${occasion} - Added SHOES: ${shoeItem.id}`);
+  } else {
+    outfit.push({
+      id: `placeholder-shoes-${occasion}`,
+      image: '/placeholder.svg',
+      type: 'shoes',
+      name: 'נעליים',
+      product_subfamily: 'shoes'
+    });
+    console.log(`📦 [usePersonalizedLooks] ${occasion} - Added placeholder SHOES`);
+  }
+  
+  console.log(`✅ [usePersonalizedLooks] ${occasion} - Complete outfit created with ${outfit.length} items:`, outfit.map((item, i) => `${i + 1}. ${item.type} (${item.id})`));
+  
+  return outfit;
 };
 
 export function usePersonalizedLooks() {
@@ -56,23 +188,44 @@ export function usePersonalizedLooks() {
     }
   }, []);
 
-  // Memoized query function - only fetch from database
+  // Memoized query function - fetch from database and create complete outfits
   const queryFn = useCallback(async () => {
     try {
+      console.log('🔍 [usePersonalizedLooks] Starting fetch for dashboard items...');
+      
       // Clear global tracking when forced refresh
       if (forceRefresh) {
         clearOutfitCache();
       }
       
       const data = await fetchDashboardItems();
+      console.log('🔍 [usePersonalizedLooks] Raw data received:', data);
       
-      // Return only database data, no fallbacks
-      return data;
+      // Transform the data to ensure each occasion has a complete outfit
+      const transformedData: { [key: string]: LookItem[] } = {};
+      
+      occasions.forEach(occasion => {
+        const occasionItems = data[occasion] || [];
+        console.log(`🔍 [usePersonalizedLooks] Processing ${occasion} with ${occasionItems.length} items`);
+        
+        // Create a complete outfit for this occasion
+        const completeOutfit = createCompleteOutfitFromItems(occasionItems, occasion);
+        transformedData[occasion] = completeOutfit;
+        
+        console.log(`✅ [usePersonalizedLooks] ${occasion} final outfit:`, completeOutfit.map(item => `${item.type} (${item.id})`));
+      });
+      
+      console.log('✅ [usePersonalizedLooks] All occasions processed:', transformedData);
+      return transformedData;
       
     } catch (err) {
-      console.error("Error fetching data:", err);
-      // Return empty data instead of fallbacks
-      return { Work: [], Casual: [], Evening: [], Weekend: [] };
+      console.error("❌ [usePersonalizedLooks] Error fetching data:", err);
+      // Return empty outfits instead of fallbacks
+      const emptyData: { [key: string]: LookItem[] } = {};
+      occasions.forEach(occasion => {
+        emptyData[occasion] = [];
+      });
+      return emptyData;
     }
   }, [forceRefresh]);
 
@@ -102,17 +255,13 @@ export function usePersonalizedLooks() {
     }
   }, [occasionOutfits, forceRefresh]);
 
-  const createLookFromItems = useCallback((items: any[] = [], occasion: string, index: number): Look | null => {
-    if (!items || items.length === 0) return null;
+  const createLookFromItems = useCallback((items: LookItem[] = [], occasion: string, index: number): Look | null => {
+    console.log(`🔍 [usePersonalizedLooks] Creating look from ${items.length} items for ${occasion}`);
     
-    // Create outfit from available items
-    const outfitItems = items.slice(0, 3).map((item, idx) => ({
-      id: item.id || `item-${idx}`,
-      image: item.image || '/placeholder.svg',
-      type: isValidItemType(item.type) ? item.type : 'top'
-    }));
-    
-    if (outfitItems.length === 0) return null;
+    if (!items || items.length === 0) {
+      console.log(`❌ [usePersonalizedLooks] No items for ${occasion} look`);
+      return null;
+    }
     
     // Calculate total price
     let totalPrice = 0;
@@ -128,14 +277,17 @@ export function usePersonalizedLooks() {
       }
     });
     
-    return {
+    const look = {
       id: `look-${occasion}-${index}`,
       title: `${occasion} Look`,
-      items: outfitItems,
+      items: items, // Use the complete outfit items as-is
       price: totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : '$29.99',
       category: userStyle?.analysis?.styleProfile || "Casual",
       occasion: occasion
     };
+    
+    console.log(`✅ [usePersonalizedLooks] Created look for ${occasion}:`, look);
+    return look;
   }, [userStyle]);
 
   const handleMoodSelect = useCallback((mood: Mood) => {
@@ -177,7 +329,9 @@ export function usePersonalizedLooks() {
 
   // Always return database data only
   const getOutfitData = useCallback(() => {
-    return occasionOutfits || { Work: [], Casual: [], Evening: [], Weekend: [] };
+    const data = occasionOutfits || { Work: [], Casual: [], Evening: [], Weekend: [] };
+    console.log('🔍 [usePersonalizedLooks] Returning outfit data:', data);
+    return data;
   }, [occasionOutfits]);
 
   return {
