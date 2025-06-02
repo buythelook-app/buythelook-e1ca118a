@@ -131,13 +131,145 @@ const extractMainProductImage = async (imageData: any, itemId?: string): Promise
 };
 
 /**
+ * Helper function to determine if a top item has short sleeves based on product name and description
+ */
+const hasShortSleeves = (item: any): boolean => {
+  if (!item) return false;
+  
+  const productName = (item.product_name || '').toLowerCase();
+  const description = (item.description || '').toLowerCase();
+  const productFamily = (item.product_family || '').toLowerCase();
+  
+  // Hebrew patterns for short sleeves
+  const shortSleevePatterns = [
+    'שרוול קצר',
+    'ללא שרוולים',
+    'גופייה',
+    'טופ',
+    'חולצת טי',
+    'טי שירט',
+    'קמיסול'
+  ];
+  
+  // Hebrew patterns for long sleeves
+  const longSleevePatterns = [
+    'שרוול ארוך',
+    'שרוולים ארוכים',
+    'סוודר',
+    'קרדיגן',
+    'חולצה מכופתרת'
+  ];
+  
+  const fullText = `${productName} ${description} ${productFamily}`;
+  
+  // Check for explicit short sleeve patterns
+  const hasShortSleevePattern = shortSleevePatterns.some(pattern => 
+    fullText.includes(pattern)
+  );
+  
+  // Check for explicit long sleeve patterns
+  const hasLongSleevePattern = longSleevePatterns.some(pattern => 
+    fullText.includes(pattern)
+  );
+  
+  // If we have explicit patterns, use them
+  if (hasShortSleevePattern && !hasLongSleevePattern) {
+    console.log(`🔍 [DEBUG] Item ${item.id} detected as SHORT sleeves: ${productName}`);
+    return true;
+  }
+  
+  if (hasLongSleevePattern && !hasShortSleevePattern) {
+    console.log(`🔍 [DEBUG] Item ${item.id} detected as LONG sleeves: ${productName}`);
+    return false;
+  }
+  
+  // Default assumption: if it's summer-like clothing, assume short sleeves
+  const summerPatterns = ['קיץ', 'חוף', 'ים', 'שמש'];
+  const hasSummerPattern = summerPatterns.some(pattern => fullText.includes(pattern));
+  
+  if (hasSummerPattern) {
+    console.log(`🔍 [DEBUG] Item ${item.id} detected as summer clothing (SHORT sleeves): ${productName}`);
+    return true;
+  }
+  
+  // Default to short sleeves if unclear
+  console.log(`🔍 [DEBUG] Item ${item.id} sleeve length unclear, defaulting to SHORT: ${productName}`);
+  return true;
+};
+
+/**
+ * Helper function to filter shoes based on whether they should be open or closed
+ */
+const filterShoesByType = (shoes: any[], shouldBeOpen: boolean): any[] => {
+  return shoes.filter(shoe => {
+    if (!shoe) return false;
+    
+    const productName = (shoe.product_name || '').toLowerCase();
+    const description = (shoe.description || '').toLowerCase();
+    const productFamily = (shoe.product_family || '').toLowerCase();
+    
+    const fullText = `${productName} ${description} ${productFamily}`;
+    
+    // Hebrew patterns for open shoes (sandals, etc.)
+    const openShoePatterns = [
+      'סנדל',
+      'כפכפים',
+      'נעלי קיץ',
+      'נעלי חוף',
+      'פתוח',
+      'אוורור'
+    ];
+    
+    // Hebrew patterns for closed shoes
+    const closedShoePatterns = [
+      'נעל עקב',
+      'מגפון',
+      'נעל סגורה',
+      'נעלי עבודה',
+      'נעלי חורף',
+      'נעל עור',
+      'מוקסין'
+    ];
+    
+    const hasOpenPattern = openShoePatterns.some(pattern => fullText.includes(pattern));
+    const hasClosedPattern = closedShoePatterns.some(pattern => fullText.includes(pattern));
+    
+    // If we want open shoes
+    if (shouldBeOpen) {
+      // Prefer shoes with open patterns, avoid shoes with closed patterns
+      if (hasOpenPattern && !hasClosedPattern) {
+        console.log(`🔍 [DEBUG] Selected OPEN shoe: ${productName}`);
+        return true;
+      }
+      // If no clear pattern, allow it (might be general shoes)
+      if (!hasOpenPattern && !hasClosedPattern) {
+        return true;
+      }
+      return false;
+    } else {
+      // We want closed shoes
+      // Prefer shoes with closed patterns, avoid shoes with open patterns
+      if (hasClosedPattern && !hasOpenPattern) {
+        console.log(`🔍 [DEBUG] Selected CLOSED shoe: ${productName}`);
+        return true;
+      }
+      // If no clear pattern, allow it (might be general shoes)
+      if (!hasOpenPattern && !hasClosedPattern) {
+        return true;
+      }
+      return false;
+    }
+  });
+};
+
+/**
  * Styling Generator Agent
  * Generates outfit suggestions using items from the zara_cloth database table with AI-selected images
  */
 export const stylingAgent: Agent = {
   role: "Styling Generator",
-  goal: "Generate outfit suggestions using available database items with AI-selected best images",
-  backstory: "Knows how to combine clothing items from the database and select the best product images using AI",
+  goal: "Generate outfit suggestions using available database items with AI-selected best images and sleeve-appropriate shoes",
+  backstory: "Knows how to combine clothing items from the database, select the best product images using AI, and match shoe types to sleeve lengths",
   tools: [GenerateOutfitTool],
   
   /**
@@ -234,16 +366,57 @@ export const stylingAgent: Agent = {
         };
       }
 
-      // Randomly select items for the outfit from valid items
-      const shuffled = [...validItems].sort(() => Math.random() - 0.5);
-      const topItem = shuffled[0];
-      const bottomItem = shuffled[1] || shuffled[0];
-      const shoesItem = shuffled[2] || shuffled[0];
+      // Separate items by category
+      const topItems = validItems.filter(item => {
+        const name = (item.product_name || '').toLowerCase();
+        const family = (item.product_family || '').toLowerCase();
+        return name.includes('חולצ') || name.includes('טופ') || name.includes('גופייה') || 
+               family.includes('חולצ') || family.includes('טופ');
+      });
+
+      const bottomItems = validItems.filter(item => {
+        const name = (item.product_name || '').toLowerCase();
+        const family = (item.product_family || '').toLowerCase();
+        return name.includes('מכנס') || name.includes('חצאית') || name.includes('ג\'ינס') || 
+               family.includes('מכנס') || family.includes('חצאית');
+      });
+
+      const shoeItems = validItems.filter(item => {
+        const name = (item.product_name || '').toLowerCase();
+        const family = (item.product_family || '').toLowerCase();
+        return name.includes('נעל') || name.includes('סנדל') || name.includes('מגפ') || 
+               family.includes('נעל') || family.includes('סנדל');
+      });
+
+      // Randomly select top and bottom items
+      const topItem = topItems.length > 0 ? 
+        topItems[Math.floor(Math.random() * topItems.length)] : 
+        validItems[0];
+      
+      const bottomItem = bottomItems.length > 0 ? 
+        bottomItems[Math.floor(Math.random() * bottomItems.length)] : 
+        validItems[1] || validItems[0];
+
+      // Determine shoe type based on top item sleeve length
+      const shouldUseOpenShoes = hasShortSleeves(topItem);
+      console.log(`🔍 [DEBUG] Top item has ${shouldUseOpenShoes ? 'SHORT' : 'LONG'} sleeves, selecting ${shouldUseOpenShoes ? 'OPEN' : 'CLOSED'} shoes`);
+
+      // Filter shoes based on sleeve length and select one
+      let filteredShoes = shoeItems.length > 0 ? filterShoesByType(shoeItems, shouldUseOpenShoes) : [];
+      
+      // If no matching shoes found, use any available shoe
+      if (filteredShoes.length === 0) {
+        console.log('⚠️ [DEBUG] No matching shoes found, using any available shoe');
+        filteredShoes = shoeItems.length > 0 ? shoeItems : [validItems[2] || validItems[0]];
+      }
+
+      const shoesItem = filteredShoes[Math.floor(Math.random() * filteredShoes.length)];
 
       console.log('✅ [DEBUG] Selected items:', { 
         topItem: topItem?.id, 
         bottomItem: bottomItem?.id, 
-        shoesItem: shoesItem?.id 
+        shoesItem: shoesItem?.id,
+        shoeType: shouldUseOpenShoes ? 'OPEN' : 'CLOSED'
       });
 
       // Extract AI-selected or best product images
@@ -272,16 +445,17 @@ export const stylingAgent: Agent = {
           image: shoesImage
         },
         score: Math.floor(Math.random() * 30) + 70,
-        description: `Outfit generated using real Zara database items with AI-selected best images (no models)`,
+        description: `Outfit generated using real Zara database items with AI-selected best images and sleeve-appropriate shoes`,
         recommendations: [
           "This combination uses actual Zara items from our database",
           "Images selected by AI to show products without models",
+          `${shouldUseOpenShoes ? 'Open shoes' : 'Closed shoes'} selected to match ${shouldUseOpenShoes ? 'short' : 'long'} sleeve top`,
           `Perfect for your body shape`
         ],
         occasion: Math.random() > 0.5 ? 'work' : 'casual'
       };
       
-      console.log("✅ [DEBUG] Generated database outfit successfully with AI-selected images");
+      console.log("✅ [DEBUG] Generated database outfit successfully with AI-selected images and appropriate shoes");
       return { success: true, data: outfit };
       
     } catch (error) {
