@@ -2,10 +2,35 @@
 import { supabase } from "@/lib/supabaseClient";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
-import { Database } from "@/types/supabase";
 
-// Use the correct database type
-type ZaraClothItem = Database['public']['Tables']['zara_cloth']['Row'];
+// Define the actual zara_cloth item type based on the real database schema
+interface ZaraClothItem {
+  id: string;
+  product_name: string;
+  price: number;
+  colour: string;
+  description: string | null;
+  image: any;
+  availability: boolean;
+  size: string;
+  materials: string[] | null;
+  created_at: string;
+  product_family: string | null;
+  product_subfamily: string | null;
+  section: string | null;
+  category_id: number | null;
+  product_id: number | null;
+  colour_code: number | null;
+  care: any;
+  low_on_stock: boolean | null;
+  you_may_also_like: any;
+  url: string | null;
+  currency: string | null;
+  product_family_en: string | null;
+  materials_description: string | null;
+  dimension: string | null;
+  sku: string | null;
+}
 
 // Interface defined but not exported to avoid conflicts
 interface Agent {
@@ -362,7 +387,8 @@ export const stylingAgent: Agent = {
       let userProfile = null;
       
       try {
-        const { data: profileData, error: profileError } = await supabase
+        // Use raw query to avoid type issues
+        const { data: profileData, error: profileError } = await (supabase as any)
           .from('style_quiz_results')
           .select('*')
           .eq('user_id', userId)
@@ -402,7 +428,7 @@ export const stylingAgent: Agent = {
         console.log(`🔍 [DEBUG] Checking item ${index + 1}/${allItems.length} (ID: ${item.id})`);
         
         // First check if it's a valid clothing item
-        const isClothing = isValidClothingItem(item);
+        const isClothing = isValidClothingItem(item as ZaraClothItem);
         if (!isClothing) {
           return false;
         }
@@ -416,7 +442,7 @@ export const stylingAgent: Agent = {
         
         console.log(`✅ [DEBUG] KEEPING item ${item.id} - valid clothing with good image`);
         return true;
-      });
+      }) as ZaraClothItem[];
 
       console.log(`✅ [DEBUG] Valid items after filtering: ${validItems.length} out of ${allItems.length}`);
 
