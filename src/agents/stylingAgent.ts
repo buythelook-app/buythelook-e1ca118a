@@ -11,7 +11,7 @@ type ZaraClothItem = {
   colour: string;
   colour_code?: number | null;
   description?: string | null;
-  size: string; // Actually a string in the database, not array
+  size: string[]; // Array of sizes as in database
   materials?: any[] | null; // Can be array of objects or null
   materials_description?: string | null;
   availability: boolean;
