@@ -2,9 +2,10 @@
 import { supabase } from "@/lib/supabaseClient";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
+import type { Database } from "@/integrations/supabase/types";
 
-// Use any type to avoid type conflicts with the current database schema
-type ZaraClothItem = any;
+// Use the correct database type from Supabase integrations
+type ZaraClothItem = Database['public']['Tables']['zara_cloth']['Row'];
 
 // Interface defined but not exported to avoid conflicts
 interface Agent {
@@ -185,7 +186,7 @@ const extractMainProductImage = async (imageData: any, itemId?: string): Promise
 /**
  * Helper function to determine if a top item has short sleeves based on product name and description
  */
-const hasShortSleeves = (item: any): boolean => {
+const hasShortSleeves = (item: ZaraClothItem): boolean => {
   if (!item) return false;
   
   const productName = (item.product_name || '').toLowerCase();
@@ -252,7 +253,7 @@ const hasShortSleeves = (item: any): boolean => {
 /**
  * Helper function to filter shoes based on whether they should be open or closed
  */
-const filterShoesByType = (shoes: any[], shouldBeOpen: boolean): any[] => {
+const filterShoesByType = (shoes: ZaraClothItem[], shouldBeOpen: boolean): ZaraClothItem[] => {
   return shoes.filter(shoe => {
     if (!shoe) return false;
     
