@@ -98,7 +98,12 @@ const filterByBudget = (items: ZaraClothItem[], budget: number): ZaraClothItem[]
   // Allow individual items up to 40% of total budget
   const maxItemPrice = budget * 0.4;
   
-  const filteredItems = items.filter(item => item.price <= maxItemPrice);
+  const filteredItems = items.filter(item => {
+    // Safely handle price field - ensure it's a valid number
+    const itemPrice = typeof item.price === 'number' ? item.price : 0;
+    return itemPrice <= maxItemPrice;
+  });
+  
   console.log(`💰 [DEBUG] Budget filter: ${items.length} -> ${filteredItems.length} items (max item price: ${maxItemPrice})`);
   
   return filteredItems;
