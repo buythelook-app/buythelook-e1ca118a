@@ -122,9 +122,9 @@ const filterByEvent = (items: ZaraClothItem[], event: string | null): ZaraClothI
   if (eventLower.includes('work') || eventLower.includes('business')) {
     // For work events, prefer formal and classic items
     filteredItems = items.filter(item => {
-      const name = (item.product_name || '').toLowerCase();
-      const family = (item.product_family || '').toLowerCase();
-      const subfamily = (item.product_subfamily || '').toLowerCase();
+      const name = (item.product_name ?? '').toLowerCase();
+      const family = (item.product_family ?? '').toLowerCase();
+      const subfamily = (item.product_subfamily ?? '').toLowerCase();
       
       // Include formal items
       return name.includes('blazer') || name.includes('shirt') || name.includes('trouser') ||
@@ -134,8 +134,8 @@ const filterByEvent = (items: ZaraClothItem[], event: string | null): ZaraClothI
   } else if (eventLower.includes('party') || eventLower.includes('date')) {
     // For parties/dates, prefer elegant and trendy items
     filteredItems = items.filter(item => {
-      const name = (item.product_name || '').toLowerCase();
-      const color = (item.colour || '').toLowerCase();
+      const name = (item.product_name ?? '').toLowerCase();
+      const color = (item.colour ?? '').toLowerCase();
       
       // Include party-appropriate items
       return name.includes('dress') || name.includes('heel') || name.includes('elegant') ||
@@ -144,8 +144,8 @@ const filterByEvent = (items: ZaraClothItem[], event: string | null): ZaraClothI
   } else if (eventLower.includes('casual') || eventLower.includes('weekend')) {
     // For casual events, prefer comfortable and relaxed items
     filteredItems = items.filter(item => {
-      const name = (item.product_name || '').toLowerCase();
-      const family = (item.product_family || '').toLowerCase();
+      const name = (item.product_name ?? '').toLowerCase();
+      const family = (item.product_family ?? '').toLowerCase();
       
       // Include casual items
       return name.includes('jean') || name.includes('t-shirt') || name.includes('sneaker') ||
@@ -170,8 +170,8 @@ const filterByMood = (items: ZaraClothItem[], mood: string | null): ZaraClothIte
   if (moodLower.includes('elegant') || moodLower.includes('sophisticated')) {
     // For elegant mood, prefer refined colors and styles
     filteredItems = items.filter(item => {
-      const color = (item.colour || '').toLowerCase();
-      const name = (item.product_name || '').toLowerCase();
+      const color = (item.colour ?? '').toLowerCase();
+      const name = (item.product_name ?? '').toLowerCase();
       
       return color.includes('black') || color.includes('navy') || color.includes('white') ||
              color.includes('beige') || name.includes('elegant');
@@ -179,7 +179,7 @@ const filterByMood = (items: ZaraClothItem[], mood: string | null): ZaraClothIte
   } else if (moodLower.includes('energized') || moodLower.includes('powerful')) {
     // For energized mood, prefer bright colors and bold styles
     filteredItems = items.filter(item => {
-      const color = (item.colour || '').toLowerCase();
+      const color = (item.colour ?? '').toLowerCase();
       
       return color.includes('red') || color.includes('orange') || color.includes('yellow') ||
              color.includes('bright') || color.includes('bold');
@@ -187,8 +187,8 @@ const filterByMood = (items: ZaraClothItem[], mood: string | null): ZaraClothIte
   } else if (moodLower.includes('romantic') || moodLower.includes('sweet')) {
     // For romantic mood, prefer soft colors and feminine styles
     filteredItems = items.filter(item => {
-      const color = (item.colour || '').toLowerCase();
-      const name = (item.product_name || '').toLowerCase();
+      const color = (item.colour ?? '').toLowerCase();
+      const name = (item.product_name ?? '').toLowerCase();
       
       return color.includes('pink') || color.includes('rose') || color.includes('pastel') ||
              color.includes('soft') || name.includes('dress') || name.includes('romantic');
@@ -196,7 +196,7 @@ const filterByMood = (items: ZaraClothItem[], mood: string | null): ZaraClothIte
   } else if (moodLower.includes('calm') || moodLower.includes('quiet')) {
     // For calm mood, prefer neutral and muted colors
     filteredItems = items.filter(item => {
-      const color = (item.colour || '').toLowerCase();
+      const color = (item.colour ?? '').toLowerCase();
       
       return color.includes('beige') || color.includes('grey') || color.includes('cream') ||
              color.includes('neutral') || color.includes('muted');
@@ -552,13 +552,13 @@ export const stylingAgent: Agent = {
 
       console.log(`✅ [DEBUG] Valid items after clothing/image filtering: ${validItems.length} out of ${allItems.length}`);
 
-      // Apply budget filter - now correctly typed
+      // Apply budget filter - now correctly typed as ZaraClothItem[]
       validItems = filterByBudget(validItems, budget);
       
-      // Apply event filter - now correctly typed
+      // Apply event filter - now correctly typed as ZaraClothItem[]
       validItems = filterByEvent(validItems, selectedEvent);
       
-      // Apply mood filter - now correctly typed
+      // Apply mood filter - now correctly typed as ZaraClothItem[]
       validItems = filterByMood(validItems, currentMood);
 
       console.log(`✅ [DEBUG] Final valid items after all filters: ${validItems.length}`);
