@@ -547,13 +547,13 @@ export const stylingAgent: Agent = {
 
       console.log(`✅ [DEBUG] Valid items after clothing/image filtering: ${validItems.length} out of ${allItems.length}`);
 
-      // Apply budget filter
+      // Apply budget filter - now correctly typed
       validItems = filterByBudget(validItems, budget);
       
-      // Apply event filter
+      // Apply event filter - now correctly typed
       validItems = filterByEvent(validItems, selectedEvent);
       
-      // Apply mood filter
+      // Apply mood filter - now correctly typed
       validItems = filterByMood(validItems, currentMood);
 
       console.log(`✅ [DEBUG] Final valid items after all filters: ${validItems.length}`);
