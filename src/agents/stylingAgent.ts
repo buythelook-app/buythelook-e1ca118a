@@ -352,7 +352,7 @@ export const stylingAgent: Agent = {
         
         console.log(`✅ [DEBUG] KEEPING item ${item.id} - valid clothing with good image`);
         return true;
-      }) as ZaraClothItem[];
+      });
 
       console.log(`✅ [DEBUG] Valid items after professional filtering: ${validItems.length} out of ${allItems.length}`);
 

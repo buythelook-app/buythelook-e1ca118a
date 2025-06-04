@@ -249,7 +249,7 @@ export type Database = {
           product_name: string
           product_subfamily: string | null
           section: string | null
-          size: string
+          size: string[]
           sku: string | null
           url: string | null
           you_may_also_like: Json | null
@@ -276,7 +276,7 @@ export type Database = {
           product_name: string
           product_subfamily?: string | null
           section?: string | null
-          size: string
+          size: string[]
           sku?: string | null
           url?: string | null
           you_may_also_like?: Json | null
@@ -303,7 +303,7 @@ export type Database = {
           product_name?: string
           product_subfamily?: string | null
           section?: string | null
-          size?: string
+          size?: string[]
           sku?: string | null
           url?: string | null
           you_may_also_like?: Json | null
