@@ -357,23 +357,23 @@ export const stylingAgent: Agent = {
         };
       }
 
-      // Step 2: Get user profile data (optional for generation)
+      // Step 2: Get user profile data (optional for generation) - simplified approach
       console.log("🔍 [DEBUG] Step 2: Attempting to fetch user profile...");
       let userProfile = null;
       
       try {
-        // Use the correct table from the integrations
-        const { data: profileData, error: profileError } = await supabase
+        // Simple approach without type conflicts
+        const profileQuery = await supabase
           .from('style_quiz_results')
           .select('*')
           .eq('user_id', userId)
           .maybeSingle();
         
-        if (!profileError && profileData) {
-          userProfile = profileData;
+        if (!profileQuery.error && profileQuery.data) {
+          userProfile = profileQuery.data;
           console.log("✅ [DEBUG] User profile found:", userProfile);
         } else {
-          console.log("⚠️ [DEBUG] Profile fetch error or no profile found:", profileError?.message || "No profile data");
+          console.log("⚠️ [DEBUG] Profile fetch error or no profile found:", profileQuery.error?.message || "No profile data");
         }
       } catch (profileError) {
         console.log("⚠️ [DEBUG] Profile table not available, continuing without profile data");
