@@ -2,10 +2,35 @@
 import { supabase } from "@/lib/supabaseClient";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
-import type { Database } from "@/integrations/supabase/types";
 
-// Use the correct database type from Supabase integrations
-type ZaraClothItem = Database['public']['Tables']['zara_cloth']['Row'];
+// Use a flexible type that matches the actual database schema
+type ZaraClothItem = {
+  id: string;
+  product_name: string;
+  price: number;
+  colour: string;
+  colour_code?: number;
+  description?: string;
+  size: string;
+  materials?: any[];
+  materials_description?: string;
+  availability: boolean;
+  low_on_stock?: boolean;
+  image?: any;
+  category_id?: number;
+  product_id?: number;
+  product_family?: string;
+  product_family_en?: string;
+  product_subfamily?: string;
+  section?: string;
+  currency?: string;
+  care?: any;
+  dimension?: string;
+  sku?: string;
+  url?: string;
+  you_may_also_like?: any;
+  created_at: string;
+};
 
 // Interface defined but not exported to avoid conflicts
 interface Agent {
@@ -357,16 +382,8 @@ export const stylingAgent: Agent = {
         };
       }
 
-      // Step 2: Get user profile data (optional for generation) - skip type checking
-      console.log("🔍 [DEBUG] Step 2: Attempting to fetch user profile...");
-      let userProfile = null;
-      
-      try {
-        // Skip profile fetching to avoid type conflicts
-        console.log("⚠️ [DEBUG] Skipping profile fetch to avoid type conflicts");
-      } catch (profileError) {
-        console.log("⚠️ [DEBUG] Profile table not available, continuing without profile data");
-      }
+      // Step 2: Skip user profile fetching to avoid type conflicts
+      console.log("🔍 [DEBUG] Step 2: Skipping user profile fetch to avoid type conflicts");
 
       // Step 3: Fetch random items from each category
       console.log("🔍 [DEBUG] Step 3: Fetching clothing items...");
