@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabaseClient";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
@@ -379,8 +378,86 @@ const extractMainProductImage = async (imageData: any, itemId?: string): Promise
 };
 
 /**
- * Professional outfit selection with budget, event, and mood considerations
- * Ensures budget compliance by validating total outfit cost
+ * Helper function to check if an item has multiple colors (3+ colors)
+ */
+const isColorfulItem = (item: ZaraClothItem): boolean => {
+  const colorName = (item.colour ?? '').toLowerCase();
+  const productName = (item.product_name ?? '').toLowerCase();
+  
+  // Check for multi-color indicators
+  const multiColorPatterns = [
+    'multicolor', 'multi-color', 'colorful', 'print', 'pattern', 'floral',
+    'striped', 'checked', 'plaid', 'geometric', 'abstract', 'mix',
+    'צבעוני', 'הדפס', 'פרחוני', 'פסים', 'משבצות'
+  ];
+  
+  const hasMultiColorPattern = multiColorPatterns.some(pattern => 
+    colorName.includes(pattern) || productName.includes(pattern)
+  );
+  
+  // Count color words in the color field
+  const colorWords = ['red', 'blue', 'green', 'yellow', 'pink', 'purple', 'orange', 'brown', 'grey', 'gray', 'black', 'white', 'beige', 'navy'];
+  const hebrewColors = ['אדום', 'כחול', 'ירוק', 'צהוב', 'ורוד', 'סגול', 'כתום', 'חום', 'אפור', 'שחור', 'לבן', 'בז\'', 'נייבי'];
+  
+  const allColors = [...colorWords, ...hebrewColors];
+  const colorCount = allColors.filter(color => colorName.includes(color) || productName.includes(color)).length;
+  
+  return hasMultiColorPattern || colorCount >= 3;
+};
+
+/**
+ * Helper function to check if an item is neutral/single color
+ */
+const isNeutralItem = (item: ZaraClothItem): boolean => {
+  const colorName = (item.colour ?? '').toLowerCase();
+  const productName = (item.product_name ?? '').toLowerCase();
+  
+  const neutralPatterns = [
+    'white', 'black', 'grey', 'gray', 'beige', 'cream', 'navy', 'khaki',
+    'לבן', 'שחור', 'אפור', 'בז\'', 'קרם', 'נייבי', 'חאקי'
+  ];
+  
+  return neutralPatterns.some(pattern => 
+    colorName.includes(pattern) || productName.includes(pattern)
+  );
+};
+
+/**
+ * Helper function to extract main colors from a colorful item
+ */
+const extractMainColors = (item: ZaraClothItem): string[] => {
+  const colorName = (item.colour ?? '').toLowerCase();
+  const productName = (item.product_name ?? '').toLowerCase();
+  
+  const colorWords = ['red', 'blue', 'green', 'yellow', 'pink', 'purple', 'orange', 'brown', 'grey', 'gray', 'black', 'white', 'beige', 'navy'];
+  const hebrewColors = ['אדום', 'כחול', 'ירוק', 'צהוב', 'ורוד', 'סגול', 'כתום', 'חום', 'אפור', 'שחור', 'לבן', 'בז\'', 'נייבי'];
+  
+  const foundColors: string[] = [];
+  const fullText = `${colorName} ${productName}`;
+  
+  [...colorWords, ...hebrewColors].forEach(color => {
+    if (fullText.includes(color)) {
+      foundColors.push(color);
+    }
+  });
+  
+  return foundColors;
+};
+
+/**
+ * Helper function to check if an item matches any of the given colors
+ */
+const matchesColors = (item: ZaraClothItem, targetColors: string[]): boolean => {
+  const colorName = (item.colour ?? '').toLowerCase();
+  const productName = (item.product_name ?? '').toLowerCase();
+  const fullText = `${colorName} ${productName}`;
+  
+  return targetColors.some(color => fullText.includes(color.toLowerCase()));
+};
+
+/**
+ * Professional outfit selection with improved color coordination
+ * Ensures budget compliance and smart color matching for colorful items
  */
 const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top?: ZaraClothItem; bottom?: ZaraClothItem; shoes?: ZaraClothItem } => {
   // Filter available items and avoid low stock when possible
@@ -420,18 +497,61 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
            subfamily.includes('נעל') || subfamily.includes('סנדל') || subfamily.includes('מגפ');
   });
   
-  // Try multiple combinations to find one within budget
-  const maxAttempts = 10;
+  // Try multiple combinations to find one within budget with good color coordination
+  const maxAttempts = 15;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const selectedTop = tops.length > 0 ? tops[Math.floor(Math.random() * tops.length)] : undefined;
-    const selectedBottom = bottoms.length > 0 ? bottoms[Math.floor(Math.random() * bottoms.length)] : undefined;
-    const selectedShoes = shoes.length > 0 ? shoes[Math.floor(Math.random() * shoes.length)] : undefined;
+    let selectedTop: ZaraClothItem | undefined;
+    let selectedBottom: ZaraClothItem | undefined;
+    let selectedShoes: ZaraClothItem | undefined;
+    
+    // Strategy: If we find a colorful item, pair it with neutral items
+    const colorfulTops = tops.filter(isColorfulItem);
+    const colorfulBottoms = bottoms.filter(isColorfulItem);
+    const neutralTops = tops.filter(isNeutralItem);
+    const neutralBottoms = bottoms.filter(isNeutralItem);
+    const neutralShoes = shoes.filter(isNeutralItem);
+    
+    // Case 1: Colorful top with neutral bottom and shoes
+    if (colorfulTops.length > 0 && neutralBottoms.length > 0 && neutralShoes.length > 0) {
+      selectedTop = colorfulTops[Math.floor(Math.random() * colorfulTops.length)];
+      selectedBottom = neutralBottoms[Math.floor(Math.random() * neutralBottoms.length)];
+      selectedShoes = neutralShoes[Math.floor(Math.random() * neutralShoes.length)];
+      
+      console.log(`🎨 [DEBUG] Strategy: Colorful top + neutral bottom + neutral shoes`);
+    }
+    // Case 2: Colorful bottom with neutral top and matching shoes
+    else if (colorfulBottoms.length > 0 && neutralTops.length > 0) {
+      selectedBottom = colorfulBottoms[Math.floor(Math.random() * colorfulBottoms.length)];
+      selectedTop = neutralTops[Math.floor(Math.random() * neutralTops.length)];
+      
+      // Try to find shoes that match one of the colors in the colorful bottom
+      const bottomColors = extractMainColors(selectedBottom);
+      const matchingShoes = shoes.filter(shoe => matchesColors(shoe, bottomColors));
+      
+      if (matchingShoes.length > 0) {
+        selectedShoes = matchingShoes[Math.floor(Math.random() * matchingShoes.length)];
+        console.log(`🎨 [DEBUG] Strategy: Neutral top + colorful bottom + color-matched shoes`);
+      } else {
+        selectedShoes = neutralShoes.length > 0 ? 
+          neutralShoes[Math.floor(Math.random() * neutralShoes.length)] :
+          shoes[Math.floor(Math.random() * shoes.length)];
+        console.log(`🎨 [DEBUG] Strategy: Neutral top + colorful bottom + neutral shoes (fallback)`);
+      }
+    }
+    // Case 3: All neutral items (fallback)
+    else {
+      selectedTop = tops.length > 0 ? tops[Math.floor(Math.random() * tops.length)] : undefined;
+      selectedBottom = bottoms.length > 0 ? bottoms[Math.floor(Math.random() * bottoms.length)] : undefined;
+      selectedShoes = shoes.length > 0 ? shoes[Math.floor(Math.random() * shoes.length)] : undefined;
+      
+      console.log(`🎨 [DEBUG] Strategy: Random selection (fallback)`);
+    }
     
     if (selectedTop && selectedBottom && selectedShoes) {
       const totalCost = selectedTop.price + selectedBottom.price + selectedShoes.price;
       
       if (totalCost <= budget) {
-        console.log(`💰 [DEBUG] Found outfit within budget: ${totalCost}₪ / ${budget}₪`);
+        console.log(`💰 [DEBUG] Found color-coordinated outfit within budget: ${totalCost}₪ / ${budget}₪`);
         console.log(`🔍 [DEBUG] Professional outfit selection: TOP=${!!selectedTop}, BOTTOM=${!!selectedBottom}, SHOES=${!!selectedShoes}`);
         
         return {
@@ -440,17 +560,17 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
           shoes: selectedShoes
         };
       } else {
-        console.log(`💰 [DEBUG] Outfit over budget (${totalCost}₪ > ${budget}₪), trying again...`);
+        console.log(`💰 [DEBUG] Color-coordinated outfit over budget (${totalCost}₪ > ${budget}₪), trying again...`);
       }
     }
   }
   
-  // If no budget-compliant outfit found, return the cheapest option
+  // If no budget-compliant outfit found with color coordination, return the cheapest option
   const cheapestTop = tops.sort((a, b) => a.price - b.price)[0];
   const cheapestBottom = bottoms.sort((a, b) => a.price - b.price)[0];
   const cheapestShoes = shoes.sort((a, b) => a.price - b.price)[0];
   
-  console.log(`⚠️ [DEBUG] Could not find outfit within budget, returning cheapest options`);
+  console.log(`⚠️ [DEBUG] Could not find color-coordinated outfit within budget, returning cheapest options`);
   
   return {
     top: cheapestTop,
