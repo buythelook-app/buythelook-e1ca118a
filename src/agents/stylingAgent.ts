@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
@@ -18,7 +19,7 @@ interface Agent {
 /**
  * Helper function to check if an item is actually a clothing item based on name and category
  */
-const isValidClothingItem = (item: ZaraClothItem): boolean => {
+const isValidClothingItem = (item: any): boolean => {
   if (!item) return false;
   
   const productName = (item.product_name || '').toLowerCase();
@@ -185,7 +186,7 @@ const extractMainProductImage = async (imageData: any, itemId?: string): Promise
 /**
  * Helper function to determine if a top item has short sleeves based on product name and description
  */
-const hasShortSleeves = (item: ZaraClothItem): boolean => {
+const hasShortSleeves = (item: any): boolean => {
   if (!item) return false;
   
   const productName = (item.product_name || '').toLowerCase();
@@ -252,7 +253,7 @@ const hasShortSleeves = (item: ZaraClothItem): boolean => {
 /**
  * Helper function to filter shoes based on whether they should be open or closed
  */
-const filterShoesByType = (shoes: ZaraClothItem[], shouldBeOpen: boolean): ZaraClothItem[] => {
+const filterShoesByType = (shoes: any[], shouldBeOpen: boolean): any[] => {
   return shoes.filter(shoe => {
     if (!shoe) return false;
     
@@ -361,8 +362,8 @@ export const stylingAgent: Agent = {
       let userProfile = null;
       
       try {
-        // Use raw query to avoid type issues
-        const { data: profileData, error: profileError } = await (supabase as any)
+        // Use the correct table from the integrations
+        const { data: profileData, error: profileError } = await supabase
           .from('style_quiz_results')
           .select('*')
           .eq('user_id', userId)
@@ -462,38 +463,42 @@ export const stylingAgent: Agent = {
       console.log(`🔍 [DEBUG] Category distribution: TOP=${topItems.length}, BOTTOM=${bottomItems.length}, SHOES=${shoeItems.length}`);
 
       // Ensure we have items in each category, use fallback if needed
-      if (topItems.length === 0) {
+      let finalTopItems = topItems;
+      let finalBottomItems = bottomItems;
+      let finalShoeItems = shoeItems;
+      
+      if (finalTopItems.length === 0) {
         console.warn('⚠️ [DEBUG] No top items found, using first 10 items as fallback');
-        topItems.push(...validItems.slice(0, Math.min(10, validItems.length)));
+        finalTopItems = validItems.slice(0, Math.min(10, validItems.length));
       }
       
-      if (bottomItems.length === 0) {
+      if (finalBottomItems.length === 0) {
         console.warn('⚠️ [DEBUG] No bottom items found, using middle items as fallback');
         const startIndex = Math.floor(validItems.length / 3);
-        bottomItems.push(...validItems.slice(startIndex, startIndex + Math.min(10, validItems.length - startIndex)));
+        finalBottomItems = validItems.slice(startIndex, startIndex + Math.min(10, validItems.length - startIndex));
       }
       
-      if (shoeItems.length === 0) {
+      if (finalShoeItems.length === 0) {
         console.warn('⚠️ [DEBUG] No shoe items found, using last items as fallback');
         const startIndex = Math.floor(validItems.length * 2 / 3);
-        shoeItems.push(...validItems.slice(startIndex, startIndex + Math.min(10, validItems.length - startIndex)));
+        finalShoeItems = validItems.slice(startIndex, startIndex + Math.min(10, validItems.length - startIndex));
       }
 
       // Randomly select items ensuring we have all three categories
-      const topItem = topItems[Math.floor(Math.random() * topItems.length)];
-      const bottomItem = bottomItems[Math.floor(Math.random() * bottomItems.length)];
+      const topItem = finalTopItems[Math.floor(Math.random() * finalTopItems.length)];
+      const bottomItem = finalBottomItems[Math.floor(Math.random() * finalBottomItems.length)];
 
       // Determine shoe type based on top item sleeve length
       const shouldUseOpenShoes = hasShortSleeves(topItem);
       console.log(`🔍 [DEBUG] Top item has ${shouldUseOpenShoes ? 'SHORT' : 'LONG'} sleeves, selecting ${shouldUseOpenShoes ? 'OPEN' : 'CLOSED'} shoes`);
 
       // Filter shoes based on sleeve length and select one
-      let filteredShoes = filterShoesByType(shoeItems, shouldUseOpenShoes);
+      let filteredShoes = filterShoesByType(finalShoeItems, shouldUseOpenShoes);
       
       // If no matching shoes found, use any available shoe
       if (filteredShoes.length === 0) {
         console.log('⚠️ [DEBUG] No matching shoes found, using any available shoe');
-        filteredShoes = shoeItems;
+        filteredShoes = finalShoeItems;
       }
 
       const shoesItem = filteredShoes[Math.floor(Math.random() * filteredShoes.length)];
