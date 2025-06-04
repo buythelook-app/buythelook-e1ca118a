@@ -3,32 +3,32 @@ import { supabase } from "@/lib/supabaseClient";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
 
-// Use a flexible type that matches the actual database schema from zara_cloth table
+// Updated type to match actual database schema and handle NULL values
 type ZaraClothItem = {
   id: string;
   product_name: string;
   price: number;
   colour: string;
-  colour_code?: number;
-  description?: string;
-  size: string;
-  materials?: { name: string }[];
+  colour_code?: number | null;
+  description?: string | null;
+  size: string; // Actually a string in the database, not array
+  materials?: any[] | null; // Can be array of objects or null
   materials_description?: string | null;
   availability: boolean;
-  low_on_stock?: boolean;
-  image?: string[];
-  category_id?: number;
-  product_id?: number;
-  product_family?: string;
+  low_on_stock?: boolean | null;
+  image?: any | null; // Can be string, array, or JSON
+  category_id?: number | null;
+  product_id?: number | null;
+  product_family?: string | null;
   product_family_en?: string | null;
-  product_subfamily?: string;
+  product_subfamily?: string | null;
   section?: string | null;
   currency?: string | null;
-  care?: any;
+  care?: any | null;
   dimension?: string | null;
   sku?: string | null;
   url?: string | null;
-  you_may_also_like?: any;
+  you_may_also_like?: any | null;
   created_at: string;
 };
 
@@ -43,14 +43,17 @@ interface Agent {
 
 /**
  * Helper function to check if an item is actually a clothing item based on name and category
+ * Only processes non-NULL values as specified
  */
 const isValidClothingItem = (item: any): boolean => {
   if (!item || !item.availability) return false;
   
   const productName = (item.product_name || '').toLowerCase();
   const description = (item.description || '').toLowerCase();
-  const productFamily = (item.product_family || '').toLowerCase();
-  const subfamily = (item.product_subfamily || '').toLowerCase();
+  
+  // Only use product_family and product_subfamily if they are not NULL
+  const productFamily = item.product_family ? item.product_family.toLowerCase() : '';
+  const subfamily = item.product_subfamily ? item.product_subfamily.toLowerCase() : '';
   
   // Exclude non-clothing items
   const excludePatterns = [
@@ -211,6 +214,7 @@ const extractMainProductImage = async (imageData: any, itemId?: string): Promise
 /**
  * Professional outfit selection based on product_family and compatibility
  * Follows the professional guidelines: 3 items (top, bottom/dress, shoes)
+ * Only processes non-NULL values as specified
  */
 const selectProfessionalOutfit = (items: ZaraClothItem[]): { top?: ZaraClothItem; bottom?: ZaraClothItem; shoes?: ZaraClothItem } => {
   // Filter available items and avoid low stock when possible
@@ -219,24 +223,33 @@ const selectProfessionalOutfit = (items: ZaraClothItem[]): { top?: ZaraClothItem
   
   const itemsToUse = availableItems.length >= 3 ? availableItems : fallbackItems;
   
-  // Categorize by product_family
+  // Categorize by product_family - only if not NULL
   const tops = itemsToUse.filter(item => {
-    const family = (item.product_family || '').toLowerCase();
-    const subfamily = (item.product_subfamily || '').toLowerCase();
+    if (!item.product_family && !item.product_subfamily) return false;
+    
+    const family = item.product_family ? item.product_family.toLowerCase() : '';
+    const subfamily = item.product_subfamily ? item.product_subfamily.toLowerCase() : '';
+    
     return family.includes('top') || family.includes('blouse') || family.includes('shirt') || 
            subfamily.includes('חולצ') || subfamily.includes('טופ') || subfamily.includes('בלוז');
   });
   
   const bottoms = itemsToUse.filter(item => {
-    const family = (item.product_family || '').toLowerCase();
-    const subfamily = (item.product_subfamily || '').toLowerCase();
+    if (!item.product_family && !item.product_subfamily) return false;
+    
+    const family = item.product_family ? item.product_family.toLowerCase() : '';
+    const subfamily = item.product_subfamily ? item.product_subfamily.toLowerCase() : '';
+    
     return family.includes('bottom') || family.includes('pants') || family.includes('skirt') || 
            family.includes('dress') || subfamily.includes('מכנס') || subfamily.includes('חצאית') || subfamily.includes('שמלה');
   });
   
   const shoes = itemsToUse.filter(item => {
-    const family = (item.product_family || '').toLowerCase();
-    const subfamily = (item.product_subfamily || '').toLowerCase();
+    if (!item.product_family && !item.product_subfamily) return false;
+    
+    const family = item.product_family ? item.product_family.toLowerCase() : '';
+    const subfamily = item.product_subfamily ? item.product_subfamily.toLowerCase() : '';
+    
     return family.includes('shoe') || family.includes('trainer') || family.includes('boot') || 
            subfamily.includes('נעל') || subfamily.includes('סנדל') || subfamily.includes('מגפ');
   });
@@ -339,7 +352,7 @@ export const stylingAgent: Agent = {
         
         console.log(`✅ [DEBUG] KEEPING item ${item.id} - valid clothing with good image`);
         return true;
-      });
+      }) as ZaraClothItem[];
 
       console.log(`✅ [DEBUG] Valid items after professional filtering: ${validItems.length} out of ${allItems.length}`);
 
