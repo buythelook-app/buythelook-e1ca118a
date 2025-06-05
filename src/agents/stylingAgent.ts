@@ -110,7 +110,7 @@ const filterByBudget = (items: ZaraClothItem[], budget: number): ZaraClothItem[]
 };
 
 /**
- * Helper function to filter items by event type
+ * Helper function to filter items by event type - IMPROVED for better style distinction
  */
 const filterByEvent = (items: ZaraClothItem[], event: string | null): ZaraClothItem[] => {
   if (!event) return items;
@@ -118,43 +118,116 @@ const filterByEvent = (items: ZaraClothItem[], event: string | null): ZaraClothI
   const eventLower = event.toLowerCase();
   let filteredItems = items;
   
-  // Filter based on event type
+  // Filter based on event type with better distinction
   if (eventLower.includes('work') || eventLower.includes('business')) {
-    // For work events, prefer formal and classic items
+    // For work events, prefer formal and business items
     filteredItems = items.filter(item => {
       const name = (item.product_name ?? '').toLowerCase();
       const family = (item.product_family ?? '').toLowerCase();
       const subfamily = (item.product_subfamily ?? '').toLowerCase();
+      const fullText = `${name} ${family} ${subfamily}`;
       
-      // Include formal items
-      return name.includes('blazer') || name.includes('shirt') || name.includes('trouser') ||
-             family.includes('formal') || subfamily.includes('עסקי') ||
-             !name.includes('casual') && !name.includes('sport');
-    });
-  } else if (eventLower.includes('party') || eventLower.includes('date')) {
-    // For parties/dates, prefer elegant and trendy items
-    filteredItems = items.filter(item => {
-      const name = (item.product_name ?? '').toLowerCase();
-      const color = (item.colour ?? '').toLowerCase();
+      // Include formal/business items
+      const businessPatterns = [
+        'blazer', 'shirt', 'trouser', 'formal', 'עסקי', 'חליפה', 'בלייזר',
+        'dress', 'heel', 'pump', 'oxford', 'loafer', 'עקב', 'נעלי עסקיות'
+      ];
       
-      // Include party-appropriate items
-      return name.includes('dress') || name.includes('heel') || name.includes('elegant') ||
-             color.includes('black') || color.includes('red') || color.includes('gold');
+      // Exclude casual items from work
+      const casualExclusions = [
+        'jean', 'ג\'ינס', 'sneaker', 'sport', 'ספורט', 'נעלי ספורט',
+        't-shirt', 'טי שירט', 'hoodie', 'הודי', 'sweat', 'casual'
+      ];
+      
+      const hasBusinessPattern = businessPatterns.some(pattern => fullText.includes(pattern));
+      const hasCasualPattern = casualExclusions.some(pattern => fullText.includes(pattern));
+      
+      return hasBusinessPattern && !hasCasualPattern;
     });
-  } else if (eventLower.includes('casual') || eventLower.includes('weekend')) {
-    // For casual events, prefer comfortable and relaxed items
+  } else if (eventLower.includes('party') || eventLower.includes('evening') || eventLower.includes('date')) {
+    // For evening/party/dates, prefer elegant and dressy items
     filteredItems = items.filter(item => {
       const name = (item.product_name ?? '').toLowerCase();
       const family = (item.product_family ?? '').toLowerCase();
+      const subfamily = (item.product_subfamily ?? '').toLowerCase();
+      const color = (item.colour ?? '').toLowerCase();
+      const fullText = `${name} ${family} ${subfamily}`;
       
-      // Include casual items
-      return name.includes('jean') || name.includes('t-shirt') || name.includes('sneaker') ||
-             name.includes('casual') || family.includes('casual');
+      // Include evening/party items
+      const eveningPatterns = [
+        'dress', 'שמלה', 'heel', 'עקב', 'elegant', 'אלגנטי', 'blouse', 'בלוזה',
+        'skirt', 'חצאית', 'blazer', 'בלייזר', 'formal', 'פורמלי'
+      ];
+      
+      // Include elegant colors
+      const elegantColors = ['black', 'שחור', 'navy', 'נייבי', 'red', 'אדום', 'gold', 'זהב'];
+      
+      // Exclude very casual items
+      const casualExclusions = [
+        'jean', 'ג\'ינס', 'sneaker', 'ספורט', 't-shirt', 'טי שירט', 'hoodie'
+      ];
+      
+      const hasEveningPattern = eveningPatterns.some(pattern => fullText.includes(pattern));
+      const hasElegantColor = elegantColors.some(colorName => color.includes(colorName));
+      const hasCasualPattern = casualExclusions.some(pattern => fullText.includes(pattern));
+      
+      return (hasEveningPattern || hasElegantColor) && !hasCasualPattern;
+    });
+  } else if (eventLower.includes('casual') || eventLower.includes('weekend')) {
+    // For casual events, prefer VERY casual and sporty items - cotton, jeans, sneakers
+    filteredItems = items.filter(item => {
+      const name = (item.product_name ?? '').toLowerCase();
+      const family = (item.product_family ?? '').toLowerCase();
+      const subfamily = (item.product_subfamily ?? '').toLowerCase();
+      const description = (item.description ?? '').toLowerCase();
+      const materials = (item.materials_description ?? '').toLowerCase();
+      const fullText = `${name} ${family} ${subfamily} ${description} ${materials}`;
+      
+      // Include very casual/sporty items
+      const casualPatterns = [
+        'jean', 'ג\'ינס', 'denim', 'דנים', 't-shirt', 'טי שירט', 'tee', 'טי',
+        'sneaker', 'ספורט', 'trainer', 'נעלי ספורט', 'converse', 'נייק',
+        'hoodie', 'הודי', 'sweatshirt', 'סווט Shirt', 'jogger', 'ג\'וגר',
+        'cotton', 'כותנה', 'casual', 'קז\'ואל', 'relaxed', 'רגיל',
+        'polo', 'פולו', 'tank', 'גופייה', 'shorts', 'מכנסיים קצרים'
+      ];
+      
+      // Exclude formal/business items from casual
+      const formalExclusions = [
+        'blazer', 'בלייזר', 'formal', 'פורמלי', 'business', 'עסקי',
+        'heel', 'עקב', 'pump', 'oxford', 'dress shirt', 'חולצה פורמלית',
+        'suit', 'חליפה', 'elegant', 'אלגנטי'
+      ];
+      
+      const hasCasualPattern = casualPatterns.some(pattern => fullText.includes(pattern));
+      const hasFormalPattern = formalExclusions.some(pattern => fullText.includes(pattern));
+      
+      return hasCasualPattern && !hasFormalPattern;
     });
   }
   
   console.log(`🎯 [DEBUG] Event filter (${event}): ${items.length} -> ${filteredItems.length} items`);
-  return filteredItems.length > 0 ? filteredItems : items; // Fallback to all items if no matches
+  
+  // If filtered items are too few, use a more lenient approach but still prefer the right style
+  if (filteredItems.length < 10) {
+    console.log(`⚠️ [DEBUG] Too few items after strict filtering, using lenient approach for ${event}`);
+    
+    // For casual, at least exclude very formal items
+    if (eventLower.includes('casual') || eventLower.includes('weekend')) {
+      filteredItems = items.filter(item => {
+        const fullText = `${item.product_name ?? ''} ${item.product_family ?? ''} ${item.product_subfamily ?? ''}`.toLowerCase();
+        const excludePatterns = ['blazer', 'בלייזר', 'heel', 'עקב', 'formal', 'פורמלי', 'suit', 'חליפה'];
+        return !excludePatterns.some(pattern => fullText.includes(pattern));
+      });
+    }
+    
+    // Fallback to all items if still too few
+    if (filteredItems.length < 5) {
+      filteredItems = items;
+    }
+  }
+  
+  return filteredItems;
 };
 
 /**
