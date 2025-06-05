@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
@@ -340,9 +341,9 @@ const isValidClothingItem = (item: any): boolean => {
 
 /**
  * Helper function to check if an image URL contains the AI-selected best image pattern
- * Uses AI analysis results when available
+ * Uses AI analysis results when available - RELAXED for shoes to ensure availability
  */
-const isValidImagePattern = (imageData: any): boolean => {
+const isValidImagePattern = (imageData: any, itemType?: string): boolean => {
   if (!imageData) {
     console.log('🔍 [DEBUG] No image data provided');
     return false;
@@ -376,25 +377,25 @@ const isValidImagePattern = (imageData: any): boolean => {
     return false;
   }
   
-  // Check for 6th+ image pattern (without model)
+  // For shoes, be more lenient - accept any valid image pattern
+  if (itemType === 'shoes') {
+    const hasAnyPattern = imageUrls.some(url => /_[1-9]_\d+_1\.jpg/.test(url));
+    console.log(`🔍 [DEBUG] Shoes item - Found ${imageUrls.length} URLs, has any valid pattern: ${hasAnyPattern}`);
+    return hasAnyPattern;
+  }
+  
+  // Check for 6th+ image pattern (without model) for other items
   const hasValidPattern = imageUrls.some(url => /_[6-9]_\d+_1\.jpg/.test(url));
   
   console.log(`🔍 [DEBUG] Found ${imageUrls.length} URLs, has valid no-model pattern (6th+ image): ${hasValidPattern}`);
-  if (hasValidPattern) {
-    const validUrl = imageUrls.find(url => /_[6-9]_\d+_1\.jpg/.test(url));
-    console.log(`🔍 [DEBUG] Valid no-model URL found: ${validUrl}`);
-  } else {
-    console.log(`🔍 [DEBUG] NO valid no-model pattern found in URLs:`, imageUrls);
-  }
-  
   return hasValidPattern;
 };
 
 /**
  * Helper function to extract the best product image URL using AI analysis
- * Returns AI-selected image or falls back to 6th+ image pattern
+ * Returns AI-selected image or falls back to any available pattern for shoes
  */
-const extractMainProductImage = async (imageData: any, itemId?: string): Promise<string> => {
+const extractMainProductImage = async (imageData: any, itemId?: string, itemType?: string): Promise<string> => {
   if (!imageData) {
     return '/placeholder.svg';
   }
@@ -435,25 +436,42 @@ const extractMainProductImage = async (imageData: any, itemId?: string): Promise
     imageUrls = [imageData.url];
   }
   
-  // Find the best image - prioritize 6th, 7th, 8th, 9th images without model
-  const noModelImages = imageUrls.filter(url => /_[6-9]_\d+_1\.jpg/.test(url));
-  
-  if (noModelImages.length > 0) {
-    noModelImages.sort((a, b) => {
-      const aMatch = a.match(/_([6-9])_\d+_1\.jpg/);
-      const bMatch = b.match(/_([6-9])_\d+_1\.jpg/);
-      if (aMatch && bMatch) {
-        return parseInt(aMatch[1]) - parseInt(bMatch[1]);
-      }
-      return 0;
-    });
+  // For shoes, be more flexible - try to find any good image
+  if (itemType === 'shoes') {
+    // Priority: 6th+ images, then any available image
+    const preferredImages = imageUrls.filter(url => /_[6-9]_\d+_1\.jpg/.test(url));
+    if (preferredImages.length > 0) {
+      console.log(`🔍 [DEBUG] Found preferred shoe image: ${preferredImages[0]}`);
+      return preferredImages[0];
+    }
     
-    console.log(`🔍 [DEBUG] Found ${noModelImages.length} no-model images, using: ${noModelImages[0]}`);
-    return noModelImages[0];
+    // Fallback to any available image pattern for shoes
+    const anyValidImage = imageUrls.find(url => /_[1-9]_\d+_1\.jpg/.test(url));
+    if (anyValidImage) {
+      console.log(`🔍 [DEBUG] Found fallback shoe image: ${anyValidImage}`);
+      return anyValidImage;
+    }
   } else {
-    console.log(`🔍 [DEBUG] NO suitable no-model images found, using placeholder`);
-    return '/placeholder.svg';
+    // Find the best image - prioritize 6th, 7th, 8th, 9th images without model
+    const noModelImages = imageUrls.filter(url => /_[6-9]_\d+_1\.jpg/.test(url));
+    
+    if (noModelImages.length > 0) {
+      noModelImages.sort((a, b) => {
+        const aMatch = a.match(/_([6-9])_\d+_1\.jpg/);
+        const bMatch = b.match(/_([6-9])_\d+_1\.jpg/);
+        if (aMatch && bMatch) {
+          return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+        }
+        return 0;
+      });
+      
+      console.log(`🔍 [DEBUG] Found ${noModelImages.length} no-model images, using: ${noModelImages[0]}`);
+      return noModelImages[0];
+    }
   }
+  
+  console.log(`🔍 [DEBUG] NO suitable images found, using placeholder`);
+  return '/placeholder.svg';
 };
 
 /**
@@ -567,17 +585,22 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
            name.includes('שמלה') || name.includes('ג\'ינס');
   });
   
-  // Enhanced shoe detection - check multiple fields
+  // Enhanced shoe detection - check multiple fields and be more lenient
   const shoes = itemsToUse.filter(item => {
     const name = (item.product_name || '').toLowerCase();
     const family = item.product_family ? item.product_family.toLowerCase() : '';
     const subfamily = item.product_subfamily ? item.product_subfamily.toLowerCase() : '';
+    const description = (item.description || '').toLowerCase();
     
     // Check for shoe patterns in all relevant fields
-    const shoePatterns = ['נעל', 'shoe', 'סנדל', 'sandal', 'מגפ', 'boot', 'נעלי', 'sneaker', 'נעליים', 'shoes', 'boots', 'sandals', 'trainers', 'heels', 'flats'];
+    const shoePatterns = [
+      'נעל', 'shoe', 'סנדל', 'sandal', 'מגפ', 'boot', 'נעלי', 'sneaker', 
+      'נעליים', 'shoes', 'boots', 'sandals', 'trainers', 'heels', 'flats',
+      'pump', 'oxford', 'loafer', 'עקב', 'נעלי עסקיות', 'ספורט'
+    ];
     
     return shoePatterns.some(pattern => 
-      name.includes(pattern) || family.includes(pattern) || subfamily.includes(pattern)
+      name.includes(pattern) || family.includes(pattern) || subfamily.includes(pattern) || description.includes(pattern)
     );
   });
   
@@ -589,8 +612,20 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
       id: item.id,
       name: item.product_name,
       family: item.product_family,
-      subfamily: item.product_subfamily
+      subfamily: item.product_subfamily,
+      description: item.description
     })));
+    
+    // If no shoes found, try to find any items that might be shoes with less strict criteria
+    const possibleShoes = itemsToUse.filter(item => {
+      const allText = `${item.product_name || ''} ${item.product_family || ''} ${item.product_subfamily || ''} ${item.description || ''}`.toLowerCase();
+      return allText.includes('נעל') || allText.includes('shoe') || allText.includes('boot') || allText.includes('heel');
+    });
+    
+    if (possibleShoes.length > 0) {
+      console.log(`🔍 [DEBUG] Found ${possibleShoes.length} possible shoes with relaxed criteria`);
+      shoes.push(...possibleShoes);
+    }
   }
   
   // Try multiple combinations to find one within budget with good color coordination
@@ -751,7 +786,7 @@ export const stylingAgent: Agent = {
       // Step 4: Apply all filters - explicitly type as ZaraClothItem[]
       console.log('🔍 [DEBUG] Starting professional filtering for valid clothing items...');
       
-      // First filter for valid clothing items with good images - explicitly typed as ZaraClothItem[]
+      // First filter for valid clothing items - explicitly typed as ZaraClothItem[]
       let validItems: ZaraClothItem[] = allItems.filter((item, index) => {
         console.log(`🔍 [DEBUG] Checking item ${index + 1}/${allItems.length} (ID: ${item.id})`);
         
@@ -761,14 +796,26 @@ export const stylingAgent: Agent = {
           return false;
         }
         
-        // Then check if it has valid image pattern
-        const hasValidImage = isValidImagePattern(item.image);
+        // For shoes, be more lenient with image requirements
+        const itemType = (() => {
+          const name = (item.product_name || '').toLowerCase();
+          const family = item.product_family ? item.product_family.toLowerCase() : '';
+          const subfamily = item.product_subfamily ? item.product_subfamily.toLowerCase() : '';
+          
+          if (name.includes('נעל') || name.includes('shoe') || family.includes('shoe') || subfamily.includes('נעל')) {
+            return 'shoes';
+          }
+          return 'clothing';
+        })();
+        
+        // Then check if it has valid image pattern (more lenient for shoes)
+        const hasValidImage = isValidImagePattern(item.image, itemType);
         if (!hasValidImage) {
-          console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - no valid image pattern`);
+          console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - no valid image pattern (type: ${itemType})`);
           return false;
         }
         
-        console.log(`✅ [DEBUG] KEEPING item ${item.id} - valid clothing with good image`);
+        console.log(`✅ [DEBUG] KEEPING item ${item.id} - valid clothing with good image (type: ${itemType})`);
         return true;
       });
 
@@ -807,11 +854,11 @@ export const stylingAgent: Agent = {
       // Calculate total cost
       const totalCost = outfitSelection.top.price + outfitSelection.bottom.price + outfitSelection.shoes.price;
 
-      // Extract AI-selected or best product images
+      // Extract AI-selected or best product images with item type info
       console.log('🔍 [DEBUG] Extracting AI-selected product images...');
-      const topImage = await extractMainProductImage(outfitSelection.top?.image, outfitSelection.top?.id);
-      const bottomImage = await extractMainProductImage(outfitSelection.bottom?.image, outfitSelection.bottom?.id);
-      const shoesImage = await extractMainProductImage(outfitSelection.shoes?.image, outfitSelection.shoes?.id);
+      const topImage = await extractMainProductImage(outfitSelection.top?.image, outfitSelection.top?.id, 'top');
+      const bottomImage = await extractMainProductImage(outfitSelection.bottom?.image, outfitSelection.bottom?.id, 'bottom');
+      const shoesImage = await extractMainProductImage(outfitSelection.shoes?.image, outfitSelection.shoes?.id, 'shoes');
 
       console.log('🔍 [DEBUG] Professional outfit images:');
       console.log('Top item image:', topImage);
