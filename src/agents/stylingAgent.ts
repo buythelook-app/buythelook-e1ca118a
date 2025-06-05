@@ -209,7 +209,7 @@ const filterByMood = (items: ZaraClothItem[], mood: string | null): ZaraClothIte
 
 /**
  * Helper function to check if an item is actually a clothing item based on name and category
- * Only processes non-NULL values as specified
+ * Enhanced to better filter out non-clothing items like perfumes and accessories
  */
 const isValidClothingItem = (item: any): boolean => {
   if (!item || !item.availability) return false;
@@ -221,13 +221,17 @@ const isValidClothingItem = (item: any): boolean => {
   const productFamily = item.product_family ? item.product_family.toLowerCase() : '';
   const subfamily = item.product_subfamily ? item.product_subfamily.toLowerCase() : '';
   
-  // Exclude non-clothing items
+  // Enhanced exclude patterns - including perfumes and cosmetics
   const excludePatterns = [
     'תיק', 'bag', 'ארנק', 'wallet', 'משקפיים', 'glasses', 'שעון', 'watch',
     'צמיד', 'bracelet', 'שרשרת', 'necklace', 'עגיל', 'earring', 'טבעת', 'ring',
     'כובע', 'hat', 'כפפות', 'gloves', 'חגורה', 'belt', 'זרוע', 'arm',
     'כלי', 'tool', 'ספר', 'book', 'נייר', 'paper', 'מחשב', 'computer',
-    'טלפון', 'phone', 'כבל', 'cable', 'מטען', 'charger'
+    'טלפון', 'phone', 'כבל', 'cable', 'מטען', 'charger',
+    // Add perfume and cosmetic patterns
+    'בושם', 'perfume', 'fragrance', 'eau de', 'cologne', 'aftershave',
+    'קוסמטיק', 'cosmetic', 'makeup', 'איפור', 'שפתון', 'lipstick',
+    'קרם', 'cream', 'לוטיון', 'lotion', 'סבון', 'soap', 'שמפו', 'shampoo'
   ];
   
   const fullText = `${productName} ${description} ${productFamily} ${subfamily}`;
@@ -240,12 +244,14 @@ const isValidClothingItem = (item: any): boolean => {
     return false;
   }
   
-  // Must contain clothing-related patterns
+  // Must contain clothing-related patterns - enhanced for shoes
   const clothingPatterns = [
     'חולצ', 'shirt', 'בלוז', 'blouse', 'טופ', 'top', 'גופייה', 'tank',
     'מכנס', 'pants', 'ג\'ינס', 'jeans', 'חצאית', 'skirt', 'שמלה', 'dress',
     'נעל', 'shoe', 'סנדל', 'sandal', 'מגפ', 'boot', 'נעלי', 'sneaker',
-    'סוודר', 'sweater', 'קרדיגן', 'cardigan', 'ז\'קט', 'jacket', 'מעיל', 'coat'
+    'סוודר', 'sweater', 'קרדיגן', 'cardigan', 'ז\'קט', 'jacket', 'מעיל', 'coat',
+    // Enhanced shoe patterns
+    'נעליים', 'shoes', 'boots', 'sandals', 'trainers', 'heels', 'flats'
   ];
   
   const hasClothingPattern = clothingPatterns.some(pattern => fullText.includes(pattern));
@@ -456,7 +462,7 @@ const matchesColors = (item: ZaraClothItem, targetColors: string[]): boolean => 
 };
 
 /**
- * Professional outfit selection with improved color coordination
+ * Professional outfit selection with improved color coordination and enhanced shoe detection
  * Ensures budget compliance and smart color matching for colorful items
  */
 const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top?: ZaraClothItem; bottom?: ZaraClothItem; shoes?: ZaraClothItem } => {
@@ -466,36 +472,53 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
   
   const itemsToUse = availableItems.length >= 3 ? availableItems : fallbackItems;
   
-  // Categorize by product_family - only if not NULL
+  // Enhanced categorization by product_family and product names - improved shoe detection
   const tops = itemsToUse.filter(item => {
-    if (!item.product_family && !item.product_subfamily) return false;
-    
+    const name = (item.product_name || '').toLowerCase();
     const family = item.product_family ? item.product_family.toLowerCase() : '';
     const subfamily = item.product_subfamily ? item.product_subfamily.toLowerCase() : '';
     
     return family.includes('top') || family.includes('blouse') || family.includes('shirt') || 
-           subfamily.includes('חולצ') || subfamily.includes('טופ') || subfamily.includes('בלוז');
+           subfamily.includes('חולצ') || subfamily.includes('טופ') || subfamily.includes('בלוז') ||
+           name.includes('חולצ') || name.includes('טופ') || name.includes('בלוז') || name.includes('shirt');
   });
   
   const bottoms = itemsToUse.filter(item => {
-    if (!item.product_family && !item.product_subfamily) return false;
-    
+    const name = (item.product_name || '').toLowerCase();
     const family = item.product_family ? item.product_family.toLowerCase() : '';
     const subfamily = item.product_subfamily ? item.product_subfamily.toLowerCase() : '';
     
     return family.includes('bottom') || family.includes('pants') || family.includes('skirt') || 
-           family.includes('dress') || subfamily.includes('מכנס') || subfamily.includes('חצאית') || subfamily.includes('שמלה');
+           family.includes('dress') || subfamily.includes('מכנס') || subfamily.includes('חצאית') || 
+           subfamily.includes('שמלה') || name.includes('מכנס') || name.includes('חצאית') || 
+           name.includes('שמלה') || name.includes('ג\'ינס');
   });
   
+  // Enhanced shoe detection - check multiple fields
   const shoes = itemsToUse.filter(item => {
-    if (!item.product_family && !item.product_subfamily) return false;
-    
+    const name = (item.product_name || '').toLowerCase();
     const family = item.product_family ? item.product_family.toLowerCase() : '';
     const subfamily = item.product_subfamily ? item.product_subfamily.toLowerCase() : '';
     
-    return family.includes('shoe') || family.includes('trainer') || family.includes('boot') || 
-           subfamily.includes('נעל') || subfamily.includes('סנדל') || subfamily.includes('מגפ');
+    // Check for shoe patterns in all relevant fields
+    const shoePatterns = ['נעל', 'shoe', 'סנדל', 'sandal', 'מגפ', 'boot', 'נעלי', 'sneaker', 'נעליים', 'shoes', 'boots', 'sandals', 'trainers', 'heels', 'flats'];
+    
+    return shoePatterns.some(pattern => 
+      name.includes(pattern) || family.includes(pattern) || subfamily.includes(pattern)
+    );
   });
+  
+  console.log(`🔍 [DEBUG] Categorization results: tops=${tops.length}, bottoms=${bottoms.length}, shoes=${shoes.length}`);
+  
+  if (shoes.length === 0) {
+    console.warn(`⚠️ [DEBUG] No shoes found! Available items: ${itemsToUse.length}`);
+    console.log(`🔍 [DEBUG] Sample items:`, itemsToUse.slice(0, 5).map(item => ({
+      id: item.id,
+      name: item.product_name,
+      family: item.product_family,
+      subfamily: item.product_subfamily
+    })));
+  }
   
   // Try multiple combinations to find one within budget with good color coordination
   const maxAttempts = 15;
@@ -504,23 +527,25 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
     let selectedBottom: ZaraClothItem | undefined;
     let selectedShoes: ZaraClothItem | undefined;
     
-    // Strategy: If we find a colorful item, pair it with neutral items
+    // Enhanced strategy: Smart color coordination
     const colorfulTops = tops.filter(isColorfulItem);
     const colorfulBottoms = bottoms.filter(isColorfulItem);
     const neutralTops = tops.filter(isNeutralItem);
     const neutralBottoms = bottoms.filter(isNeutralItem);
     const neutralShoes = shoes.filter(isNeutralItem);
     
-    // Case 1: Colorful top with neutral bottom and shoes
-    if (colorfulTops.length > 0 && neutralBottoms.length > 0 && neutralShoes.length > 0) {
+    // Strategy 1: One colorful item + two neutral items (preferred)
+    if (colorfulTops.length > 0 && neutralBottoms.length > 0 && (neutralShoes.length > 0 || shoes.length > 0)) {
       selectedTop = colorfulTops[Math.floor(Math.random() * colorfulTops.length)];
       selectedBottom = neutralBottoms[Math.floor(Math.random() * neutralBottoms.length)];
-      selectedShoes = neutralShoes[Math.floor(Math.random() * neutralShoes.length)];
+      selectedShoes = neutralShoes.length > 0 ? 
+        neutralShoes[Math.floor(Math.random() * neutralShoes.length)] :
+        shoes[Math.floor(Math.random() * shoes.length)];
       
-      console.log(`🎨 [DEBUG] Strategy: Colorful top + neutral bottom + neutral shoes`);
+      console.log(`🎨 [DEBUG] Strategy 1: Colorful top + neutral bottom + neutral/any shoes`);
     }
-    // Case 2: Colorful bottom with neutral top and matching shoes
-    else if (colorfulBottoms.length > 0 && neutralTops.length > 0) {
+    // Strategy 2: Neutral top + colorful bottom + matching/neutral shoes
+    else if (colorfulBottoms.length > 0 && neutralTops.length > 0 && shoes.length > 0) {
       selectedBottom = colorfulBottoms[Math.floor(Math.random() * colorfulBottoms.length)];
       selectedTop = neutralTops[Math.floor(Math.random() * neutralTops.length)];
       
@@ -530,21 +555,21 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
       
       if (matchingShoes.length > 0) {
         selectedShoes = matchingShoes[Math.floor(Math.random() * matchingShoes.length)];
-        console.log(`🎨 [DEBUG] Strategy: Neutral top + colorful bottom + color-matched shoes`);
+        console.log(`🎨 [DEBUG] Strategy 2: Neutral top + colorful bottom + color-matched shoes`);
       } else {
         selectedShoes = neutralShoes.length > 0 ? 
           neutralShoes[Math.floor(Math.random() * neutralShoes.length)] :
           shoes[Math.floor(Math.random() * shoes.length)];
-        console.log(`🎨 [DEBUG] Strategy: Neutral top + colorful bottom + neutral shoes (fallback)`);
+        console.log(`🎨 [DEBUG] Strategy 2: Neutral top + colorful bottom + neutral/any shoes (fallback)`);
       }
     }
-    // Case 3: All neutral items (fallback)
+    // Strategy 3: All neutral items (fallback)
     else {
       selectedTop = tops.length > 0 ? tops[Math.floor(Math.random() * tops.length)] : undefined;
       selectedBottom = bottoms.length > 0 ? bottoms[Math.floor(Math.random() * bottoms.length)] : undefined;
       selectedShoes = shoes.length > 0 ? shoes[Math.floor(Math.random() * shoes.length)] : undefined;
       
-      console.log(`🎨 [DEBUG] Strategy: Random selection (fallback)`);
+      console.log(`🎨 [DEBUG] Strategy 3: Random selection (fallback)`);
     }
     
     if (selectedTop && selectedBottom && selectedShoes) {
@@ -552,7 +577,7 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
       
       if (totalCost <= budget) {
         console.log(`💰 [DEBUG] Found color-coordinated outfit within budget: ${totalCost}₪ / ${budget}₪`);
-        console.log(`🔍 [DEBUG] Professional outfit selection: TOP=${!!selectedTop}, BOTTOM=${!!selectedBottom}, SHOES=${!!selectedShoes}`);
+        console.log(`🔍 [DEBUG] Professional outfit selection: TOP=${selectedTop.product_name}, BOTTOM=${selectedBottom.product_name}, SHOES=${selectedShoes.product_name}`);
         
         return {
           top: selectedTop,
@@ -562,6 +587,8 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
       } else {
         console.log(`💰 [DEBUG] Color-coordinated outfit over budget (${totalCost}₪ > ${budget}₪), trying again...`);
       }
+    } else {
+      console.log(`⚠️ [DEBUG] Incomplete outfit at attempt ${attempt + 1}: top=${!!selectedTop}, bottom=${!!selectedBottom}, shoes=${!!selectedShoes}`);
     }
   }
   
@@ -570,7 +597,8 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
   const cheapestBottom = bottoms.sort((a, b) => a.price - b.price)[0];
   const cheapestShoes = shoes.sort((a, b) => a.price - b.price)[0];
   
-  console.log(`⚠️ [DEBUG] Could not find color-coordinated outfit within budget, returning cheapest options`);
+  console.log(`⚠️ [DEBUG] Could not find complete color-coordinated outfit within budget, returning cheapest options`);
+  console.log(`🔍 [DEBUG] Final selection: TOP=${cheapestTop?.product_name || 'NONE'}, BOTTOM=${cheapestBottom?.product_name || 'NONE'}, SHOES=${cheapestShoes?.product_name || 'NONE'}`);
   
   return {
     top: cheapestTop,
