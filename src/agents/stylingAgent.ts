@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
@@ -592,13 +593,13 @@ function findMatchingShoes(
  */
 const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top?: ZaraClothItem; bottom?: ZaraClothItem; shoes?: ZaraClothItem } => {
   // Filter available items and avoid low stock when possible
-  const availableItems = items.filter(item => item.availability && !item.low_on_stock);
-  const fallbackItems = items.filter(item => item.availability); // Include low stock as fallback
+  const availableItems: ZaraClothItem[] = items.filter(item => item.availability && !item.low_on_stock);
+  const fallbackItems: ZaraClothItem[] = items.filter(item => item.availability); // Include low stock as fallback
   
-  const itemsToUse = availableItems.length >= 3 ? availableItems : fallbackItems;
+  const itemsToUse: ZaraClothItem[] = availableItems.length >= 3 ? availableItems : fallbackItems;
   
   // Enhanced categorization by product_family and product names - improved shoe detection
-  const tops = itemsToUse.filter(item => {
+  const tops: ZaraClothItem[] = itemsToUse.filter(item => {
     const name = (item.product_name || '').toLowerCase();
     const family = item.product_family ? item.product_family.toLowerCase() : '';
     const subfamily = item.product_subfamily ? item.product_subfamily.toLowerCase() : '';
@@ -608,7 +609,7 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
            name.includes('חולצ') || name.includes('טופ') || name.includes('בלוז') || name.includes('shirt');
   });
   
-  const bottoms = itemsToUse.filter(item => {
+  const bottoms: ZaraClothItem[] = itemsToUse.filter(item => {
     const name = (item.product_name || '').toLowerCase();
     const family = item.product_family ? item.product_family.toLowerCase() : '';
     const subfamily = item.product_subfamily ? item.product_subfamily.toLowerCase() : '';
@@ -620,7 +621,7 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
   });
   
   // Enhanced shoe detection - check multiple fields and be more lenient
-  const shoes = itemsToUse.filter(item => {
+  const shoes: ZaraClothItem[] = itemsToUse.filter(item => {
     const name = (item.product_name || '').toLowerCase();
     const family = item.product_family ? item.product_family.toLowerCase() : '';
     const subfamily = item.product_subfamily ? item.product_subfamily.toLowerCase() : '';
