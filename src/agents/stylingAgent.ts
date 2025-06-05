@@ -285,7 +285,7 @@ const filterByMood = (items: ZaraClothItem[], mood: string | null): ZaraClothIte
  * Helper function to check if an item is actually a clothing item based on name and category
  * Enhanced to better filter out non-clothing items like perfumes and accessories
  */
-const isValidClothingItem = (item: any): boolean => {
+const isValidClothingItem = (item: ZaraClothItem): boolean => {
   if (!item || !item.availability) return false;
   
   const productName = (item.product_name || '').toLowerCase();
