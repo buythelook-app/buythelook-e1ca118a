@@ -553,6 +553,41 @@ const matchesColors = (item: ZaraClothItem, targetColors: string[]): boolean => 
 };
 
 /**
+ * Enhanced function to find matching shoes based on the user's criteria
+ */
+function findMatchingShoes(
+  items: ZaraClothItem[],
+  topItem: ZaraClothItem
+): ZaraClothItem[] {
+  const shoeKeywords = [
+    "shoes", "trainer", "sneaker", "sandals", "heels", "boots",
+    "נעליים", "נעל", "סנדל", "מגפ", "נעלי", "עקב"
+  ];
+  const lowerName = (s: string) => s?.toLowerCase() || "";
+
+  return items.filter(item => {
+    const name = lowerName(item.product_name);
+    const description = lowerName(item.description ?? "");
+    const family = lowerName(item.product_family ?? "");
+    const subfamily = lowerName(item.product_subfamily ?? "");
+
+    // Check if it's a shoe across all text fields
+    const isShoe = shoeKeywords.some(kw =>
+      name.includes(kw) || description.includes(kw) || family.includes(kw) || subfamily.includes(kw)
+    );
+
+    // Check for same or similar color
+    const isSameColour = item.colour === topItem.colour;
+    
+    // Check for similar price range (within 100 NIS)
+    const isSimilarPrice = Math.abs(item.price - topItem.price) < 100;
+
+    // For shoes, be more flexible - match on any criteria
+    return isShoe && (isSameColour || isSimilarPrice);
+  });
+}
+
+/**
  * Professional outfit selection with improved color coordination and enhanced shoe detection
  * Ensures budget compliance and smart color matching for colorful items
  */
@@ -646,38 +681,47 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
     if (colorfulTops.length > 0 && neutralBottoms.length > 0 && (neutralShoes.length > 0 || shoes.length > 0)) {
       selectedTop = colorfulTops[Math.floor(Math.random() * colorfulTops.length)];
       selectedBottom = neutralBottoms[Math.floor(Math.random() * neutralBottoms.length)];
-      selectedShoes = neutralShoes.length > 0 ? 
-        neutralShoes[Math.floor(Math.random() * neutralShoes.length)] :
-        shoes[Math.floor(Math.random() * shoes.length)];
       
-      console.log(`🎨 [DEBUG] Strategy 1: Colorful top + neutral bottom + neutral/any shoes`);
+      // Use the updated findMatchingShoes function
+      const matchingShoes = findMatchingShoes(shoes, selectedTop);
+      selectedShoes = matchingShoes.length > 0 ? 
+        matchingShoes[Math.floor(Math.random() * matchingShoes.length)] :
+        (neutralShoes.length > 0 ? 
+          neutralShoes[Math.floor(Math.random() * neutralShoes.length)] :
+          shoes[Math.floor(Math.random() * shoes.length)]);
+      
+      console.log(`🎨 [DEBUG] Strategy 1: Colorful top + neutral bottom + matching/neutral shoes`);
     }
     // Strategy 2: Neutral top + colorful bottom + matching/neutral shoes
     else if (colorfulBottoms.length > 0 && neutralTops.length > 0 && shoes.length > 0) {
       selectedBottom = colorfulBottoms[Math.floor(Math.random() * colorfulBottoms.length)];
       selectedTop = neutralTops[Math.floor(Math.random() * neutralTops.length)];
       
-      // Try to find shoes that match one of the colors in the colorful bottom
-      const bottomColors = extractMainColors(selectedBottom);
-      const matchingShoes = shoes.filter(shoe => matchesColors(shoe, bottomColors));
-      
-      if (matchingShoes.length > 0) {
-        selectedShoes = matchingShoes[Math.floor(Math.random() * matchingShoes.length)];
-        console.log(`🎨 [DEBUG] Strategy 2: Neutral top + colorful bottom + color-matched shoes`);
-      } else {
-        selectedShoes = neutralShoes.length > 0 ? 
+      // Use the updated findMatchingShoes function
+      const matchingShoes = findMatchingShoes(shoes, selectedBottom);
+      selectedShoes = matchingShoes.length > 0 ? 
+        matchingShoes[Math.floor(Math.random() * matchingShoes.length)] :
+        (neutralShoes.length > 0 ? 
           neutralShoes[Math.floor(Math.random() * neutralShoes.length)] :
-          shoes[Math.floor(Math.random() * shoes.length)];
-        console.log(`🎨 [DEBUG] Strategy 2: Neutral top + colorful bottom + neutral/any shoes (fallback)`);
-      }
+          shoes[Math.floor(Math.random() * shoes.length)]);
+      
+      console.log(`🎨 [DEBUG] Strategy 2: Neutral top + colorful bottom + matching/neutral shoes`);
     }
     // Strategy 3: All neutral items (fallback)
     else {
       selectedTop = tops.length > 0 ? tops[Math.floor(Math.random() * tops.length)] : undefined;
       selectedBottom = bottoms.length > 0 ? bottoms[Math.floor(Math.random() * bottoms.length)] : undefined;
-      selectedShoes = shoes.length > 0 ? shoes[Math.floor(Math.random() * shoes.length)] : undefined;
       
-      console.log(`🎨 [DEBUG] Strategy 3: Random selection (fallback)`);
+      if (selectedTop && shoes.length > 0) {
+        const matchingShoes = findMatchingShoes(shoes, selectedTop);
+        selectedShoes = matchingShoes.length > 0 ? 
+          matchingShoes[Math.floor(Math.random() * matchingShoes.length)] :
+          shoes[Math.floor(Math.random() * shoes.length)];
+      } else {
+        selectedShoes = shoes.length > 0 ? shoes[Math.floor(Math.random() * shoes.length)] : undefined;
+      }
+      
+      console.log(`🎨 [DEBUG] Strategy 3: Random selection with shoe matching (fallback)`);
     }
     
     if (selectedTop && selectedBottom && selectedShoes) {
