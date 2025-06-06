@@ -237,7 +237,7 @@ const filterByBudget = (items: ZaraClothItem[], budget: number): ZaraClothItem[]
 };
 
 /**
- * Helper function to filter items by event type - FIXED logic for proper casual vs work categorization
+ * Helper function to filter items by event type - REVERTED work logic to previous version
  */
 const filterByEvent = (items: ZaraClothItem[], event: string | null): ZaraClothItem[] => {
   if (!event) return items;
@@ -245,16 +245,16 @@ const filterByEvent = (items: ZaraClothItem[], event: string | null): ZaraClothI
   const eventLower = event.toLowerCase();
   let filteredItems = items;
   
-  // Filter based on event type with CORRECTED logic
+  // Filter based on event type - REVERTED work logic
   if (eventLower.includes('work') || eventLower.includes('business')) {
-    // For work events, prefer FORMAL and BUSINESS items
+    // REVERTED: Use the old work filtering logic that was working better
     filteredItems = items.filter(item => {
       const name = (item.product_name ?? '').toLowerCase();
       const family = (item.product_family ?? '').toLowerCase();
       const subfamily = (item.product_subfamily ?? '').toLowerCase();
       const fullText = `${name} ${family} ${subfamily}`;
       
-      // Include FORMAL/BUSINESS items for work
+      // OLD LOGIC: Include business patterns for work
       const businessPatterns = [
         'blazer', 'בלייזר', 'shirt', 'חולצה', 'blouse', 'בלוזה',
         'trouser', 'מכנסיים פורמליים', 'formal', 'פורמלי', 'עסקי', 'business',
@@ -262,21 +262,20 @@ const filterByEvent = (items: ZaraClothItem[], event: string | null): ZaraClothI
         'נעלי עסקיות', 'coat', 'מעיל', 'jacket', 'ז\'קט', 'suit', 'חליפה'
       ];
       
-      // Exclude CASUAL items from work
+      // OLD LOGIC: Exclude casual items from work (less strict)
       const casualExclusions = [
         'jean', 'ג\'ינס', 'sneaker', 'ספורט', 'נעלי ספורט',
-        't-shirt', 'טי שירט', 'hoodie', 'הודי', 'sweat', 'סווט',
-        'casual', 'קז\'ואל', 'trainer', 'converse', 'running',
-        'tank top', 'גופייה', 'shorts', 'מכנסיים קצרים'
+        't-shirt', 'טי שירט', 'hoodie', 'הודי', 'sweat', 'סווט'
       ];
       
       const hasBusinessPattern = businessPatterns.some(pattern => fullText.includes(pattern));
       const hasCasualPattern = casualExclusions.some(pattern => fullText.includes(pattern));
       
-      return hasBusinessPattern && !hasCasualPattern;
+      // OLD LOGIC: More lenient - include if has business OR doesn't have strong casual
+      return hasBusinessPattern || !hasCasualPattern;
     });
   } else if (eventLower.includes('casual') || eventLower.includes('weekend')) {
-    // For casual/weekend, PRIORITIZE CASUAL items and EXCLUDE FORMAL items
+    // KEEP NEW LOGIC: For casual/weekend, PRIORITIZE CASUAL items and EXCLUDE FORMAL items
     filteredItems = items.filter(item => {
       const name = (item.product_name ?? '').toLowerCase();
       const family = (item.product_family ?? '').toLowerCase();
@@ -378,10 +377,11 @@ const filterByEvent = (items: ZaraClothItem[], event: string | null): ZaraClothI
       });
     }
     
-    // For work, at least exclude very casual items
+    // For work, use OLD LENIENT logic - at least exclude very casual items
     if (eventLower.includes('work') || eventLower.includes('business')) {
       filteredItems = items.filter(item => {
         const fullText = `${item.product_name ?? ''} ${item.product_family ?? ''} ${item.product_subfamily ?? ''}`.toLowerCase();
+        // OLD LOGIC: Just exclude very casual items, don't be too strict
         const excludePatterns = ['jean', 'ג\'ינס', 'sneaker', 'ספורט', 't-shirt', 'טי שירט', 'hoodie', 'הודי'];
         return !excludePatterns.some(pattern => fullText.includes(pattern));
       });
