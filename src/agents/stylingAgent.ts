@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
@@ -64,6 +65,107 @@ const isItemAlreadyUsed = (itemId: string): boolean => {
 const markItemAsUsed = (itemId: string): void => {
   usedItemIds.add(itemId);
   console.log(`📝 [DEBUG] Marked item ${itemId} as used`);
+};
+
+/**
+ * Helper function to check if an item is a valid clothing item
+ */
+const isValidClothingItem = (item: ZaraClothItem): boolean => {
+  const name = (item.product_name || '').toLowerCase();
+  const family = (item.product_family || '').toLowerCase();
+  const subfamily = (item.product_subfamily || '').toLowerCase();
+  
+  // Exclude non-clothing items
+  const excludePatterns = [
+    'perfume', 'fragrance', 'בושם', 'ריח',
+    'bag', 'תיק', 'handbag', 'backpack',
+    'wallet', 'ארנק', 'purse',
+    'watch', 'שעון',
+    'phone case', 'כיסוי טלפון',
+    'makeup', 'איפור', 'cosmetic',
+    'candle', 'נר',
+    'home', 'בית', 'decoration'
+  ];
+  
+  const fullText = `${name} ${family} ${subfamily}`;
+  const hasExcludePattern = excludePatterns.some(pattern => fullText.includes(pattern));
+  
+  return !hasExcludePattern;
+};
+
+/**
+ * Helper function to check if an image has valid pattern
+ */
+const isValidImagePattern = (imageData: any, itemType: string = 'clothing'): boolean => {
+  if (!imageData) {
+    return false;
+  }
+  
+  let imageUrls: string[] = [];
+  
+  if (typeof imageData === 'string') {
+    try {
+      const parsed = JSON.parse(imageData);
+      if (Array.isArray(parsed)) {
+        imageUrls = parsed.filter(url => typeof url === 'string');
+      } else {
+        imageUrls = [imageData];
+      }
+    } catch {
+      imageUrls = [imageData];
+    }
+  } else if (Array.isArray(imageData)) {
+    imageUrls = imageData.filter(url => typeof url === 'string');
+  } else if (typeof imageData === 'object' && imageData.url) {
+    imageUrls = [imageData.url];
+  }
+  
+  // For shoes, be more lenient - accept 6th image and up
+  if (itemType === 'shoes') {
+    return imageUrls.some(url => /_[6-9]_\d+_1\.jpg/.test(url));
+  }
+  
+  // For clothing, prefer 6th image and up but be more flexible
+  return imageUrls.some(url => /_[6-9]_\d+_1\.jpg/.test(url)) || imageUrls.length > 0;
+};
+
+/**
+ * Helper function to extract main product image
+ */
+const extractMainProductImage = async (imageData: any, itemId?: string, itemType?: string): Promise<string> => {
+  if (!imageData) {
+    return '/placeholder.svg';
+  }
+  
+  let imageUrls: string[] = [];
+  
+  if (typeof imageData === 'string') {
+    try {
+      const parsed = JSON.parse(imageData);
+      if (Array.isArray(parsed)) {
+        imageUrls = parsed.filter(url => typeof url === 'string');
+      } else {
+        imageUrls = [imageData];
+      }
+    } catch {
+      imageUrls = [imageData];
+    }
+  } else if (Array.isArray(imageData)) {
+    imageUrls = imageData.filter(url => typeof url === 'string');
+  } else if (typeof imageData === 'object' && imageData.url) {
+    imageUrls = [imageData.url];
+  }
+  
+  // Find the best image - prioritize 6th, 7th, 8th, 9th images
+  const noModelImages = imageUrls.filter(url => /_[6-9]_\d+_1\.jpg/.test(url));
+  
+  if (noModelImages.length > 0) {
+    return noModelImages[0];
+  } else if (imageUrls.length > 0) {
+    return imageUrls[0];
+  } else {
+    return '/placeholder.svg';
+  }
 };
 
 /**
@@ -282,7 +384,154 @@ const filterByEvent = (items: ZaraClothItem[], event: string | null): ZaraClothI
   return filteredItems;
 };
 
-// ... keep existing code (all other helper functions, main styling agent logic) the same ...
+/**
+ * Helper function to filter items by mood
+ */
+const filterByMood = (items: ZaraClothItem[], mood: string | null): ZaraClothItem[] => {
+  if (!mood) return items;
+  
+  const moodLower = mood.toLowerCase();
+  
+  if (moodLower.includes('energetic') || moodLower.includes('bold')) {
+    return items.filter(item => {
+      const color = (item.colour || '').toLowerCase();
+      const name = (item.product_name || '').toLowerCase();
+      return color.includes('red') || color.includes('bright') || name.includes('sport');
+    });
+  }
+  
+  if (moodLower.includes('calm') || moodLower.includes('elegant')) {
+    return items.filter(item => {
+      const color = (item.colour || '').toLowerCase();
+      return color.includes('blue') || color.includes('beige') || color.includes('white');
+    });
+  }
+  
+  return items;
+};
+
+/**
+ * Helper function to select professional outfit with proper coat/top logic
+ */
+const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number) => {
+  console.log('🔍 [DEBUG] Starting professional outfit selection...');
+  
+  // Categorize items by type with proper classification
+  const categorizedItems = {
+    tops: [] as ZaraClothItem[],
+    bottoms: [] as ZaraClothItem[],
+    shoes: [] as ZaraClothItem[],
+    coats: [] as ZaraClothItem[]
+  };
+  
+  items.forEach(item => {
+    if (isItemAlreadyUsed(item.id)) {
+      console.log(`⏭️ [DEBUG] Skipping already used item: ${item.id}`);
+      return;
+    }
+    
+    const name = (item.product_name || '').toLowerCase();
+    const family = (item.product_family || '').toLowerCase();
+    const subfamily = (item.product_subfamily || '').toLowerCase();
+    
+    // Classify coats/jackets/outerwear
+    if (name.includes('coat') || name.includes('מעיל') || 
+        name.includes('jacket') || name.includes('ג\'קט') ||
+        name.includes('blazer') || name.includes('בלייזר') ||
+        family.includes('outerwear') || subfamily.includes('outerwear')) {
+      categorizedItems.coats.push(item);
+    }
+    // Classify skirts as bottoms (FIXED)
+    else if (name.includes('skirt') || name.includes('חצאית') ||
+             name.includes('pants') || name.includes('מכנסיים') ||
+             name.includes('trousers') || name.includes('jeans') ||
+             name.includes('shorts')) {
+      categorizedItems.bottoms.push(item);
+    }
+    // Classify shoes
+    else if (name.includes('shoe') || name.includes('נעל') ||
+             name.includes('heel') || name.includes('עקב') ||
+             name.includes('sneaker') || name.includes('ספורט') ||
+             family.includes('shoe') || subfamily.includes('נעל')) {
+      categorizedItems.shoes.push(item);
+    }
+    // Everything else as tops (shirts, blouses, t-shirts, etc.)
+    else {
+      categorizedItems.tops.push(item);
+    }
+  });
+  
+  console.log('📊 [DEBUG] Categorized items:', {
+    tops: categorizedItems.tops.length,
+    bottoms: categorizedItems.bottoms.length,
+    shoes: categorizedItems.shoes.length,
+    coats: categorizedItems.coats.length
+  });
+  
+  // Select items within budget - ensure we have a top when selecting a coat
+  let selectedTop: ZaraClothItem | null = null;
+  let selectedBottom: ZaraClothItem | null = null;
+  let selectedShoes: ZaraClothItem | null = null;
+  let selectedCoat: ZaraClothItem | null = null;
+  
+  // Try to find a combination that fits the budget
+  for (const bottom of categorizedItems.bottoms) {
+    if (isItemAlreadyUsed(bottom.id)) continue;
+    
+    for (const shoes of categorizedItems.shoes) {
+      if (isItemAlreadyUsed(shoes.id)) continue;
+      
+      // Try with coat first (4 items total)
+      for (const coat of categorizedItems.coats) {
+        if (isItemAlreadyUsed(coat.id)) continue;
+        
+        for (const top of categorizedItems.tops) {
+          if (isItemAlreadyUsed(top.id)) continue;
+          
+          const totalCost = top.price + bottom.price + shoes.price + coat.price;
+          if (totalCost <= budget) {
+            selectedTop = top;
+            selectedBottom = bottom;
+            selectedShoes = shoes;
+            selectedCoat = coat;
+            
+            // Mark all items as used
+            markItemAsUsed(top.id);
+            markItemAsUsed(bottom.id);
+            markItemAsUsed(shoes.id);
+            markItemAsUsed(coat.id);
+            
+            console.log(`✅ [DEBUG] Selected 4-piece outfit with coat (${totalCost}₪)`);
+            return { top: selectedTop, bottom: selectedBottom, shoes: selectedShoes, coat: selectedCoat };
+          }
+        }
+      }
+      
+      // If no coat combination works, try without coat (3 items)
+      for (const top of categorizedItems.tops) {
+        if (isItemAlreadyUsed(top.id)) continue;
+        
+        const totalCost = top.price + bottom.price + shoes.price;
+        if (totalCost <= budget) {
+          selectedTop = top;
+          selectedBottom = bottom;
+          selectedShoes = shoes;
+          
+          // Mark items as used
+          markItemAsUsed(top.id);
+          markItemAsUsed(bottom.id);
+          markItemAsUsed(shoes.id);
+          
+          console.log(`✅ [DEBUG] Selected 3-piece outfit (${totalCost}₪)`);
+          return { top: selectedTop, bottom: selectedBottom, shoes: selectedShoes };
+        }
+      }
+    }
+  }
+  
+  console.log('❌ [DEBUG] Could not find suitable combination within budget');
+  return { top: null, bottom: null, shoes: null, coat: null };
+};
 
 export const stylingAgent: Agent = {
   role: "Professional AI Styling Assistant",
