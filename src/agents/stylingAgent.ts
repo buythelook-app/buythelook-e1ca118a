@@ -1,5 +1,3 @@
-
-
 import { supabase } from "@/lib/supabaseClient";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
@@ -41,6 +39,32 @@ interface Agent {
   tools: any[];
   run?: (userId: string) => Promise<any>;
 }
+
+// Global tracker to prevent duplicate items across multiple outfit generations
+let usedItemIds = new Set<string>();
+
+/**
+ * Helper function to clear the global used items tracker
+ */
+const clearUsedItems = () => {
+  usedItemIds.clear();
+  console.log('🔄 [DEBUG] Cleared used items tracker');
+};
+
+/**
+ * Helper function to check if an item has already been used
+ */
+const isItemAlreadyUsed = (itemId: string): boolean => {
+  return usedItemIds.has(itemId);
+};
+
+/**
+ * Helper function to mark an item as used
+ */
+const markItemAsUsed = (itemId: string): void => {
+  usedItemIds.add(itemId);
+  console.log(`📝 [DEBUG] Marked item ${itemId} as used`);
+};
 
 /**
  * Helper function to get user budget from localStorage or filters
@@ -112,7 +136,7 @@ const filterByBudget = (items: ZaraClothItem[], budget: number): ZaraClothItem[]
 };
 
 /**
- * Helper function to filter items by event type - IMPROVED for better style distinction
+ * Helper function to filter items by event type - IMPROVED for better casual detection
  */
 const filterByEvent = (items: ZaraClothItem[], event: string | null): ZaraClothItem[] => {
   if (!event) return items;
@@ -120,7 +144,7 @@ const filterByEvent = (items: ZaraClothItem[], event: string | null): ZaraClothI
   const eventLower = event.toLowerCase();
   let filteredItems = items;
   
-  // Filter based on event type with better distinction
+  // Filter based on event type with enhanced casual detection
   if (eventLower.includes('work') || eventLower.includes('business')) {
     // For work events, prefer formal and business items
     filteredItems = items.filter(item => {
@@ -176,7 +200,7 @@ const filterByEvent = (items: ZaraClothItem[], event: string | null): ZaraClothI
       return (hasEveningPattern || hasElegantColor) && !hasCasualPattern;
     });
   } else if (eventLower.includes('casual') || eventLower.includes('weekend')) {
-    // For casual events, prefer VERY casual and sporty items - cotton, jeans, sneakers
+    // ENHANCED casual detection - focus on truly casual everyday items
     filteredItems = items.filter(item => {
       const name = (item.product_name ?? '').toLowerCase();
       const family = (item.product_family ?? '').toLowerCase();
@@ -185,20 +209,34 @@ const filterByEvent = (items: ZaraClothItem[], event: string | null): ZaraClothI
       const materials = (item.materials_description ?? '').toLowerCase();
       const fullText = `${name} ${family} ${subfamily} ${description} ${materials}`;
       
-      // Include very casual/sporty items
+      // ENHANCED casual patterns - more specific everyday items
       const casualPatterns = [
-        'jean', 'ג\'ינס', 'denim', 'דנים', 't-shirt', 'טי שירט', 'tee', 'טי',
-        'sneaker', 'ספורט', 'trainer', 'נעלי ספורט', 'converse', 'נייק',
-        'hoodie', 'הודי', 'sweatshirt', 'סווט Shirt', 'jogger', 'ג\'וגר',
-        'cotton', 'כותנה', 'casual', 'קז\'ואל', 'relaxed', 'רגיל',
-        'polo', 'פולו', 'tank', 'גופייה', 'shorts', 'מכנסיים קצרים'
+        // Jeans and denim
+        'jean', 'ג\'ינס', 'denim', 'דנים',
+        // T-shirts and casual tops
+        't-shirt', 'טי שירט', 'tee', 'טי', 'tank', 'גופייה', 'טריקו',
+        // Sneakers and casual shoes
+        'sneaker', 'ספורט', 'trainer', 'נעלי ספורט', 'converse', 'נייק', 'אדידס',
+        'running', 'jogging', 'canvas', 'סניקרס',
+        // Hoodies and sweatshirts
+        'hoodie', 'הודי', 'sweatshirt', 'סווטשירט', 'sweat', 'סווט',
+        // Casual pants and shorts
+        'jogger', 'ג\'וגר', 'track', 'casual pants', 'מכנסיים קזואלים',
+        'shorts', 'מכנסיים קצרים', 'bermuda',
+        // Casual materials
+        'cotton', 'כותנה', '100% cotton', 'jersey', 'ג\'רזי',
+        // Casual descriptors
+        'casual', 'קז\'ואל', 'relaxed', 'רגיל', 'comfortable', 'נוח',
+        'everyday', 'יומיומי', 'weekend', 'סוף שבוע',
+        // Polo and casual shirts
+        'polo', 'פולו', 'henley'
       ];
       
       // Exclude formal/business items from casual
       const formalExclusions = [
         'blazer', 'בלייזר', 'formal', 'פורמלי', 'business', 'עסקי',
         'heel', 'עקב', 'pump', 'oxford', 'dress shirt', 'חולצה פורמלית',
-        'suit', 'חליפה', 'elegant', 'אלגנטי'
+        'suit', 'חליפה', 'elegant', 'אלגנטי', 'evening', 'ערב'
       ];
       
       const hasCasualPattern = casualPatterns.some(pattern => fullText.includes(pattern));
@@ -591,14 +629,20 @@ function findMatchingShoes(
 /**
  * Professional outfit selection with improved color coordination and enhanced shoe detection
  * Ensures budget compliance and smart color matching for colorful items
- * Now includes shirt/top when coat/jacket is present
+ * Now includes shirt/top when coat/jacket is present and prevents duplicate items
  */
 const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top?: ZaraClothItem; bottom?: ZaraClothItem; shoes?: ZaraClothItem; coat?: ZaraClothItem } => {
-  // Filter available items and avoid low stock when possible
-  const availableItems: ZaraClothItem[] = items.filter(item => item.availability && !item.low_on_stock);
-  const fallbackItems: ZaraClothItem[] = items.filter(item => item.availability); // Include low stock as fallback
+  // Filter out items that have already been used and exclude low stock when possible
+  const availableItems: ZaraClothItem[] = items.filter(item => 
+    item.availability && !item.low_on_stock && !isItemAlreadyUsed(item.id)
+  );
+  const fallbackItems: ZaraClothItem[] = items.filter(item => 
+    item.availability && !isItemAlreadyUsed(item.id)
+  ); // Include low stock as fallback but still exclude used items
   
   const itemsToUse: ZaraClothItem[] = availableItems.length >= 3 ? availableItems : fallbackItems;
+  
+  console.log(`🔄 [DEBUG] Available items after excluding used: ${itemsToUse.length} (original: ${items.length})`);
   
   // Enhanced categorization by product_family and product names - improved detection
   const tops: ZaraClothItem[] = itemsToUse.filter(item => {
@@ -641,7 +685,7 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
     );
   });
 
-  // NEW: Add coat/jacket detection
+  // Add coat/jacket detection
   const coats: ZaraClothItem[] = itemsToUse.filter(item => {
     const name = (item.product_name || '').toLowerCase();
     const family = item.product_family ? item.product_family.toLowerCase() : '';
@@ -704,10 +748,25 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
     if (includeCoat) {
       selectedCoat = coats[Math.floor(Math.random() * coats.length)];
       console.log(`🧥 [DEBUG] Including coat: ${selectedCoat.product_name}`);
+      
+      // When including a coat, also ensure we have a shirt/top underneath
+      if (tops.length > 0) {
+        // Filter tops to exclude coats/jackets (we want shirt underneath)
+        const shirtsUnderCoats = tops.filter(top => {
+          const name = (top.product_name || '').toLowerCase();
+          const coatPatterns = ['ז\'קט', 'jacket', 'מעיל', 'coat', 'בלייזר', 'blazer', 'עליונית', 'cardigan', 'קרדיגן', 'sweater', 'סוודר'];
+          return !coatPatterns.some(pattern => name.includes(pattern));
+        });
+        
+        if (shirtsUnderCoats.length > 0) {
+          selectedTop = shirtsUnderCoats[Math.floor(Math.random() * shirtsUnderCoats.length)];
+          console.log(`👕 [DEBUG] Selected shirt under coat: ${selectedTop.product_name}`);
+        }
+      }
     }
 
     // Strategy 1: One colorful item + neutrals (preferred)
-    if (colorfulTops.length > 0 && neutralBottoms.length > 0 && (neutralShoes.length > 0 || shoes.length > 0)) {
+    if (!selectedTop && colorfulTops.length > 0 && neutralBottoms.length > 0 && (neutralShoes.length > 0 || shoes.length > 0)) {
       selectedTop = colorfulTops[Math.floor(Math.random() * colorfulTops.length)];
       selectedBottom = neutralBottoms[Math.floor(Math.random() * neutralBottoms.length)];
       
@@ -722,7 +781,7 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
       console.log(`🎨 [DEBUG] Strategy 1: Colorful top + neutral bottom + matching/neutral shoes`);
     }
     // Strategy 2: Neutral top + colorful bottom + matching/neutral shoes
-    else if (colorfulBottoms.length > 0 && neutralTops.length > 0 && shoes.length > 0) {
+    else if (!selectedTop && colorfulBottoms.length > 0 && neutralTops.length > 0 && shoes.length > 0) {
       selectedBottom = colorfulBottoms[Math.floor(Math.random() * colorfulBottoms.length)];
       selectedTop = neutralTops[Math.floor(Math.random() * neutralTops.length)];
       
@@ -738,8 +797,12 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
     }
     // Strategy 3: All neutral items (fallback)
     else {
-      selectedTop = tops.length > 0 ? tops[Math.floor(Math.random() * tops.length)] : undefined;
-      selectedBottom = bottoms.length > 0 ? bottoms[Math.floor(Math.random() * bottoms.length)] : undefined;
+      if (!selectedTop) {
+        selectedTop = tops.length > 0 ? tops[Math.floor(Math.random() * tops.length)] : undefined;
+      }
+      if (!selectedBottom) {
+        selectedBottom = bottoms.length > 0 ? bottoms[Math.floor(Math.random() * bottoms.length)] : undefined;
+      }
       
       if (selectedTop && shoes.length > 0) {
         const matchingShoes = findMatchingShoes(shoes, selectedTop);
@@ -764,6 +827,14 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
         console.log(`💰 [DEBUG] Found color-coordinated outfit within budget: ${totalCost}₪ / ${budget}₪`);
         console.log(`🔍 [DEBUG] Professional outfit selection: TOP=${selectedTop!.product_name}, BOTTOM=${selectedBottom!.product_name}, SHOES=${selectedShoes!.product_name}${selectedCoat ? ', COAT=' + selectedCoat.product_name : ''}`);
         
+        // Mark all selected items as used to prevent duplicates
+        markItemAsUsed(selectedTop!.id);
+        markItemAsUsed(selectedBottom!.id);
+        markItemAsUsed(selectedShoes!.id);
+        if (selectedCoat) {
+          markItemAsUsed(selectedCoat.id);
+        }
+        
         return {
           top: selectedTop,
           bottom: selectedBottom,
@@ -786,6 +857,12 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
   
   console.log(`⚠️ [DEBUG] Could not find complete color-coordinated outfit within budget, returning cheapest options`);
   console.log(`🔍 [DEBUG] Final selection: TOP=${cheapestTop?.product_name || 'NONE'}, BOTTOM=${cheapestBottom?.product_name || 'NONE'}, SHOES=${cheapestShoes?.product_name || 'NONE'}, COAT=${cheapestCoat?.product_name || 'NONE'}`);
+  
+  // Mark cheapest items as used if they exist
+  if (cheapestTop) markItemAsUsed(cheapestTop.id);
+  if (cheapestBottom) markItemAsUsed(cheapestBottom.id);
+  if (cheapestShoes) markItemAsUsed(cheapestShoes.id);
+  if (cheapestCoat) markItemAsUsed(cheapestCoat.id);
   
   return {
     top: cheapestTop,
@@ -813,6 +890,9 @@ export const stylingAgent: Agent = {
     console.log("🔍 [DEBUG] Professional StylingAgent starting for user:", userId);
     
     try {
+      // Clear used items at the start of a new session
+      clearUsedItems();
+      
       // Step 1: Get user preferences from localStorage
       const budget = getUserBudget();
       const selectedEvent = getSelectedEvent();
@@ -867,20 +947,21 @@ export const stylingAgent: Agent = {
       console.log('🔍 [DEBUG] Starting professional filtering for valid clothing items...');
       
       // First filter for valid clothing items - properly type the items
-      let validItems: ZaraClothItem[] = (allItems as ZaraClothItem[]).filter((item, index) => {
-        console.log(`🔍 [DEBUG] Checking item ${index + 1}/${allItems.length} (ID: ${item.id})`);
+      let validItems: ZaraClothItem[] = (allItems as ZaraClothItem[]).filter((item: any, index) => {
+        const typedItem = item as ZaraClothItem;
+        console.log(`🔍 [DEBUG] Checking item ${index + 1}/${allItems.length} (ID: ${typedItem.id})`);
         
         // First check if it's a valid clothing item
-        const isClothing = isValidClothingItem(item);
+        const isClothing = isValidClothingItem(typedItem);
         if (!isClothing) {
           return false;
         }
         
         // For shoes, be more lenient with image requirements
         const itemType = (() => {
-          const name = (item.product_name || '').toLowerCase();
-          const family = item.product_family ? item.product_family.toLowerCase() : '';
-          const subfamily = item.product_subfamily ? item.product_subfamily.toLowerCase() : '';
+          const name = (typedItem.product_name || '').toLowerCase();
+          const family = typedItem.product_family ? typedItem.product_family.toLowerCase() : '';
+          const subfamily = typedItem.product_subfamily ? typedItem.product_subfamily.toLowerCase() : '';
           
           if (name.includes('נעל') || name.includes('shoe') || family.includes('shoe') || subfamily.includes('נעל')) {
             return 'shoes';
@@ -889,13 +970,13 @@ export const stylingAgent: Agent = {
         })();
         
         // Then check if it has valid image pattern (more lenient for shoes)
-        const hasValidImage = isValidImagePattern(item.image, itemType);
+        const hasValidImage = isValidImagePattern(typedItem.image, itemType);
         if (!hasValidImage) {
-          console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - no valid image pattern (type: ${itemType})`);
+          console.log(`❌ [DEBUG] FILTERED OUT item ${typedItem.id} - no valid image pattern (type: ${itemType})`);
           return false;
         }
         
-        console.log(`✅ [DEBUG] KEEPING item ${item.id} - valid clothing with good image (type: ${itemType})`);
+        console.log(`✅ [DEBUG] KEEPING item ${typedItem.id} - valid clothing with good image (type: ${itemType})`);
         return true;
       });
 
@@ -920,7 +1001,7 @@ export const stylingAgent: Agent = {
         };
       }
 
-      // Step 5: Professional outfit selection with budget consideration
+      // Step 5: Professional outfit selection with budget consideration and duplicate prevention
       const outfitSelection = selectProfessionalOutfit(validItems, budget);
       
       if (!outfitSelection.top || !outfitSelection.bottom || !outfitSelection.shoes) {
@@ -970,7 +1051,7 @@ export const stylingAgent: Agent = {
           }
         }),
         score: Math.floor(Math.random() * 30) + 70,
-        description: `Professional outfit recommendation (${totalCost}₪/${budget}₪) tailored for ${selectedEvent || 'general occasion'} with ${currentMood || 'balanced'} mood${outfitSelection.coat ? ' including layering piece' : ''}`,
+        description: `Professional outfit recommendation (${totalCost}₪/${budget}₪) tailored for ${selectedEvent || 'general occasion'} with ${currentMood || 'balanced'} mood${outfitSelection.coat ? ' including layering piece with coordinated top' : ''}`,
         recommendations: [
           `Budget-conscious selection: ${totalCost}₪ out of ${budget}₪ budget`,
           `Event-appropriate styling for ${selectedEvent || 'general occasions'}`,
@@ -978,7 +1059,8 @@ export const stylingAgent: Agent = {
           "Items selected from real Zara database with AI-analyzed images",
           "All items currently available and prioritized over low-stock alternatives",
           "Colors and styles coordinated for visual appeal and occasion suitability",
-          ...(outfitSelection.coat ? ["Complete layered look with coordinated outerwear"] : [])
+          "Unique items - no duplicates across different outfit suggestions",
+          ...(outfitSelection.coat ? ["Complete layered look with coordinated outerwear and proper top underneath"] : [])
         ],
         occasion: selectedEvent || 'general',
         totalCost: totalCost,
@@ -986,7 +1068,7 @@ export const stylingAgent: Agent = {
         mood: currentMood
       };
       
-      console.log("✅ [DEBUG] Generated professional database outfit successfully with budget and preference filtering");
+      console.log("✅ [DEBUG] Generated professional database outfit successfully with budget and preference filtering and duplicate prevention");
       return { success: true, data: outfit };
       
     } catch (error) {
