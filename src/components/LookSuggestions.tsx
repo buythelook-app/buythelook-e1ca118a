@@ -121,7 +121,7 @@ export const LookSuggestions = () => {
       }
     }
 
-    const bottomKeywords = ['pants', 'skirt', 'shorts', 'jeans', 'trousers', 'bottom'];
+    const bottomKeywords = ['pants', 'skirt', 'חצאית', 'shorts', 'jeans', 'trousers', 'bottom'];
     for (const keyword of bottomKeywords) {
       if (lowerType.includes(keyword)) {
         console.log(`Found bottom keyword: ${keyword} in type: ${lowerType}`);
@@ -136,6 +136,8 @@ export const LookSuggestions = () => {
       'top': 'top',
       'corset top': 'top',
       'dress': 'dress',
+      'skirt': 'bottom', // FIXED: Skirt should be bottom
+      'חצאית': 'bottom', // FIXED: Hebrew skirt should be bottom
       'heel shoe': 'shoes',
       'shoes': 'shoes',
       'sneakers': 'shoes',

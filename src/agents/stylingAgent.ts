@@ -186,7 +186,7 @@ const filterByEvent = (items: ZaraClothItem[], event: string | null): ZaraClothI
       ];
       
       // Include elegant colors
-      const elegantColors = ['black', 'שחור', 'navy', 'נייבי', 'red', 'אדום', 'gold', 'זהב'];
+      const elegantColors = ['black', 'שחור', 'נייבי', 'red', 'אדום', 'gold', 'זהב'];
       
       // Exclude very casual items
       const casualExclusions = [
@@ -644,11 +644,19 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
   
   console.log(`🔄 [DEBUG] Available items after excluding used: ${itemsToUse.length} (original: ${items.length})`);
   
-  // Enhanced categorization by product_family and product names - improved detection
+  // Enhanced categorization by product_family and product names - improved detection with correct skirt classification
   const tops: ZaraClothItem[] = itemsToUse.filter(item => {
     const name = (item.product_name || '').toLowerCase();
     const family = item.product_family ? item.product_family.toLowerCase() : '';
     const subfamily = item.product_subfamily ? item.product_subfamily.toLowerCase() : '';
+    
+    // Exclude skirts from tops - they should be in bottoms
+    const isSkirt = name.includes('חצאית') || name.includes('skirt') || 
+                   family.includes('skirt') || subfamily.includes('חצאית');
+    
+    if (isSkirt) {
+      return false; // Skirts are NOT tops
+    }
     
     return family.includes('top') || family.includes('blouse') || family.includes('shirt') || 
            subfamily.includes('חולצ') || subfamily.includes('טופ') || subfamily.includes('בלוז') ||
@@ -660,9 +668,17 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
     const family = item.product_family ? item.product_family.toLowerCase() : '';
     const subfamily = item.product_subfamily ? item.product_subfamily.toLowerCase() : '';
     
-    return family.includes('bottom') || family.includes('pants') || family.includes('skirt') || 
-           family.includes('dress') || subfamily.includes('מכנס') || subfamily.includes('חצאית') || 
-           subfamily.includes('שמלה') || name.includes('מכנס') || name.includes('חצאית') || 
+    // Include skirts in bottoms - this is the correct classification
+    const isSkirt = name.includes('חצאית') || name.includes('skirt') || 
+                   family.includes('skirt') || subfamily.includes('חצאית');
+    
+    if (isSkirt) {
+      return true; // Skirts ARE bottoms
+    }
+    
+    return family.includes('bottom') || family.includes('pants') || 
+           family.includes('dress') || subfamily.includes('מכנס') || 
+           subfamily.includes('שמלה') || name.includes('מכנס') || 
            name.includes('שמלה') || name.includes('ג\'ינס');
   });
   

@@ -54,19 +54,22 @@ const classifyItemType = (item: any): 'top' | 'bottom' | 'shoes' => {
     return 'shoes';
   }
   
-  // Bottom items - pants, trousers, jeans, shorts, skirts
+  // Bottom items - pants, trousers, jeans, shorts, skirts (FIXED: added skirts)
   if (subfamily.includes('pants') || subfamily.includes('trousers') || 
       subfamily.includes('jeans') || subfamily.includes('shorts') || 
-      subfamily.includes('skirt') || subfamily.includes('leggings') ||
-      subfamily.includes('joggers') || subfamily.includes('chinos') ||
-      name.includes('pants') || name.includes('jeans') || name.includes('shorts') || 
-      name.includes('skirt') || name.includes('trousers') || name.includes('leggings') ||
-      family.includes('pants') || family.includes('trousers') || family.includes('bottoms')) {
+      subfamily.includes('skirt') || subfamily.includes('חצאית') || // Added skirt classification
+      subfamily.includes('leggings') || subfamily.includes('joggers') || 
+      subfamily.includes('chinos') || name.includes('pants') || 
+      name.includes('jeans') || name.includes('shorts') || 
+      name.includes('skirt') || name.includes('חצאית') || // Added skirt classification
+      name.includes('trousers') || name.includes('leggings') ||
+      family.includes('pants') || family.includes('trousers') || 
+      family.includes('bottoms') || family.includes('skirt')) { // Added skirt classification
     console.log(`✅ [usePersonalizedLooks] Classified as BOTTOM: ${item.id}`);
     return 'bottom';
   }
   
-  // Top items - everything else (shirts, blouses, t-shirts, sweaters, etc.)
+  // Top items - everything else (shirts, blouses, t-shirts, sweaters, etc.) - but NOT skirts
   console.log(`✅ [usePersonalizedLooks] Classified as TOP: ${item.id}`);
   return 'top';
 };
