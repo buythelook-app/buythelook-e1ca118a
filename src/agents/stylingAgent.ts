@@ -591,15 +591,16 @@ function findMatchingShoes(
 /**
  * Professional outfit selection with improved color coordination and enhanced shoe detection
  * Ensures budget compliance and smart color matching for colorful items
+ * Now includes shirt/top when coat/jacket is present
  */
-const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top?: ZaraClothItem; bottom?: ZaraClothItem; shoes?: ZaraClothItem } => {
+const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top?: ZaraClothItem; bottom?: ZaraClothItem; shoes?: ZaraClothItem; coat?: ZaraClothItem } => {
   // Filter available items and avoid low stock when possible
   const availableItems: ZaraClothItem[] = items.filter(item => item.availability && !item.low_on_stock);
   const fallbackItems: ZaraClothItem[] = items.filter(item => item.availability); // Include low stock as fallback
   
   const itemsToUse: ZaraClothItem[] = availableItems.length >= 3 ? availableItems : fallbackItems;
   
-  // Enhanced categorization by product_family and product names - improved shoe detection
+  // Enhanced categorization by product_family and product names - improved detection
   const tops: ZaraClothItem[] = itemsToUse.filter(item => {
     const name = (item.product_name || '').toLowerCase();
     const family = item.product_family ? item.product_family.toLowerCase() : '';
@@ -639,8 +640,26 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
       name.includes(pattern) || family.includes(pattern) || subfamily.includes(pattern) || description.includes(pattern)
     );
   });
+
+  // NEW: Add coat/jacket detection
+  const coats: ZaraClothItem[] = itemsToUse.filter(item => {
+    const name = (item.product_name || '').toLowerCase();
+    const family = item.product_family ? item.product_family.toLowerCase() : '';
+    const subfamily = item.product_subfamily ? item.product_subfamily.toLowerCase() : '';
+    const description = (item.description || '').toLowerCase();
+    
+    // Check for coat/jacket patterns
+    const coatPatterns = [
+      'ז\'קט', 'jacket', 'מעיל', 'coat', 'בלייזר', 'blazer', 'עליונית', 'cardigan',
+      'קרדיגן', 'sweater', 'סוודר', 'hoodie', 'הודי'
+    ];
+    
+    return coatPatterns.some(pattern => 
+      name.includes(pattern) || family.includes(pattern) || subfamily.includes(pattern) || description.includes(pattern)
+    );
+  });
   
-  console.log(`🔍 [DEBUG] Categorization results: tops=${tops.length}, bottoms=${bottoms.length}, shoes=${shoes.length}`);
+  console.log(`🔍 [DEBUG] Categorization results: tops=${tops.length}, bottoms=${bottoms.length}, shoes=${shoes.length}, coats=${coats.length}`);
   
   if (shoes.length === 0) {
     console.warn(`⚠️ [DEBUG] No shoes found! Available items: ${itemsToUse.length}`);
@@ -670,6 +689,7 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
     let selectedTop: ZaraClothItem | undefined;
     let selectedBottom: ZaraClothItem | undefined;
     let selectedShoes: ZaraClothItem | undefined;
+    let selectedCoat: ZaraClothItem | undefined;
     
     // Enhanced strategy: Smart color coordination
     const colorfulTops = tops.filter(isColorfulItem);
@@ -677,8 +697,16 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
     const neutralTops = tops.filter(isNeutralItem);
     const neutralBottoms = bottoms.filter(isNeutralItem);
     const neutralShoes = shoes.filter(isNeutralItem);
+
+    // Decide if we should include a coat (30% chance)
+    const includeCoat = Math.random() < 0.3 && coats.length > 0;
     
-    // Strategy 1: One colorful item + two neutral items (preferred)
+    if (includeCoat) {
+      selectedCoat = coats[Math.floor(Math.random() * coats.length)];
+      console.log(`🧥 [DEBUG] Including coat: ${selectedCoat.product_name}`);
+    }
+
+    // Strategy 1: One colorful item + neutrals (preferred)
     if (colorfulTops.length > 0 && neutralBottoms.length > 0 && (neutralShoes.length > 0 || shoes.length > 0)) {
       selectedTop = colorfulTops[Math.floor(Math.random() * colorfulTops.length)];
       selectedBottom = neutralBottoms[Math.floor(Math.random() * neutralBottoms.length)];
@@ -725,17 +753,22 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
       console.log(`🎨 [DEBUG] Strategy 3: Random selection with shoe matching (fallback)`);
     }
     
-    if (selectedTop && selectedBottom && selectedShoes) {
-      const totalCost = selectedTop.price + selectedBottom.price + selectedShoes.price;
+    // Check if we have the required items
+    const hasRequiredItems = selectedTop && selectedBottom && selectedShoes;
+    
+    if (hasRequiredItems) {
+      // Calculate total cost including coat if selected
+      const totalCost = selectedTop!.price + selectedBottom!.price + selectedShoes!.price + (selectedCoat ? selectedCoat.price : 0);
       
       if (totalCost <= budget) {
         console.log(`💰 [DEBUG] Found color-coordinated outfit within budget: ${totalCost}₪ / ${budget}₪`);
-        console.log(`🔍 [DEBUG] Professional outfit selection: TOP=${selectedTop.product_name}, BOTTOM=${selectedBottom.product_name}, SHOES=${selectedShoes.product_name}`);
+        console.log(`🔍 [DEBUG] Professional outfit selection: TOP=${selectedTop!.product_name}, BOTTOM=${selectedBottom!.product_name}, SHOES=${selectedShoes!.product_name}${selectedCoat ? ', COAT=' + selectedCoat.product_name : ''}`);
         
         return {
           top: selectedTop,
           bottom: selectedBottom,
-          shoes: selectedShoes
+          shoes: selectedShoes,
+          coat: selectedCoat
         };
       } else {
         console.log(`💰 [DEBUG] Color-coordinated outfit over budget (${totalCost}₪ > ${budget}₪), trying again...`);
@@ -749,14 +782,16 @@ const selectProfessionalOutfit = (items: ZaraClothItem[], budget: number): { top
   const cheapestTop = tops.sort((a, b) => a.price - b.price)[0];
   const cheapestBottom = bottoms.sort((a, b) => a.price - b.price)[0];
   const cheapestShoes = shoes.sort((a, b) => a.price - b.price)[0];
+  const cheapestCoat = coats.length > 0 ? coats.sort((a, b) => a.price - b.price)[0] : undefined;
   
   console.log(`⚠️ [DEBUG] Could not find complete color-coordinated outfit within budget, returning cheapest options`);
-  console.log(`🔍 [DEBUG] Final selection: TOP=${cheapestTop?.product_name || 'NONE'}, BOTTOM=${cheapestBottom?.product_name || 'NONE'}, SHOES=${cheapestShoes?.product_name || 'NONE'}`);
+  console.log(`🔍 [DEBUG] Final selection: TOP=${cheapestTop?.product_name || 'NONE'}, BOTTOM=${cheapestBottom?.product_name || 'NONE'}, SHOES=${cheapestShoes?.product_name || 'NONE'}, COAT=${cheapestCoat?.product_name || 'NONE'}`);
   
   return {
     top: cheapestTop,
     bottom: cheapestBottom,
-    shoes: cheapestShoes
+    shoes: cheapestShoes,
+    coat: cheapestCoat
   };
 };
 
@@ -896,19 +931,23 @@ export const stylingAgent: Agent = {
         };
       }
 
-      // Calculate total cost
-      const totalCost = outfitSelection.top.price + outfitSelection.bottom.price + outfitSelection.shoes.price;
+      // Calculate total cost including coat if present
+      const totalCost = outfitSelection.top.price + outfitSelection.bottom.price + outfitSelection.shoes.price + (outfitSelection.coat ? outfitSelection.coat.price : 0);
 
       // Extract AI-selected or best product images with item type info
       console.log('🔍 [DEBUG] Extracting AI-selected product images...');
       const topImage = await extractMainProductImage(outfitSelection.top?.image, outfitSelection.top?.id, 'top');
       const bottomImage = await extractMainProductImage(outfitSelection.bottom?.image, outfitSelection.bottom?.id, 'bottom');
       const shoesImage = await extractMainProductImage(outfitSelection.shoes?.image, outfitSelection.shoes?.id, 'shoes');
+      const coatImage = outfitSelection.coat ? await extractMainProductImage(outfitSelection.coat?.image, outfitSelection.coat?.id, 'coat') : undefined;
 
       console.log('🔍 [DEBUG] Professional outfit images:');
       console.log('Top item image:', topImage);
       console.log('Bottom item image:', bottomImage);
       console.log('Shoes item image:', shoesImage);
+      if (outfitSelection.coat) {
+        console.log('Coat item image:', coatImage);
+      }
 
       // Step 6: Create professional outfit object with database items and AI-selected images
       const outfit = {
@@ -924,15 +963,22 @@ export const stylingAgent: Agent = {
           ...outfitSelection.shoes,
           image: shoesImage
         },
+        ...(outfitSelection.coat && {
+          coat: {
+            ...outfitSelection.coat,
+            image: coatImage
+          }
+        }),
         score: Math.floor(Math.random() * 30) + 70,
-        description: `Professional outfit recommendation (${totalCost}₪/${budget}₪) tailored for ${selectedEvent || 'general occasion'} with ${currentMood || 'balanced'} mood`,
+        description: `Professional outfit recommendation (${totalCost}₪/${budget}₪) tailored for ${selectedEvent || 'general occasion'} with ${currentMood || 'balanced'} mood${outfitSelection.coat ? ' including layering piece' : ''}`,
         recommendations: [
           `Budget-conscious selection: ${totalCost}₪ out of ${budget}₪ budget`,
           `Event-appropriate styling for ${selectedEvent || 'general occasions'}`,
           `Mood-matched design reflecting ${currentMood || 'balanced'} feelings`,
           "Items selected from real Zara database with AI-analyzed images",
           "All items currently available and prioritized over low-stock alternatives",
-          "Colors and styles coordinated for visual appeal and occasion suitability"
+          "Colors and styles coordinated for visual appeal and occasion suitability",
+          ...(outfitSelection.coat ? ["Complete layered look with coordinated outerwear"] : [])
         ],
         occasion: selectedEvent || 'general',
         totalCost: totalCost,
@@ -952,4 +998,3 @@ export const stylingAgent: Agent = {
     }
   }
 };
-
