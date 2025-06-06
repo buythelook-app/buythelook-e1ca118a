@@ -1,4 +1,5 @@
 
+
 import { supabase } from "@/lib/supabaseClient";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
@@ -827,11 +828,11 @@ export const stylingAgent: Agent = {
 
       console.log('✅ [DEBUG] Available items fetched:', allItems.length);
 
-      // Step 4: Apply all filters - explicitly type as ZaraClothItem[]
+      // Step 4: Apply all filters - cast allItems to ZaraClothItem[] and filter properly
       console.log('🔍 [DEBUG] Starting professional filtering for valid clothing items...');
       
-      // First filter for valid clothing items - explicitly typed as ZaraClothItem[]
-      let validItems: ZaraClothItem[] = allItems.filter((item, index) => {
+      // First filter for valid clothing items - properly type the items
+      let validItems: ZaraClothItem[] = (allItems as ZaraClothItem[]).filter((item, index) => {
         console.log(`🔍 [DEBUG] Checking item ${index + 1}/${allItems.length} (ID: ${item.id})`);
         
         // First check if it's a valid clothing item
@@ -951,3 +952,4 @@ export const stylingAgent: Agent = {
     }
   }
 };
+
