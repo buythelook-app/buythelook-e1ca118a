@@ -673,54 +673,92 @@ export const stylingAgent: Agent = {
       // Step 5: Professional outfit selection with budget consideration and duplicate prevention
       const outfitSelection = selectProfessionalOutfit(validItems, budget);
       
-      if (!outfitSelection.top || !outfitSelection.bottom || !outfitSelection.shoes) {
+      // Check if we have a dress outfit (2 items) or regular outfit (3-4 items)
+      const isDressOutfit = outfitSelection.dress && outfitSelection.shoes;
+      const isRegularOutfit = outfitSelection.top && outfitSelection.bottom && outfitSelection.shoes;
+      
+      if (!isDressOutfit && !isRegularOutfit) {
         console.error('❌ [DEBUG] Could not find complete professional outfit within budget');
         return { 
           success: false, 
-          error: "Could not find complete outfit items (top, bottom, shoes) within your budget and preferences" 
+          error: "Could not find complete outfit items within your budget and preferences" 
         };
       }
 
-      // Calculate total cost including coat if present
-      const totalCost = outfitSelection.top.price + outfitSelection.bottom.price + outfitSelection.shoes.price + (outfitSelection.coat ? outfitSelection.coat.price : 0);
+      // Calculate total cost
+      let totalCost = 0;
+      if (isDressOutfit) {
+        totalCost = outfitSelection.dress!.price + outfitSelection.shoes!.price;
+      } else {
+        totalCost = outfitSelection.top!.price + outfitSelection.bottom!.price + outfitSelection.shoes!.price + (outfitSelection.coat ? outfitSelection.coat.price : 0);
+      }
 
       // Extract AI-selected or best product images with item type info
       console.log('🔍 [DEBUG] Extracting AI-selected product images...');
-      const topImage = await extractMainProductImage(outfitSelection.top?.image, outfitSelection.top?.id, 'top');
-      const bottomImage = await extractMainProductImage(outfitSelection.bottom?.image, outfitSelection.bottom?.id, 'bottom');
-      const shoesImage = await extractMainProductImage(outfitSelection.shoes?.image, outfitSelection.shoes?.id, 'shoes');
-      const coatImage = outfitSelection.coat ? await extractMainProductImage(outfitSelection.coat?.image, outfitSelection.coat?.id, 'coat') : undefined;
+      
+      let outfit: any = {};
+      
+      if (isDressOutfit) {
+        // For dress outfits - only dress and shoes
+        const dressImage = await extractMainProductImage(outfitSelection.dress?.image, outfitSelection.dress?.id, 'dress');
+        const shoesImage = await extractMainProductImage(outfitSelection.shoes?.image, outfitSelection.shoes?.id, 'shoes');
+        
+        console.log('🔍 [DEBUG] Dress outfit images:');
+        console.log('Dress item image:', dressImage);
+        console.log('Shoes item image:', shoesImage);
+        
+        outfit = {
+          dress: {
+            ...outfitSelection.dress,
+            image: dressImage
+          },
+          shoes: {
+            ...outfitSelection.shoes,
+            image: shoesImage
+          }
+        };
+      } else {
+        // For regular outfits - top, bottom, shoes, optional coat
+        const topImage = await extractMainProductImage(outfitSelection.top?.image, outfitSelection.top?.id, 'top');
+        const bottomImage = await extractMainProductImage(outfitSelection.bottom?.image, outfitSelection.bottom?.id, 'bottom');
+        const shoesImage = await extractMainProductImage(outfitSelection.shoes?.image, outfitSelection.shoes?.id, 'shoes');
+        const coatImage = outfitSelection.coat ? await extractMainProductImage(outfitSelection.coat?.image, outfitSelection.coat?.id, 'coat') : undefined;
 
-      console.log('🔍 [DEBUG] Professional outfit images:');
-      console.log('Top item image:', topImage);
-      console.log('Bottom item image:', bottomImage);
-      console.log('Shoes item image:', shoesImage);
-      if (outfitSelection.coat) {
-        console.log('Coat item image:', coatImage);
+        console.log('🔍 [DEBUG] Regular outfit images:');
+        console.log('Top item image:', topImage);
+        console.log('Bottom item image:', bottomImage);
+        console.log('Shoes item image:', shoesImage);
+        if (outfitSelection.coat) {
+          console.log('Coat item image:', coatImage);
+        }
+
+        outfit = {
+          top: {
+            ...outfitSelection.top,
+            image: topImage
+          },
+          bottom: {
+            ...outfitSelection.bottom,
+            image: bottomImage
+          },
+          shoes: {
+            ...outfitSelection.shoes,
+            image: shoesImage
+          },
+          ...(outfitSelection.coat && {
+            coat: {
+              ...outfitSelection.coat,
+              image: coatImage
+            }
+          })
+        };
       }
 
       // Step 6: Create professional outfit object with database items and AI-selected images
-      const outfit = {
-        top: {
-          ...outfitSelection.top,
-          image: topImage
-        },
-        bottom: {
-          ...outfitSelection.bottom,
-          image: bottomImage
-        },
-        shoes: {
-          ...outfitSelection.shoes,
-          image: shoesImage
-        },
-        ...(outfitSelection.coat && {
-          coat: {
-            ...outfitSelection.coat,
-            image: coatImage
-          }
-        }),
+      const finalOutfit = {
+        ...outfit,
         score: Math.floor(Math.random() * 30) + 70,
-        description: `Professional outfit recommendation (${totalCost}₪/${budget}₪) tailored for ${selectedEvent || 'general occasion'} with ${currentMood || 'balanced'} mood${outfitSelection.coat ? ' including layering piece with coordinated top' : ''}`,
+        description: `Professional outfit recommendation (${totalCost}₪/${budget}₪) tailored for ${selectedEvent || 'general occasion'} with ${currentMood || 'balanced'} mood${isDressOutfit ? ' - elegant dress ensemble' : (outfitSelection.coat ? ' including layering piece with coordinated top' : '')}`,
         recommendations: [
           `Budget-conscious selection: ${totalCost}₪ out of ${budget}₪ budget`,
           `Event-appropriate styling for ${selectedEvent || 'general occasions'}`,
@@ -729,7 +767,7 @@ export const stylingAgent: Agent = {
           "All items currently available and prioritized over low-stock alternatives",
           "Colors and styles coordinated for visual appeal and occasion suitability",
           "Unique items - no duplicates across different outfit suggestions",
-          ...(outfitSelection.coat ? ["Complete layered look with coordinated outerwear and proper top underneath"] : [])
+          ...(isDressOutfit ? ["Complete dress look - elegant and effortless"] : (outfitSelection.coat ? ["Complete layered look with coordinated outerwear and proper top underneath"] : []))
         ],
         occasion: selectedEvent || 'general',
         totalCost: totalCost,
@@ -738,7 +776,7 @@ export const stylingAgent: Agent = {
       };
       
       console.log("✅ [DEBUG] Generated professional database outfit successfully with budget and preference filtering and duplicate prevention");
-      return { success: true, data: outfit };
+      return { success: true, data: finalOutfit };
       
     } catch (error) {
       console.error("❌ [DEBUG] Error in professional styling agent:", error);
