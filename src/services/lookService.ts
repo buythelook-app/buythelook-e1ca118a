@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { isValidImagePattern } from "../../supabase/functions/trainer-agent/imageValidator";
-import { extractZaraImageUrl } from "@/utils/imageUtils";
+import { extractZaraImageUrl, extractShoesImageUrl } from "@/utils/imageUtils";
 import { analyzeImagesWithAI } from "@/services/aiImageAnalysisService";
 
 // Cache for outfit data
@@ -54,35 +54,77 @@ const isUnderwearItem = (item: ZaraItem): boolean => {
 };
 
 /**
- * Helper function to safely map subfamily to item type
+ * Enhanced function to detect shoes with multiple criteria
  */
-const mapSubfamilyToType = (subfamily: string | null | undefined): DashboardItem['type'] => {
-  if (!subfamily) return 'top';
+const isShoeItem = (item: ZaraItem): boolean => {
+  const subfamily = item.product_subfamily?.toLowerCase() || '';
+  const name = item.product_name?.toLowerCase() || '';
+  const family = item.product_family?.toLowerCase() || '';
+  const section = item.section?.toLowerCase() || '';
   
-  const lowerSubfamily = subfamily.toLowerCase();
+  // Comprehensive list of shoe-related keywords in multiple languages
+  const shoeKeywords = [
+    // English
+    'shoes', 'shoe', 'sneakers', 'sneaker', 'boots', 'boot',
+    'sandals', 'sandal', 'heels', 'heel', 'flats', 'flat',
+    'trainers', 'trainer', 'loafers', 'loafer', 'pumps', 'pump',
+    'slip-on', 'oxford', 'derby', 'ankle boots', 'knee boots',
+    'running shoes', 'walking shoes', 'basketball shoes', 'tennis shoes',
+    'footwear', 'calzado',
+    // Hebrew
+    'נעליים', 'נעל', 'סניקרס', 'מגפיים', 'מגף',
+    'סנדלים', 'סנדל', 'עקבים', 'עקב', 'שטוחות',
+    'נעלי ספורט', 'מוקסינים',
+    // Spanish (for Zara items)
+    'zapatos', 'zapatillas', 'botas', 'sandalias'
+  ];
   
-  if (['shirt', 'blouse', 't-shirt', 'top', 'sweater', 'cardigan', 'jacket'].some(type => 
-    lowerSubfamily.includes(type)
-  )) {
-    return 'top';
+  const isShoe = shoeKeywords.some(keyword => 
+    subfamily.includes(keyword) || 
+    name.includes(keyword) || 
+    family.includes(keyword) ||
+    section.includes(keyword)
+  );
+  
+  if (isShoe) {
+    console.log(`👟 [LookService] DETECTED SHOE: ${item.id} - "${name}" (subfamily: "${subfamily}", family: "${family}")`);
   }
   
-  if (['pants', 'skirt', 'shorts', 'jeans', 'trousers', 'leggings'].some(type => 
-    lowerSubfamily.includes(type)
+  return isShoe;
+};
+
+/**
+ * Helper function to safely map subfamily to item type with enhanced shoe detection
+ */
+const mapSubfamilyToType = (item: ZaraItem): DashboardItem['type'] => {
+  // First check if it's shoes using our enhanced detection
+  if (isShoeItem(item)) {
+    return 'shoes';
+  }
+  
+  const subfamily = item.product_subfamily?.toLowerCase() || '';
+  const name = item.product_name?.toLowerCase() || '';
+  const family = item.product_family?.toLowerCase() || '';
+  
+  // Check for dress
+  if (['dress', 'gown', 'jumpsuit', 'שמלה'].some(type => 
+    subfamily.includes(type) || name.includes(type) || family.includes(type)
+  )) {
+    return 'dress';
+  }
+  
+  // Check for bottom (excluding dresses)
+  if (['pants', 'skirt', 'shorts', 'jeans', 'trousers', 'leggings', 'מכנס', 'חצאית', 'ג\'ינס', 'שורט'].some(type => 
+    subfamily.includes(type) || name.includes(type) || family.includes(type)
   )) {
     return 'bottom';
   }
   
-  if (['shoes', 'heel', 'sneakers', 'boots', 'sandals', 'flats'].some(type => 
-    lowerSubfamily.includes(type)
+  // Check for outerwear
+  if (['coat', 'jacket', 'blazer', 'cardigan', 'מעיל', 'ג\'קט', 'בלייזר'].some(type => 
+    subfamily.includes(type) || name.includes(type) || family.includes(type)
   )) {
-    return 'shoes';
-  }
-  
-  if (['dress', 'gown', 'jumpsuit'].some(type => 
-    lowerSubfamily.includes(type)
-  )) {
-    return 'dress';
+    return 'outerwear';
   }
   
   // Default to top if we can't determine
@@ -107,23 +149,26 @@ const getAISelectedImage = async (item: ZaraItem): Promise<string> => {
     console.warn(`⚠️ AI analysis failed for item ${item.id}, using fallback:`, error);
   }
   
-  // Fallback to existing image extraction
-  return extractZaraImageUrl(item.image);
+  // Fallback to our enhanced image extraction
+  const type = mapSubfamilyToType(item);
+  return type === 'shoes' ? extractShoesImageUrl(item.image) : extractZaraImageUrl(item.image);
 };
 
 /**
- * Enhanced mapZaraItemToDashboardItem with AI image selection
+ * Enhanced mapZaraItemToDashboardItem with AI image selection and proper type detection
  */
 const mapZaraItemToDashboardItem = async (item: ZaraItem, targetType?: string): Promise<DashboardItem> => {
-  const type = targetType || mapSubfamilyToType(item.product_subfamily);
+  const type = targetType || mapSubfamilyToType(item);
   
-  // Use AI-selected image
-  const aiSelectedImage = await getAISelectedImage(item);
+  // Use AI-selected image or enhanced extraction
+  const selectedImage = await getAISelectedImage(item);
+  
+  console.log(`🔍 [LookService] Mapped item ${item.id} as ${type}: "${item.product_name}" with image: ${selectedImage.substring(0, 50)}...`);
   
   return {
     id: item.id,
     name: item.product_name || 'Unknown Item',
-    image: aiSelectedImage,
+    image: selectedImage,
     type: type as DashboardItem['type'],
     price: typeof item.price === 'number' ? `$${item.price.toFixed(2)}` : '$0.00',
     description: item.description || `${item.colour} ${item.product_name}`
@@ -183,32 +228,23 @@ export const matchOutfitToColors = async () => {
     
     console.log(`✅ [DEBUG] Valid non-underwear items with no-model patterns: ${validItems.length} out of ${allItems.length}`);
     
-    // Group items by type using safe property access
+    // Group items by type using enhanced detection
     const result = {
-      top: validItems.filter(item => {
-        const subfamily = item.product_subfamily;
-        return mapSubfamilyToType(subfamily) === 'top';
-      }).map(item => ({
+      top: validItems.filter(item => mapSubfamilyToType(item) === 'top').map(item => ({
         id: item.id,
         name: item.product_name || 'Fashion Item',
         image: item.image,
         type: 'top' as const,
         price: item.price ? `$${item.price}` : '$49.99'
       })),
-      bottom: validItems.filter(item => {
-        const subfamily = item.product_subfamily;
-        return mapSubfamilyToType(subfamily) === 'bottom';
-      }).map(item => ({
+      bottom: validItems.filter(item => mapSubfamilyToType(item) === 'bottom').map(item => ({
         id: item.id,
         name: item.product_name || 'Fashion Item',
         image: item.image,
         type: 'bottom' as const,
         price: item.price ? `$${item.price}` : '$49.99'
       })),
-      shoes: validItems.filter(item => {
-        const subfamily = item.product_subfamily;
-        return mapSubfamilyToType(subfamily) === 'shoes';
-      }).map(item => ({
+      shoes: validItems.filter(item => mapSubfamilyToType(item) === 'shoes').map(item => ({
         id: item.id,
         name: item.product_name || 'Fashion Item',
         image: item.image,
@@ -217,7 +253,18 @@ export const matchOutfitToColors = async () => {
       }))
     };
 
-    console.log("✅ [DEBUG] Color matching result:", Object.keys(result).map(k => `${k}: ${result[k].length}`));
+    console.log("✅ [DEBUG] Color matching result with enhanced detection:", Object.keys(result).map(k => `${k}: ${result[k].length}`));
+    
+    // Special debug for shoes
+    if (result.shoes.length > 0) {
+      console.log("👟 [DEBUG] Found shoes:", result.shoes.slice(0, 3).map(s => ({
+        id: s.id,
+        name: s.name
+      })));
+    } else {
+      console.log("❌ [DEBUG] NO SHOES FOUND in color matching!");
+    }
+    
     return result;
 
   } catch (error) {
@@ -267,6 +314,17 @@ export const fetchDashboardItems = async (): Promise<{ [key: string]: DashboardI
     });
 
     console.log(`✅ [DEBUG] Valid non-underwear items with no-model patterns: ${validItems.length}`);
+    
+    // Debug: Count shoes specifically
+    const shoeItems = validItems.filter(item => isShoeItem(item));
+    console.log(`👟 [DEBUG] Found ${shoeItems.length} shoe items in fetchDashboardItems`);
+    if (shoeItems.length > 0) {
+      console.log("👟 [DEBUG] Shoe examples:", shoeItems.slice(0, 3).map(s => ({
+        id: s.id,
+        name: s.product_name,
+        subfamily: s.product_subfamily
+      })));
+    }
 
     if (validItems.length === 0) {
       console.log('❌ [DEBUG] No valid non-underwear items with suitable no-model patterns found');
@@ -286,12 +344,19 @@ export const fetchDashboardItems = async (): Promise<{ [key: string]: DashboardI
         id: item.id,
         name: item.product_name || 'Fashion Item',
         image: item.image,
-        type: mapSubfamilyToType(item.product_subfamily),
+        type: mapSubfamilyToType(item),
         price: item.price ? `$${item.price}` : '$49.99'
       }));
     });
 
     console.log(`✅ [DEBUG] Distributed non-underwear items across occasions:`, Object.keys(result).map(k => `${k}: ${result[k].length}`));
+    
+    // Debug: Check shoes distribution
+    occasions.forEach(occasion => {
+      const shoesInOccasion = result[occasion].filter(item => item.type === 'shoes');
+      console.log(`👟 [DEBUG] ${occasion} has ${shoesInOccasion.length} shoes`);
+    });
+    
     return result;
 
   } catch (error) {
@@ -302,7 +367,7 @@ export const fetchDashboardItems = async (): Promise<{ [key: string]: DashboardI
 };
 
 /**
- * Enhanced fetchFirstOutfitSuggestion with AI image integration
+ * Enhanced fetchFirstOutfitSuggestion with improved shoe detection and AI image integration
  */
 export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false): Promise<DashboardItem[]> => {
   try {
@@ -332,7 +397,7 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
       clearGlobalItemTrackers();
     }
 
-    console.log('🔍 Generating new outfit combination with AI-selected images (no models, no underwear)...');
+    console.log('🔍 Generating new outfit combination with enhanced shoe detection...');
 
     // Fetch items from zara_cloth table with valid image patterns
     const { data: allItems, error } = await supabase
@@ -349,7 +414,7 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
     // Use 'as any[]' to avoid type conversion issues
     const typedItems = allItems as any[];
 
-    // Enhanced filtering with AI-compatible items (items that have 6th+ image patterns) AND exclude underwear
+    // Enhanced filtering with better shoe detection AND exclude underwear
     const validItems = typedItems.filter(item => {
       // Check if item has valid image data
       if (!item.image) return false;
@@ -387,33 +452,35 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
       }
       
       const hasValidData = item.product_name && item.price;
-      console.log(`✅ KEEPING item ${item.id} - has no-model image pattern and valid data`);
+      if (hasValidData) {
+        console.log(`✅ KEEPING item ${item.id} - has no-model image pattern and valid data`);
+      }
       return hasValidData;
     });
 
-    console.log(`✅ ${validItems.length} non-underwear items passed AI-compatible validation`);
+    console.log(`✅ ${validItems.length} non-underwear items passed validation`);
 
     if (validItems.length < 3) {
       throw new Error('Not enough valid non-underwear items with no-model images available');
     }
 
-    // Group items by type for proper outfit composition
-    const topItems = validItems.filter(item => {
-      const type = mapSubfamilyToType(item.product_subfamily);
-      return type === 'top';
-    });
-    
-    const bottomItems = validItems.filter(item => {
-      const type = mapSubfamilyToType(item.product_subfamily);
-      return type === 'bottom';
-    });
-    
-    const shoesItems = validItems.filter(item => {
-      const type = mapSubfamilyToType(item.product_subfamily);
-      return type === 'shoes';
-    });
+    // Group items by type using enhanced detection
+    const topItems = validItems.filter(item => mapSubfamilyToType(item) === 'top');
+    const bottomItems = validItems.filter(item => mapSubfamilyToType(item) === 'bottom');
+    const shoesItems = validItems.filter(item => mapSubfamilyToType(item) === 'shoes');
 
-    console.log(`📊 Non-underwear item distribution: tops=${topItems.length}, bottoms=${bottomItems.length}, shoes=${shoesItems.length}`);
+    console.log(`📊 Enhanced item distribution: tops=${topItems.length}, bottoms=${bottomItems.length}, shoes=${shoesItems.length}`);
+
+    // Special logging for shoes
+    if (shoesItems.length > 0) {
+      console.log("👟 Found shoes:", shoesItems.slice(0, 3).map(s => ({
+        id: s.id,
+        name: s.product_name,
+        subfamily: s.product_subfamily
+      })));
+    } else {
+      console.log("❌ NO SHOES FOUND! This will cause outfit creation to fail.");
+    }
 
     // Select random items from each category or fallback to any valid items
     const getRandomItem = (items: any[], fallbackItems: any[]) => {
@@ -425,7 +492,7 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
     const selectedBottom = getRandomItem(bottomItems, validItems);
     const selectedShoes = getRandomItem(shoesItems, validItems);
 
-    // Map items with AI-selected images (the Canvas will handle AI image selection)
+    // Map items with enhanced image selection
     const outfitItems: DashboardItem[] = [
       await mapZaraItemToDashboardItem(selectedTop, 'top'),
       await mapZaraItemToDashboardItem(selectedBottom, 'bottom'),
@@ -435,7 +502,7 @@ export const fetchFirstOutfitSuggestion = async (forceRefresh: boolean = false):
     // Cache the result
     outfitCache[cacheKey] = outfitItems;
     
-    console.log('✅ Generated new outfit with AI-compatible non-underwear items:', outfitItems.map(item => ({
+    console.log('✅ Generated new outfit with enhanced shoe detection:', outfitItems.map(item => ({
       id: item.id,
       type: item.type,
       name: item.name

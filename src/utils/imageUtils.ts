@@ -19,8 +19,8 @@ export const validateImageUrl = (url: string): boolean => {
 export type ZaraImageData = string | string[] | { url?: string } | { [key: string]: any } | null | undefined;
 
 /**
- * Extracts a usable image URL from Zara's various image data formats
- * Looks for images 6th and higher without models (_6_x_1.jpg and up)
+ * Enhanced function to extract usable image URL from Zara's image data
+ * Now with better handling for shoes and fallback options
  * @param imageData - The image data from Zara API or database
  * @returns A usable image URL with suitable pattern or placeholder
  */
@@ -28,7 +28,7 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
   try {
     // Handle null/undefined
     if (imageData === null || imageData === undefined) {
-      console.log('Image data is null or undefined');
+      console.log('🔍 [ImageUtils] Image data is null or undefined');
       return '/placeholder.svg';
     }
     
@@ -36,30 +36,33 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
     
     // Direct handling for arrays (jsonb arrays from zara_cloth table)
     if (Array.isArray(imageData) && imageData.length > 0) {
-      imageUrls = imageData.filter(url => typeof url === 'string');
+      imageUrls = imageData.filter(url => typeof url === 'string' && url.trim() !== '');
+      console.log(`🔍 [ImageUtils] Found ${imageUrls.length} URLs in array`);
     }
     
     // Handle string URL directly
     else if (typeof imageData === 'string') {
+      const trimmedData = imageData.trim();
+      
       // If it's already a URL, check if it's a suitable no-model image
-      if (imageData.startsWith('https://') || imageData.startsWith('http://')) {
+      if (trimmedData.startsWith('https://') || trimmedData.startsWith('http://')) {
         // Check for 6th+ image without model pattern
-        if (/_[6-9]_\d+_1\.jpg/.test(imageData)) {
-          console.log(`Found direct no-model URL: ${imageData}`);
-          return imageData;
+        if (/_[6-9]_\d+_1\.jpg/.test(trimmedData)) {
+          console.log(`✅ [ImageUtils] Found direct no-model URL: ${trimmedData}`);
+          return trimmedData;
         }
-        imageUrls = [imageData];
+        imageUrls = [trimmedData];
       }
       
       // Handle JSON string arrays like "[\"https://static.zara.net/photos/...jpg\"]"
       else {
         try {
-          const parsed = JSON.parse(imageData);
+          const parsed = JSON.parse(trimmedData);
           
           // If parsed into array, get all items
           if (Array.isArray(parsed)) {
-            imageUrls = parsed.filter(url => typeof url === 'string');
-            console.log(`Successfully parsed JSON string array with ${imageUrls.length} URLs`);
+            imageUrls = parsed.filter(url => typeof url === 'string' && url.trim() !== '');
+            console.log(`✅ [ImageUtils] Successfully parsed JSON string array with ${imageUrls.length} URLs`);
           }
           
           // If parsed into object, look for URL
@@ -79,9 +82,9 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
             }
           }
         } catch (e) {
-          console.warn('JSON parsing failed for image data:', imageData, e);
+          console.warn('⚠️ [ImageUtils] JSON parsing failed for image data:', trimmedData.substring(0, 100), e);
           // If parsing fails, return the string as-is (might be a URL)
-          imageUrls = [imageData];
+          imageUrls = [trimmedData];
         }
       }
     }
@@ -113,7 +116,13 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
       }
     }
     
-    // Find the best no-model image (6th and higher without model)
+    // Remove duplicates and empty URLs
+    imageUrls = [...new Set(imageUrls.filter(url => url && url.trim() !== ''))];
+    
+    console.log(`🔍 [ImageUtils] Total unique URLs found: ${imageUrls.length}`);
+    
+    // Enhanced selection strategy for best images
+    // 1. First priority: 6th+ images without model (best for shoes)
     const noModelImages = imageUrls.filter(url => /_[6-9]_\d+_1\.jpg/.test(url));
     
     if (noModelImages.length > 0) {
@@ -127,16 +136,58 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
         return 0;
       });
       
-      console.log(`Found ${noModelImages.length} no-model images, using: ${noModelImages[0]}`);
+      console.log(`✅ [ImageUtils] Found ${noModelImages.length} no-model images, using: ${noModelImages[0]}`);
       return noModelImages[0];
     }
     
-    // NO FALLBACK - return placeholder if no suitable images found
-    console.log('No suitable no-model images found, using placeholder. Available URLs:', imageUrls);
+    // 2. Second priority: Any image with reasonable pattern (_\d+_\d+_\d+\.jpg)
+    const reasonableImages = imageUrls.filter(url => /_\d+_\d+_\d+\.jpg/.test(url));
+    
+    if (reasonableImages.length > 0) {
+      console.log(`⚠️ [ImageUtils] No ideal no-model images found, using reasonable image: ${reasonableImages[0]}`);
+      return reasonableImages[0];
+    }
+    
+    // 3. Third priority: Any HTTPS URL that looks like an image
+    const anyImageUrls = imageUrls.filter(url => 
+      url.startsWith('https://') && 
+      (url.includes('.jpg') || url.includes('.jpeg') || url.includes('.png') || url.includes('.webp'))
+    );
+    
+    if (anyImageUrls.length > 0) {
+      console.log(`⚠️ [ImageUtils] Using fallback image URL: ${anyImageUrls[0]}`);
+      return anyImageUrls[0];
+    }
+    
+    // 4. Last resort: Any URL
+    if (imageUrls.length > 0) {
+      console.log(`⚠️ [ImageUtils] Using last resort URL: ${imageUrls[0]}`);
+      return imageUrls[0];
+    }
+    
+    // NO suitable images found
+    console.log('❌ [ImageUtils] No suitable images found, using placeholder. Available URLs:', imageUrls.slice(0, 3));
     return '/placeholder.svg';
     
   } catch (error) {
-    console.error('Error extracting image URL:', error);
+    console.error('❌ [ImageUtils] Error extracting image URL:', error);
     return '/placeholder.svg';
   }
+};
+
+/**
+ * Specific function for shoes image extraction with enhanced fallbacks
+ */
+export const extractShoesImageUrl = (imageData: ZaraImageData): string => {
+  const url = extractZaraImageUrl(imageData);
+  
+  // If we got a placeholder, it means we couldn't find any suitable image
+  if (url === '/placeholder.svg') {
+    console.log('👟 [ImageUtils] Using shoe placeholder due to no suitable images found');
+    // You could return a specific shoe placeholder here if you have one
+    return '/placeholder.svg';
+  }
+  
+  console.log(`👟 [ImageUtils] Selected shoe image: ${url}`);
+  return url;
 };
