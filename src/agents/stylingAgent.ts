@@ -1,5 +1,6 @@
 
 import { Look } from '../types/lookTypes';
+import { Agent } from './index';
 
 export interface StylingResult {
   looks: Look[];
@@ -14,7 +15,18 @@ export interface StylingRequest {
   availableItems: any[];
 }
 
-export const stylingAgent = {
+class StylingAgentClass implements Agent {
+  role = "Senior Fashion Stylist";
+  goal = "Create fashionable and appropriate outfit combinations based on user preferences";
+  backstory = "An experienced fashion stylist with expertise in body shapes, color coordination, and style matching";
+  tools: any[] = [];
+
+  async run(userId: string): Promise<any> {
+    // This method can be implemented when needed for the agent crew
+    console.log(`StylingAgent run method called for user: ${userId}`);
+    return { success: true, data: null };
+  }
+
   async createOutfits(request: StylingRequest): Promise<StylingResult> {
     const { bodyStructure, mood, style, event, availableItems } = request;
     
@@ -29,7 +41,7 @@ export const stylingAgent = {
     
     const looks: Look[] = [];
     
-    // Generate dress outfits (dress + shoes only)
+    // Generate dress outfits (dress + shoes only - NO PANTS WITH DRESS!)
     if (dresses.length > 0 && shoes.length > 0) {
       for (let i = 0; i < Math.min(2, dresses.length); i++) {
         const dress = dresses[i];
@@ -40,9 +52,26 @@ export const stylingAgent = {
         if (!event || event !== 'work' || isWorkAppropriate) {
           looks.push({
             id: `dress-look-${i}`,
-            items: [dress, shoe],
-            description: `${dress.name} עם ${shoe.name}`,
-            occasion: event as any || 'general',
+            items: [
+              {
+                id: dress.id || `dress-${i}`,
+                title: dress.name || dress.product_name || 'שמלה',
+                description: dress.description || '',
+                image: dress.image || '',
+                price: dress.price || '0',
+                type: 'dress'
+              },
+              {
+                id: shoe.id || `shoes-${i}`,
+                title: shoe.name || shoe.product_name || 'נעליים',
+                description: shoe.description || '',
+                image: shoe.image || '',
+                price: shoe.price || '0',
+                type: 'shoes'
+              }
+            ],
+            description: `${dress.name || 'שמלה'} עם ${shoe.name || 'נעליים'}`,
+            occasion: (event as any) || 'general',
             style: style,
             mood: mood
           });
@@ -51,6 +80,7 @@ export const stylingAgent = {
     }
     
     // Generate regular outfits (top + bottom + shoes, optionally + coat)
+    // Only create regular outfits if we didn't create enough dress outfits
     const maxRegularOutfits = 3 - looks.length;
     let regularOutfitCount = 0;
     
@@ -64,20 +94,51 @@ export const stylingAgent = {
         const isWorkAppropriate = this.isWorkAppropriate(top, shoe, bottom, undefined, event);
         
         if (!event || event !== 'work' || isWorkAppropriate) {
-          const baseItems = [top, bottom, shoe];
-          let outfitItems = [...baseItems];
+          const baseItems = [
+            {
+              id: top.id || `top-${i}`,
+              title: top.name || top.product_name || 'חולצה',
+              description: top.description || '',
+              image: top.image || '',
+              price: top.price || '0',
+              type: 'top'
+            },
+            {
+              id: bottom.id || `bottom-${j}`,
+              title: bottom.name || bottom.product_name || 'מכנס',
+              description: bottom.description || '',
+              image: bottom.image || '',
+              price: bottom.price || '0',
+              type: 'bottom'
+            },
+            {
+              id: shoe.id || `shoes-${regularOutfitCount}`,
+              title: shoe.name || shoe.product_name || 'נעליים',
+              description: shoe.description || '',
+              image: shoe.image || '',
+              price: shoe.price || '0',
+              type: 'shoes'
+            }
+          ];
           
           // Add coat if available and it's a work event or winter mood
           if (coats.length > 0 && (event === 'work' || mood.includes('חורף'))) {
             const coat = coats[regularOutfitCount % coats.length];
-            outfitItems.push(coat);
+            baseItems.push({
+              id: coat.id || `coat-${regularOutfitCount}`,
+              title: coat.name || coat.product_name || 'מעיל',
+              description: coat.description || '',
+              image: coat.image || '',
+              price: coat.price || '0',
+              type: 'outerwear'
+            });
           }
           
           looks.push({
             id: `regular-look-${regularOutfitCount}`,
-            items: outfitItems,
-            description: this.generateDescription(outfitItems),
-            occasion: event as any || 'general',
+            items: baseItems,
+            description: this.generateDescription(baseItems),
+            occasion: (event as any) || 'general',
             style: style,
             mood: mood
           });
@@ -89,9 +150,9 @@ export const stylingAgent = {
     
     return {
       looks: looks.slice(0, 3),
-      reasoning: `יצרתי ${looks.length} לוקים מתאימים ל${mood} בסגנון ${style}${event ? ` לאירוע ${event}` : ''}`
+      reasoning: `יצרתי ${looks.length} לוקים מתאימים ל${mood} בסגנון ${style}${event ? ` לאירוע ${event}` : ''}. שמות לא משולבות עם מכנסיים.`
     };
-  },
+  }
   
   isWorkAppropriate(top: any, shoes: any, bottom?: any, coat?: any, event?: string): boolean {
     if (event !== 'work') return true;
@@ -120,10 +181,12 @@ export const stylingAgent = {
     }
     
     return isTopAppropriate && isShoesAppropriate && isBottomAppropriate;
-  },
+  }
   
   generateDescription(items: any[]): string {
-    const itemNames = items.map(item => item.name).join(' עם ');
+    const itemNames = items.map(item => item.title || item.name).join(' עם ');
     return itemNames;
   }
-};
+}
+
+export const stylingAgent = new StylingAgentClass();

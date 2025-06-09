@@ -19,9 +19,11 @@ export interface OutfitItem {
 
 export interface Look {
   id: string;
-  title: string;
+  title?: string;
   description: string;
   style: string;
-  totalPrice: string;
+  mood?: string;
+  totalPrice?: string;
   items: OutfitItem[];
+  occasion?: 'work' | 'casual' | 'weekend' | 'date night' | 'general';
 }
