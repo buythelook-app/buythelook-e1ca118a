@@ -74,58 +74,71 @@ class StylingAgentClass implements Agent {
       coats: coats.length
     });
     
-    // Generate dress outfits ONLY (dress + shoes - NO PANTS WITH DRESS!)
-    if (dresses.length > 0 && shoes.length > 0) {
-      for (let i = 0; i < Math.min(2, dresses.length); i++) {
+    // בדיקה חשובה: חייבות להיות נעליים!
+    if (shoes.length === 0) {
+      console.warn('❌ No shoes available - cannot create complete outfits');
+      return {
+        looks: [],
+        reasoning: 'לא ניתן ליצור תלבושות ללא נעליים זמינות במלאי'
+      };
+    }
+    
+    // 1. צור תלבושות שמלה - רק שמלה + נעליים (ללא מכנסיים!)
+    if (dresses.length > 0) {
+      for (let i = 0; i < Math.min(2, dresses.length) && looks.length < 3; i++) {
         const dress = dresses[i];
-        const availableShoes = shoes.filter(shoe => !usedItemIds.has(shoe.id));
         
+        // בחר נעליים שלא נוצלו עדיין
+        const availableShoes = shoes.filter(shoe => !usedItemIds.has(shoe.id));
         if (availableShoes.length === 0) break;
         
         const shoe = availableShoes[0];
         
-        // Check if items are already used
+        // וודא שהפריטים לא נוצלו כבר
         if (usedItemIds.has(dress.id) || usedItemIds.has(shoe.id)) continue;
         
         const isWorkAppropriate = this.isWorkAppropriate(dress, shoe, undefined, undefined, event);
         
         if (!event || event !== 'work' || isWorkAppropriate) {
-          const dressItems = [
-            {
-              id: dress.id || `dress-${i}`,
-              title: dress.name || dress.product_name || 'שמלה',
-              description: dress.description || '',
-              image: dress.image || '',
-              price: dress.price || '0',
-              type: 'dress'
-            },
-            {
-              id: shoe.id || `shoes-${i}`,
-              title: shoe.name || shoe.product_name || 'נעליים',
-              description: shoe.description || '',
-              image: shoe.image || '',
-              price: shoe.price || '0',
-              type: 'shoes'
-            }
-          ];
-          
-          looks.push({
+          // צור תלבושת שמלה - רק 2 פריטים: שמלה + נעליים
+          const dressLook: Look = {
             id: `dress-look-${i}`,
-            items: dressItems,
+            items: [
+              {
+                id: dress.id || `dress-${i}`,
+                title: dress.name || dress.product_name || 'שמלה',
+                description: dress.description || '',
+                image: dress.image || '',
+                price: dress.price || '0',
+                type: 'dress'
+              },
+              {
+                id: shoe.id || `shoes-${i}`,
+                title: shoe.name || shoe.product_name || 'נעליים',
+                description: shoe.description || '',
+                image: shoe.image || '',
+                price: shoe.price || '0',
+                type: 'shoes'
+              }
+            ],
             description: `שמלה ${dress.name || ''} עם נעליים ${shoe.name || ''}`,
             occasion: (event as any) || 'general',
             style: style,
             mood: mood
-          });
+          };
           
-          // Mark items as used
+          looks.push(dressLook);
+          
+          // סמן פריטים כמנוצלים
           usedItemIds.add(dress.id);
           usedItemIds.add(shoe.id);
+          
+          console.log(`✅ Created dress look: dress ${dress.id} + shoes ${shoe.id} (NO PANTS!)`);
         }
       }
     }
     
-    // Generate regular outfits (top + bottom + shoes, optionally + coat)
+    // 2. צור תלבושות רגילות - חולצה + מכנס + נעליים (3 פריטים בדיוק)
     const maxRegularOutfits = 3 - looks.length;
     let regularOutfitCount = 0;
     
@@ -137,52 +150,65 @@ class StylingAgentClass implements Agent {
         const bottom = bottoms[j];
         if (usedItemIds.has(bottom.id)) continue;
         
-        // Find available shoes (not used yet)
+        // מצא נעליים זמינות (לא בשימוש)
         const availableShoes = shoes.filter(shoe => !usedItemIds.has(shoe.id));
-        if (availableShoes.length === 0) break;
+        if (availableShoes.length === 0) {
+          console.warn('❌ No more available shoes for regular outfits');
+          break;
+        }
         
-        const shoe = availableShoes[regularOutfitCount % availableShoes.length];
+        const shoe = availableShoes[0];
         
-        // Check work appropriateness
+        // בדוק התאמה לעבודה
         const isWorkAppropriate = this.isWorkAppropriate(top, shoe, bottom, undefined, event);
         
         if (!event || event !== 'work' || isWorkAppropriate) {
-          const baseItems = [
-            {
-              id: top.id || `top-${i}`,
-              title: top.name || top.product_name || 'חולצה',
-              description: top.description || '',
-              image: top.image || '',
-              price: top.price || '0',
-              type: 'top'
-            },
-            {
-              id: bottom.id || `bottom-${j}`,
-              title: bottom.name || bottom.product_name || 'מכנס',
-              description: bottom.description || '',
-              image: bottom.image || '',
-              price: bottom.price || '0',
-              type: 'bottom'
-            },
-            {
-              id: shoe.id || `shoes-${regularOutfitCount}`,
-              title: shoe.name || shoe.product_name || 'נעליים',
-              description: shoe.description || '',
-              image: shoe.image || '',
-              price: shoe.price || '0',
-              type: 'shoes'
-            }
-          ];
+          // צור תלבושת רגילה - 3 פריטים: חולצה + מכנס + נעליים
+          const regularLook: Look = {
+            id: `regular-look-${regularOutfitCount}`,
+            items: [
+              {
+                id: top.id || `top-${i}`,
+                title: top.name || top.product_name || 'חולצה',
+                description: top.description || '',
+                image: top.image || '',
+                price: top.price || '0',
+                type: 'top'
+              },
+              {
+                id: bottom.id || `bottom-${j}`,
+                title: bottom.name || bottom.product_name || 'מכנס',
+                description: bottom.description || '',
+                image: bottom.image || '',
+                price: bottom.price || '0',
+                type: 'bottom'
+              },
+              {
+                id: shoe.id || `shoes-${regularOutfitCount}`,
+                title: shoe.name || shoe.product_name || 'נעליים',
+                description: shoe.description || '',
+                image: shoe.image || '',
+                price: shoe.price || '0',
+                type: 'shoes'
+              }
+            ],
+            description: this.generateDescription([
+              { title: top.name || top.product_name || 'חולצה' },
+              { title: bottom.name || bottom.product_name || 'מכנס' },
+              { title: shoe.name || shoe.product_name || 'נעליים' }
+            ]),
+            occasion: (event as any) || 'general',
+            style: style,
+            mood: mood
+          };
           
-          // Add coat ONLY if available and needed (work event or winter mood)
-          // When adding coat, we need to ensure we have an underlying top
+          // הוסף מעיל רק אם צריך (עבודה או חורף) - כפריט רביעי נוסף
           if (coats.length > 0 && (event === 'work' || mood.includes('חורף'))) {
             const availableCoats = coats.filter(coat => !usedItemIds.has(coat.id));
             if (availableCoats.length > 0) {
               const coat = availableCoats[0];
               
-              // Add coat as additional layer (total 4 items: top + bottom + shoes + coat)
-              baseItems.push({
+              regularLook.items.push({
                 id: coat.id || `coat-${regularOutfitCount}`,
                 title: coat.name || coat.product_name || 'מעיל',
                 description: coat.description || '',
@@ -195,30 +221,34 @@ class StylingAgentClass implements Agent {
             }
           }
           
-          looks.push({
-            id: `regular-look-${regularOutfitCount}`,
-            items: baseItems,
-            description: this.generateDescription(baseItems),
-            occasion: (event as any) || 'general',
-            style: style,
-            mood: mood
-          });
+          looks.push(regularLook);
           
-          // Mark items as used
+          // סמן פריטים כמנוצלים
           usedItemIds.add(top.id);
           usedItemIds.add(bottom.id);
           usedItemIds.add(shoe.id);
+          
+          console.log(`✅ Created regular look: top ${top.id} + bottom ${bottom.id} + shoes ${shoe.id}`);
           
           regularOutfitCount++;
         }
       }
     }
     
-    console.log(`Created ${looks.length} unique outfits with no duplicate items`);
+    console.log(`✅ Created ${looks.length} complete outfits - each dress look has 2 items (dress+shoes), each regular look has 3+ items (top+bottom+shoes+optional coat)`);
+    
+    // וודא שכל תלבושת יש לה נעליים
+    const looksWithShoes = looks.filter(look => 
+      look.items.some(item => item.type === 'shoes')
+    );
+    
+    if (looksWithShoes.length !== looks.length) {
+      console.error('❌ Some looks created without shoes!');
+    }
     
     return {
       looks: looks.slice(0, 3),
-      reasoning: `יצרתי ${looks.length} לוקים ייחודיים מתאימים ל${mood} בסגנון ${style}${event ? ` לאירוע ${event}` : ''}. כל תלבושת כוללת פריט אחד בלבד מכל קטגוריה - שמלות רק עם נעליים, תלבושות רגילות עם חולצה+מכנס+נעליים, ועם מעיל במקרה הצורך.`
+      reasoning: `יצרתי ${looks.length} תלבושות ייחודיות: שמלות רק עם נעליים (ללא מכנסיים), תלבושות רגילות עם חולצה+מכנס+נעליים. כל תלבושת כוללת נעליים בהכרח.`
     };
   }
   
