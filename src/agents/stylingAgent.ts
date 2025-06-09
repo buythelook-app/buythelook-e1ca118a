@@ -1,4 +1,3 @@
-
 import { Look } from '../types/lookTypes';
 import { Agent } from './index';
 
@@ -87,7 +86,7 @@ class StylingAgentClass implements Agent {
       };
     }
     
-    // 1. צור לוקי שמלה: שמלה + נעליים (ו-אופציונלי עליונית)
+    // 1. צור לוקי שמלה: רק שמלה + נעליים + עליונית אופציונלית
     if (dresses.length > 0) {
       for (let i = 0; i < Math.min(2, dresses.length) && looks.length < 3; i++) {
         const dress = dresses[i];
@@ -103,7 +102,7 @@ class StylingAgentClass implements Agent {
         const isWorkAppropriate = this.isWorkAppropriate(dress, shoe, undefined, undefined, event);
         if (event === 'work' && !isWorkAppropriate) continue;
         
-        // צור לוק שמלה: רק שמלה + נעליים (ללא מכנסיים!)
+        // צור לוק שמלה: בדיוק שמלה + נעליים (ללא מכנסיים או חולצות!)
         const dressLookItems = [
           {
             id: dress.id || `dress-${i}`,
@@ -153,11 +152,11 @@ class StylingAgentClass implements Agent {
         usedItemIds.add(dress.id);
         usedItemIds.add(shoe.id);
         
-        console.log(`✅ Created dress look: dress ${dress.id} + shoes ${shoe.id} (NO bottom!)`);
+        console.log(`✅ Created DRESS ONLY look: dress ${dress.id} + shoes ${shoe.id} (NO bottom, NO top!)`);
       }
     }
     
-    // 2. צור לוקים עם עליונית: עליונית + חולצה + מכנס + נעליים (4 פריטים)
+    // 2. צור לוקים עם עליונית: עליונית + חולצה + מכנס + נעליים (4 פריטים בדיוק)
     if (outerwear.length > 0 && tops.length > 0 && bottoms.length > 0) {
       const maxOuterwearLooks = Math.min(1, 3 - looks.length);
       
@@ -179,7 +178,7 @@ class StylingAgentClass implements Agent {
         const isWorkAppropriate = this.isWorkAppropriate(top, shoe, bottom, coat, event);
         if (event === 'work' && !isWorkAppropriate) continue;
         
-        // צור לוק עליונית: 4 פריטים - עליונית + חולצה + מכנס + נעליים
+        // צור לוק עליונית: בדיוק 4 פריטים - עליונית + חולצה + מכנס + נעליים
         const outerwearLook: Look = {
           id: `outerwear-look-${i}`,
           items: [
@@ -233,11 +232,11 @@ class StylingAgentClass implements Agent {
         usedItemIds.add(bottom.id);
         usedItemIds.add(shoe.id);
         
-        console.log(`✅ Created outerwear look: coat ${coat.id} + top ${top.id} + bottom ${bottom.id} + shoes ${shoe.id}`);
+        console.log(`✅ Created OUTERWEAR look: coat ${coat.id} + top ${top.id} + bottom ${bottom.id} + shoes ${shoe.id}`);
       }
     }
     
-    // 3. צור לוקים רגילים: חולצה + מכנס + נעליים (3 פריטים)
+    // 3. צור לוקים רגילים: רק חולצה + מכנס + נעליים (3 פריטים בדיוק)
     const maxRegularLooks = 3 - looks.length;
     let regularLookCount = 0;
     
@@ -258,7 +257,7 @@ class StylingAgentClass implements Agent {
         const isWorkAppropriate = this.isWorkAppropriate(top, shoe, bottom, undefined, event);
         if (event === 'work' && !isWorkAppropriate) continue;
         
-        // צור לוק רגיל: 3 פריטים - חולצה + מכנס + נעליים
+        // צור לוק רגיל: בדיוק 3 פריטים - חולצה + מכנס + נעליים (ללא שמלות או עליוניות!)
         const regularLook: Look = {
           id: `regular-look-${regularLookCount}`,
           items: [
@@ -302,25 +301,37 @@ class StylingAgentClass implements Agent {
         usedItemIds.add(bottom.id);
         usedItemIds.add(shoe.id);
         
-        console.log(`✅ Created regular look: top ${top.id} + bottom ${bottom.id} + shoes ${shoe.id}`);
+        console.log(`✅ Created REGULAR look: top ${top.id} + bottom ${bottom.id} + shoes ${shoe.id} (NO dress, NO outerwear!)`);
         regularLookCount++;
       }
     }
     
-    // ודא שכל תלבושת כוללת נעליים
-    const looksWithShoes = looks.filter(look => 
-      look.items.some(item => item.type === 'shoes')
-    );
+    // ודא שכל תלבושת כוללת נעליים והיא עומדת בכללים
+    const validatedLooks = looks.filter(look => {
+      const hasShoes = look.items.some(item => item.type === 'shoes');
+      const hasDress = look.items.some(item => item.type === 'dress');
+      const hasBottom = look.items.some(item => item.type === 'bottom');
+      
+      // אם יש שמלה, לא צריך להיות מכנס
+      if (hasDress && hasBottom) {
+        console.error(`❌ Invalid look ${look.id}: has both dress AND bottom!`);
+        return false;
+      }
+      
+      // כל לוק חייב נעליים
+      if (!hasShoes) {
+        console.error(`❌ Invalid look ${look.id}: missing shoes!`);
+        return false;
+      }
+      
+      return true;
+    });
     
-    if (looksWithShoes.length !== looks.length) {
-      console.error('❌ Some looks created without shoes!');
-    }
-    
-    console.log(`✅ Created ${looks.length} complete outfits following all logic rules`);
+    console.log(`✅ Created ${validatedLooks.length} VALID complete outfits following all logic rules`);
     
     return {
-      looks: looks.slice(0, 3),
-      reasoning: `יצרתי ${looks.length} תלבושות לפי הכללים: שמלות רק עם נעליים, לוקים עם עליונית כוללים 4 פריטים, לוקים רגילים כוללים 3 פריטים. כל תלבושת כוללת נעליים בהכרח.`
+      looks: validatedLooks.slice(0, 3),
+      reasoning: `יצרתי ${validatedLooks.length} תלבושות תקינות: שמלות רק עם נעליים (ללא מכנסיים), לוקים עם עליונית כוללים 4 פריטים, לוקים רגילים כוללים 3 פריטים. כל תלבושת כוללת נעליים בהכרח.`
     };
   }
   
