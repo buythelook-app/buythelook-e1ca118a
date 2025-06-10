@@ -1,3 +1,4 @@
+
 import { Look } from '../types/lookTypes';
 import { Agent } from './index';
 
@@ -67,7 +68,138 @@ class StylingAgentClass implements Agent {
   }
 
   /**
-   * NEW: Check if shoes are closed/appropriate for outerwear
+   * Enhanced function to get appropriate shoes based on event and style
+   */
+  private getAppropriateShoes(shoes: any[], event?: string, hasOuterwear?: boolean, hasDress?: boolean): any[] {
+    console.log(`🔍 [StylingAgent] Filtering shoes for event: ${event}, hasOuterwear: ${hasOuterwear}, hasDress: ${hasDress}`);
+    
+    // Filter out open shoes if there's outerwear (winter/coat rule)
+    let filteredShoes = shoes;
+    
+    if (hasOuterwear) {
+      filteredShoes = shoes.filter(shoe => this.isClosedShoe(shoe));
+      console.log(`❄️ [StylingAgent] Filtered to ${filteredShoes.length} closed shoes for outerwear look`);
+    }
+    
+    // Apply event-specific filtering
+    if (event) {
+      const eventSpecificShoes = this.filterShoesByEvent(filteredShoes, event, hasDress);
+      if (eventSpecificShoes.length > 0) {
+        console.log(`🎯 [StylingAgent] Found ${eventSpecificShoes.length} event-appropriate shoes for ${event}`);
+        return eventSpecificShoes;
+      }
+    }
+    
+    console.log(`👟 [StylingAgent] Using ${filteredShoes.length} general appropriate shoes`);
+    return filteredShoes;
+  }
+
+  /**
+   * Filter shoes by specific event type
+   */
+  private filterShoesByEvent(shoes: any[], event: string, hasDress?: boolean): any[] {
+    const eventLower = event.toLowerCase();
+    
+    // Evening/Party/Date - prefer heels, pumps, elegant shoes
+    if (eventLower.includes('evening') || eventLower.includes('party') || eventLower.includes('date') || eventLower.includes('ערב')) {
+      return shoes.filter(shoe => this.isElegantShoe(shoe));
+    }
+    
+    // Casual/Weekend - prefer sneakers, loafers, casual shoes
+    if (eventLower.includes('casual') || eventLower.includes('weekend') || eventLower.includes('יום-יום')) {
+      return shoes.filter(shoe => this.isCasualShoe(shoe));
+    }
+    
+    // Business/Work - prefer loafers, oxford, low heels
+    if (eventLower.includes('business') || eventLower.includes('work') || eventLower.includes('עבודה')) {
+      return shoes.filter(shoe => this.isBusinessShoe(shoe));
+    }
+    
+    // Winter/Cold - prefer closed boots
+    if (eventLower.includes('winter') || eventLower.includes('cold') || eventLower.includes('חורף')) {
+      return shoes.filter(shoe => this.isWinterShoe(shoe));
+    }
+    
+    return shoes;
+  }
+
+  /**
+   * Check if shoe is elegant (heels, pumps, dress shoes)
+   */
+  private isElegantShoe(shoe: any): boolean {
+    const name = (shoe.product_name || shoe.name || '').toLowerCase();
+    const subfamily = shoe.product_subfamily?.toLowerCase() || '';
+    
+    const elegantKeywords = [
+      'heels', 'heel', 'עקבים', 'עקב',
+      'pumps', 'pump', 'נעלי עקב',
+      'dress shoes', 'evening shoes',
+      'stiletto', 'platform'
+    ];
+    
+    return elegantKeywords.some(keyword => 
+      name.includes(keyword) || subfamily.includes(keyword)
+    );
+  }
+
+  /**
+   * Check if shoe is casual (sneakers, casual flats)
+   */
+  private isCasualShoe(shoe: any): boolean {
+    const name = (shoe.product_name || shoe.name || '').toLowerCase();
+    const subfamily = shoe.product_subfamily?.toLowerCase() || '';
+    
+    const casualKeywords = [
+      'sneakers', 'sneaker', 'סניקרס',
+      'trainers', 'נעלי ספורט',
+      'flats', 'שטוחות',
+      'slip-on', 'canvas shoes'
+    ];
+    
+    return casualKeywords.some(keyword => 
+      name.includes(keyword) || subfamily.includes(keyword)
+    );
+  }
+
+  /**
+   * Check if shoe is business appropriate (loafers, oxford, low heels)
+   */
+  private isBusinessShoe(shoe: any): boolean {
+    const name = (shoe.product_name || shoe.name || '').toLowerCase();
+    const subfamily = shoe.product_subfamily?.toLowerCase() || '';
+    
+    const businessKeywords = [
+      'loafers', 'loafer', 'מוקסינים',
+      'oxford', 'derby',
+      'low heel', 'עקב נמוך',
+      'dress shoes', 'formal shoes'
+    ];
+    
+    return businessKeywords.some(keyword => 
+      name.includes(keyword) || subfamily.includes(keyword)
+    );
+  }
+
+  /**
+   * Check if shoe is winter appropriate (boots, closed shoes)
+   */
+  private isWinterShoe(shoe: any): boolean {
+    const name = (shoe.product_name || shoe.name || '').toLowerCase();
+    const subfamily = shoe.product_subfamily?.toLowerCase() || '';
+    
+    const winterKeywords = [
+      'boots', 'boot', 'מגפיים', 'מגף',
+      'ankle boots', 'knee boots',
+      'winter shoes', 'נעלי חורף'
+    ];
+    
+    return winterKeywords.some(keyword => 
+      name.includes(keyword) || subfamily.includes(keyword)
+    );
+  }
+
+  /**
+   * Check if shoes are closed/appropriate for outerwear
    */
   private isClosedShoe(item: any): boolean {
     const subfamily = item.product_subfamily?.toLowerCase() || '';
@@ -216,7 +348,7 @@ class StylingAgentClass implements Agent {
   async createOutfits(request: StylingRequest): Promise<StylingResult> {
     const { bodyStructure, mood, style, event, availableItems } = request;
     
-    console.log('🎯 [StylingAgent] Creating outfits for:', { bodyStructure, mood, style, event });
+    console.log('🎯 [StylingAgent] Creating outfits with advanced styling rules for:', { bodyStructure, mood, style, event });
     
     // Filter only available items first
     const availableFilteredItems = availableItems.filter(item => {
@@ -236,36 +368,13 @@ class StylingAgentClass implements Agent {
     const dresses = availableFilteredItems.filter(item => this.isDressItem(item));
     const outerwear = availableFilteredItems.filter(item => this.isOuterwearItem(item));
     
-    // NEW: Separate closed shoes for outerwear looks
-    const closedShoes = shoes.filter(item => this.isClosedShoe(item));
-    
     console.log(`📊 [StylingAgent] Enhanced categorization:`, {
       shoes: shoes.length,
-      closedShoes: closedShoes.length,
       tops: tops.length,
       bottoms: bottoms.length,
       dresses: dresses.length,
       outerwear: outerwear.length
     });
-    
-    // Log some examples for debugging
-    if (shoes.length > 0) {
-      console.log('👟 [StylingAgent] Shoe examples:', shoes.slice(0, 3).map(s => ({
-        id: s.id,
-        name: s.product_name,
-        subfamily: s.product_subfamily
-      })));
-    } else {
-      console.log('❌ [StylingAgent] NO SHOES FOUND! Cannot create complete outfits without shoes.');
-    }
-    
-    if (closedShoes.length > 0) {
-      console.log('🥾 [StylingAgent] Closed shoe examples for outerwear:', closedShoes.slice(0, 3).map(s => ({
-        id: s.id,
-        name: s.product_name,
-        subfamily: s.product_subfamily
-      })));
-    }
     
     const looks: Look[] = [];
     const usedItemIds = new Set<string>();
@@ -279,14 +388,15 @@ class StylingAgentClass implements Agent {
       };
     }
     
-    // 1. Create dress looks: dress + shoes (+ optional outerwear)
+    // RULE 1: Create dress looks: dress + shoes (2 items) OR dress + shoes + outerwear (3 items)
     if (dresses.length > 0) {
       for (let i = 0; i < Math.min(2, dresses.length) && looks.length < 3; i++) {
         const dress = dresses[i];
         if (usedItemIds.has(dress.id)) continue;
         
-        // Find available shoes
-        const availableShoes = shoes.filter(shoe => !usedItemIds.has(shoe.id));
+        // Get appropriate shoes for dress look
+        const appropriateShoes = this.getAppropriateShoes(shoes, event, false, true);
+        const availableShoes = appropriateShoes.filter(shoe => !usedItemIds.has(shoe.id));
         if (availableShoes.length === 0) break;
         
         const shoe = availableShoes[0];
@@ -295,7 +405,7 @@ class StylingAgentClass implements Agent {
         const isWorkAppropriate = this.isWorkAppropriate(dress, shoe, undefined, undefined, event);
         if (event === 'work' && !isWorkAppropriate) continue;
         
-        // Create dress look: ONLY dress + shoes (NO bottoms!)
+        // Create dress look: DRESS + SHOES (NO bottoms!)
         const dressLookItems = [
           {
             id: dress.id || `dress-${i}`,
@@ -315,27 +425,48 @@ class StylingAgentClass implements Agent {
           }
         ];
         
-        // Add outerwear only if appropriate (work or cold weather)
-        if (outerwear.length > 0 && (event === 'work' || mood.includes('קר') || mood.includes('חורף'))) {
+        // RULE: Add outerwear to dress ONLY if event requires it (work/winter)
+        const shouldAddOuterwear = event === 'work' || mood.includes('קר') || mood.includes('חורף') || event?.includes('winter');
+        if (outerwear.length > 0 && shouldAddOuterwear) {
           const availableOuterwear = outerwear.filter(coat => !usedItemIds.has(coat.id));
           if (availableOuterwear.length > 0) {
             const coat = availableOuterwear[0];
-            dressLookItems.push({
-              id: coat.id || `coat-${i}`,
-              title: coat.product_name || coat.name || 'מעיל',
-              description: coat.description || '',
-              image: coat.image || '',
-              price: coat.price ? `$${coat.price}` : '0',
-              type: 'outerwear'
-            });
-            usedItemIds.add(coat.id);
+            
+            // For dress + outerwear, ensure closed shoes
+            const closedShoes = this.getAppropriateShoes(shoes, event, true, true);
+            const availableClosedShoes = closedShoes.filter(s => !usedItemIds.has(s.id));
+            
+            if (availableClosedShoes.length > 0) {
+              // Replace shoe with closed shoe
+              dressLookItems[1] = {
+                id: availableClosedShoes[0].id || `shoes-${i}`,
+                title: availableClosedShoes[0].product_name || availableClosedShoes[0].name || 'נעליים סגורות',
+                description: availableClosedShoes[0].description || '',
+                image: availableClosedShoes[0].image || '',
+                price: availableClosedShoes[0].price ? `$${availableClosedShoes[0].price}` : '0',
+                type: 'shoes'
+              };
+              
+              dressLookItems.push({
+                id: coat.id || `coat-${i}`,
+                title: coat.product_name || coat.name || 'מעיל',
+                description: coat.description || '',
+                image: coat.image || '',
+                price: coat.price ? `$${coat.price}` : '0',
+                type: 'outerwear'
+              });
+              usedItemIds.add(coat.id);
+              usedItemIds.add(availableClosedShoes[0].id);
+            }
           }
+        } else {
+          usedItemIds.add(shoe.id);
         }
         
         const dressLook: Look = {
           id: `dress-look-${i}`,
           items: dressLookItems,
-          description: `שמלה ${dress.product_name || ''} עם נעליים ${shoe.product_name || ''}`,
+          description: `שמלה ${dress.product_name || ''} עם נעליים מתאימות${dressLookItems.length === 3 ? ' ועליונית' : ''}`,
           occasion: (event as any) || 'general',
           style: style,
           mood: mood
@@ -343,36 +474,38 @@ class StylingAgentClass implements Agent {
         
         looks.push(dressLook);
         usedItemIds.add(dress.id);
-        usedItemIds.add(shoe.id);
         
-        console.log(`✅ [StylingAgent] Created DRESS look: dress ${dress.id} + shoes ${shoe.id} (NO bottoms!)`);
+        console.log(`✅ [StylingAgent] Created DRESS look: ${dressLookItems.length} items (dress + shoes${dressLookItems.length === 3 ? ' + outerwear' : ''})`);
       }
     }
     
-    // 2. Create outerwear looks: outerwear + top + bottom + CLOSED shoes (4 items exactly)
-    if (outerwear.length > 0 && tops.length > 0 && bottoms.length > 0 && closedShoes.length > 0) {
+    // RULE 2: Create outerwear looks: OUTERWEAR + TOP + BOTTOM + CLOSED SHOES (4 items exactly)
+    if (outerwear.length > 0 && tops.length > 0 && bottoms.length > 0) {
       const maxOuterwearLooks = Math.min(1, 3 - looks.length);
       
       for (let i = 0; i < maxOuterwearLooks; i++) {
         const availableOuterwear = outerwear.filter(coat => !usedItemIds.has(coat.id));
         const availableTops = tops.filter(top => !usedItemIds.has(top.id));
         const availableBottoms = bottoms.filter(bottom => !usedItemIds.has(bottom.id));
-        // Use CLOSED shoes for outerwear looks
-        const availableClosedShoes = closedShoes.filter(shoe => !usedItemIds.has(shoe.id));
         
-        if (availableOuterwear.length === 0 || availableTops.length === 0 || 
-            availableBottoms.length === 0 || availableClosedShoes.length === 0) break;
+        if (availableOuterwear.length === 0 || availableTops.length === 0 || availableBottoms.length === 0) break;
         
         const coat = availableOuterwear[0];
         const top = availableTops[0];
         const bottom = availableBottoms[0];
-        const shoe = availableClosedShoes[0]; // Use closed shoes with outerwear
+        
+        // RULE: Outerwear REQUIRES closed shoes
+        const appropriateShoes = this.getAppropriateShoes(shoes, event, true, false);
+        const availableClosedShoes = appropriateShoes.filter(shoe => !usedItemIds.has(shoe.id));
+        
+        if (availableClosedShoes.length === 0) break;
+        const shoe = availableClosedShoes[0];
         
         // Check work appropriateness if needed
         const isWorkAppropriate = this.isWorkAppropriate(top, shoe, bottom, coat, event);
         if (event === 'work' && !isWorkAppropriate) continue;
         
-        // Create outerwear look: exactly 4 items with closed shoes
+        // Create outerwear look: EXACTLY 4 items with closed shoes
         const outerwearLook: Look = {
           id: `outerwear-look-${i}`,
           items: [
@@ -402,7 +535,7 @@ class StylingAgentClass implements Agent {
             },
             {
               id: shoe.id || `shoes-${i}`,
-              title: shoe.product_name || shoe.name || 'נעליים',
+              title: shoe.product_name || shoe.name || 'נעליים סגורות',
               description: shoe.description || '',
               image: shoe.image || '',
               price: shoe.price ? `$${shoe.price}` : '0',
@@ -426,11 +559,11 @@ class StylingAgentClass implements Agent {
         usedItemIds.add(bottom.id);
         usedItemIds.add(shoe.id);
         
-        console.log(`✅ [StylingAgent] Created OUTERWEAR look with CLOSED shoes: coat ${coat.id} + top ${top.id} + bottom ${bottom.id} + closed shoes ${shoe.id}`);
+        console.log(`✅ [StylingAgent] Created OUTERWEAR look: 4 items with event-appropriate closed shoes`);
       }
     }
     
-    // 3. Create regular looks: top + bottom + shoes (3 items exactly) - can use any shoes
+    // RULE 3: Create regular looks: TOP + BOTTOM + SHOES (3 items exactly)
     const maxRegularLooks = 3 - looks.length;
     let regularLookCount = 0;
     
@@ -442,10 +575,12 @@ class StylingAgentClass implements Agent {
         const bottom = bottoms[j];
         if (usedItemIds.has(bottom.id)) continue;
         
-        const availableShoes = shoes.filter(shoe => !usedItemIds.has(shoe.id));
+        // Get appropriate shoes for regular look (any shoes allowed)
+        const appropriateShoes = this.getAppropriateShoes(shoes, event, false, false);
+        const availableShoes = appropriateShoes.filter(shoe => !usedItemIds.has(shoe.id));
         if (availableShoes.length === 0) break;
         
-        const shoe = availableShoes[0]; // Can use any shoes for regular looks
+        const shoe = availableShoes[0];
         
         // Check work appropriateness if needed
         const isWorkAppropriate = this.isWorkAppropriate(top, shoe, bottom, undefined, event);
@@ -483,7 +618,7 @@ class StylingAgentClass implements Agent {
           description: this.generateDescription([
             { title: top.product_name || top.name || 'חולצה' },
             { title: bottom.product_name || bottom.name || 'מכנס' },
-            { title: shoe.product_name || shoe.name || 'נעליים' }
+            { title: shoe.product_name || shoe.name || 'נעליים מתאימות' }
           ]),
           occasion: (event as any) || 'general',
           style: style,
@@ -495,43 +630,46 @@ class StylingAgentClass implements Agent {
         usedItemIds.add(bottom.id);
         usedItemIds.add(shoe.id);
         
-        console.log(`✅ [StylingAgent] Created REGULAR look: top ${top.id} + bottom ${bottom.id} + shoes ${shoe.id}`);
+        console.log(`✅ [StylingAgent] Created REGULAR look: 3 items with event-appropriate shoes`);
         regularLookCount++;
       }
     }
     
-    // Validate all looks follow the rules
+    // Validate all looks follow the advanced styling rules
     const validatedLooks = looks.filter(look => {
       const hasShoes = look.items.some(item => item.type === 'shoes');
       const hasDress = look.items.some(item => item.type === 'dress');
       const hasBottom = look.items.some(item => item.type === 'bottom');
       const hasOuterwear = look.items.some(item => item.type === 'outerwear');
+      const hasTop = look.items.some(item => item.type === 'top');
       
-      // If has dress, should not have bottom
+      // RULE: If has dress, should not have bottom
       if (hasDress && hasBottom) {
         console.error(`❌ [StylingAgent] Invalid look ${look.id}: has both dress AND bottom!`);
         return false;
       }
       
-      // Every look must have shoes
+      // RULE: Every look must have shoes
       if (!hasShoes) {
         console.error(`❌ [StylingAgent] Invalid look ${look.id}: missing shoes!`);
         return false;
       }
       
-      // If has outerwear, should use closed shoes (this is enforced in creation logic)
-      if (hasOuterwear) {
-        console.log(`🧥 [StylingAgent] Outerwear look ${look.id}: using appropriate closed shoes`);
+      // RULE: If has outerwear, must have top
+      if (hasOuterwear && !hasTop && !hasDress) {
+        console.error(`❌ [StylingAgent] Invalid look ${look.id}: outerwear without top!`);
+        return false;
       }
       
+      console.log(`✅ [StylingAgent] Valid look ${look.id}: ${look.items.length} items following styling rules`);
       return true;
     });
     
-    console.log(`✅ [StylingAgent] Created ${validatedLooks.length} VALID complete outfits with enhanced shoe matching`);
+    console.log(`✅ [StylingAgent] Created ${validatedLooks.length} VALID complete outfits with advanced styling rules`);
     
     return {
       looks: validatedLooks.slice(0, 3),
-      reasoning: `יצרתי ${validatedLooks.length} תלבושות תקינות: שמלות רק עם נעליים, לוקים עם מעיל/ג'קט כוללים נעליים סגורות (לא סנדלים), לוקים רגילים יכולים לכלול כל סוג נעליים. כל תלבושת כוללת נעליים מתאימות לסגנון.`
+      reasoning: `יצרתי ${validatedLooks.length} תלבושות תקינות לפי כללי סטיילינג מתקדמים: שמלות (2-3 פריטים), לוקים עם עליונית (4 פריטים), לוקים רגילים (3 פריטים). נעליים נבחרו לפי האירוע והסגנון, עם נעליים סגורות לעליוניות בלבד.`
     };
   }
   
@@ -579,5 +717,3 @@ class StylingAgentClass implements Agent {
 }
 
 export const stylingAgent = new StylingAgentClass();
-
-}
