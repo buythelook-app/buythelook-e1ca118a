@@ -1,4 +1,3 @@
-
 import { Look } from '../types/lookTypes';
 import { Agent } from './index';
 
@@ -24,6 +23,82 @@ class StylingAgentClass implements Agent {
   async run(userId: string): Promise<any> {
     console.log(`StylingAgent run method called for user: ${userId}`);
     return { success: true, data: null };
+  }
+
+  /**
+   * Validates outfit composition and calculates score based on styling rules
+   */
+  private validateOutfitComposition(items: any[]): { isValid: boolean; score: number; reason: string } {
+    const itemTypes = items.map(item => item.type);
+    const hasDress = itemTypes.includes('dress');
+    const hasTop = itemTypes.includes('top');
+    const hasBottom = itemTypes.includes('bottom');
+    const hasShoes = itemTypes.includes('shoes');
+    const hasOuterwear = itemTypes.includes('outerwear');
+
+    // CRITICAL RULE: If dress exists with top/bottom, severely penalize score
+    if (hasDress && (hasTop || hasBottom)) {
+      console.error(`❌ [StylingAgent] INVALID COMPOSITION: Dress paired with ${hasTop ? 'top' : ''}${hasBottom ? 'bottom' : ''}`);
+      return {
+        isValid: false,
+        score: 0, // Zero score for invalid combinations
+        reason: 'שמלה לא יכולה להיות עם חולצה או מכנסיים'
+      };
+    }
+
+    // RULE: Every outfit must have shoes
+    if (!hasShoes) {
+      return {
+        isValid: false,
+        score: 0,
+        reason: 'חסרות נעליים'
+      };
+    }
+
+    // RULE: Dress can only be with shoes (and optionally outerwear for work/winter)
+    if (hasDress) {
+      if (hasOuterwear) {
+        // Dress + shoes + outerwear = valid (3 items)
+        return {
+          isValid: true,
+          score: 95,
+          reason: 'שמלה עם נעליים ומעיל - הרכב תקין'
+        };
+      } else {
+        // Dress + shoes = valid (2 items)
+        return {
+          isValid: true,
+          score: 100,
+          reason: 'שמלה עם נעליים - הרכב מושלם'
+        };
+      }
+    }
+
+    // RULE: Regular outfit should have top + bottom + shoes
+    if (hasTop && hasBottom && hasShoes) {
+      if (hasOuterwear) {
+        // Top + bottom + shoes + outerwear = valid (4 items)
+        return {
+          isValid: true,
+          score: 90,
+          reason: 'הרכב מלא עם מעיל'
+        };
+      } else {
+        // Top + bottom + shoes = valid (3 items)
+        return {
+          isValid: true,
+          score: 95,
+          reason: 'הרכב תקין'
+        };
+      }
+    }
+
+    // Any other combination is incomplete
+    return {
+      isValid: false,
+      score: 20,
+      reason: 'הרכב לא שלם'
+    };
   }
 
   /**
@@ -348,7 +423,7 @@ class StylingAgentClass implements Agent {
   async createOutfits(request: StylingRequest): Promise<StylingResult> {
     const { bodyStructure, mood, style, event, availableItems } = request;
     
-    console.log('🎯 [StylingAgent] Creating outfits with advanced styling rules for:', { bodyStructure, mood, style, event });
+    console.log('🎯 [StylingAgent] Creating outfits with STRICT scoring rules for dresses:', { bodyStructure, mood, style, event });
     
     // Filter only available items first
     const availableFilteredItems = availableItems.filter(item => {
@@ -405,7 +480,7 @@ class StylingAgentClass implements Agent {
         const isWorkAppropriate = this.isWorkAppropriate(dress, shoe, undefined, undefined, event);
         if (event === 'work' && !isWorkAppropriate) continue;
         
-        // Create dress look: DRESS + SHOES (NO bottoms!)
+        // Create dress look: DRESS + SHOES (NO bottoms/tops!)
         const dressLookItems = [
           {
             id: dress.id || `dress-${i}`,
@@ -463,6 +538,9 @@ class StylingAgentClass implements Agent {
           usedItemIds.add(shoe.id);
         }
         
+        // Validate the dress look composition and score
+        const validation = this.validateOutfitComposition(dressLookItems);
+        
         const dressLook: Look = {
           id: `dress-look-${i}`,
           items: dressLookItems,
@@ -475,7 +553,7 @@ class StylingAgentClass implements Agent {
         looks.push(dressLook);
         usedItemIds.add(dress.id);
         
-        console.log(`✅ [StylingAgent] Created DRESS look: ${dressLookItems.length} items (dress + shoes${dressLookItems.length === 3 ? ' + outerwear' : ''})`);
+        console.log(`✅ [StylingAgent] Created DRESS look: ${dressLookItems.length} items (score: ${validation.score}) - ${validation.reason}`);
       }
     }
     
@@ -505,43 +583,48 @@ class StylingAgentClass implements Agent {
         const isWorkAppropriate = this.isWorkAppropriate(top, shoe, bottom, coat, event);
         if (event === 'work' && !isWorkAppropriate) continue;
         
+        const outerwearLookItems = [
+          {
+            id: coat.id || `coat-${i}`,
+            title: coat.product_name || coat.name || 'מעיל',
+            description: coat.description || '',
+            image: coat.image || '',
+            price: coat.price ? `$${coat.price}` : '0',
+            type: 'outerwear'
+          },
+          {
+            id: top.id || `top-${i}`,
+            title: top.product_name || top.name || 'חולצה',
+            description: top.description || '',
+            image: top.image || '',
+            price: top.price ? `$${top.price}` : '0',
+            type: 'top'
+          },
+          {
+            id: bottom.id || `bottom-${i}`,
+            title: bottom.product_name || bottom.name || 'מכנס',
+            description: bottom.description || '',
+            image: bottom.image || '',
+            price: bottom.price ? `$${bottom.price}` : '0',
+            type: 'bottom'
+          },
+          {
+            id: shoe.id || `shoes-${i}`,
+            title: shoe.product_name || shoe.name || 'נעליים סגורות',
+            description: shoe.description || '',
+            image: shoe.image || '',
+            price: shoe.price ? `$${shoe.price}` : '0',
+            type: 'shoes'
+          }
+        ];
+        
+        // Validate the outerwear look composition and score
+        const validation = this.validateOutfitComposition(outerwearLookItems);
+        
         // Create outerwear look: EXACTLY 4 items with closed shoes
         const outerwearLook: Look = {
           id: `outerwear-look-${i}`,
-          items: [
-            {
-              id: coat.id || `coat-${i}`,
-              title: coat.product_name || coat.name || 'מעיל',
-              description: coat.description || '',
-              image: coat.image || '',
-              price: coat.price ? `$${coat.price}` : '0',
-              type: 'outerwear'
-            },
-            {
-              id: top.id || `top-${i}`,
-              title: top.product_name || top.name || 'חולצה',
-              description: top.description || '',
-              image: top.image || '',
-              price: top.price ? `$${top.price}` : '0',
-              type: 'top'
-            },
-            {
-              id: bottom.id || `bottom-${i}`,
-              title: bottom.product_name || bottom.name || 'מכנס',
-              description: bottom.description || '',
-              image: bottom.image || '',
-              price: bottom.price ? `$${bottom.price}` : '0',
-              type: 'bottom'
-            },
-            {
-              id: shoe.id || `shoes-${i}`,
-              title: shoe.product_name || shoe.name || 'נעליים סגורות',
-              description: shoe.description || '',
-              image: shoe.image || '',
-              price: shoe.price ? `$${shoe.price}` : '0',
-              type: 'shoes'
-            }
-          ],
+          items: outerwearLookItems,
           description: this.generateDescription([
             { title: coat.product_name || coat.name || 'מעיל' },
             { title: top.product_name || top.name || 'חולצה' },
@@ -559,7 +642,7 @@ class StylingAgentClass implements Agent {
         usedItemIds.add(bottom.id);
         usedItemIds.add(shoe.id);
         
-        console.log(`✅ [StylingAgent] Created OUTERWEAR look: 4 items with event-appropriate closed shoes`);
+        console.log(`✅ [StylingAgent] Created OUTERWEAR look: 4 items (score: ${validation.score}) - ${validation.reason}`);
       }
     }
     
@@ -586,35 +669,40 @@ class StylingAgentClass implements Agent {
         const isWorkAppropriate = this.isWorkAppropriate(top, shoe, bottom, undefined, event);
         if (event === 'work' && !isWorkAppropriate) continue;
         
+        const regularLookItems = [
+          {
+            id: top.id || `top-${i}`,
+            title: top.product_name || top.name || 'חולצה',
+            description: top.description || '',
+            image: top.image || '',
+            price: top.price ? `$${top.price}` : '0',
+            type: 'top'
+          },
+          {
+            id: bottom.id || `bottom-${j}`,
+            title: bottom.product_name || bottom.name || 'מכנס',
+            description: bottom.description || '',
+            image: bottom.image || '',
+            price: bottom.price ? `$${bottom.price}` : '0',
+            type: 'bottom'
+          },
+          {
+            id: shoe.id || `shoes-${regularLookCount}`,
+            title: shoe.product_name || shoe.name || 'נעליים',
+            description: shoe.description || '',
+            image: shoe.image || '',
+            price: shoe.price ? `$${shoe.price}` : '0',
+            type: 'shoes'
+          }
+        ];
+        
+        // Validate the regular look composition and score
+        const validation = this.validateOutfitComposition(regularLookItems);
+        
         // Create regular look: exactly 3 items
         const regularLook: Look = {
           id: `regular-look-${regularLookCount}`,
-          items: [
-            {
-              id: top.id || `top-${i}`,
-              title: top.product_name || top.name || 'חולצה',
-              description: top.description || '',
-              image: top.image || '',
-              price: top.price ? `$${top.price}` : '0',
-              type: 'top'
-            },
-            {
-              id: bottom.id || `bottom-${j}`,
-              title: bottom.product_name || bottom.name || 'מכנס',
-              description: bottom.description || '',
-              image: bottom.image || '',
-              price: bottom.price ? `$${bottom.price}` : '0',
-              type: 'bottom'
-            },
-            {
-              id: shoe.id || `shoes-${regularLookCount}`,
-              title: shoe.product_name || shoe.name || 'נעליים',
-              description: shoe.description || '',
-              image: shoe.image || '',
-              price: shoe.price ? `$${shoe.price}` : '0',
-              type: 'shoes'
-            }
-          ],
+          items: regularLookItems,
           description: this.generateDescription([
             { title: top.product_name || top.name || 'חולצה' },
             { title: bottom.product_name || bottom.name || 'מכנס' },
@@ -630,46 +718,29 @@ class StylingAgentClass implements Agent {
         usedItemIds.add(bottom.id);
         usedItemIds.add(shoe.id);
         
-        console.log(`✅ [StylingAgent] Created REGULAR look: 3 items with event-appropriate shoes`);
+        console.log(`✅ [StylingAgent] Created REGULAR look: 3 items (score: ${validation.score}) - ${validation.reason}`);
         regularLookCount++;
       }
     }
     
-    // Validate all looks follow the advanced styling rules
+    // Validate all looks follow the STRICT styling rules with proper scoring
     const validatedLooks = looks.filter(look => {
-      const hasShoes = look.items.some(item => item.type === 'shoes');
-      const hasDress = look.items.some(item => item.type === 'dress');
-      const hasBottom = look.items.some(item => item.type === 'bottom');
-      const hasOuterwear = look.items.some(item => item.type === 'outerwear');
-      const hasTop = look.items.some(item => item.type === 'top');
+      const validation = this.validateOutfitComposition(look.items);
       
-      // RULE: If has dress, should not have bottom
-      if (hasDress && hasBottom) {
-        console.error(`❌ [StylingAgent] Invalid look ${look.id}: has both dress AND bottom!`);
+      if (!validation.isValid || validation.score === 0) {
+        console.error(`❌ [StylingAgent] REJECTED look ${look.id}: ${validation.reason} (score: ${validation.score})`);
         return false;
       }
       
-      // RULE: Every look must have shoes
-      if (!hasShoes) {
-        console.error(`❌ [StylingAgent] Invalid look ${look.id}: missing shoes!`);
-        return false;
-      }
-      
-      // RULE: If has outerwear, must have top
-      if (hasOuterwear && !hasTop && !hasDress) {
-        console.error(`❌ [StylingAgent] Invalid look ${look.id}: outerwear without top!`);
-        return false;
-      }
-      
-      console.log(`✅ [StylingAgent] Valid look ${look.id}: ${look.items.length} items following styling rules`);
+      console.log(`✅ [StylingAgent] APPROVED look ${look.id}: ${validation.reason} (score: ${validation.score})`);
       return true;
     });
     
-    console.log(`✅ [StylingAgent] Created ${validatedLooks.length} VALID complete outfits with advanced styling rules`);
+    console.log(`✅ [StylingAgent] Created ${validatedLooks.length} VALID complete outfits with STRICT scoring rules`);
     
     return {
       looks: validatedLooks.slice(0, 3),
-      reasoning: `יצרתי ${validatedLooks.length} תלבושות תקינות לפי כללי סטיילינג מתקדמים: שמלות (2-3 פריטים), לוקים עם עליונית (4 פריטים), לוקים רגילים (3 פריטים). נעליים נבחרו לפי האירוע והסגנון, עם נעליים סגורות לעליוניות בלבד.`
+      reasoning: `יצרתי ${validatedLooks.length} תלבושות תקינות לפי כללי סטיילינג קפדניים: שמלות רק עם נעליים (ולא עם פריטים נוספים), לוקים עם עליונית (4 פריטים), לוקים רגילים (3 פריטים). הניקוד מתבסס על הרכב תקין ומענישה שמלות עם פריטים לא מתאימים.`
     };
   }
   
@@ -717,3 +788,5 @@ class StylingAgentClass implements Agent {
 }
 
 export const stylingAgent = new StylingAgentClass();
+
+}
