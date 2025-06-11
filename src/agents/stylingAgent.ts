@@ -1,4 +1,3 @@
-
 import { Look } from '../types/lookTypes';
 import { Agent } from './index';
 
@@ -329,11 +328,14 @@ class StylingAgentClass implements Agent {
 
   /**
    * Enhanced top item detection - EXCLUDES dresses completely
+   * DETAILED LOGGING for debugging
    */
   private isTopItem(item: any): boolean {
     const subfamily = item.product_subfamily?.toLowerCase() || '';
     const name = (item.product_name || item.name || '').toLowerCase();
     const family = item.product_family?.toLowerCase() || '';
+    
+    console.log(`🔍 [StylingAgent] ANALYZING TOP - ID: ${item.id}, Name: "${name}", Subfamily: "${subfamily}", Family: "${family}"`);
     
     // FIRST CHECK: Make sure this is NOT a dress
     const dressKeywords = ['dress', 'שמלה', 'gown', 'frock'];
@@ -343,6 +345,23 @@ class StylingAgentClass implements Agent {
     
     if (isDress) {
       console.log(`❌ [StylingAgent] FILTERED OUT dress from tops: ${item.id} - ${name}`);
+      return false;
+    }
+    
+    // SECOND CHECK: Make sure this is NOT trousers/pants (should be bottom)
+    const bottomKeywords = [
+      'pants', 'trousers', 'jeans', 'shorts',
+      'skirt', 'leggings', 'joggers', 'chinos',
+      'מכנס', 'מכנסיים', 'ג\'ינס', 'שורט',
+      'חצאית', 'לגינס'
+    ];
+    
+    const isBottomItem = bottomKeywords.some(keyword => 
+      subfamily.includes(keyword) || name.includes(keyword) || family.includes(keyword)
+    );
+    
+    if (isBottomItem) {
+      console.log(`❌ [StylingAgent] FILTERED OUT bottom item from tops: ${item.id} - ${name} (found: ${bottomKeywords.find(k => subfamily.includes(k) || name.includes(k) || family.includes(k))})`);
       return false;
     }
     
@@ -361,6 +380,8 @@ class StylingAgentClass implements Agent {
     
     if (isTop) {
       console.log(`✅ [StylingAgent] DETECTED TOP: ${item.id} - ${name} (subfamily: ${subfamily})`);
+    } else {
+      console.log(`❓ [StylingAgent] NOT CLASSIFIED AS TOP: ${item.id} - ${name} (subfamily: ${subfamily})`);
     }
     
     return isTop;
@@ -368,11 +389,14 @@ class StylingAgentClass implements Agent {
 
   /**
    * Enhanced bottom item detection (excluding dresses AND underwear)
+   * DETAILED LOGGING for debugging
    */
   private isBottomItem(item: any): boolean {
     const subfamily = item.product_subfamily?.toLowerCase() || '';
     const name = (item.product_name || item.name || '').toLowerCase();
     const family = item.product_family?.toLowerCase() || '';
+    
+    console.log(`🔍 [StylingAgent] ANALYZING BOTTOM - ID: ${item.id}, Name: "${name}", Subfamily: "${subfamily}", Family: "${family}"`);
     
     // Make sure it's not a dress
     const dressKeywords = ['dress', 'שמלה', 'gown', 'frock'];
@@ -415,7 +439,9 @@ class StylingAgentClass implements Agent {
     );
     
     if (isBottom) {
-      console.log(`✅ [StylingAgent] DETECTED BOTTOM: ${item.id} - ${name} (subfamily: ${subfamily})`);
+      console.log(`✅ [StylingAgent] DETECTED BOTTOM: ${item.id} - ${name} (subfamily: ${subfamily}) - found keyword: ${bottomKeywords.find(k => subfamily.includes(k) || name.includes(k) || family.includes(k))}`);
+    } else {
+      console.log(`❓ [StylingAgent] NOT CLASSIFIED AS BOTTOM: ${item.id} - ${name} (subfamily: ${subfamily})`);
     }
     
     return isBottom;
@@ -428,6 +454,8 @@ class StylingAgentClass implements Agent {
     const subfamily = item.product_subfamily?.toLowerCase() || '';
     const name = (item.product_name || item.name || '').toLowerCase();
     const family = item.product_family?.toLowerCase() || '';
+    
+    console.log(`🔍 [StylingAgent] ANALYZING DRESS - ID: ${item.id}, Name: "${name}", Subfamily: "${subfamily}", Family: "${family}"`);
     
     const dressKeywords = [
       'dress', 'שמלה', 'gown', 'frock',
@@ -473,7 +501,8 @@ class StylingAgentClass implements Agent {
   async createOutfits(request: StylingRequest): Promise<StylingResult> {
     const { bodyStructure, mood, style, event, availableItems } = request;
     
-    console.log('🎯 [StylingAgent] Creating outfits with STRICT RULES and HIGH SCORING for all valid combinations:', { bodyStructure, mood, style, event });
+    console.log('🎯 [StylingAgent] Creating outfits with DETAILED CLASSIFICATION LOGGING:', { bodyStructure, mood, style, event });
+    console.log(`📊 [StylingAgent] Total available items: ${availableItems.length}`);
     
     // Filter only available items first
     const availableFilteredItems = availableItems.filter(item => {
@@ -484,22 +513,69 @@ class StylingAgentClass implements Agent {
       return isAvailable;
     });
     
-    console.log(`📊 [StylingAgent] Available items: ${availableFilteredItems.length} out of ${availableItems.length}`);
+    console.log(`📊 [StylingAgent] Available items after filter: ${availableFilteredItems.length} out of ${availableItems.length}`);
     
-    // Use enhanced detection methods for better categorization - STRICT SEPARATION
-    const shoes = availableFilteredItems.filter(item => this.isShoeItem(item));
-    const tops = availableFilteredItems.filter(item => this.isTopItem(item)); // Excludes dresses
-    const bottoms = availableFilteredItems.filter(item => this.isBottomItem(item)); // Excludes dresses and underwear
-    const dresses = availableFilteredItems.filter(item => this.isDressItem(item)); // Only dresses
+    // Use enhanced detection methods for better categorization - STRICT SEPARATION with DETAILED LOGGING
+    console.log('\n🔍 [StylingAgent] STARTING DETAILED CLASSIFICATION:');
+    console.log('='.repeat(60));
+    
+    const shoes = availableFilteredItems.filter(item => {
+      const result = this.isShoeItem(item);
+      return result;
+    });
+    
+    console.log('\n👕 [StylingAgent] CLASSIFYING TOPS:');
+    console.log('-'.repeat(40));
+    const tops = availableFilteredItems.filter(item => {
+      const result = this.isTopItem(item);
+      return result;
+    });
+    
+    console.log('\n👖 [StylingAgent] CLASSIFYING BOTTOMS:');
+    console.log('-'.repeat(40));
+    const bottoms = availableFilteredItems.filter(item => {
+      const result = this.isBottomItem(item);
+      return result;
+    });
+    
+    console.log('\n👗 [StylingAgent] CLASSIFYING DRESSES:');
+    console.log('-'.repeat(40));
+    const dresses = availableFilteredItems.filter(item => {
+      const result = this.isDressItem(item);
+      return result;
+    });
+    
     const outerwear = availableFilteredItems.filter(item => this.isOuterwearItem(item));
     
-    console.log(`📊 [StylingAgent] STRICT categorization (no overlap):`, {
-      shoes: shoes.length,
-      tops: tops.length,
-      bottoms: bottoms.length,
-      dresses: dresses.length,
-      outerwear: outerwear.length
-    });
+    console.log('\n📊 [StylingAgent] FINAL CLASSIFICATION RESULTS:');
+    console.log('='.repeat(60));
+    console.log(`👟 SHOES: ${shoes.length} items`);
+    console.log(`👕 TOPS: ${tops.length} items`);
+    console.log(`👖 BOTTOMS: ${bottoms.length} items`);
+    console.log(`👗 DRESSES: ${dresses.length} items`);
+    console.log(`🧥 OUTERWEAR: ${outerwear.length} items`);
+    
+    // Log examples from each category
+    console.log('\n📝 [StylingAgent] EXAMPLES FROM EACH CATEGORY:');
+    console.log('-'.repeat(50));
+    
+    if (shoes.length > 0) {
+      console.log(`👟 SHOES examples:`, shoes.slice(0, 3).map(item => `"${item.product_name || item.name}" (${item.product_subfamily || 'no subfamily'})`));
+    }
+    if (tops.length > 0) {
+      console.log(`👕 TOPS examples:`, tops.slice(0, 3).map(item => `"${item.product_name || item.name}" (${item.product_subfamily || 'no subfamily'})`));
+    }
+    if (bottoms.length > 0) {
+      console.log(`👖 BOTTOMS examples:`, bottoms.slice(0, 3).map(item => `"${item.product_name || item.name}" (${item.product_subfamily || 'no subfamily'})`));
+    }
+    if (dresses.length > 0) {
+      console.log(`👗 DRESSES examples:`, dresses.slice(0, 3).map(item => `"${item.product_name || item.name}" (${item.product_subfamily || 'no subfamily'})`));
+    }
+    if (outerwear.length > 0) {
+      console.log(`🧥 OUTERWEAR examples:`, outerwear.slice(0, 3).map(item => `"${item.product_name || item.name}" (${item.product_subfamily || 'no subfamily'})`));
+    }
+    
+    console.log('='.repeat(60));
     
     const looks: Look[] = [];
     const usedItemIds = new Set<string>();
@@ -512,7 +588,7 @@ class StylingAgentClass implements Agent {
         reasoning: 'לא ניתן ליצור תלבושות ללא נעליים זמינות במלאי. אנא וודאו שיש נעליים זמינות במאגר הנתונים.'
       };
     }
-    
+
     // RULE 1: Create dress looks: dress + shoes (2 items) OR dress + shoes + outerwear (3 items)
     // BOTH GET HIGH SCORES (95-100) - NO OTHER ITEMS ALLOWED
     if (dresses.length > 0) {
@@ -789,11 +865,11 @@ class StylingAgentClass implements Agent {
       return true;
     });
     
-    console.log(`✅ [StylingAgent] Created ${validatedLooks.length} VALID complete outfits with STRICT RULES and HIGH SCORING`);
+    console.log(`✅ [StylingAgent] Created ${validatedLooks.length} VALID complete outfits with DETAILED CLASSIFICATION LOGGING`);
     
     return {
       looks: validatedLooks.slice(0, 3),
-      reasoning: `יצרתי ${validatedLooks.length} תלבושות תקינות עם כללים מחמירים וציונים גבוהים (90+): שמלות רק עם נעליים (ללא חולצות/מכנסיים), לוקים עם עליונית, לוקים רגילים. סינון מוצלח של פריטי תחתונים ומניעת ערבוב של שמלות עם פריטים אחרים.`
+      reasoning: `יצרתי ${validatedLooks.length} תלבושות תקינות עם סיווג מפורט ולוגים: שמלות רק עם נעליים, מכנסיים בקטגוריית תחתון בלבד, סינון מוצלח של תחתונים.`
     };
   }
   
