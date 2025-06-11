@@ -27,6 +27,7 @@ class StylingAgentClass implements Agent {
 
   /**
    * Validates outfit composition and calculates score based on styling rules
+   * ALL VALID COMBINATIONS GET HIGH SCORES (90+)
    */
   private validateOutfitComposition(items: any[]): { isValid: boolean; score: number; reason: string } {
     const itemTypes = items.map(item => item.type);
@@ -58,14 +59,14 @@ class StylingAgentClass implements Agent {
     // RULE: Dress can only be with shoes (and optionally outerwear for work/winter)
     if (hasDress) {
       if (hasOuterwear) {
-        // Dress + shoes + outerwear = valid (3 items)
+        // שמלה + נעליים + מעיל = valid - HIGH SCORE
         return {
           isValid: true,
           score: 95,
           reason: 'שמלה עם נעליים ומעיל - הרכב תקין'
         };
       } else {
-        // Dress + shoes = valid (2 items)
+        // שמלה + נעליים = valid - HIGHEST SCORE
         return {
           isValid: true,
           score: 100,
@@ -74,21 +75,21 @@ class StylingAgentClass implements Agent {
       }
     }
 
-    // RULE: Regular outfit should have top + bottom + shoes
+    // RULE: Regular outfit should have top + bottom + shoes - HIGH SCORE
     if (hasTop && hasBottom && hasShoes) {
       if (hasOuterwear) {
-        // Top + bottom + shoes + outerwear = valid (4 items)
-        return {
-          isValid: true,
-          score: 90,
-          reason: 'הרכב מלא עם מעיל'
-        };
-      } else {
-        // Top + bottom + shoes = valid (3 items)
+        // מעיל + חולצה + מכנסיים + נעליים = valid - HIGH SCORE
         return {
           isValid: true,
           score: 95,
-          reason: 'הרכב תקין'
+          reason: 'הרכב מלא עם מעיל - ציון גבוה'
+        };
+      } else {
+        // חולצה + מכנסיים + נעליים = valid - HIGH SCORE
+        return {
+          isValid: true,
+          score: 95,
+          reason: 'הרכב תקין - ציון גבוה'
         };
       }
     }
@@ -348,7 +349,7 @@ class StylingAgentClass implements Agent {
   }
 
   /**
-   * Enhanced bottom item detection (excluding dresses)
+   * Enhanced bottom item detection (excluding dresses AND underwear)
    */
   private isBottomItem(item: any): boolean {
     const subfamily = item.product_subfamily?.toLowerCase() || '';
@@ -368,13 +369,35 @@ class StylingAgentClass implements Agent {
       subfamily.includes(keyword) || name.includes(keyword) || family.includes(keyword)
     );
     
-    if (isDress) return false;
+    // EXCLUDE UNDERWEAR ITEMS - this was the main issue!
+    const underwearKeywords = [
+      'bra', 'briefs', 'underwear', 'panties', 'boxers',
+      'lingerie', 'underpants', 'thong', 'bikini bottom',
+      'תחתון', 'תחתונים', 'חזייה', 'בגד תחתון'
+    ];
     
-    return bottomKeywords.some(keyword => 
+    const isUnderwear = underwearKeywords.some(keyword => 
+      subfamily.includes(keyword) || name.includes(keyword) || family.includes(keyword)
+    );
+    
+    if (isDress || isUnderwear) {
+      if (isUnderwear) {
+        console.log(`❌ [StylingAgent] FILTERED OUT underwear item: ${item.id} - ${name}`);
+      }
+      return false;
+    }
+    
+    const isBottom = bottomKeywords.some(keyword => 
       subfamily.includes(keyword) || 
       name.includes(keyword) || 
       family.includes(keyword)
     );
+    
+    if (isBottom) {
+      console.log(`✅ [StylingAgent] DETECTED BOTTOM: ${item.id} - ${name} (subfamily: ${subfamily})`);
+    }
+    
+    return isBottom;
   }
 
   /**
@@ -423,7 +446,7 @@ class StylingAgentClass implements Agent {
   async createOutfits(request: StylingRequest): Promise<StylingResult> {
     const { bodyStructure, mood, style, event, availableItems } = request;
     
-    console.log('🎯 [StylingAgent] Creating outfits with STRICT scoring rules for dresses:', { bodyStructure, mood, style, event });
+    console.log('🎯 [StylingAgent] Creating outfits with HIGH SCORING for all valid combinations:', { bodyStructure, mood, style, event });
     
     // Filter only available items first
     const availableFilteredItems = availableItems.filter(item => {
@@ -439,11 +462,11 @@ class StylingAgentClass implements Agent {
     // Use enhanced detection methods for better categorization
     const shoes = availableFilteredItems.filter(item => this.isShoeItem(item));
     const tops = availableFilteredItems.filter(item => this.isTopItem(item));
-    const bottoms = availableFilteredItems.filter(item => this.isBottomItem(item));
+    const bottoms = availableFilteredItems.filter(item => this.isBottomItem(item)); // Now excludes underwear
     const dresses = availableFilteredItems.filter(item => this.isDressItem(item));
     const outerwear = availableFilteredItems.filter(item => this.isOuterwearItem(item));
     
-    console.log(`📊 [StylingAgent] Enhanced categorization:`, {
+    console.log(`📊 [StylingAgent] Enhanced categorization (excluding underwear):`, {
       shoes: shoes.length,
       tops: tops.length,
       bottoms: bottoms.length,
@@ -464,6 +487,7 @@ class StylingAgentClass implements Agent {
     }
     
     // RULE 1: Create dress looks: dress + shoes (2 items) OR dress + shoes + outerwear (3 items)
+    // BOTH GET HIGH SCORES (95-100)
     if (dresses.length > 0) {
       for (let i = 0; i < Math.min(2, dresses.length) && looks.length < 3; i++) {
         const dress = dresses[i];
@@ -553,11 +577,12 @@ class StylingAgentClass implements Agent {
         looks.push(dressLook);
         usedItemIds.add(dress.id);
         
-        console.log(`✅ [StylingAgent] Created DRESS look: ${dressLookItems.length} items (score: ${validation.score}) - ${validation.reason}`);
+        console.log(`✅ [StylingAgent] Created DRESS look: ${dressLookItems.length} items (HIGH SCORE: ${validation.score}) - ${validation.reason}`);
       }
     }
     
     // RULE 2: Create outerwear looks: OUTERWEAR + TOP + BOTTOM + CLOSED SHOES (4 items exactly)
+    // HIGH SCORE (95)
     if (outerwear.length > 0 && tops.length > 0 && bottoms.length > 0) {
       const maxOuterwearLooks = Math.min(1, 3 - looks.length);
       
@@ -621,7 +646,7 @@ class StylingAgentClass implements Agent {
         // Validate the outerwear look composition and score
         const validation = this.validateOutfitComposition(outerwearLookItems);
         
-        // Create outerwear look: EXACTLY 4 items with closed shoes
+        // Create outerwear look: EXACTLY 4 items with closed shoes - HIGH SCORE
         const outerwearLook: Look = {
           id: `outerwear-look-${i}`,
           items: outerwearLookItems,
@@ -642,11 +667,11 @@ class StylingAgentClass implements Agent {
         usedItemIds.add(bottom.id);
         usedItemIds.add(shoe.id);
         
-        console.log(`✅ [StylingAgent] Created OUTERWEAR look: 4 items (score: ${validation.score}) - ${validation.reason}`);
+        console.log(`✅ [StylingAgent] Created OUTERWEAR look: 4 items (HIGH SCORE: ${validation.score}) - ${validation.reason}`);
       }
     }
     
-    // RULE 3: Create regular looks: TOP + BOTTOM + SHOES (3 items exactly)
+    // RULE 3: Create regular looks: TOP + BOTTOM + SHOES (3 items exactly) - HIGH SCORE (95)
     const maxRegularLooks = 3 - looks.length;
     let regularLookCount = 0;
     
@@ -699,7 +724,7 @@ class StylingAgentClass implements Agent {
         // Validate the regular look composition and score
         const validation = this.validateOutfitComposition(regularLookItems);
         
-        // Create regular look: exactly 3 items
+        // Create regular look: exactly 3 items - HIGH SCORE
         const regularLook: Look = {
           id: `regular-look-${regularLookCount}`,
           items: regularLookItems,
@@ -718,12 +743,12 @@ class StylingAgentClass implements Agent {
         usedItemIds.add(bottom.id);
         usedItemIds.add(shoe.id);
         
-        console.log(`✅ [StylingAgent] Created REGULAR look: 3 items (score: ${validation.score}) - ${validation.reason}`);
+        console.log(`✅ [StylingAgent] Created REGULAR look: 3 items (HIGH SCORE: ${validation.score}) - ${validation.reason}`);
         regularLookCount++;
       }
     }
     
-    // Validate all looks follow the STRICT styling rules with proper scoring
+    // Validate all looks follow the STRICT styling rules with HIGH SCORING
     const validatedLooks = looks.filter(look => {
       const validation = this.validateOutfitComposition(look.items);
       
@@ -732,15 +757,15 @@ class StylingAgentClass implements Agent {
         return false;
       }
       
-      console.log(`✅ [StylingAgent] APPROVED look ${look.id}: ${validation.reason} (score: ${validation.score})`);
+      console.log(`✅ [StylingAgent] APPROVED look ${look.id}: ${validation.reason} (HIGH SCORE: ${validation.score})`);
       return true;
     });
     
-    console.log(`✅ [StylingAgent] Created ${validatedLooks.length} VALID complete outfits with STRICT scoring rules`);
+    console.log(`✅ [StylingAgent] Created ${validatedLooks.length} VALID complete outfits with HIGH SCORING rules`);
     
     return {
       looks: validatedLooks.slice(0, 3),
-      reasoning: `יצרתי ${validatedLooks.length} תלבושות תקינות לפי כללי סטיילינג קפדניים: שמלות רק עם נעליים (ולא עם פריטים נוספים), לוקים עם עליונית (4 פריטים), לוקים רגילים (3 פריטים). הניקוד מתבסס על הרכב תקין ומענישה שמלות עם פריטים לא מתאימים.`
+      reasoning: `יצרתי ${validatedLooks.length} תלבושות תקינות עם ציונים גבוהים (90+): שמלות רק עם נעליים, לוקים עם עליונית, לוקים רגילים. סינון מוצלח של פריטי תחתונים שלא אמורים להיכלל בקטגוריית תחתון.`
     };
   }
   
