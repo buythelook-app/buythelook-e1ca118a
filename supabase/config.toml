@@ -1,4 +1,5 @@
 
+
 project_id = "mwsblnposuyhrgzrtoyo"
 
 [functions.generate-outfit]
@@ -15,9 +16,10 @@ cors = true
 
 # Cron job configuration for trainer-agent
 [[functions.trainer-agent.schedules]]
-name = "daily-trainer-validation"
-schedule = "0 9 * * *"  # Run daily at 9:00 AM UTC
+name = "quarter-hourly-trainer-validation"
+schedule = "*/15 * * * *"  # Run every 15 minutes
 path = "/"
 method = "POST"
 headers = { "Content-Type" = "application/json" }
 body = "{}"
+

@@ -17,8 +17,8 @@ export default function CronStatusPage() {
       <div className="mt-8 p-4 bg-gray-50 rounded-lg">
         <h3 className="text-lg font-semibold mb-2">הסבר על הקרון</h3>
         <div className="text-sm text-gray-700 space-y-2">
-          <p>• <strong>מטרה:</strong> להפעיל את ה-trainer-agent באופן אוטומטי מדי יום</p>
-          <p>• <strong>תזמון:</strong> 9:00 בבוקר UTC (12:00 בישראל בחורף, 13:00 בקיץ)</p>
+          <p>• <strong>מטרה:</strong> להפעיל את ה-trainer-agent באופן אוטומטי כל רבע שעה</p>
+          <p>• <strong>תזמון:</strong> כל 15 דקות (*/15 * * * *)</p>
           <p>• <strong>פעולה:</strong> יצירת תוצאות agent validation והכנסתן למסד הנתונים</p>
           <p>• <strong>לוגים:</strong> ניתן לראות בקונסול של הדפדפן ובלוגים של Supabase Edge Functions</p>
         </div>

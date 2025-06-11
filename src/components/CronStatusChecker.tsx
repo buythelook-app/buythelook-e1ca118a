@@ -83,7 +83,7 @@ export function CronStatusChecker() {
           Trainer Agent Cron Status
         </CardTitle>
         <CardDescription>
-          Check if the trainer-agent cron job is configured and running properly
+          Check if the trainer-agent cron job is configured and running properly (every 15 minutes)
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -151,9 +151,9 @@ export function CronStatusChecker() {
         )}
 
         <div className="text-sm text-gray-600 space-y-1">
-          <p><strong>Cron Schedule:</strong> Daily at 9:00 AM UTC (0 9 * * *)</p>
+          <p><strong>Cron Schedule:</strong> Every 15 minutes (*/15 * * * *)</p>
           <p><strong>Function Name:</strong> trainer-agent</p>
-          <p><strong>Expected Behavior:</strong> Automatically run validation tests and generate agent results</p>
+          <p><strong>Expected Behavior:</strong> Automatically run validation tests and generate agent results every quarter hour</p>
         </div>
       </CardContent>
     </Card>
