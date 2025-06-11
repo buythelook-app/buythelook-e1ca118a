@@ -37,6 +37,25 @@ async function generateAgentResults(): Promise<any[]> {
   }
 }
 
+// Log cron execution
+async function logCronExecution(status: 'started' | 'completed' | 'failed', details?: any) {
+  try {
+    console.log(`🕒 [CRON] Trainer Agent cron job ${status}`, details ? { details } : {});
+    
+    // Create a simple log entry
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      status,
+      type: 'cron_execution',
+      details: details || {}
+    };
+    
+    console.log(`📝 [CRON] Log entry:`, logEntry);
+  } catch (error) {
+    console.error("❌ [CRON] Failed to log cron execution:", error);
+  }
+}
+
 // Main handler for the edge function
 Deno.serve(async (req) => {
   // Handle CORS
@@ -47,17 +66,32 @@ Deno.serve(async (req) => {
   try {
     console.log("🔍 [DEBUG] Trainer Agent Edge Function starting...");
     
+    // Check if this is a cron call
+    const userAgent = req.headers.get('user-agent') || '';
+    const isCronCall = userAgent.includes('Supabase-Cron') || req.headers.get('x-supabase-cron') === 'true';
+    
+    if (isCronCall) {
+      await logCronExecution('started');
+      console.log("🕒 [CRON] Trainer Agent called by cron scheduler");
+    }
+    
     // Generate results using database items
     const agentResults = await generateAgentResults();
     
     if (agentResults.length === 0) {
       console.log("❌ [DEBUG] No agent results generated");
+      
+      if (isCronCall) {
+        await logCronExecution('failed', { reason: 'No results generated' });
+      }
+      
       return new Response(
         JSON.stringify({
           success: false,
           status: "no_results",
           results: [],
-          message: "No items available in database or connection failed"
+          message: "No items available in database or connection failed",
+          isCronCall
         }),
         {
           headers: {
@@ -78,9 +112,20 @@ Deno.serve(async (req) => {
     
     console.log(`✅ [DEBUG] Returning ${agentResults.length} agent results`);
     
+    if (isCronCall) {
+      await logCronExecution('completed', { 
+        resultsCount: agentResults.length,
+        executionTime: new Date().toISOString()
+      });
+    }
+    
     // Return the response
     return new Response(
-      JSON.stringify(response),
+      JSON.stringify({
+        ...response,
+        isCronCall,
+        timestamp: new Date().toISOString()
+      }),
       {
         headers: {
           ...corsHeaders,
@@ -93,12 +138,25 @@ Deno.serve(async (req) => {
     // Handle errors
     console.error("❌ [DEBUG] Error in trainer-agent:", error);
     
+    // Check if this was a cron call for error logging
+    const userAgent = req.headers.get('user-agent') || '';
+    const isCronCall = userAgent.includes('Supabase-Cron') || req.headers.get('x-supabase-cron') === 'true';
+    
+    if (isCronCall) {
+      await logCronExecution('failed', { 
+        error: error.message,
+        stack: error.stack 
+      });
+    }
+    
     return new Response(
       JSON.stringify({
         success: false,
         status: "error",
         results: [],
-        message: error.message
+        message: error.message,
+        isCronCall,
+        timestamp: new Date().toISOString()
       }),
       { 
         headers: {

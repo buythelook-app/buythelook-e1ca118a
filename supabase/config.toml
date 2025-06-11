@@ -12,3 +12,12 @@ rate_limits = [
 [functions.trainer-agent]
 verify_jwt = false
 cors = true
+
+# Cron job configuration for trainer-agent
+[[functions.trainer-agent.schedules]]
+name = "daily-trainer-validation"
+schedule = "0 9 * * *"  # Run daily at 9:00 AM UTC
+path = "/"
+method = "POST"
+headers = { "Content-Type" = "application/json" }
+body = "{}"

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient"; // Use the single client instance
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -8,6 +7,7 @@ import { OutfitAgentCard } from "./OutfitAgentCard";
 import { toast } from "sonner";
 import { AgentResult, TrainerAgentResponse } from "@/types/outfitAgentTypes";
 import { extractZaraImageUrl } from "@/utils/imageUtils";
+import CronStatusButton from "./CronStatusButton";
 
 // Helper to format agent names nicely
 const formatAgentName = (name: string): string => {
@@ -126,6 +126,7 @@ export function AgentOutfitVisualizer() {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Fashion Agent Visualization (Debug Mode)</h2>
         <div className="flex gap-2">
+          <CronStatusButton />
           <Button 
             onClick={() => setShowImagePath(!showImagePath)} 
             variant="outline" 
