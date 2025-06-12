@@ -20,8 +20,18 @@ export interface OutfitRecommendation {
   occasion: 'work' | 'casual' | 'weekend' | 'date night' | 'general';
 }
 
+// Add new interface for coordinated agent response
+export interface CoordinatedOutfitData {
+  looks: any[];
+  reasoning?: string;
+  recommendations: string[];
+  validation?: any;
+  timestamp: string;
+  agentFlow: string;
+}
+
 export interface OutfitResponse {
   success: boolean;
-  data?: GeneratedOutfit & { recommendations?: string[], occasion?: string };
+  data?: CoordinatedOutfitData;
   error?: string;
 }

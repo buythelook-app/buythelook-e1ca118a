@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
@@ -42,6 +41,7 @@ export function useOutfitGeneration() {
         outfitItems.forEach(item => userPreferences.likedItems.add(item.id));
       } else {
         userPreferences.dislikedCombinations.add(combinationKey);
+        outfitItems.forEach(item => userPreferences.dislikedCombinations.add(item.id));
         outfitItems.forEach(item => userPreferences.dislikedItems.add(item.id));
       }
       

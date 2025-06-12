@@ -70,7 +70,7 @@ export class AgentCrew {
       console.log('💡 [AgentCrew] Step 4: Running RecommendationAgent...');
       const recommendationResult = await recommendationAgent.run(userId);
       
-      // Combine all results
+      // Combine all results with proper structure
       const finalData = {
         looks: stylingResult.data.looks,
         reasoning: stylingResult.data.reasoning,
