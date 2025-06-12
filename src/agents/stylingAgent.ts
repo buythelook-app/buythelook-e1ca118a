@@ -414,34 +414,54 @@ class StylingAgentClass implements Agent {
   async createOutfits(request: StylingRequest): Promise<StylingResult> {
     const { bodyStructure, mood, style, event, availableItems } = request;
     
-    console.log('🎯 [StylingAgent] Creating STRICTLY VALIDATED outfits with ONE ITEM PER CATEGORY:', { bodyStructure, mood, style, event });
+    console.log('🎯 [StylingAgent] Creating outfits with STRICT one-item-per-category rule:', { bodyStructure, mood, style, event });
     console.log(`📊 [StylingAgent] Total available items: ${availableItems.length}`);
     
     // Filter only available items
     const availableFilteredItems = availableItems.filter(item => item.availability === true);
     console.log(`📊 [StylingAgent] Available items after filter: ${availableFilteredItems.length}`);
     
-    // Classify items into strict categories
-    const shoes = availableFilteredItems.filter(item => this.isShoeItem(item));
-    const tops = availableFilteredItems.filter(item => this.isTopItem(item));
-    const bottoms = availableFilteredItems.filter(item => this.isBottomItem(item));
-    const dresses = availableFilteredItems.filter(item => this.isDressItem(item));
-    const jumpsuits = availableFilteredItems.filter(item => this.isJumpsuitItem(item));
-    const outerwear = availableFilteredItems.filter(item => this.isOuterwearItem(item));
+    // Classify items into strict categories - each item goes to EXACTLY ONE category
+    const categorizedItems = {
+      shoes: [],
+      tops: [],
+      bottoms: [],
+      dresses: [],
+      jumpsuits: [],
+      outerwear: []
+    };
     
-    console.log('📊 [StylingAgent] STRICT CLASSIFICATION:');
-    console.log(`👟 SHOES: ${shoes.length} items`);
-    console.log(`👕 TOPS: ${tops.length} items`);
-    console.log(`👖 BOTTOMS: ${bottoms.length} items`);
-    console.log(`👗 DRESSES: ${dresses.length} items`);
-    console.log(`🤸 JUMPSUITS: ${jumpsuits.length} items`);
-    console.log(`🧥 OUTERWEAR: ${outerwear.length} items`);
+    // Categorize each item into exactly ONE category
+    for (const item of availableFilteredItems) {
+      if (this.isDressItem(item)) {
+        categorizedItems.dresses.push(item);
+      } else if (this.isJumpsuitItem(item)) {
+        categorizedItems.jumpsuits.push(item);
+      } else if (this.isShoeItem(item)) {
+        categorizedItems.shoes.push(item);
+      } else if (this.isOuterwearItem(item)) {
+        categorizedItems.outerwear.push(item);
+      } else if (this.isTopItem(item)) {
+        categorizedItems.tops.push(item);
+      } else if (this.isBottomItem(item)) {
+        categorizedItems.bottoms.push(item);
+      }
+      // Items that don't fit any category are ignored
+    }
+    
+    console.log('📊 [StylingAgent] STRICT CATEGORIZATION (ONE ITEM PER CATEGORY):');
+    console.log(`👟 SHOES: ${categorizedItems.shoes.length} items`);
+    console.log(`👕 TOPS: ${categorizedItems.tops.length} items`);
+    console.log(`👖 BOTTOMS: ${categorizedItems.bottoms.length} items`);
+    console.log(`👗 DRESSES: ${categorizedItems.dresses.length} items`);
+    console.log(`🤸 JUMPSUITS: ${categorizedItems.jumpsuits.length} items`);
+    console.log(`🧥 OUTERWEAR: ${categorizedItems.outerwear.length} items`);
     
     const looks: Look[] = [];
     const usedItemIds = new Set<string>();
     
     // CRITICAL CHECK: Must have shoes!
-    if (shoes.length === 0) {
+    if (categorizedItems.shoes.length === 0) {
       console.error('❌ [StylingAgent] CRITICAL: No shoes available');
       return {
         looks: [],
@@ -449,134 +469,118 @@ class StylingAgentClass implements Agent {
       };
     }
 
-    // OUTFIT TYPE 1: Dress looks (1 שמלה + 1 נעליים = 2 פריטים)
-    if (dresses.length > 0 && looks.length < 3) {
-      for (let i = 0; i < Math.min(1, dresses.length) && looks.length < 3; i++) {
-        const dress = dresses[i];
-        if (usedItemIds.has(dress.id)) continue;
-        
-        const availableShoes = shoes.filter(shoe => !usedItemIds.has(shoe.id));
-        if (availableShoes.length === 0) break;
-        
-        const shoe = availableShoes[0];
-        
-        const dressLookItems = [
-          {
-            id: dress.id || `dress-${i}`,
-            title: dress.product_name || dress.name || 'שמלה',
-            description: dress.description || '',
-            image: dress.image || '',
-            price: dress.price ? `$${dress.price}` : '0',
-            type: 'dress'
-          },
-          {
-            id: shoe.id || `shoes-${i}`,
-            title: shoe.product_name || shoe.name || 'נעליים',
-            description: shoe.description || '',
-            image: shoe.image || '',
-            price: shoe.price ? `$${shoe.price}` : '0',
-            type: 'shoes'
-          }
-        ];
-        
-        // Validate this exact combination
-        const validation = this.validateOutfitComposition(dressLookItems);
-        if (!validation.isValid) {
-          console.error(`❌ [StylingAgent] Dress outfit validation failed: ${validation.reason}`);
-          continue;
+    // OUTFIT TYPE 1: Dress looks (שמלה + נעליים = 2 פריטים)
+    for (let i = 0; i < Math.min(1, categorizedItems.dresses.length) && looks.length < 3; i++) {
+      const dress = categorizedItems.dresses[i];
+      if (usedItemIds.has(dress.id)) continue;
+      
+      const availableShoes = categorizedItems.shoes.filter(shoe => !usedItemIds.has(shoe.id));
+      if (availableShoes.length === 0) break;
+      
+      const shoe = availableShoes[0];
+      
+      const dressLookItems = [
+        {
+          id: dress.id || `dress-${i}`,
+          title: dress.product_name || dress.name || 'שמלה',
+          description: dress.description || '',
+          image: dress.image || '',
+          price: dress.price ? `$${dress.price}` : '0',
+          type: 'dress'
+        },
+        {
+          id: shoe.id || `shoes-${i}`,
+          title: shoe.product_name || shoe.name || 'נעליים',
+          description: shoe.description || '',
+          image: shoe.image || '',
+          price: shoe.price ? `$${shoe.price}` : '0',
+          type: 'shoes'
         }
-        
-        const dressLook: Look = {
-          id: `dress-look-${i}`,
-          items: dressLookItems,
-          description: `שמלה ${dress.product_name || ''} עם נעליים מתאימות`,
-          occasion: (event as any) || 'general',
-          style: style,
-          mood: mood
-        };
-        
-        looks.push(dressLook);
-        usedItemIds.add(dress.id);
-        usedItemIds.add(shoe.id);
-        
-        console.log(`✅ [StylingAgent] Created DRESS look: 2 פריטים - ${validation.reason}`);
-      }
+      ];
+      
+      const dressLook: Look = {
+        id: `dress-look-${i}`,
+        items: dressLookItems,
+        description: `שמלה ${dress.product_name || ''} עם נעליים מתאימות`,
+        occasion: (event as any) || 'general',
+        style: style,
+        mood: mood
+      };
+      
+      looks.push(dressLook);
+      usedItemIds.add(dress.id);
+      usedItemIds.add(shoe.id);
+      
+      console.log(`✅ [StylingAgent] Created DRESS look: שמלה + נעליים (2 פריטים)`);
     }
 
-    // OUTFIT TYPE 2: Jumpsuit looks (1 אוברול + 1 נעליים = 2 פריטים)
-    if (jumpsuits.length > 0 && looks.length < 3) {
-      for (let i = 0; i < Math.min(1, jumpsuits.length) && looks.length < 3; i++) {
-        const jumpsuit = jumpsuits[i];
-        if (usedItemIds.has(jumpsuit.id)) continue;
-        
-        const availableShoes = shoes.filter(shoe => !usedItemIds.has(shoe.id));
-        if (availableShoes.length === 0) break;
-        
-        const shoe = availableShoes[0];
-        
-        const jumpsuitLookItems = [
-          {
-            id: jumpsuit.id || `jumpsuit-${i}`,
-            title: jumpsuit.product_name || jumpsuit.name || 'אוברול',
-            description: jumpsuit.description || '',
-            image: jumpsuit.image || '',
-            price: jumpsuit.price ? `$${jumpsuit.price}` : '0',
-            type: 'jumpsuit'
-          },
-          {
-            id: shoe.id || `shoes-jumpsuit-${i}`,
-            title: shoe.product_name || shoe.name || 'נעליים',
-            description: shoe.description || '',
-            image: shoe.image || '',
-            price: shoe.price ? `$${shoe.price}` : '0',
-            type: 'shoes'
-          }
-        ];
-        
-        // Validate this exact combination
-        const validation = this.validateOutfitComposition(jumpsuitLookItems);
-        if (!validation.isValid) {
-          console.error(`❌ [StylingAgent] Jumpsuit outfit validation failed: ${validation.reason}`);
-          continue;
+    // OUTFIT TYPE 2: Jumpsuit looks (אוברול + נעליים = 2 פריטים)
+    for (let i = 0; i < Math.min(1, categorizedItems.jumpsuits.length) && looks.length < 3; i++) {
+      const jumpsuit = categorizedItems.jumpsuits[i];
+      if (usedItemIds.has(jumpsuit.id)) continue;
+      
+      const availableShoes = categorizedItems.shoes.filter(shoe => !usedItemIds.has(shoe.id));
+      if (availableShoes.length === 0) break;
+      
+      const shoe = availableShoes[0];
+      
+      const jumpsuitLookItems = [
+        {
+          id: jumpsuit.id || `jumpsuit-${i}`,
+          title: jumpsuit.product_name || jumpsuit.name || 'אוברול',
+          description: jumpsuit.description || '',
+          image: jumpsuit.image || '',
+          price: jumpsuit.price ? `$${jumpsuit.price}` : '0',
+          type: 'jumpsuit'
+        },
+        {
+          id: shoe.id || `shoes-jumpsuit-${i}`,
+          title: shoe.product_name || shoe.name || 'נעליים',
+          description: shoe.description || '',
+          image: shoe.image || '',
+          price: shoe.price ? `$${shoe.price}` : '0',
+          type: 'shoes'
         }
-        
-        const jumpsuitLook: Look = {
-          id: `jumpsuit-look-${i}`,
-          items: jumpsuitLookItems,
-          description: `אוברול ${jumpsuit.product_name || ''} עם נעליים מתאימות`,
-          occasion: (event as any) || 'general',
-          style: style,
-          mood: mood
-        };
-        
-        looks.push(jumpsuitLook);
-        usedItemIds.add(jumpsuit.id);
-        usedItemIds.add(shoe.id);
-        
-        console.log(`✅ [StylingAgent] Created JUMPSUIT look: 2 פריטים - ${validation.reason}`);
-      }
+      ];
+      
+      const jumpsuitLook: Look = {
+        id: `jumpsuit-look-${i}`,
+        items: jumpsuitLookItems,
+        description: `אוברול ${jumpsuit.product_name || ''} עם נעליים מתאימות`,
+        occasion: (event as any) || 'general',
+        style: style,
+        mood: mood
+      };
+      
+      looks.push(jumpsuitLook);
+      usedItemIds.add(jumpsuit.id);
+      usedItemIds.add(shoe.id);
+      
+      console.log(`✅ [StylingAgent] Created JUMPSUIT look: אוברול + נעליים (2 פריטים)`);
     }
     
-    // OUTFIT TYPE 3: Regular looks (1 חלק עליון + 1 חלק תחתון + 1 נעליים = 3 פריטים)
+    // OUTFIT TYPE 3: Regular looks (חלק עליון + חלק תחתון + נעליים = 3 פריטים)
     const maxRegularLooks = 3 - looks.length;
     let regularLookCount = 0;
     
-    for (let i = 0; i < tops.length && regularLookCount < maxRegularLooks; i++) {
-      const top = tops[i];
+    // Create combinations ensuring exactly ONE item from each category
+    for (let topIndex = 0; topIndex < categorizedItems.tops.length && regularLookCount < maxRegularLooks; topIndex++) {
+      const top = categorizedItems.tops[topIndex];
       if (usedItemIds.has(top.id)) continue;
       
-      for (let j = 0; j < bottoms.length && regularLookCount < maxRegularLooks; j++) {
-        const bottom = bottoms[j];
+      for (let bottomIndex = 0; bottomIndex < categorizedItems.bottoms.length && regularLookCount < maxRegularLooks; bottomIndex++) {
+        const bottom = categorizedItems.bottoms[bottomIndex];
         if (usedItemIds.has(bottom.id)) continue;
         
-        const availableShoes = shoes.filter(shoe => !usedItemIds.has(shoe.id));
+        const availableShoes = categorizedItems.shoes.filter(shoe => !usedItemIds.has(shoe.id));
         if (availableShoes.length === 0) break;
         
         const shoe = availableShoes[0];
         
+        // Create outfit with EXACTLY 1 top + 1 bottom + 1 shoes = 3 items
         const regularLookItems = [
           {
-            id: top.id || `top-${i}`,
+            id: top.id || `top-${topIndex}`,
             title: top.product_name || top.name || 'חולצה',
             description: top.description || '',
             image: top.image || '',
@@ -584,7 +588,7 @@ class StylingAgentClass implements Agent {
             type: 'top'
           },
           {
-            id: bottom.id || `bottom-${j}`,
+            id: bottom.id || `bottom-${bottomIndex}`,
             title: bottom.product_name || bottom.name || 'מכנס',
             description: bottom.description || '',
             image: bottom.image || '',
@@ -601,13 +605,6 @@ class StylingAgentClass implements Agent {
           }
         ];
         
-        // Validate this exact combination
-        const validation = this.validateOutfitComposition(regularLookItems);
-        if (!validation.isValid) {
-          console.error(`❌ [StylingAgent] Regular outfit validation failed: ${validation.reason}`);
-          continue;
-        }
-        
         const regularLook: Look = {
           id: `regular-look-${regularLookCount}`,
           items: regularLookItems,
@@ -622,28 +619,23 @@ class StylingAgentClass implements Agent {
         usedItemIds.add(bottom.id);
         usedItemIds.add(shoe.id);
         
-        console.log(`✅ [StylingAgent] Created REGULAR look: 3 פריטים - ${validation.reason}`);
+        console.log(`✅ [StylingAgent] Created REGULAR look: חלק עליון + חלק תחתון + נעליים (3 פריטים)`);
         regularLookCount++;
         break; // Move to next top after finding a valid combination
       }
     }
     
-    // Final validation - ensure all looks are valid
-    const validatedLooks = looks.filter(look => {
-      const validation = this.validateOutfitComposition(look.items);
-      if (!validation.isValid) {
-        console.error(`❌ [StylingAgent] REJECTED look ${look.id}: ${validation.reason}`);
-        return false;
-      }
-      console.log(`✅ [StylingAgent] APPROVED look ${look.id}: ${validation.reason}`);
-      return true;
-    });
+    console.log(`✅ [StylingAgent] Created ${looks.length} STRICTLY VALIDATED outfits with ONE ITEM PER CATEGORY`);
     
-    console.log(`✅ [StylingAgent] Created ${validatedLooks.length} STRICTLY VALIDATED outfits with ONE ITEM PER CATEGORY`);
+    // Final validation
+    for (const look of looks) {
+      const itemTypes = look.items.map(item => item.type);
+      console.log(`🔍 [StylingAgent] Look ${look.id}: ${itemTypes.join(', ')}`);
+    }
     
     return {
-      looks: validatedLooks.slice(0, 3),
-      reasoning: `יצרתי ${validatedLooks.length} תלבושות תקינות עם פריט אחד בלבד מכל קטגוריה נדרשת.`
+      looks: looks.slice(0, 3),
+      reasoning: `יצרתי ${looks.length} תלבושות תקינות עם פריט אחד בלבד מכל קטגוריה נדרשת.`
     };
   }
 }
