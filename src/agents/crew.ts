@@ -1,7 +1,6 @@
 
 import { personalizationAgent, stylingAgent, validatorAgent, recommendationAgent, Agent } from "./index";
 import { ProfileFetcherTool } from "../tools/profileFetcherTool";
-import { GenerateOutfitTool } from "../tools/generateOutfitTool";
 import { CompatibilityCheckerTool } from "../tools/compatibilityCheckerTool";
 import { GenerateRecommendationsTool } from "../tools/generateRecommendationsTool";
 import { OutfitResponse } from "../types/outfitTypes";
@@ -22,62 +21,87 @@ export class AgentCrew {
   }
 
   /**
-   * Runs all agents in sequence to generate a complete outfit recommendation
+   * Runs all agents in coordinated sequence to generate a complete outfit recommendation
    * @param userId The ID of the user to generate recommendations for
    * @returns A complete outfit recommendation with styling tips
    */
   async run(userId: string): Promise<OutfitResponse> {
-    console.log(`AgentCrew starting run for user: ${userId}`);
+    console.log(`🚀 [AgentCrew] Starting COORDINATED agent workflow for user: ${userId}`);
+    
     try {
-      // Step 1: Get user profile data using the personalization agent
-      const profileResult = await ProfileFetcherTool.execute(userId);
-      if (!profileResult.success) {
-        return { success: false, error: profileResult.error || "Failed to fetch user profile" };
-      }
+      // Step 1: Run personalization agent to gather user profile and preferences
+      console.log('🧠 [AgentCrew] Step 1: Running PersonalizationAgent...');
+      const personalizationResult = await personalizationAgent.run(userId);
       
-      // Step 2: Generate outfit using the styling agent's run method
-      // Use the new run method instead of the tool
-      const outfitResult = await stylingAgent.run(userId);
-      if (!outfitResult.success) {
-        return { success: false, error: outfitResult.error || "Failed to generate outfit" };
-      }
-      const generatedOutfit = outfitResult.data;
-      
-      // Step 3: Validate the outfit compatibility using the validator agent
-      const compatibilityResult = await CompatibilityCheckerTool.execute(generatedOutfit);
-      if (!compatibilityResult.success || !compatibilityResult.data.isCompatible) {
+      if (!personalizationResult.success) {
         return { 
           success: false, 
-          error: compatibilityResult.error || "Generated outfit is not compatible" 
+          error: `Personalization failed: ${personalizationResult.error}` 
         };
       }
       
-      // Step 4: Generate recommendations and styling tips using the recommendation agent
-      const recommendationsResult = await GenerateRecommendationsTool.execute(generatedOutfit);
-      if (!recommendationsResult.success) {
-        return { success: false, error: recommendationsResult.error || "Failed to generate recommendations" };
+      console.log('✅ [AgentCrew] PersonalizationAgent completed successfully');
+      
+      // Step 2: Run styling agent with user profile data
+      console.log('👗 [AgentCrew] Step 2: Running StylingAgent...');
+      const stylingResult = await stylingAgent.run(userId);
+      
+      if (!stylingResult.success || !stylingResult.data?.looks?.length) {
+        return { 
+          success: false, 
+          error: `Styling failed: ${stylingResult.error || 'No outfits generated'}` 
+        };
       }
       
-      // Combine the outfit with recommendations
-      const finalOutfit = {
-        ...generatedOutfit,
-        recommendations: recommendationsResult.data.recommendations,
-        occasion: recommendationsResult.data.occasion
+      console.log(`✅ [AgentCrew] StylingAgent created ${stylingResult.data.looks.length} outfits`);
+      
+      // Step 3: Run validator agent to check outfit compatibility
+      console.log('🔍 [AgentCrew] Step 3: Running ValidatorAgent...');
+      const validatorResult = await validatorAgent.run(userId);
+      
+      if (!validatorResult.success) {
+        console.warn(`⚠️ [AgentCrew] Validator warning: ${validatorResult.error}`);
+        // Continue anyway, validator is not critical
+      } else {
+        console.log('✅ [AgentCrew] ValidatorAgent completed successfully');
+      }
+      
+      // Step 4: Run recommendation agent to add styling tips
+      console.log('💡 [AgentCrew] Step 4: Running RecommendationAgent...');
+      const recommendationResult = await recommendationAgent.run(userId);
+      
+      // Combine all results
+      const finalData = {
+        looks: stylingResult.data.looks,
+        reasoning: stylingResult.data.reasoning,
+        recommendations: recommendationResult?.recommendations || [
+          'תוכל להוסיף אביזרים מתאימים כדי להשלים את המראה',
+          'שקול להתאים את הבחירה לאירוע הספציפי'
+        ],
+        validation: validatorResult?.data || null,
+        timestamp: new Date().toISOString(),
+        agentFlow: 'coordinated'
       };
       
-      console.log(`AgentCrew completed run successfully for user: ${userId}`);
-      return { success: true, data: finalOutfit };
+      console.log(`🎉 [AgentCrew] COORDINATED workflow completed successfully!`);
+      console.log(`📊 [AgentCrew] Final results: ${finalData.looks.length} outfits with recommendations`);
+      
+      return { 
+        success: true, 
+        data: finalData 
+      };
+      
     } catch (error) {
-      console.error("Error in AgentCrew:", error);
+      console.error("❌ [AgentCrew] Error in coordinated workflow:", error);
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : "Unknown error in the agent crew" 
+        error: error instanceof Error ? error.message : "Unknown error in coordinated agent workflow" 
       };
     }
   }
 }
 
 /**
- * Singleton instance for easy access to the AgentCrew
+ * Singleton instance for easy access to the coordinated AgentCrew
  */
 export const agentCrew = new AgentCrew();

@@ -1,35 +1,19 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
-import { fetchFirstOutfitSuggestion, clearOutfitCache, matchOutfitToColors, clearGlobalItemTrackers } from "@/services/lookService";
+import { agentCrew } from "@/agents/crew";
 import { DashboardItem } from "@/types/lookTypes";
-import { supabase } from "@/lib/supabaseClient"; // Use the single client instance
-import { generateOutfit as generateOutfitAPI, getStyleRecommendations } from "@/services/outfitGenerationService";
+import { supabase } from "@/lib/supabaseClient";
 import logger from "@/lib/logger";
-
-interface OutfitColors {
-  top: string;
-  bottom: string;
-  shoes: string;
-  [key: string]: string;
-}
-
-interface StyleRecommendation {
-  description: string;
-  recommendations: string[];
-}
 
 // Track user preferences for color combinations and styles
 const userPreferences = {
-  likedCombinations: new Set<string>(), // store color combinations the user liked
-  dislikedCombinations: new Set<string>(), // store color combinations the user disliked
-  likedItems: new Set<string>(), // store specific items the user liked
-  dislikedItems: new Set<string>() // store specific items the user disliked
+  likedCombinations: new Set<string>(),
+  dislikedCombinations: new Set<string>(),
+  likedItems: new Set<string>(),
+  dislikedItems: new Set<string>()
 };
-
-// Track API attempt counts to avoid infinite loops
-let attemptCounter = 0;
-const MAX_ATTEMPTS = 5;
 
 export function useOutfitGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -99,230 +83,124 @@ export function useOutfitGeneration() {
     }
   };
   
-  const generateOutfitFromAPI = async () => {
+  const generateOutfit = async (forceRefresh: boolean = true) => {
+    setIsGenerating(true);
+    
     try {
-      setIsGenerating(true);
-      
-      // Get user style data
-      const styleData = localStorage.getItem('styleAnalysis');
-      if (!styleData) {
-        throw new Error('Style data not found');
-      }
-      
-      const parsedData = JSON.parse(styleData);
-      const bodyShape = parsedData?.analysis?.bodyShape || 'H';
-      const style = parsedData?.analysis?.styleProfile || 'classic';
-      const mood = localStorage.getItem('current-mood') || 'energized';
-      
-      logger.info("Generating outfit from API", { 
+      logger.info("🚀 Starting COORDINATED outfit generation", { 
         context: "useOutfitGeneration",
-        data: { bodyShape, style, mood }
+        data: { forceRefresh }
       });
       
-      // Call the outfit generation API with a single request object
-      const response = await generateOutfitAPI({
-        bodyStructure: bodyShape as any,
-        mood,
-        style: style as any
-      });
+      // Get current user ID (or use anonymous ID)
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id || 'anonymous-user';
       
-      if (!response.success) {
-        logger.warn("API outfit generation failed", { 
-          context: "useOutfitGeneration", 
-          data: response.error 
-        });
-        
-        sonnerToast.warning("Couldn't generate outfit with AI, trying regular method...", {
-          duration: 3000
-        });
-        
-        // Fallback to regular generation
-        return generateOutfitFromItems();
-      }
+      // Use the coordinated agent crew workflow
+      const result = await agentCrew.run(userId);
       
-      // Update recommendations
-      const newRecommendations = getStyleRecommendations();
-      if (newRecommendations.length > 0) {
-        setRecommendations(newRecommendations);
-      }
-      
-      // Match real items to the generated outfit colors
-      logger.info("Matching outfit colors to real clothing items");
-      const colorMatches = await matchOutfitToColors();
-      
-      // Populate items array with one item from each matched category
-      const items: DashboardItem[] = [];
-      for (const [type, matchedItems] of Object.entries(colorMatches)) {
-        if (Array.isArray(matchedItems) && matchedItems.length > 0) {
-          const randomIndex = Math.floor(Math.random() * matchedItems.length);
-          const item = matchedItems[randomIndex];
-          // Ensure the item conforms to DashboardItem type
-          items.push({
-            id: item.id,
-            name: item.name,
-            image: item.image,
-            type: item.type, // This is already properly typed from the service
-            price: item.price
-          });
-        }
-      }
-      
-      // If we couldn't match enough items, fall back to regular generation
-      if (items.length < 3) {
-        logger.warn("Not enough color-matched items found, using fallback", {
+      if (!result.success) {
+        logger.error("❌ Coordinated outfit generation failed", {
           context: "useOutfitGeneration",
-          data: { matchedCount: items.length }
+          data: { error: result.error }
         });
-        return generateOutfitFromItems();
+        
+        toast({
+          title: "Generation Failed",
+          description: result.error || "Could not generate outfit using coordinated agents.",
+          variant: "destructive",
+        });
+        
+        return {
+          success: false,
+          items: []
+        };
       }
       
-      logger.info("Successfully generated outfit from API with matched items", {
+      // Extract the first look from the coordinated results
+      const looks = result.data?.looks || [];
+      if (looks.length === 0) {
+        logger.warn("No looks generated by coordinated agents");
+        
+        toast({
+          title: "No Outfits Generated",
+          description: "The styling agents couldn't create suitable outfits with available items.",
+          variant: "destructive",
+        });
+        
+        return {
+          success: false,
+          items: []
+        };
+      }
+      
+      // Convert the first look to DashboardItem format
+      const firstLook = looks[0];
+      const items: DashboardItem[] = firstLook.items.map(item => ({
+        id: item.id,
+        name: item.title,
+        image: item.image,
+        type: item.type as any,
+        price: item.price
+      }));
+      
+      // Update recommendations from the coordinated result
+      if (result.data?.recommendations && Array.isArray(result.data.recommendations)) {
+        setRecommendations(result.data.recommendations);
+        localStorage.setItem('style-recommendations', JSON.stringify(result.data.recommendations));
+      }
+      
+      logger.info("✅ Coordinated outfit generation completed successfully", {
         context: "useOutfitGeneration",
-        data: { itemCount: items.length }
+        data: { 
+          itemCount: items.length,
+          lookId: firstLook.id,
+          hasRecommendations: result.data?.recommendations?.length > 0
+        }
+      });
+      
+      sonnerToast.success("נוצרה תלבושת חדשה באמצעות אייגנטים מתואמים!", {
+        duration: 3000
       });
       
       return {
         success: true,
         items: items
       };
+      
     } catch (error) {
-      logger.error("Error in API outfit generation", {
+      logger.error('❌ Error in coordinated outfit generation:', {
         context: "useOutfitGeneration",
         data: error
       });
       
-      // Fall back to regular generation
-      return generateOutfitFromItems();
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-  
-  const generateOutfitFromItems = async (forceRefresh: boolean = true) => {
-    setIsGenerating(true);
-    
-    try {
-      // Reset attempt counter if this is a user-initiated refresh
-      if (forceRefresh) {
-        attemptCounter = 0;
-      }
-      
-      // Safety check to prevent infinite loops
-      if (attemptCounter >= MAX_ATTEMPTS) {
-        throw new Error('Maximum generation attempts reached');
-      }
-      
-      attemptCounter++;
-      
-      // Get user style data
-      const styleData = localStorage.getItem('styleAnalysis');
-      if (!styleData) {
-        throw new Error('Style data not found');
-      }
-      
-      const parsedData = JSON.parse(styleData);
-      const bodyShape = parsedData?.analysis?.bodyShape || 'H';
-      const style = parsedData?.analysis?.styleProfile || 'classic';
-      const mood = localStorage.getItem('current-mood') || 'energized';
-      
-      // Clear the outfit cache to force a new generation
-      if (forceRefresh) {
-        clearOutfitCache(bodyShape, style, mood);
-      }
-      
-      // Fetch a new outfit suggestion
-      const outfitItems = await fetchFirstOutfitSuggestion(forceRefresh);
-      
-      logger.debug("Outfit items received:", { 
-        context: "useOutfitGeneration", 
-        data: outfitItems.length 
-      });
-      
-      // Validate that we have exactly one of each required item type
-      const itemTypes = outfitItems.map(item => item.type);
-      const hasTop = itemTypes.includes('top');
-      const hasBottom = itemTypes.includes('bottom');
-      const hasShoes = itemTypes.includes('shoes');
-      
-      logger.debug(`Outfit completeness check: top=${hasTop}, bottom=${hasBottom}, shoes=${hasShoes}`, {
-        context: "useOutfitGeneration"
-      });
-      
-      if (!hasTop || !hasBottom || !hasShoes) {
-        logger.warn(`Incomplete outfit generated: top=${hasTop}, bottom=${hasBottom}, shoes=${hasShoes}`, {
-          context: "useOutfitGeneration"
-        });
-        sonnerToast.warning("Incomplete outfit generated, trying again...");
-        // Try one more time if the outfit is incomplete
-        return generateOutfitFromItems(true);
-      }
-      
-      // Store any recommendations in localStorage if they exist
-      const outfitData = localStorage.getItem('last-outfit-data');
-      if (outfitData) {
-        try {
-          const parsedOutfit = JSON.parse(outfitData);
-          if (parsedOutfit.recommendations && Array.isArray(parsedOutfit.recommendations)) {
-            setRecommendations(parsedOutfit.recommendations);
-            localStorage.setItem('style-recommendations', JSON.stringify(parsedOutfit.recommendations));
-          }
-          
-          // Store color palette
-          if (parsedOutfit.colors && typeof parsedOutfit.colors === 'object') {
-            localStorage.setItem('outfit-colors', JSON.stringify(parsedOutfit.colors));
-          }
-        } catch (e) {
-          logger.error('Error parsing outfit data:', {
-            context: "useOutfitGeneration",
-            data: e
-          });
-        }
-      }
-      
-      // Reset the attempt counter since we successfully generated an outfit
-      attemptCounter = 0;
-      
-      return {
-        success: true,
-        items: outfitItems.map(item => ({
-          ...item,
-          // Ensure each item has a type property for proper look assembly
-          type: item.type || 'top'
-        }))
-      };
-    } catch (error) {
-      logger.error('Error generating outfit:', {
-        context: "useOutfitGeneration",
-        data: error
-      });
       toast({
         title: "Generation Failed",
-        description: "Could not generate a new outfit. Please try again.",
+        description: "Could not generate outfit with coordinated agents. Please try again.",
         variant: "destructive",
       });
+      
       return {
         success: false,
         items: []
       };
     } finally {
       setIsGenerating(false);
-      // Reset the attempt counter after the operation completes
-      attemptCounter = 0;
     }
   };
   
-  const generateOutfit = async (forceRefresh: boolean = true) => {
-    // Try to generate from API first
-    const apiResult = await generateOutfitFromAPI();
+  const clearGlobalItemTrackers = () => {
+    // Clear user preferences
+    userPreferences.likedCombinations.clear();
+    userPreferences.dislikedCombinations.clear();
+    userPreferences.likedItems.clear();
+    userPreferences.dislikedItems.clear();
     
-    // If API generation succeeded, return the result
-    if (apiResult.success && apiResult.items.length >= 3) {
-      return apiResult;
-    }
+    // Clear local storage
+    localStorage.removeItem('outfit-feedback');
+    localStorage.removeItem('style-recommendations');
     
-    // Otherwise, fall back to regular item-based generation
-    logger.info("Falling back to regular item-based outfit generation");
-    return generateOutfitFromItems(forceRefresh);
+    logger.info("Cleared global item trackers and user preferences");
   };
   
   return {

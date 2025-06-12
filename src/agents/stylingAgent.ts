@@ -21,8 +21,79 @@ class StylingAgentClass implements Agent {
   tools: any[] = [];
 
   async run(userId: string): Promise<any> {
-    console.log(`StylingAgent run method called for user: ${userId}`);
-    return { success: true, data: null };
+    console.log(`🎯 [StylingAgent] Running coordinated styling for user: ${userId}`);
+    
+    try {
+      // Get user profile data from localStorage (populated by PersonalizationAgent)
+      const styleData = localStorage.getItem('styleAnalysis');
+      const currentMood = localStorage.getItem('current-mood') || 'energized';
+      
+      if (!styleData) {
+        return {
+          success: false,
+          error: 'No style profile found. Please run personalization first.'
+        };
+      }
+      
+      const parsedData = JSON.parse(styleData);
+      const bodyShape = parsedData?.analysis?.bodyShape || 'H';
+      const style = parsedData?.analysis?.styleProfile || 'classic';
+      
+      // Get available items from database (this should be provided by PersonalizationAgent)
+      const { supabase } = await import('../lib/supabaseClient');
+      const { data: availableItems, error } = await supabase
+        .from('zara_cloth')
+        .select('*')
+        .eq('availability', true)
+        .limit(500);
+      
+      if (error || !availableItems) {
+        return {
+          success: false,
+          error: 'Failed to fetch available items from database'
+        };
+      }
+      
+      console.log(`📊 [StylingAgent] Retrieved ${availableItems.length} available items`);
+      
+      // Create styling request
+      const request: StylingRequest = {
+        bodyStructure: bodyShape as any,
+        mood: currentMood,
+        style: style as any,
+        event: undefined, // Can be added later
+        availableItems
+      };
+      
+      // Generate outfits using the existing createOutfits method
+      const result = await this.createOutfits(request);
+      
+      if (result.looks.length === 0) {
+        return {
+          success: false,
+          error: 'No suitable outfits could be created with available items'
+        };
+      }
+      
+      console.log(`✅ [StylingAgent] Created ${result.looks.length} outfit suggestions`);
+      
+      return {
+        success: true,
+        data: {
+          looks: result.looks,
+          reasoning: result.reasoning,
+          userId,
+          timestamp: new Date().toISOString()
+        }
+      };
+      
+    } catch (error) {
+      console.error('❌ [StylingAgent] Error in coordinated run:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error in styling agent'
+      };
+    }
   }
 
   /**
@@ -501,7 +572,7 @@ class StylingAgentClass implements Agent {
   async createOutfits(request: StylingRequest): Promise<StylingResult> {
     const { bodyStructure, mood, style, event, availableItems } = request;
     
-    console.log('🎯 [StylingAgent] Creating outfits with DETAILED CLASSIFICATION LOGGING:', { bodyStructure, mood, style, event });
+    console.log('🎯 [StylingAgent] Creating outfits with COORDINATED AGENT FLOW:', { bodyStructure, mood, style, event });
     console.log(`📊 [StylingAgent] Total available items: ${availableItems.length}`);
     
     // Filter only available items first
@@ -865,11 +936,11 @@ class StylingAgentClass implements Agent {
       return true;
     });
     
-    console.log(`✅ [StylingAgent] Created ${validatedLooks.length} VALID complete outfits with DETAILED CLASSIFICATION LOGGING`);
+    console.log(`✅ [StylingAgent] Created ${validatedLooks.length} VALID complete outfits with COORDINATED AGENT FLOW`);
     
     return {
       looks: validatedLooks.slice(0, 3),
-      reasoning: `יצרתי ${validatedLooks.length} תלבושות תקינות עם סיווג מפורט ולוגים: שמלות רק עם נעליים, מכנסיים בקטגוריית תחתון בלבד, סינון מוצלח של תחתונים.`
+      reasoning: `יצרתי ${validatedLooks.length} תלבושות תקינות באמצעות זרימת אייגנטים מתואמת.`
     };
   }
   
