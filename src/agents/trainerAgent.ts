@@ -262,7 +262,22 @@ export const trainerAgent: Agent = {
   role: "Trainer Agent",
   goal: "Run automated validation of all agents and their outputs periodically",
   backstory: "Responsible for testing the accuracy and consistency of agent logic",
-  tools: [RunValidationCycleTool]
+  tools: [RunValidationCycleTool],
+  
+  async run(userId: string) {
+    console.log(`[TrainerAgent] Running validation cycle for user: ${userId}`);
+    try {
+      const result = await RunValidationCycleTool.execute();
+      console.log(`[TrainerAgent] Validation cycle completed`);
+      return result;
+    } catch (error) {
+      console.error(`[TrainerAgent] Error:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error in trainer"
+      };
+    }
+  }
 };
 
 // Export a function to run the validation cycle directly
