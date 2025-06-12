@@ -103,6 +103,7 @@ class StylingAgentClass implements Agent {
   private validateOutfitComposition(items: any[]): { isValid: boolean; score: number; reason: string } {
     const itemTypes = items.map(item => item.type);
     const hasDress = itemTypes.includes('dress');
+    const hasJumpsuit = itemTypes.includes('jumpsuit'); // Added jumpsuit check
     const hasTop = itemTypes.includes('top');
     const hasBottom = itemTypes.includes('bottom');
     const hasShoes = itemTypes.includes('shoes');
@@ -119,31 +120,33 @@ class StylingAgentClass implements Agent {
       };
     }
 
-    // RULE 1: Dress outfits (שמלה + נעליים או שמלה + נעליים + מעיל)
-    if (hasDress) {
-      // Dress CANNOT be with top or bottom
+    // RULE 1: Dress OR Jumpsuit outfits (שמלה/אוברול + נעליים או שמלה/אוברול + נעליים + מעיל)
+    if (hasDress || hasJumpsuit) {
+      const outfitType = hasDress ? 'שמלה' : 'אוברול';
+      
+      // Dress/Jumpsuit CANNOT be with top or bottom
       if (hasTop || hasBottom) {
         return {
           isValid: false,
           score: 0,
-          reason: 'שמלה לא יכולה להיות עם חולצה או מכנסיים'
+          reason: `${outfitType} לא יכול להיות עם חולצה או מכנסיים`
         };
       }
       
-      // Valid dress outfits: dress + shoes (2 items) OR dress + shoes + outerwear (3 items)
-      const validDressItems = hasOuterwear ? 3 : 2;
-      if (items.length === validDressItems) {
+      // Valid dress/jumpsuit outfits: dress/jumpsuit + shoes (2 items) OR dress/jumpsuit + shoes + outerwear (3 items)
+      const validItems = hasOuterwear ? 3 : 2;
+      if (items.length === validItems) {
         return {
           isValid: true,
           score: 100,
-          reason: hasOuterwear ? 'שמלה עם נעליים ומעיל - תקין' : 'שמלה עם נעליים - תקין'
+          reason: hasOuterwear ? `${outfitType} עם נעליים ומעיל - תקין` : `${outfitType} עם נעליים - תקין`
         };
       }
       
       return {
         isValid: false,
         score: 0,
-        reason: `שמלה צריכה ${validDressItems} פריטים בלבד`
+        reason: `${outfitType} צריך ${validItems} פריטים בלבד`
       };
     }
 
@@ -216,9 +219,12 @@ class StylingAgentClass implements Agent {
     const name = (item.product_name || item.name || '').toLowerCase();
     const family = item.product_family?.toLowerCase() || '';
     
-    // EXCLUDE dresses
-    const dressKeywords = ['dress', 'שמלה', 'gown', 'frock'];
-    const isDress = dressKeywords.some(keyword => 
+    // EXCLUDE dresses and jumpsuits
+    const excludeKeywords = [
+      'dress', 'שמלה', 'gown', 'frock',
+      'jumpsuit', 'אוברול', 'overall', 'romper'
+    ];
+    const isExcluded = excludeKeywords.some(keyword => 
       subfamily.includes(keyword) || name.includes(keyword) || family.includes(keyword)
     );
     
@@ -234,7 +240,7 @@ class StylingAgentClass implements Agent {
       subfamily.includes(keyword) || name.includes(keyword) || family.includes(keyword)
     );
     
-    if (isDress || isBottomItem) {
+    if (isExcluded || isBottomItem) {
       return false;
     }
     
@@ -257,9 +263,10 @@ class StylingAgentClass implements Agent {
     const name = (item.product_name || item.name || '').toLowerCase();
     const family = item.product_family?.toLowerCase() || '';
     
-    // EXCLUDE dresses and underwear
+    // EXCLUDE dresses, jumpsuits and underwear
     const excludeKeywords = [
       'dress', 'שמלה', 'gown', 'frock',
+      'jumpsuit', 'אוברול', 'overall', 'romper',
       'bra', 'briefs', 'underwear', 'panties', 'boxers',
       'lingerie', 'underpants', 'thong', 'bikini bottom',
       'תחתון', 'תחתונים', 'חזייה', 'בגד תחתון'
@@ -305,6 +312,23 @@ class StylingAgentClass implements Agent {
     );
   }
 
+  private isJumpsuitItem(item: any): boolean {
+    const subfamily = item.product_subfamily?.toLowerCase() || '';
+    const name = (item.product_name || item.name || '').toLowerCase();
+    const family = item.product_family?.toLowerCase() || '';
+    
+    const jumpsuitKeywords = [
+      'jumpsuit', 'אוברול', 'overall', 'romper',
+      'playsuit', 'coverall', 'boilersuit'
+    ];
+    
+    return jumpsuitKeywords.some(keyword => 
+      subfamily.includes(keyword) || 
+      name.includes(keyword) || 
+      family.includes(keyword)
+    );
+  }
+
   private isOuterwearItem(item: any): boolean {
     const subfamily = item.product_subfamily?.toLowerCase() || '';
     const name = (item.product_name || item.name || '').toLowerCase();
@@ -339,6 +363,7 @@ class StylingAgentClass implements Agent {
     const tops = availableFilteredItems.filter(item => this.isTopItem(item));
     const bottoms = availableFilteredItems.filter(item => this.isBottomItem(item));
     const dresses = availableFilteredItems.filter(item => this.isDressItem(item));
+    const jumpsuits = availableFilteredItems.filter(item => this.isJumpsuitItem(item)); // Added jumpsuit classification
     const outerwear = availableFilteredItems.filter(item => this.isOuterwearItem(item));
     
     console.log('📊 [StylingAgent] STRICT CLASSIFICATION:');
@@ -346,6 +371,7 @@ class StylingAgentClass implements Agent {
     console.log(`👕 TOPS: ${tops.length} items`);
     console.log(`👖 BOTTOMS: ${bottoms.length} items`);
     console.log(`👗 DRESSES: ${dresses.length} items`);
+    console.log(`🤸 JUMPSUITS: ${jumpsuits.length} items`); // Added jumpsuit logging
     console.log(`🧥 OUTERWEAR: ${outerwear.length} items`);
     
     const looks: Look[] = [];
@@ -413,8 +439,62 @@ class StylingAgentClass implements Agent {
         console.log(`✅ [StylingAgent] Created DRESS look: 2 פריטים - ${validation.reason}`);
       }
     }
+
+    // OUTFIT TYPE 2: Jumpsuit looks (אוברול + נעליים = 2 פריטים)
+    if (jumpsuits.length > 0 && looks.length < 3) {
+      for (let i = 0; i < Math.min(1, jumpsuits.length) && looks.length < 3; i++) {
+        const jumpsuit = jumpsuits[i];
+        if (usedItemIds.has(jumpsuit.id)) continue;
+        
+        const availableShoes = shoes.filter(shoe => !usedItemIds.has(shoe.id));
+        if (availableShoes.length === 0) break;
+        
+        const shoe = availableShoes[0];
+        
+        const jumpsuitLookItems = [
+          {
+            id: jumpsuit.id || `jumpsuit-${i}`,
+            title: jumpsuit.product_name || jumpsuit.name || 'אוברול',
+            description: jumpsuit.description || '',
+            image: jumpsuit.image || '',
+            price: jumpsuit.price ? `$${jumpsuit.price}` : '0',
+            type: 'jumpsuit'
+          },
+          {
+            id: shoe.id || `shoes-jumpsuit-${i}`,
+            title: shoe.product_name || shoe.name || 'נעליים',
+            description: shoe.description || '',
+            image: shoe.image || '',
+            price: shoe.price ? `$${shoe.price}` : '0',
+            type: 'shoes'
+          }
+        ];
+        
+        // Validate this exact combination
+        const validation = this.validateOutfitComposition(jumpsuitLookItems);
+        if (!validation.isValid) {
+          console.error(`❌ [StylingAgent] Jumpsuit outfit validation failed: ${validation.reason}`);
+          continue;
+        }
+        
+        const jumpsuitLook: Look = {
+          id: `jumpsuit-look-${i}`,
+          items: jumpsuitLookItems,
+          description: `אוברול ${jumpsuit.product_name || ''} עם נעליים מתאימות`,
+          occasion: (event as any) || 'general',
+          style: style,
+          mood: mood
+        };
+        
+        looks.push(jumpsuitLook);
+        usedItemIds.add(jumpsuit.id);
+        usedItemIds.add(shoe.id);
+        
+        console.log(`✅ [StylingAgent] Created JUMPSUIT look: 2 פריטים - ${validation.reason}`);
+      }
+    }
     
-    // OUTFIT TYPE 2: Regular looks (חלק עליון + חלק תחתון + נעליים = 3 פריטים)
+    // OUTFIT TYPE 3: Regular looks (חלק עליון + חלק תחתון + נעליים = 3 פריטים)
     const maxRegularLooks = 3 - looks.length;
     let regularLookCount = 0;
     
@@ -484,7 +564,7 @@ class StylingAgentClass implements Agent {
       }
     }
     
-    // OUTFIT TYPE 3: Outerwear looks (מעיל + חלק עליון + חלק תחתון + נעליים = 4 פריטים)
+    // OUTFIT TYPE 4: Outerwear looks (מעיל + חלק עליון + חלק תחתון + נעליים = 4 פריטים)
     if (outerwear.length > 0 && looks.length < 3) {
       const maxOuterwearLooks = 3 - looks.length;
       
@@ -578,7 +658,7 @@ class StylingAgentClass implements Agent {
     
     return {
       looks: validatedLooks.slice(0, 3),
-      reasoning: `יצרתי ${validatedLooks.length} תלבושות תקינות עם המבנה הנכון של פריטים.`
+      reasoning: `יצרתי ${validatedLooks.length} תלבושות תקינות עם המבנה הנכון של פריטים, כולל תמיכה באוברולים.`
     };
   }
 }
