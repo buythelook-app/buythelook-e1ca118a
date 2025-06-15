@@ -1,4 +1,3 @@
-
 import { Look } from '../types/lookTypes';
 import { Agent } from './index';
 
@@ -44,15 +43,15 @@ type ZaraClothItem = {
 
 type ShoeItem = {
   name: string;
-  brand?: string;
-  description?: string;
-  price: number;
-  colour: string;
-  image: string | string[] | null;
-  discount?: string;
-  category?: string;
-  availability: string;
-  url?: string;
+  brand?: string | null;
+  description?: string | null;
+  price: number | null;
+  colour?: string | null;
+  image: any | null;
+  discount?: string | null;
+  category?: string | null;
+  availability: string | null;
+  url?: string | null;
   breadcrumbs?: any;
 };
 
@@ -184,7 +183,7 @@ class StylingAgentClass implements Agent {
     
     // Use only shoes from the shoes table
     const availableShoes = shoesItems.filter(shoe => 
-      shoe.availability === 'in stock' && shoe.price <= budget * 0.4
+      shoe.availability === 'in stock' && (shoe.price || 0) <= budget * 0.4
     );
     
     if (tops.length === 0 || bottoms.length === 0 || availableShoes.length === 0) {
@@ -200,7 +199,7 @@ class StylingAgentClass implements Agent {
       return {};
     }
     
-    const totalCost = selectedTop.price + selectedBottom.price + selectedShoes.price;
+    const totalCost = selectedTop.price + selectedBottom.price + (selectedShoes.price || 0);
     if (totalCost > budget) {
       return {};
     }
