@@ -178,6 +178,75 @@ export type Database = {
         }
         Relationships: []
       }
+      shoes: {
+        Row: {
+          about_me: string | null
+          availability: string | null
+          brand: string | null
+          breadcrumbs: Json | null
+          buy_the_look: Json | null
+          category: string | null
+          color: Json | null
+          currency: string | null
+          description: string | null
+          discount: string | null
+          image: Json | null
+          look_after_me: string | null
+          name: string
+          possible_sizes: Json | null
+          price: number | null
+          product_details: string | null
+          product_id: number | null
+          size_fit: string | null
+          url: string | null
+          you_might_also_like: Json | null
+        }
+        Insert: {
+          about_me?: string | null
+          availability?: string | null
+          brand?: string | null
+          breadcrumbs?: Json | null
+          buy_the_look?: Json | null
+          category?: string | null
+          color?: Json | null
+          currency?: string | null
+          description?: string | null
+          discount?: string | null
+          image?: Json | null
+          look_after_me?: string | null
+          name: string
+          possible_sizes?: Json | null
+          price?: number | null
+          product_details?: string | null
+          product_id?: number | null
+          size_fit?: string | null
+          url?: string | null
+          you_might_also_like?: Json | null
+        }
+        Update: {
+          about_me?: string | null
+          availability?: string | null
+          brand?: string | null
+          breadcrumbs?: Json | null
+          buy_the_look?: Json | null
+          category?: string | null
+          color?: Json | null
+          currency?: string | null
+          description?: string | null
+          discount?: string | null
+          image?: Json | null
+          look_after_me?: string | null
+          name?: string
+          possible_sizes?: Json | null
+          price?: number | null
+          product_details?: string | null
+          product_id?: number | null
+          size_fit?: string | null
+          url?: string | null
+          you_might_also_like?: Json | null
+        }
+        Relationships: []
+      }
       style_quiz_results: {
         Row: {
           body_shape: string | null
