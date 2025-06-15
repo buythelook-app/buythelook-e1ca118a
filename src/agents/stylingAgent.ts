@@ -47,7 +47,7 @@ type ShoeItem = {
   description?: string | null;
   price: number | null;
   colour?: string | null;
-  image: any | null;
+  image: string | string[] | null;
   discount?: string | null;
   category?: string | null;
   availability: string | null;
@@ -109,6 +109,19 @@ class StylingAgentClass implements Agent {
       
       console.log(`📊 [StylingAgent] Retrieved ${allClothing.length} clothing items and ${allShoes.length} shoes`);
       
+      // 🔍 DEBUG: בדיקת נתונים בטבלת shoes
+      console.time('shoe-image-debug');
+      console.log('[DEBUG] Shoes sample:', allShoes.slice(0, 5));
+      
+      // בדיקת סוג השדה image בנעליים
+      allShoes.slice(0, 3).forEach((shoe, index) => {
+        console.log(`[DEBUG] Shoe ${index + 1} (${shoe.name}):`);
+        console.log(`  - image type: ${typeof shoe.image}`);
+        console.log(`  - image value:`, shoe.image);
+        console.log(`  - has http:`, shoe.image && String(shoe.image).includes('http'));
+        console.log(`  - has .jpg/.png:`, shoe.image && (String(shoe.image).includes('.jpg') || String(shoe.image).includes('.png')));
+      });
+      
       // Create styling request with separated data
       const request: StylingRequest = {
         bodyStructure: bodyShape as any,
@@ -120,6 +133,15 @@ class StylingAgentClass implements Agent {
       
       // Generate outfits using the new dual-source method
       const result = await this.createOutfitsFromSeparateSources(request, allClothing, allShoes);
+      
+      console.timeEnd('shoe-image-debug');
+      
+      // בדיקת תקינות תמונות נעליים בתוצאה הסופית
+      const finalShoes = result.looks.flatMap(look => 
+        look.items.filter(item => item.type === 'shoes')
+      );
+      console.log('[✅] Shoe images resolved?', finalShoes.every(s => s.image && s.image !== '/placeholder.svg'));
+      console.log('[DEBUG] Final shoe images:', finalShoes.map(s => ({ title: s.title, image: s.image })));
       
       if (result.looks.length === 0) {
         return {
@@ -149,8 +171,18 @@ class StylingAgentClass implements Agent {
     }
   }
 
-  private normalizeImageField(image: any): string {
-    if (!image) return '';
+  private normalizeImageField(image: any, itemType: string = 'clothing'): string {
+    console.log(`[DEBUG] normalizeImageField called with type: ${itemType}, image:`, image);
+    
+    if (!image) {
+      console.log(`[DEBUG] No image provided for ${itemType}`);
+      return '/placeholder.svg';
+    }
+    
+    // עבור נעליים - טיפול מיוחד
+    if (itemType === 'shoes') {
+      return this.extractShoesImageUrl(image);
+    }
     
     // If it's a string, return as is
     if (typeof image === 'string') {
@@ -169,7 +201,143 @@ class StylingAgentClass implements Agent {
       if (image.href) return image.href;
     }
     
-    return '';
+    return '/placeholder.svg';
+  }
+
+  private extractShoesImageUrl(imageData: any): string {
+    console.log(`[DEBUG] extractShoesImageUrl called with:`, imageData);
+    
+    if (!imageData) {
+      console.log(`⚠️ [DEBUG] No image data for shoe`);
+      return '/placeholder.svg';
+    }
+    
+    let imageUrls: string[] = [];
+    
+    // אם זה מחרוזת יחידה
+    if (typeof imageData === 'string') {
+      const trimmed = imageData.trim();
+      
+      // בדיקה אם זה URL ישיר
+      if (trimmed.startsWith('http') && (trimmed.includes('.jpg') || trimmed.includes('.png') || trimmed.includes('.jpeg'))) {
+        console.log(`✅ [DEBUG] Direct shoe image URL found: ${trimmed}`);
+        return trimmed;
+      }
+      
+      // ניסיון פרסור JSON
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          imageUrls = parsed.filter(url => typeof url === 'string');
+        }
+      } catch {
+        // אם הפרסור נכשל, נשתמש במחרוזת כמו שהיא
+        imageUrls = [trimmed];
+      }
+    }
+    
+    // אם זה מערך
+    else if (Array.isArray(imageData)) {
+      imageUrls = imageData.filter(url => typeof url === 'string');
+    }
+    
+    // אם זה אובייקט
+    else if (typeof imageData === 'object') {
+      if (imageData.url) imageUrls = [imageData.url];
+      else if (imageData.src) imageUrls = [imageData.src];
+    }
+    
+    console.log(`[DEBUG] Shoe image URLs extracted:`, imageUrls);
+    
+    // חיפוש URL תקין
+    const validUrl = imageUrls.find(url => 
+      url && 
+      url.includes('http') && 
+      (url.includes('.jpg') || url.includes('.png') || url.includes('.jpeg'))
+    );
+    
+    if (validUrl) {
+      console.log(`✅ [DEBUG] Valid shoe image URL found: ${validUrl}`);
+      return validUrl;
+    }
+    
+    console.log(`⚠️ [DEBUG] No valid shoe image URL found, using placeholder`);
+    return '/placeholder.svg';
+  }
+
+  private isValidImagePattern(imageData: any, itemType: string = 'clothing'): boolean {
+    console.log(`[DEBUG] isValidImagePattern for ${itemType}:`, imageData);
+    
+    if (!imageData) {
+      console.log('🔍 [DEBUG] No image data provided');
+      return false;
+    }
+    
+    // עבור נעליים - בדיקה פשוטה יותר
+    if (itemType === 'shoes') {
+      let imageUrls: string[] = [];
+      
+      if (typeof imageData === 'string') {
+        imageUrls = [imageData];
+      } else if (Array.isArray(imageData)) {
+        imageUrls = imageData.filter(url => typeof url === 'string');
+      } else if (typeof imageData === 'object' && imageData.url) {
+        imageUrls = [imageData.url];
+      }
+      
+      console.log(`[DEBUG] Shoe ${itemType} image(s):`, imageUrls);
+      
+      const hasValidUrl = imageUrls.some(url => 
+        url && 
+        url.includes('http') && 
+        (url.includes('.jpg') || url.includes('.png') || url.includes('.jpeg'))
+      );
+      
+      console.log(`[DEBUG] Shoe has valid image pattern: ${hasValidUrl}`);
+      return hasValidUrl;
+    }
+    
+    // Handle different image data formats for clothing
+    let imageUrls: string[] = [];
+    
+    if (typeof imageData === 'string') {
+      // Handle JSON string arrays like "[\"https://static.zara.net/photos/...jpg\"]"
+      try {
+        const parsed = JSON.parse(imageData);
+        if (Array.isArray(parsed)) {
+          imageUrls = parsed.filter(url => typeof url === 'string');
+          console.log(`🔍 [DEBUG] Parsed JSON array with ${imageUrls.length} URLs`);
+        } else {
+          imageUrls = [imageData];
+          console.log(`🔍 [DEBUG] Using string directly: ${imageData}`);
+        }
+      } catch {
+        imageUrls = [imageData];
+        console.log(`🔍 [DEBUG] Failed to parse JSON, using string directly: ${imageData}`);
+      }
+    } else if (Array.isArray(imageData)) {
+      imageUrls = imageData.filter(url => typeof url === 'string');
+      console.log(`🔍 [DEBUG] Using array with ${imageUrls.length} URLs`);
+    } else if (typeof imageData === 'object' && imageData.url) {
+      imageUrls = [imageData.url];
+      console.log(`🔍 [DEBUG] Using URL from object: ${imageData.url}`);
+    } else {
+      console.log(`🔍 [DEBUG] Unknown image data format:`, typeof imageData, imageData);
+      return false;
+    }
+    
+    // Check if any URL contains pattern _6_x_1.jpg or higher (6th image and up, without model)
+    const hasValidPattern = imageUrls.some(url => /_[6-9]_\d+_1\.jpg/.test(url));
+    
+    console.log(`🔍 [DEBUG] Found ${imageUrls.length} URLs, has valid no-model pattern (6th+ image): ${hasValidPattern}`);
+    if (hasValidPattern) {
+      const validUrl = imageUrls.find(url => /_[6-9]_\d+_1\.jpg/.test(url));
+      console.log(`🔍 [DEBUG] Valid no-model URL found: ${validUrl}`);
+    } else {
+      console.log(`🔍 [DEBUG] NO valid no-model pattern found in URLs:`, imageUrls);
+    }
+    
+    return hasValidPattern;
   }
 
   private selectProfessionalOutfit(
@@ -181,19 +349,24 @@ class StylingAgentClass implements Agent {
     const tops = clothingItems.filter(item => this.isTopItem(item));
     const bottoms = clothingItems.filter(item => this.isBottomItem(item));
     
-    // Use only shoes from the shoes table
+    // Use only shoes from the shoes table with valid images
     const availableShoes = shoesItems.filter(shoe => 
-      shoe.availability === 'in stock' && (shoe.price || 0) <= budget * 0.4
+      shoe.availability === 'in stock' && 
+      (shoe.price || 0) <= budget * 0.4 &&
+      this.isValidImagePattern(shoe.image, 'shoes')
     );
     
+    console.log(`[DEBUG] Available shoes with valid images: ${availableShoes.length}/${shoesItems.length}`);
+    
     if (tops.length === 0 || bottoms.length === 0 || availableShoes.length === 0) {
+      console.log(`[DEBUG] Missing items - tops: ${tops.length}, bottoms: ${bottoms.length}, shoes: ${availableShoes.length}`);
       return {};
     }
     
     // Select items within budget
     const selectedTop = tops.find(item => item.price <= budget * 0.35);
     const selectedBottom = bottoms.find(item => item.price <= budget * 0.35);
-    const selectedShoes = availableShoes[0]; // Take first available shoes
+    const selectedShoes = availableShoes[0]; // Take first available shoes with valid image
     
     if (!selectedTop || !selectedBottom || !selectedShoes) {
       return {};
@@ -227,6 +400,10 @@ class StylingAgentClass implements Agent {
     
     console.log(`📊 [StylingAgent] Available after filter - Clothing: ${availableClothing.length}, Shoes: ${availableShoes.length}`);
     
+    // בדיקת תמונות נעליים זמינות
+    const shoesWithValidImages = availableShoes.filter(shoe => this.isValidImagePattern(shoe.image, 'shoes'));
+    console.log(`[DEBUG] Shoes with valid images: ${shoesWithValidImages.length}/${availableShoes.length}`);
+    
     // Classify clothing items (excluding shoes - they come from shoes table)
     const categorizedItems = {
       tops: [],
@@ -257,31 +434,31 @@ class StylingAgentClass implements Agent {
     console.log(`👗 DRESSES: ${categorizedItems.dresses.length} items`);
     console.log(`🤸 JUMPSUITS: ${categorizedItems.jumpsuits.length} items`);
     console.log(`🧥 OUTERWEAR: ${categorizedItems.outerwear.length} items`);
-    console.log(`👟 SHOES (from shoes table): ${availableShoes.length} items`);
+    console.log(`👟 SHOES (from shoes table): ${shoesWithValidImages.length} items with valid images`);
     
     const looks: Look[] = [];
     const usedItemIds = new Set<string>();
     const usedShoeIds = new Set<string>();
     
-    // CRITICAL CHECK: Must have shoes from shoes table!
-    if (availableShoes.length === 0) {
-      console.error('❌ [StylingAgent] CRITICAL: No shoes available from shoes table');
+    // CRITICAL CHECK: Must have shoes from shoes table with valid images!
+    if (shoesWithValidImages.length === 0) {
+      console.error('❌ [StylingAgent] CRITICAL: No shoes with valid images available from shoes table');
       return {
         looks: [],
-        reasoning: 'לא ניתן ליצור תלבושות ללא נעליים זמינות בטבלת הנעליים.'
+        reasoning: 'לא ניתן ליצור תלבושות ללא נעליים זמינות עם תמונות תקינות בטבלת הנעליים.'
       };
     }
 
-    console.log('🚨 [StylingAgent] ENSURING EVERY OUTFIT HAS SHOES FROM SHOES TABLE!');
+    console.log('🚨 [StylingAgent] ENSURING EVERY OUTFIT HAS SHOES FROM SHOES TABLE WITH VALID IMAGES!');
 
     // OUTFIT TYPE 1: Dress looks (שמלה + נעליים מטבלת נעליים)
     for (let i = 0; i < Math.min(1, categorizedItems.dresses.length) && looks.length < 3; i++) {
       const dress = categorizedItems.dresses[i];
       if (usedItemIds.has(dress.id)) continue;
       
-      const availableShoesForOutfit = availableShoes.filter(shoe => !usedShoeIds.has(shoe.name));
+      const availableShoesForOutfit = shoesWithValidImages.filter(shoe => !usedShoeIds.has(shoe.name));
       if (availableShoesForOutfit.length === 0) {
-        console.warn('⚠️ [StylingAgent] No available shoes from shoes table for dress outfit, skipping');
+        console.warn('⚠️ [StylingAgent] No available shoes with valid images from shoes table for dress outfit, skipping');
         break;
       }
       
@@ -292,7 +469,7 @@ class StylingAgentClass implements Agent {
           id: dress.id || `dress-${i}`,
           title: dress.product_name || 'שמלה',
           description: dress.description || '',
-          image: this.normalizeImageField(dress.image),
+          image: this.normalizeImageField(dress.image, 'clothing'),
           price: dress.price ? `$${dress.price}` : '0',
           type: 'dress'
         },
@@ -300,7 +477,7 @@ class StylingAgentClass implements Agent {
           id: shoe.name || `shoes-dress-${i}`,
           title: shoe.name || 'נעליים',
           description: shoe.description || '',
-          image: this.normalizeImageField(shoe.image),
+          image: this.normalizeImageField(shoe.image, 'shoes'),
           price: shoe.price ? `$${shoe.price}` : '0',
           type: 'shoes'
         }
@@ -327,9 +504,9 @@ class StylingAgentClass implements Agent {
       const jumpsuit = categorizedItems.jumpsuits[i];
       if (usedItemIds.has(jumpsuit.id)) continue;
       
-      const availableShoesForOutfit = availableShoes.filter(shoe => !usedShoeIds.has(shoe.name));
+      const availableShoesForOutfit = shoesWithValidImages.filter(shoe => !usedShoeIds.has(shoe.name));
       if (availableShoesForOutfit.length === 0) {
-        console.warn('⚠️ [StylingAgent] No available shoes from shoes table for jumpsuit outfit, skipping');
+        console.warn('⚠️ [StylingAgent] No available shoes with valid images from shoes table for jumpsuit outfit, skipping');
         break;
       }
       
@@ -340,7 +517,7 @@ class StylingAgentClass implements Agent {
           id: jumpsuit.id || `jumpsuit-${i}`,
           title: jumpsuit.product_name || 'אוברול',
           description: jumpsuit.description || '',
-          image: this.normalizeImageField(jumpsuit.image),
+          image: this.normalizeImageField(jumpsuit.image, 'clothing'),
           price: jumpsuit.price ? `$${jumpsuit.price}` : '0',
           type: 'jumpsuit'
         },
@@ -348,7 +525,7 @@ class StylingAgentClass implements Agent {
           id: shoe.name || `shoes-jumpsuit-${i}`,
           title: shoe.name || 'נעליים',
           description: shoe.description || '',
-          image: this.normalizeImageField(shoe.image),
+          image: this.normalizeImageField(shoe.image, 'shoes'),
           price: shoe.price ? `$${shoe.price}` : '0',
           type: 'shoes'
         }
@@ -382,10 +559,10 @@ class StylingAgentClass implements Agent {
         const bottom = categorizedItems.bottoms[bottomIndex];
         if (usedItemIds.has(bottom.id)) continue;
         
-        // MANDATORY: Find available shoes from shoes table
-        const availableShoesForOutfit = availableShoes.filter(shoe => !usedShoeIds.has(shoe.name));
+        // MANDATORY: Find available shoes with valid images from shoes table
+        const availableShoesForOutfit = shoesWithValidImages.filter(shoe => !usedShoeIds.has(shoe.name));
         if (availableShoesForOutfit.length === 0) {
-          console.warn('⚠️ [StylingAgent] No available shoes from shoes table for regular outfit, stopping creation');
+          console.warn('⚠️ [StylingAgent] No available shoes with valid images from shoes table for regular outfit, stopping creation');
           break;
         }
         
@@ -397,7 +574,7 @@ class StylingAgentClass implements Agent {
             id: top.id || `top-${topIndex}`,
             title: top.product_name || 'חולצה',
             description: top.description || '',
-            image: this.normalizeImageField(top.image),
+            image: this.normalizeImageField(top.image, 'clothing'),
             price: top.price ? `$${top.price}` : '0',
             type: 'top'
           },
@@ -405,7 +582,7 @@ class StylingAgentClass implements Agent {
             id: bottom.id || `bottom-${bottomIndex}`,
             title: bottom.product_name || 'מכנס',
             description: bottom.description || '',
-            image: this.normalizeImageField(bottom.image),
+            image: this.normalizeImageField(bottom.image, 'clothing'),
             price: bottom.price ? `$${bottom.price}` : '0',
             type: 'bottom'
           },
@@ -413,7 +590,7 @@ class StylingAgentClass implements Agent {
             id: shoe.name || `shoes-regular-${regularLookCount}`,
             title: shoe.name || 'נעליים',
             description: shoe.description || '',
-            image: this.normalizeImageField(shoe.image),
+            image: this.normalizeImageField(shoe.image, 'shoes'),
             price: shoe.price ? `$${shoe.price}` : '0',
             type: 'shoes'
           }
@@ -447,13 +624,14 @@ class StylingAgentClass implements Agent {
       if (!hasShoes) {
         console.error(`❌ [StylingAgent] CRITICAL ERROR: Look ${look.id} has NO SHOES!`);
       } else {
-        console.log(`✅ [StylingAgent] Look ${look.id} has shoes from shoes table: ${look.items.find(i => i.type === 'shoes')?.title}`);
+        const shoeItem = look.items.find(i => i.type === 'shoes');
+        console.log(`✅ [StylingAgent] Look ${look.id} has shoes from shoes table: ${shoeItem?.title}, image: ${shoeItem?.image}`);
       }
     }
     
     return {
       looks: looks.slice(0, 3),
-      reasoning: `יצרתי ${looks.length} תלבושות תקינות - כולן כוללות נעליים מטבלת הנעליים המיועדת!`
+      reasoning: `יצרתי ${looks.length} תלבושות תקינות - כולן כוללות נעליים מטבלת הנעליים המיועדת עם תמונות תקינות!`
     };
   }
 
