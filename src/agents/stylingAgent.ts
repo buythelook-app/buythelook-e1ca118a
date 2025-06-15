@@ -41,18 +41,29 @@ type ZaraClothItem = {
   created_at: string;
 };
 
+// Updated ShoeItem type to match actual Supabase shoes table schema
 type ShoeItem = {
   name: string;
   brand?: string | null;
   description?: string | null;
   price: number | null;
   colour?: string | null;
-  image: string | string[] | null;
+  image: any | null; // Changed from string | string[] to any to match Json type from database
   discount?: string | null;
   category?: string | null;
   availability: string | null;
   url?: string | null;
   breadcrumbs?: any;
+  buy_the_look?: any | null;
+  possible_sizes?: any | null;
+  you_might_also_like?: any | null;
+  product_id?: number | null;
+  color?: any | null;
+  about_me?: string | null;
+  look_after_me?: string | null;
+  product_details?: string | null;
+  size_fit?: string | null;
+  currency?: string | null;
 };
 
 class StylingAgentClass implements Agent {
