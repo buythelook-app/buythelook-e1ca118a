@@ -1,3 +1,4 @@
+
 import { Look } from '../types/lookTypes';
 import { Agent } from './index';
 
@@ -172,7 +173,7 @@ class StylingAgentClass implements Agent {
     return '';
   }
 
-  function selectProfessionalOutfit(
+  private selectProfessionalOutfit(
     clothingItems: ZaraClothItem[],
     shoesItems: ShoeItem[],
     budget: number
