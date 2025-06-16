@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +44,14 @@ interface DebugInfo {
     total_time_ms: number;
     image_debug_time_ms?: number;
   };
+  outfit_logic?: {
+    event_type: string;
+    outfit_rules_applied: string[];
+    selected_combination: string;
+    item_sources: {
+      [key: string]: string;
+    };
+  };
 }
 
 export function AgentDebugDisplay() {
@@ -52,11 +59,12 @@ export function AgentDebugDisplay() {
   const [agentResult, setAgentResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+  const [outfitLogicExpanded, setOutfitLogicExpanded] = useState(true);
 
   const runStylingAgent = async () => {
     setLoading(true);
     try {
-      // Set up mock data in localStorage for testing
+      // Set up mock data for testing
       const mockStyleData = {
         analysis: {
           bodyShape: 'H',
@@ -65,12 +73,13 @@ export function AgentDebugDisplay() {
       };
       localStorage.setItem('styleAnalysis', JSON.stringify(mockStyleData));
       localStorage.setItem('current-mood', 'elegant');
+      localStorage.setItem('current-event', 'evening'); // Test with evening event
 
-      console.log("🎯 [DEBUG] Running styling agent with debug logging...");
+      console.log("🎯 [DEBUG] Running NEW OUTFIT LOGIC styling agent...");
       
       const result = await stylingAgent.run('test-user');
       
-      console.log("✅ [DEBUG] Styling agent completed:", result);
+      console.log("✅ [DEBUG] NEW OUTFIT LOGIC completed:", result);
       
       setAgentResult(result);
       if (result.success && result.data?.debugInfo) {
@@ -93,13 +102,70 @@ export function AgentDebugDisplay() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">🔍 Agent Debug Monitor</h2>
-          <p className="text-gray-600">ניטור מפורט של פעילות האייגנטים</p>
+          <p className="text-gray-600">ניטור מפורט של לוגיקת יצירת תלבושות חדשה</p>
         </div>
         <Button onClick={runStylingAgent} disabled={loading} className="flex items-center gap-2">
           <Play className="h-4 w-4" />
-          {loading ? "מריץ..." : "הרץ Styling Agent"}
+          {loading ? "מריץ..." : "הרץ NEW OUTFIT LOGIC"}
         </Button>
       </div>
+
+      {debugData && debugData.outfit_logic && (
+        <Collapsible open={outfitLogicExpanded} onOpenChange={setOutfitLogicExpanded}>
+          <Card className="border-blue-200 bg-blue-50">
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-blue-100">
+                <CardTitle className="flex items-center justify-between text-blue-800">
+                  🎯 לוגיקת יצירת תלבושות חדשה
+                  {outfitLogicExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
+                <div className="grid gap-4">
+                  <div>
+                    <h4 className="font-semibold mb-2">סוג אירוע:</h4>
+                    <Badge variant="outline" className="text-lg px-3 py-1">
+                      {debugData.outfit_logic.event_type}
+                    </Badge>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-semibold mb-2">חוקי תלבושת שהופעלו:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {debugData.outfit_logic.outfit_rules_applied.map((rule, index) => (
+                        <Badge key={index} variant="secondary">{rule}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-semibold mb-2">צירוף נבחר:</h4>
+                    <p className="text-sm bg-white p-2 rounded border">
+                      {debugData.outfit_logic.selected_combination}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-semibold mb-2">מקורות פריטים:</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Object.entries(debugData.outfit_logic.item_sources).map(([item, source]) => (
+                        <div key={item} className="flex justify-between items-center bg-white p-2 rounded border text-sm">
+                          <span className="font-medium">{item}:</span>
+                          <Badge variant={source === 'shoes_table' ? 'default' : 'secondary'}>
+                            {source}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      )}
 
       {debugData && (
         <div className="grid gap-6">
@@ -325,7 +391,7 @@ export function AgentDebugDisplay() {
       {!debugData && !loading && (
         <Card>
           <CardContent className="text-center py-8">
-            <p className="text-gray-500">הרץ את ה-Styling Agent כדי לראות מידע דיבאג מפורט</p>
+            <p className="text-gray-500">הרץ את ה-Styling Agent כדי לראות מידע דיבאג מפורט עם הלוגיקה החדשה</p>
           </CardContent>
         </Card>
       )}
