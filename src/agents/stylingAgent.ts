@@ -4,6 +4,7 @@ import { Agent } from './index';
 export interface StylingResult {
   looks: Look[];
   reasoning: string;
+  debugInfo?: any; // Add debug information
 }
 
 export interface StylingRequest {
@@ -66,6 +67,46 @@ type ShoeItem = {
   currency?: string | null;
 };
 
+// Debug information structure
+interface DebugInfo {
+  filters_applied: string[];
+  raw_data: {
+    clothing_fetched: number;
+    shoes_fetched: number;
+    clothing_available: number;
+    shoes_available: number;
+  };
+  categorization: {
+    tops: number;
+    bottoms: number;
+    dresses: number;
+    jumpsuits: number;
+    outerwear: number;
+    shoes_with_valid_images: number;
+  };
+  filtering_steps: {
+    step: string;
+    items_before: number;
+    items_after: number;
+    criteria: string;
+  }[];
+  items_selected: {
+    [key: string]: {
+      id: string;
+      name: string;
+      image: string;
+      source: string;
+      price?: number;
+      image_validation: boolean;
+    };
+  };
+  logic_notes: string[];
+  performance: {
+    total_time_ms: number;
+    image_debug_time_ms?: number;
+  };
+}
+
 class StylingAgentClass implements Agent {
   role = "Senior Fashion Stylist";
   goal = "Create fashionable and appropriate outfit combinations based on user preferences";
@@ -73,7 +114,19 @@ class StylingAgentClass implements Agent {
   tools: any[] = [];
 
   async run(userId: string): Promise<any> {
+    const startTime = performance.now();
+    const debugInfo: DebugInfo = {
+      filters_applied: [],
+      raw_data: { clothing_fetched: 0, shoes_fetched: 0, clothing_available: 0, shoes_available: 0 },
+      categorization: { tops: 0, bottoms: 0, dresses: 0, jumpsuits: 0, outerwear: 0, shoes_with_valid_images: 0 },
+      filtering_steps: [],
+      items_selected: {},
+      logic_notes: [],
+      performance: { total_time_ms: 0 }
+    };
+
     console.log(`🎯 [StylingAgent] Running coordinated styling for user: ${userId}`);
+    console.log(`📊 [DEBUG] Starting detailed logging workflow...`);
     
     try {
       // Get user profile data from localStorage (populated by PersonalizationAgent)
@@ -81,9 +134,11 @@ class StylingAgentClass implements Agent {
       const currentMood = localStorage.getItem('current-mood') || 'energized';
       
       if (!styleData) {
+        debugInfo.logic_notes.push('ERROR: No style profile found in localStorage');
         return {
           success: false,
-          error: 'No style profile found. Please run personalization first.'
+          error: 'No style profile found. Please run personalization first.',
+          debugInfo
         };
       }
       
@@ -91,8 +146,13 @@ class StylingAgentClass implements Agent {
       const bodyShape = parsedData?.analysis?.bodyShape || 'H';
       const style = parsedData?.analysis?.styleProfile || 'classic';
       
+      debugInfo.filters_applied.push('bodyShape', 'mood', 'style');
+      debugInfo.logic_notes.push(`Profile loaded: bodyShape=${bodyShape}, style=${style}, mood=${currentMood}`);
+      
       // Dual table fetch: clothing and shoes separately
       const { supabase } = await import('../lib/supabaseClient');
+      
+      console.log(`🔍 [DEBUG] Fetching data from Supabase tables...`);
       
       const { data: allClothing, error: clothError } = await supabase
         .from('zara_cloth')
@@ -105,23 +165,34 @@ class StylingAgentClass implements Agent {
         .eq('availability', 'in stock');
       
       if (clothError || !allClothing) {
+        debugInfo.logic_notes.push(`ERROR: Failed to fetch clothing - ${clothError?.message}`);
         return {
           success: false,
-          error: 'Failed to fetch available clothing items from database'
+          error: 'Failed to fetch available clothing items from database',
+          debugInfo
         };
       }
 
       if (shoesError || !allShoes) {
+        debugInfo.logic_notes.push(`ERROR: Failed to fetch shoes - ${shoesError?.message}`);
         return {
           success: false,
-          error: 'Failed to fetch available shoes from database'
+          error: 'Failed to fetch available shoes from database',
+          debugInfo
         };
       }
       
+      debugInfo.raw_data.clothing_fetched = allClothing.length;
+      debugInfo.raw_data.shoes_fetched = allShoes.length;
+      
       console.log(`📊 [StylingAgent] Retrieved ${allClothing.length} clothing items and ${allShoes.length} shoes`);
+      console.log(`📊 [DEBUG] Sample clothing IDs:`, allClothing.slice(0, 5).map(c => ({ id: c.id, name: c.product_name })));
+      console.log(`📊 [DEBUG] Sample shoes:`, allShoes.slice(0, 5).map(s => ({ name: s.name, availability: s.availability })));
       
       // 🔍 DEBUG: בדיקת נתונים בטבלת shoes
       console.time('shoe-image-debug');
+      debugInfo.performance.image_debug_time_ms = performance.now();
+      
       console.log('[DEBUG] Shoes sample:', allShoes.slice(0, 5));
       
       // בדיקת סוג השדה image בנעליים
@@ -133,6 +204,33 @@ class StylingAgentClass implements Agent {
         console.log(`  - has .jpg/.png:`, shoe.image && (String(shoe.image).includes('.jpg') || String(shoe.image).includes('.png')));
       });
       
+      // Filter only available items
+      const availableClothing = allClothing.filter(item => item.availability === true);
+      const availableShoes = allShoes.filter(shoe => shoe.availability === 'in stock');
+      
+      debugInfo.raw_data.clothing_available = availableClothing.length;
+      debugInfo.raw_data.shoes_available = availableShoes.length;
+      debugInfo.filtering_steps.push({
+        step: 'availability_filter',
+        items_before: allClothing.length + allShoes.length,
+        items_after: availableClothing.length + availableShoes.length,
+        criteria: 'availability=true AND availability=in_stock'
+      });
+      
+      console.log(`📊 [StylingAgent] Available after filter - Clothing: ${availableClothing.length}, Shoes: ${availableShoes.length}`);
+      
+      // בדיקת תמונות נעליים זמינות
+      const shoesWithValidImages = availableShoes.filter(shoe => this.isValidImagePattern(shoe.image, 'shoes'));
+      debugInfo.categorization.shoes_with_valid_images = shoesWithValidImages.length;
+      debugInfo.filtering_steps.push({
+        step: 'shoes_image_validation',
+        items_before: availableShoes.length,
+        items_after: shoesWithValidImages.length,
+        criteria: 'valid_image_pattern'
+      });
+      
+      console.log(`[DEBUG] Shoes with valid images: ${shoesWithValidImages.length}/${availableShoes.length}`);
+      
       // Create styling request with separated data
       const request: StylingRequest = {
         bodyStructure: bodyShape as any,
@@ -142,10 +240,13 @@ class StylingAgentClass implements Agent {
         availableItems: [] // This will be handled differently now
       };
       
+      debugInfo.logic_notes.push(`StylingRequest created: ${JSON.stringify(request)}`);
+      
       // Generate outfits using the new dual-source method
-      const result = await this.createOutfitsFromSeparateSources(request, allClothing, allShoes);
+      const result = await this.createOutfitsFromSeparateSources(request, availableClothing, availableShoes, debugInfo);
       
       console.timeEnd('shoe-image-debug');
+      debugInfo.performance.image_debug_time_ms = performance.now() - debugInfo.performance.image_debug_time_ms;
       
       // בדיקת תקינות תמונות נעליים בתוצאה הסופית
       const finalShoes = result.looks.flatMap(look => 
@@ -155,13 +256,19 @@ class StylingAgentClass implements Agent {
       console.log('[DEBUG] Final shoe images:', finalShoes.map(s => ({ title: s.title, image: s.image })));
       
       if (result.looks.length === 0) {
+        debugInfo.logic_notes.push('ERROR: No suitable outfits could be created with available items');
         return {
           success: false,
-          error: 'No suitable outfits could be created with available items'
+          error: 'No suitable outfits could be created with available items',
+          debugInfo
         };
       }
       
+      const endTime = performance.now();
+      debugInfo.performance.total_time_ms = endTime - startTime;
+      
       console.log(`✅ [StylingAgent] Created ${result.looks.length} outfit suggestions`);
+      console.log(`📊 [DEBUG] FINAL DEBUG REPORT:`, JSON.stringify(debugInfo, null, 2));
       
       return {
         success: true,
@@ -169,15 +276,22 @@ class StylingAgentClass implements Agent {
           looks: result.looks,
           reasoning: result.reasoning,
           userId,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          debugInfo
         }
       };
       
     } catch (error) {
+      debugInfo.logic_notes.push(`CRITICAL ERROR: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      debugInfo.performance.total_time_ms = performance.now() - startTime;
+      
       console.error('❌ [StylingAgent] Error in coordinated run:', error);
+      console.log(`📊 [DEBUG] ERROR DEBUG REPORT:`, JSON.stringify(debugInfo, null, 2));
+      
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error in styling agent'
+        error: error instanceof Error ? error.message : 'Unknown error in styling agent',
+        debugInfo
       };
     }
   }
@@ -398,12 +512,15 @@ class StylingAgentClass implements Agent {
   async createOutfitsFromSeparateSources(
     request: StylingRequest, 
     clothingItems: ZaraClothItem[], 
-    shoesItems: ShoeItem[]
+    shoesItems: ShoeItem[],
+    debugInfo: DebugInfo
   ): Promise<StylingResult> {
     const { bodyStructure, mood, style, event } = request;
     
     console.log('🎯 [StylingAgent] Creating outfits with DUAL SOURCE data:', { bodyStructure, mood, style, event });
     console.log(`📊 [StylingAgent] Clothing items: ${clothingItems.length}, Shoes: ${shoesItems.length}`);
+    
+    debugInfo.logic_notes.push(`DUAL SOURCE METHOD: Clothing=${clothingItems.length}, Shoes=${shoesItems.length}`);
     
     // Filter only available items
     const availableClothing = clothingItems.filter(item => item.availability === true);
@@ -439,6 +556,14 @@ class StylingAgentClass implements Agent {
       }
     }
     
+    // Update debug info with categorization
+    debugInfo.categorization.tops = categorizedItems.tops.length;
+    debugInfo.categorization.bottoms = categorizedItems.bottoms.length;
+    debugInfo.categorization.dresses = categorizedItems.dresses.length;
+    debugInfo.categorization.jumpsuits = categorizedItems.jumpsuits.length;
+    debugInfo.categorization.outerwear = categorizedItems.outerwear.length;
+    debugInfo.categorization.shoes_with_valid_images = shoesWithValidImages.length;
+    
     console.log('📊 [StylingAgent] DUAL SOURCE CATEGORIZATION:');
     console.log(`👕 TOPS: ${categorizedItems.tops.length} items`);
     console.log(`👖 BOTTOMS: ${categorizedItems.bottoms.length} items`);
@@ -447,6 +572,8 @@ class StylingAgentClass implements Agent {
     console.log(`🧥 OUTERWEAR: ${categorizedItems.outerwear.length} items`);
     console.log(`👟 SHOES (from shoes table): ${shoesWithValidImages.length} items with valid images`);
     
+    debugInfo.logic_notes.push(`CATEGORIZATION COMPLETE: ${JSON.stringify(debugInfo.categorization)}`);
+    
     const looks: Look[] = [];
     const usedItemIds = new Set<string>();
     const usedShoeIds = new Set<string>();
@@ -454,13 +581,16 @@ class StylingAgentClass implements Agent {
     // CRITICAL CHECK: Must have shoes from shoes table with valid images!
     if (shoesWithValidImages.length === 0) {
       console.error('❌ [StylingAgent] CRITICAL: No shoes with valid images available from shoes table');
+      debugInfo.logic_notes.push('CRITICAL ERROR: No shoes with valid images from shoes table');
       return {
         looks: [],
-        reasoning: 'לא ניתן ליצור תלבושות ללא נעליים זמינות עם תמונות תקינות בטבלת הנעליים.'
+        reasoning: 'לא ניתן ליצור תלבושות ללא נעליים זמינות עם תמונות תקינות בטבלת הנעליים.',
+        debugInfo
       };
     }
 
     console.log('🚨 [StylingAgent] ENSURING EVERY OUTFIT HAS SHOES FROM SHOES TABLE WITH VALID IMAGES!');
+    debugInfo.logic_notes.push('VALIDATION: All outfits must have shoes from shoes table with valid images');
 
     // OUTFIT TYPE 1: Dress looks (שמלה + נעליים מטבלת נעליים)
     for (let i = 0; i < Math.min(1, categorizedItems.dresses.length) && looks.length < 3; i++) {
@@ -470,6 +600,7 @@ class StylingAgentClass implements Agent {
       const availableShoesForOutfit = shoesWithValidImages.filter(shoe => !usedShoeIds.has(shoe.name));
       if (availableShoesForOutfit.length === 0) {
         console.warn('⚠️ [StylingAgent] No available shoes with valid images from shoes table for dress outfit, skipping');
+        debugInfo.logic_notes.push('WARNING: No available shoes for dress outfit - skipped');
         break;
       }
       
@@ -494,6 +625,25 @@ class StylingAgentClass implements Agent {
         }
       ];
       
+      // Add to debug info
+      debugInfo.items_selected[`dress_look_${i}_dress`] = {
+        id: dress.id,
+        name: dress.product_name || 'שמלה',
+        image: this.normalizeImageField(dress.image, 'clothing'),
+        source: 'zara_cloth',
+        price: dress.price,
+        image_validation: this.isValidImagePattern(dress.image, 'clothing')
+      };
+      
+      debugInfo.items_selected[`dress_look_${i}_shoes`] = {
+        id: shoe.name,
+        name: shoe.name || 'נעליים',
+        image: this.normalizeImageField(shoe.image, 'shoes'),
+        source: 'shoes',
+        price: shoe.price || 0,
+        image_validation: this.isValidImagePattern(shoe.image, 'shoes')
+      };
+      
       const dressLook: Look = {
         id: `dress-look-${i}`,
         items: dressLookItems,
@@ -508,6 +658,7 @@ class StylingAgentClass implements Agent {
       usedShoeIds.add(shoe.name);
       
       console.log(`✅ [StylingAgent] Created DRESS look with SHOES from shoes table`);
+      debugInfo.logic_notes.push(`DRESS OUTFIT CREATED: dress=${dress.product_name}, shoes=${shoe.name}`);
     }
 
     // OUTFIT TYPE 2: Jumpsuit looks (אוברול + נעליים מטבלת נעליים)
@@ -518,6 +669,7 @@ class StylingAgentClass implements Agent {
       const availableShoesForOutfit = shoesWithValidImages.filter(shoe => !usedShoeIds.has(shoe.name));
       if (availableShoesForOutfit.length === 0) {
         console.warn('⚠️ [StylingAgent] No available shoes with valid images from shoes table for jumpsuit outfit, skipping');
+        debugInfo.logic_notes.push('WARNING: No available shoes for jumpsuit outfit - skipped');
         break;
       }
       
@@ -542,6 +694,25 @@ class StylingAgentClass implements Agent {
         }
       ];
       
+      // Add to debug info
+      debugInfo.items_selected[`jumpsuit_look_${i}_jumpsuit`] = {
+        id: jumpsuit.id,
+        name: jumpsuit.product_name || 'אוברול',
+        image: this.normalizeImageField(jumpsuit.image, 'clothing'),
+        source: 'zara_cloth',
+        price: jumpsuit.price,
+        image_validation: this.isValidImagePattern(jumpsuit.image, 'clothing')
+      };
+      
+      debugInfo.items_selected[`jumpsuit_look_${i}_shoes`] = {
+        id: shoe.name,
+        name: shoe.name || 'נעליים',
+        image: this.normalizeImageField(shoe.image, 'shoes'),
+        source: 'shoes',
+        price: shoe.price || 0,
+        image_validation: this.isValidImagePattern(shoe.image, 'shoes')
+      };
+      
       const jumpsuitLook: Look = {
         id: `jumpsuit-look-${i}`,
         items: jumpsuitLookItems,
@@ -556,6 +727,7 @@ class StylingAgentClass implements Agent {
       usedShoeIds.add(shoe.name);
       
       console.log(`✅ [StylingAgent] Created JUMPSUIT look with SHOES from shoes table`);
+      debugInfo.logic_notes.push(`JUMPSUIT OUTFIT CREATED: jumpsuit=${jumpsuit.product_name}, shoes=${shoe.name}`);
     }
     
     // OUTFIT TYPE 3: Regular looks (חלק עליון + חלק תחתון + נעליים מטבלת נעליים)
@@ -574,6 +746,7 @@ class StylingAgentClass implements Agent {
         const availableShoesForOutfit = shoesWithValidImages.filter(shoe => !usedShoeIds.has(shoe.name));
         if (availableShoesForOutfit.length === 0) {
           console.warn('⚠️ [StylingAgent] No available shoes with valid images from shoes table for regular outfit, stopping creation');
+          debugInfo.logic_notes.push('WARNING: No available shoes for regular outfit - stopping creation');
           break;
         }
         
@@ -607,6 +780,34 @@ class StylingAgentClass implements Agent {
           }
         ];
         
+        // Add to debug info
+        debugInfo.items_selected[`regular_look_${regularLookCount}_top`] = {
+          id: top.id,
+          name: top.product_name || 'חולצה',
+          image: this.normalizeImageField(top.image, 'clothing'),
+          source: 'zara_cloth',
+          price: top.price,
+          image_validation: this.isValidImagePattern(top.image, 'clothing')
+        };
+        
+        debugInfo.items_selected[`regular_look_${regularLookCount}_bottom`] = {
+          id: bottom.id,
+          name: bottom.product_name || 'מכנס',
+          image: this.normalizeImageField(bottom.image, 'clothing'),
+          source: 'zara_cloth',
+          price: bottom.price,
+          image_validation: this.isValidImagePattern(bottom.image, 'clothing')
+        };
+        
+        debugInfo.items_selected[`regular_look_${regularLookCount}_shoes`] = {
+          id: shoe.name,
+          name: shoe.name || 'נעליים',
+          image: this.normalizeImageField(shoe.image, 'shoes'),
+          source: 'shoes',
+          price: shoe.price || 0,
+          image_validation: this.isValidImagePattern(shoe.image, 'shoes')
+        };
+        
         const regularLook: Look = {
           id: `regular-look-${regularLookCount}`,
           items: regularLookItems,
@@ -622,27 +823,32 @@ class StylingAgentClass implements Agent {
         usedShoeIds.add(shoe.name);
         
         console.log(`✅ [StylingAgent] Created REGULAR look with SHOES from shoes table`);
+        debugInfo.logic_notes.push(`REGULAR OUTFIT CREATED: top=${top.product_name}, bottom=${bottom.product_name}, shoes=${shoe.name}`);
         regularLookCount++;
         break; // Move to next top after finding a valid combination
       }
     }
     
     console.log(`🎉 [StylingAgent] FINAL RESULT: Created ${looks.length} outfits - ALL WITH SHOES FROM SHOES TABLE!`);
+    debugInfo.logic_notes.push(`FINAL RESULT: Created ${looks.length} outfits with shoes from shoes table`);
     
     // Final validation - EVERY outfit MUST have shoes from shoes table
     for (const look of looks) {
       const hasShoes = look.items.some(item => item.type === 'shoes');
       if (!hasShoes) {
         console.error(`❌ [StylingAgent] CRITICAL ERROR: Look ${look.id} has NO SHOES!`);
+        debugInfo.logic_notes.push(`CRITICAL ERROR: Look ${look.id} has NO SHOES`);
       } else {
         const shoeItem = look.items.find(i => i.type === 'shoes');
         console.log(`✅ [StylingAgent] Look ${look.id} has shoes from shoes table: ${shoeItem?.title}, image: ${shoeItem?.image}`);
+        debugInfo.logic_notes.push(`VALIDATION OK: Look ${look.id} has shoes: ${shoeItem?.title}`);
       }
     }
     
     return {
       looks: looks.slice(0, 3),
-      reasoning: `יצרתי ${looks.length} תלבושות תקינות - כולן כוללות נעליים מטבלת הנעליים המיועדת עם תמונות תקינות!`
+      reasoning: `יצרתי ${looks.length} תלבושות תקינות - כולן כוללות נעליים מטבלת הנעליים המיועדת עם תמונות תקינות!`,
+      debugInfo
     };
   }
 
@@ -805,7 +1011,7 @@ class StylingAgentClass implements Agent {
       'shoes', 'shoe', 'נעליים', 'נעל',
       'sneakers', 'sneaker', 'סניקרס',
       'boots', 'boot', 'מגפיים', 'מגף',
-      'sandals', 'sandal', 'סנדלים', 'סנדל',
+      'sandals', 'sandal', 'סנדלים', 'סandal',
       'heels', 'heel', 'עקבים', 'עקב',
       'flats', 'flat', 'שטוחות',
       'trainers', 'trainer', 'נעלי ספורט',
@@ -962,7 +1168,18 @@ class StylingAgentClass implements Agent {
     const clothingItems = availableItems.filter(item => !this.isShoeItem(item));
     const shoesItems = []; // Empty array since this old method doesn't have separate shoes data
     
-    return this.createOutfitsFromSeparateSources(request, clothingItems, shoesItems);
+    // Create empty debug info for backward compatibility
+    const debugInfo: DebugInfo = {
+      filters_applied: [],
+      raw_data: { clothing_fetched: 0, shoes_fetched: 0, clothing_available: 0, shoes_available: 0 },
+      categorization: { tops: 0, bottoms: 0, dresses: 0, jumpsuits: 0, outerwear: 0, shoes_with_valid_images: 0 },
+      filtering_steps: [],
+      items_selected: {},
+      logic_notes: ['Using legacy createOutfits method'],
+      performance: { total_time_ms: 0 }
+    };
+    
+    return this.createOutfitsFromSeparateSources(request, clothingItems, shoesItems, debugInfo);
   }
 }
 
