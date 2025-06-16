@@ -1,3 +1,4 @@
+
 import { Look } from '../types/lookTypes';
 import { Agent } from './index';
 
@@ -317,7 +318,6 @@ class StylingAgentClass implements Agent {
     debugInfo.categorization.dresses = categorized.dresses.length;
     debugInfo.categorization.jumpsuits = categorized.jumpsuits.length;
     debugInfo.categorization.outerwear = categorized.outerwear.length;
-    debugInfo.categorization.shoes_with_valid_images = shoesWithValidImages.length;
     
     return categorized;
   }
