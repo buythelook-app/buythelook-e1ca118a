@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
@@ -13,6 +14,9 @@ const userPreferences = {
   likedItems: new Set<string>(),
   dislikedItems: new Set<string>()
 };
+
+// Track previously generated combinations to avoid duplicates
+const previousCombinations = new Set<string>();
 
 export function useOutfitGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -89,15 +93,37 @@ export function useOutfitGeneration() {
     try {
       logger.info("🚀 Starting COORDINATED outfit generation", { 
         context: "useOutfitGeneration",
-        data: { forceRefresh }
+        data: { forceRefresh, attempt: previousCombinations.size + 1 }
       });
       
       // Get current user ID (or use anonymous ID)
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id || 'anonymous-user';
       
-      // Use the coordinated agent crew workflow
-      const result = await agentCrew.run(userId);
+      // Add randomization parameters to ensure different results
+      const randomSeed = Math.random();
+      const timestamp = Date.now();
+      const previousCount = previousCombinations.size;
+      
+      // Create context with randomization and exclusions
+      const generationContext = {
+        userId,
+        forceRefresh,
+        randomSeed,
+        timestamp,
+        excludeCombinations: Array.from(previousCombinations),
+        excludeItems: Array.from(userPreferences.dislikedItems),
+        preferredItems: Array.from(userPreferences.likedItems),
+        attempt: previousCount + 1
+      };
+      
+      logger.info("🎲 Generation context with randomization", {
+        context: "useOutfitGeneration",
+        data: generationContext
+      });
+      
+      // Use the coordinated agent crew workflow with enhanced parameters
+      const result = await agentCrew.run(userId, generationContext);
       
       if (!result.success) {
         logger.error("❌ Coordinated outfit generation failed", {
@@ -144,6 +170,21 @@ export function useOutfitGeneration() {
         price: item.price
       }));
       
+      // Track this combination to avoid future duplicates
+      const topItem = items.find(item => item.type === 'top');
+      const bottomItem = items.find(item => item.type === 'bottom');
+      const shoesItem = items.find(item => item.type === 'shoes');
+      
+      if (topItem && bottomItem && shoesItem) {
+        const combinationKey = `${topItem.id}-${bottomItem.id}-${shoesItem.id}`;
+        previousCombinations.add(combinationKey);
+        
+        logger.info("📝 Tracking new combination", {
+          context: "useOutfitGeneration",
+          data: { combinationKey, totalTracked: previousCombinations.size }
+        });
+      }
+      
       // Update recommendations from the coordinated result
       if (result.data?.recommendations && Array.isArray(result.data.recommendations)) {
         setRecommendations(result.data.recommendations);
@@ -155,7 +196,8 @@ export function useOutfitGeneration() {
         data: { 
           itemCount: items.length,
           lookId: firstLook.id,
-          hasRecommendations: result.data?.recommendations?.length > 0
+          hasRecommendations: result.data?.recommendations?.length > 0,
+          attempt: previousCount + 1
         }
       });
       
@@ -195,6 +237,9 @@ export function useOutfitGeneration() {
     userPreferences.dislikedCombinations.clear();
     userPreferences.likedItems.clear();
     userPreferences.dislikedItems.clear();
+    
+    // Clear previous combinations
+    previousCombinations.clear();
     
     // Clear local storage
     localStorage.removeItem('outfit-feedback');

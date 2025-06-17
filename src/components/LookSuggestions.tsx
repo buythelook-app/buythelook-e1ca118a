@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -213,16 +214,40 @@ export const LookSuggestions = () => {
 
   const handleTryDifferentLook = async () => {
     setIsRefetching(true);
+    
     try {
+      console.log("🔄 Generating new outfit look...");
+      
+      // Generate a completely new outfit using the enhanced generateOutfit function
       const result = await generateOutfit(true);
       
-      if (result.success) {
+      if (result.success && result.items.length > 0) {
+        // Force refetch the query to get new data
         await refetch();
+        
+        console.log("✅ New outfit generated successfully:", result.items);
+        
         toast({
-          title: "New Look Generated",
-          description: "Here's a fresh style combination for you!",
+          title: "תלבושת חדשה נוצרה!",
+          description: "הנה קומבינציית סטייל חדשה במיוחד בשבילך!",
+        });
+      } else {
+        console.warn("⚠️ Failed to generate new outfit");
+        
+        toast({
+          title: "שגיאה ביצירת תלבושת",
+          description: "לא הצלחנו ליצור תלבושת חדשה. אנא נסה שוב.",
+          variant: "destructive",
         });
       }
+    } catch (error) {
+      console.error("❌ Error generating different look:", error);
+      
+      toast({
+        title: "שגיאה",
+        description: "אירעה שגיאה ביצירת תלבושת חדשה. אנא נסה שוב.",
+        variant: "destructive",
+      });
     } finally {
       setIsRefetching(false);
     }
@@ -300,8 +325,11 @@ export const LookSuggestions = () => {
                 <div className="bg-white rounded-lg shadow-lg overflow-hidden pb-4">
                   <div className="relative">
                     {(isRefetching || isGenerating) ? (
-                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-netflix-accent" />
+                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
+                        <div className="text-center">
+                          <Loader2 className="h-8 w-8 animate-spin text-netflix-accent mx-auto mb-2" />
+                          <p className="text-sm text-gray-600">יוצר תלבושת חדשה...</p>
+                        </div>
                       </div>
                     ) : null}
                     <LookCanvas items={canvasItems} width={300} height={480} />
@@ -320,7 +348,7 @@ export const LookSuggestions = () => {
                         disabled={isRefetching || isGenerating}
                       >
                         <Shuffle className="mr-1 h-3 w-3" />
-                        Try different
+                        {isRefetching ? "מחולל..." : "Try different"}
                       </Button>
                     </div>
                   </div>
