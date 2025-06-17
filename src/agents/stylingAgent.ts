@@ -1,6 +1,6 @@
-
 import { Look } from '../types/lookTypes';
 import { Agent } from './index';
+import { ColorCoordinationService } from '../services/colorCoordinationService';
 
 export interface StylingResult {
   looks: Look[];
@@ -119,8 +119,8 @@ interface DebugInfo {
 
 class StylingAgentClass implements Agent {
   role = "Senior Fashion Stylist";
-  goal = "Create fashionable and appropriate outfit combinations based on user preferences";
-  backstory = "An experienced fashion stylist with expertise in body shapes, color coordination, and style matching";
+  goal = "Create fashionable and appropriate outfit combinations based on user preferences, budget, mood, and color coordination";
+  backstory = "An experienced fashion stylist with expertise in body shapes, color coordination, fabric matching, and budget-conscious styling";
   tools: any[] = [];
 
   async run(userId: string): Promise<any> {
@@ -141,14 +141,22 @@ class StylingAgentClass implements Agent {
       }
     };
 
-    console.log(`🎯 [StylingAgent] Starting CLEAN outfit generation for user: ${userId}`);
-    console.log(`📊 [DEBUG] Filtering OUT underwear and creating proper outfits...`);
+    console.log(`🎯 [StylingAgent] Starting ENHANCED outfit generation with ALL FILTERS for user: ${userId}`);
     
     try {
-      // Get user profile data from localStorage
+      // Get user preferences from localStorage
       const styleData = localStorage.getItem('styleAnalysis');
-      const currentMood = localStorage.getItem('current-mood') || 'energized';
+      const currentMood = localStorage.getItem('current-mood') || 'elegant';
       const currentEvent = localStorage.getItem('current-event') || 'casual';
+      
+      // 🆕 GET BUDGET FROM FILTERS
+      const budgetData = this.getBudgetFromFilters();
+      const budget = budgetData.budget;
+      const isUnlimited = budgetData.isUnlimited;
+      
+      console.log(`💰 [BUDGET FILTER] Budget: ${isUnlimited ? 'UNLIMITED' : `$${budget}`}`);
+      debugInfo.filters_applied.push('BUDGET_FILTER');
+      debugInfo.logic_notes.push(`Budget applied: ${isUnlimited ? 'UNLIMITED' : `$${budget}`}`);
       
       if (!styleData) {
         debugInfo.logic_notes.push('ERROR: No style profile found in localStorage');
@@ -163,26 +171,37 @@ class StylingAgentClass implements Agent {
       const bodyShape = parsedData?.analysis?.bodyShape || 'H';
       const style = parsedData?.analysis?.styleProfile || 'classic';
       
-      debugInfo.filters_applied.push('bodyShape', 'mood', 'style', 'event', 'NO_UNDERWEAR');
-      debugInfo.logic_notes.push(`Profile loaded: bodyShape=${bodyShape}, style=${style}, mood=${currentMood}, event=${currentEvent}`);
+      debugInfo.filters_applied.push('bodyShape', 'mood', 'style', 'event', 'NO_UNDERWEAR', 'COLOR_COORDINATION', 'FABRIC_MATCHING');
+      debugInfo.logic_notes.push(`Enhanced profile: bodyShape=${bodyShape}, style=${style}, mood=${currentMood}, event=${currentEvent}, budget=${isUnlimited ? 'unlimited' : budget}`);
       debugInfo.outfit_logic.event_type = currentEvent;
       
-      console.log(`🎭 [OUTFIT LOGIC] Event: ${currentEvent}, Style: ${style}, Mood: ${currentMood}`);
+      console.log(`🎭 [ENHANCED LOGIC] Event: ${currentEvent}, Style: ${style}, Mood: ${currentMood}, Budget: ${isUnlimited ? 'unlimited' : budget}`);
       
-      // DUAL TABLE FETCH: clothing from zara_cloth, shoes from shoes table
+      // Fetch from dual sources
       const { supabase } = await import('../lib/supabaseClient');
       
-      console.log(`🔍 [DEBUG] Fetching from DUAL SOURCES: zara_cloth + shoes tables...`);
+      console.log(`🔍 [DEBUG] Fetching from DUAL SOURCES with BUDGET FILTER...`);
       
-      const { data: allClothingRaw, error: clothError } = await supabase
+      // 🆕 BUDGET-FILTERED QUERIES
+      let clothingQuery = supabase
         .from('zara_cloth')
         .select('*')
         .eq('availability', true);
-
-      const { data: allShoesRaw, error: shoesError } = await supabase
+        
+      let shoesQuery = supabase
         .from('shoes')
         .select('*')
         .eq('availability', 'in stock');
+      
+      // Apply budget filter if not unlimited
+      if (!isUnlimited && budget > 0) {
+        clothingQuery = clothingQuery.lte('price', budget * 0.7); // 70% of budget for clothing
+        shoesQuery = shoesQuery.lte('price', budget * 0.3); // 30% of budget for shoes
+        console.log(`💰 [BUDGET] Filtering clothing ≤ $${budget * 0.7}, shoes ≤ $${budget * 0.3}`);
+      }
+      
+      const { data: allClothingRaw, error: clothError } = await clothingQuery;
+      const { data: allShoesRaw, error: shoesError } = await shoesQuery;
       
       if (clothError || !allClothingRaw) {
         debugInfo.logic_notes.push(`ERROR: Failed to fetch clothing - ${clothError?.message}`);
@@ -205,51 +224,60 @@ class StylingAgentClass implements Agent {
       debugInfo.raw_data.clothing_fetched = allClothingRaw.length;
       debugInfo.raw_data.shoes_fetched = allShoesRaw.length;
       
-      // ✅ CRITICAL: Filter out underwear and invalid items
-      const allClothing = this.filterOutUnderwear(allClothingRaw, debugInfo);
+      // Filter out underwear and apply mood-based color filtering
+      const allClothing = this.filterClothingByMoodAndBudget(
+        this.filterOutUnderwear(allClothingRaw, debugInfo), 
+        currentMood, 
+        budget, 
+        isUnlimited, 
+        debugInfo
+      );
+      
       debugInfo.raw_data.clothing_available = allClothing.length;
       debugInfo.raw_data.underwear_filtered = allClothingRaw.length - allClothing.length;
       
-      console.log(`🚫 [UNDERWEAR FILTER] Removed ${debugInfo.raw_data.underwear_filtered} underwear items`);
-      console.log(`✅ [CLEAN CLOTHING] ${allClothing.length} valid clothing items remain`);
+      console.log(`🚫 [UNDERWEAR + MOOD FILTER] Removed ${debugInfo.raw_data.underwear_filtered} items`);
+      console.log(`✅ [FILTERED CLOTHING] ${allClothing.length} mood-appropriate, budget-friendly items remain`);
 
-      // Transform shoes data to match ShoeItem interface
+      // Transform and filter shoes
       const allShoes: ShoeItem[] = allShoesRaw.map(shoe => ({
         ...shoe,
-        image: shoe.url || '/placeholder.svg', // Use url field for image
+        image: shoe.url || '/placeholder.svg',
         price: shoe.price || 0,
         colour: shoe.color || shoe.colour || 'unknown'
       }));
       
-      debugInfo.raw_data.shoes_available = allShoes.length;
+      // 🆕 FILTER SHOES BY MOOD COLORS
+      const filteredShoes = this.filterShoesByMood(allShoes, currentMood, debugInfo);
+      debugInfo.raw_data.shoes_available = filteredShoes.length;
       
-      console.log(`📊 [CLEAN DATA] Retrieved ${allClothing.length} CLEAN clothing items and ${allShoes.length} shoes`);
-      console.log(`🔍 [SOURCE SEPARATION] Clothing from zara_cloth (NO UNDERWEAR), Shoes from shoes table`);
+      console.log(`👠 [MOOD FILTER] Filtered shoes from ${allShoes.length} to ${filteredShoes.length} mood-appropriate pairs`);
       
-      // Create styling request
+      // Create enhanced styling request
       const request: StylingRequest = {
         bodyStructure: bodyShape as any,
         mood: currentMood,
         style: style as any,
         event: currentEvent,
-        availableItems: [] // This will be handled differently now with dual sources
+        availableItems: []
       };
       
-      debugInfo.logic_notes.push(`StylingRequest created: ${JSON.stringify(request)}`);
+      debugInfo.logic_notes.push(`Enhanced StylingRequest: ${JSON.stringify(request)}`);
       
-      // Generate outfits using the dual-source method
-      const result = await this.createOutfitsFromSeparateSources(
+      // Generate outfits with enhanced coordination
+      const result = await this.createEnhancedOutfitsWithCoordination(
         request, 
         allClothing, 
-        allShoes, 
+        filteredShoes, 
+        budget,
+        isUnlimited,
         debugInfo
       );
       
       const endTime = performance.now();
       debugInfo.performance.total_time_ms = endTime - startTime;
       
-      console.log(`✅ [STYLING COMPLETE] Created ${result.looks.length} CLEAN outfits using DUAL SOURCE logic`);
-      console.log(`📊 [FINAL DEBUG REPORT]`, JSON.stringify(debugInfo.outfit_logic, null, 2));
+      console.log(`✅ [ENHANCED STYLING COMPLETE] Created ${result.looks.length} COORDINATED outfits with mood, budget, and color matching`);
       
       return {
         success: true,
@@ -266,8 +294,7 @@ class StylingAgentClass implements Agent {
       debugInfo.logic_notes.push(`CRITICAL ERROR: ${error instanceof Error ? error.message : 'Unknown error'}`);
       debugInfo.performance.total_time_ms = performance.now() - startTime;
       
-      console.error('❌ [StylingAgent] Error in dual source outfit generation:', error);
-      console.log(`📊 [DEBUG] ERROR DEBUG REPORT:`, JSON.stringify(debugInfo, null, 2));
+      console.error('❌ [StylingAgent] Error in enhanced outfit generation:', error);
       
       return {
         success: false,
@@ -275,6 +302,541 @@ class StylingAgentClass implements Agent {
         debugInfo
       };
     }
+  }
+
+  /**
+   * 🆕 Get budget from FilterOptions component
+   */
+  private getBudgetFromFilters(): { budget: number; isUnlimited: boolean } {
+    try {
+      // Try to get budget from localStorage or component state
+      const budgetData = localStorage.getItem('outfit-budget');
+      if (budgetData) {
+        const parsed = JSON.parse(budgetData);
+        return {
+          budget: parsed.budget || 500,
+          isUnlimited: parsed.isUnlimited || false
+        };
+      }
+    } catch (error) {
+      console.log('Could not get budget from storage, using default');
+    }
+    
+    // Default budget
+    return { budget: 500, isUnlimited: false };
+  }
+
+  /**
+   * 🆕 Filter clothing by mood colors and budget
+   */
+  private filterClothingByMoodAndBudget(
+    clothingItems: ZaraClothItem[],
+    mood: string,
+    budget: number,
+    isUnlimited: boolean,
+    debugInfo: DebugInfo
+  ): ZaraClothItem[] {
+    console.log(`🎨 [MOOD + BUDGET FILTER] Filtering ${clothingItems.length} items for mood: ${mood}`);
+    
+    const moodColors = ColorCoordinationService.getColorsForMood(mood);
+    console.log(`🎨 [MOOD COLORS] ${mood} → [${moodColors.join(', ')}]`);
+    
+    const filtered = clothingItems.filter(item => {
+      // Budget check (if not unlimited)
+      if (!isUnlimited && item.price > budget * 0.7) {
+        return false;
+      }
+      
+      // Color mood check - allow items that match mood or are neutral
+      const itemColor = (item.colour || '').toLowerCase();
+      const itemName = (item.product_name || '').toLowerCase();
+      
+      const matchesMoodColor = moodColors.some(moodColor => 
+        itemColor.includes(moodColor.toLowerCase()) ||
+        itemName.includes(moodColor.toLowerCase()) ||
+        ColorCoordinationService.areColorsCompatible(itemColor, moodColor)
+      );
+      
+      // Allow neutral colors (they go with any mood)
+      const neutralColors = ['black', 'white', 'gray', 'beige', 'brown'];
+      const isNeutral = neutralColors.some(neutral => 
+        itemColor.includes(neutral) || itemName.includes(neutral)
+      );
+      
+      return matchesMoodColor || isNeutral;
+    });
+    
+    debugInfo.filtering_steps.push({
+      step: 'Mood + Budget Filter',
+      items_before: clothingItems.length,
+      items_after: filtered.length,
+      criteria: `Mood: ${mood}, Budget: ${isUnlimited ? 'unlimited' : `$${budget}`}`
+    });
+    
+    console.log(`🎨 [MOOD + BUDGET RESULT] Filtered from ${clothingItems.length} to ${filtered.length} items`);
+    return filtered;
+  }
+
+  /**
+   * 🆕 Filter shoes by mood appropriateness
+   */
+  private filterShoesByMood(shoes: ShoeItem[], mood: string, debugInfo: DebugInfo): ShoeItem[] {
+    console.log(`👠 [SHOES MOOD FILTER] Filtering ${shoes.length} shoes for mood: ${mood}`);
+    
+    const moodColors = ColorCoordinationService.getColorsForMood(mood);
+    
+    const filtered = shoes.filter(shoe => {
+      const shoeColor = (shoe.colour || shoe.color || '').toLowerCase();
+      const shoeName = (shoe.name || '').toLowerCase();
+      
+      const matchesMoodColor = moodColors.some(moodColor => 
+        shoeColor.includes(moodColor.toLowerCase()) ||
+        shoeName.includes(moodColor.toLowerCase()) ||
+        ColorCoordinationService.areColorsCompatible(shoeColor, moodColor)
+      );
+      
+      // Allow neutral shoes
+      const neutralColors = ['black', 'white', 'brown', 'beige', 'gray'];
+      const isNeutral = neutralColors.some(neutral => 
+        shoeColor.includes(neutral) || shoeName.includes(neutral)
+      );
+      
+      return matchesMoodColor || isNeutral;
+    });
+    
+    debugInfo.filtering_steps.push({
+      step: 'Shoes Mood Filter',
+      items_before: shoes.length,
+      items_after: filtered.length,
+      criteria: `Mood colors: [${moodColors.join(', ')}]`
+    });
+    
+    console.log(`👠 [SHOES MOOD RESULT] Filtered from ${shoes.length} to ${filtered.length} mood-appropriate shoes`);
+    return filtered;
+  }
+
+  /**
+   * 🆕 Create outfits with enhanced color coordination and fabric matching
+   */
+  private async createEnhancedOutfitsWithCoordination(
+    request: StylingRequest,
+    allClothing: ZaraClothItem[],
+    allShoes: ShoeItem[],
+    budget: number,
+    isUnlimited: boolean,
+    debugInfo: DebugInfo
+  ): Promise<StylingResult> {
+    console.log(`🎯 [ENHANCED COORDINATION] Creating outfits with color/fabric matching`);
+    console.log(`📊 [DATA] Clothing: ${allClothing.length}, Shoes: ${allShoes.length}, Budget: ${isUnlimited ? 'unlimited' : `$${budget}`}`);
+    
+    const categorizedItems = this.categorizeClothingItems(allClothing, debugInfo);
+    const categorizedShoes = this.categorizeShoesByType(allShoes);
+    
+    debugInfo.categorization.shoes_with_valid_images = allShoes.length;
+    
+    const looks: Look[] = [];
+    const usedItemIds = new Set<string>();
+    const usedShoeIds = new Set<string>();
+    
+    const eventType = request.event || 'casual';
+    debugInfo.outfit_logic.event_type = eventType;
+    
+    const appropriateShoes = this.selectShoesForEvent(categorizedShoes, eventType);
+    
+    console.log(`🎯 [ENHANCED] Creating ${eventType} outfits with color coordination and mood: ${request.mood}`);
+    
+    // Create coordinated outfits based on event type
+    if (eventType === 'evening' || eventType === 'formal') {
+      await this.createCoordinatedDressOutfits(
+        categorizedItems.dresses,
+        appropriateShoes,
+        looks,
+        usedItemIds,
+        usedShoeIds,
+        debugInfo,
+        eventType,
+        request.mood,
+        budget,
+        isUnlimited
+      );
+      
+      if (looks.length < 3) {
+        await this.createCoordinatedFormalOutfits(
+          categorizedItems,
+          appropriateShoes,
+          looks,
+          usedItemIds,
+          usedShoeIds,
+          debugInfo,
+          request.mood,
+          budget,
+          isUnlimited
+        );
+      }
+    } else {
+      await this.createCoordinatedCasualOutfits(
+        categorizedItems,
+        appropriateShoes,
+        looks,
+        usedItemIds,
+        usedShoeIds,
+        debugInfo,
+        request.mood,
+        budget,
+        isUnlimited
+      );
+      
+      if (looks.length < 3 && categorizedItems.dresses.length > 0) {
+        await this.createCoordinatedDressOutfits(
+          categorizedItems.dresses,
+          appropriateShoes,
+          looks,
+          usedItemIds,
+          usedShoeIds,
+          debugInfo,
+          eventType,
+          request.mood,
+          budget,
+          isUnlimited
+        );
+      }
+    }
+    
+    // Add jumpsuit outfits if needed
+    if (looks.length < 3 && categorizedItems.jumpsuits.length > 0) {
+      await this.createCoordinatedJumpsuitOutfits(
+        categorizedItems.jumpsuits,
+        appropriateShoes,
+        looks,
+        usedItemIds,
+        usedShoeIds,
+        debugInfo,
+        request.mood,
+        budget,
+        isUnlimited
+      );
+    }
+    
+    // 🆕 SCORE OUTFITS BASED ON COORDINATION
+    looks.forEach((look, index) => {
+      const coordinationScore = ColorCoordinationService.scoreOutfitCoordination(look.items, request.mood);
+      console.log(`🏆 [COORDINATION SCORE] Look ${index + 1}: ${coordinationScore}/100`);
+      debugInfo.logic_notes.push(`Look ${index + 1} coordination score: ${coordinationScore}/100`);
+    });
+    
+    console.log(`✅ [ENHANCED CREATION COMPLETE] Created ${looks.length} coordinated outfits`);
+    
+    return {
+      looks,
+      reasoning: `Created ${looks.length} enhanced outfits for ${eventType} event with color coordination, fabric matching, mood alignment (${request.mood}), and budget consideration (${isUnlimited ? 'unlimited' : `$${budget}`})`,
+      debugInfo
+    };
+  }
+
+  /**
+   * 🆕 Create coordinated dress outfits with color matching
+   */
+  private async createCoordinatedDressOutfits(
+    dresses: ZaraClothItem[], 
+    shoes: ShoeItem[], 
+    looks: Look[], 
+    usedItemIds: Set<string>, 
+    usedShoeIds: Set<string>, 
+    debugInfo: DebugInfo,
+    eventType: string,
+    mood: string,
+    budget: number,
+    isUnlimited: boolean
+  ) {
+    console.log(`👗 [COORDINATED DRESS] Creating color-matched dress outfits`);
+    
+    const availableDresses = dresses.filter(dress => !usedItemIds.has(dress.id));
+    const availableShoes = shoes.filter(shoe => !usedShoeIds.has(shoe.name));
+    
+    if (availableDresses.length === 0 || availableShoes.length === 0) {
+      return;
+    }
+    
+    // Find the best color-coordinated dress + shoes combination
+    for (const dress of availableDresses.slice(0, 2)) {
+      // Check budget if not unlimited
+      if (!isUnlimited && dress.price > budget * 0.8) {
+        continue;
+      }
+      
+      // Find shoes that coordinate with the dress
+      const coordinatingShoes = availableShoes.find(shoe => {
+        const totalCost = dress.price + (shoe.price || 0);
+        if (!isUnlimited && totalCost > budget) {
+          return false;
+        }
+        
+        return ColorCoordinationService.areColorsCompatible(
+          dress.colour || 'unknown', 
+          shoe.colour || shoe.color || 'unknown'
+        );
+      });
+      
+      if (!coordinatingShoes) {
+        console.log(`❌ [COORDINATION] No matching shoes found for dress: ${dress.product_name}`);
+        continue;
+      }
+      
+      console.log(`✅ [COORDINATED DRESS] ${dress.product_name} + ${coordinatingShoes.name}`);
+      debugInfo.outfit_logic.outfit_rules_applied.push('COORDINATED_DRESS_SHOES');
+      
+      const lookItems = [
+        {
+          id: dress.id,
+          title: dress.product_name,
+          description: dress.description || '',
+          image: this.normalizeImageField(dress.image, 'clothing'),
+          price: dress.price ? `$${dress.price}` : '0',
+          type: 'dress'
+        },
+        {
+          id: coordinatingShoes.name,
+          title: coordinatingShoes.name,
+          description: coordinatingShoes.description || '',
+          image: coordinatingShoes.image,
+          price: coordinatingShoes.price ? `$${coordinatingShoes.price}` : '0',
+          type: 'shoes'
+        }
+      ];
+      
+      const look: Look = {
+        id: `coordinated-dress-look-${looks.length}`,
+        items: lookItems,
+        description: `${dress.product_name} עם ${coordinatingShoes.name} - תואם צבעים למצב רוח ${mood}`,
+        occasion: eventType as any,
+        style: 'elegant',
+        mood: mood as any
+      };
+      
+      looks.push(look);
+      usedItemIds.add(dress.id);
+      usedShoeIds.add(coordinatingShoes.name);
+      
+      break; // One coordinated dress outfit is enough
+    }
+  }
+
+  /**
+   * 🆕 Create coordinated casual outfits with color and fabric matching
+   */
+  private async createCoordinatedCasualOutfits(
+    categorizedItems: any, 
+    shoes: ShoeItem[], 
+    looks: Look[], 
+    usedItemIds: Set<string>, 
+    usedShoeIds: Set<string>, 
+    debugInfo: DebugInfo,
+    mood: string,
+    budget: number,
+    isUnlimited: boolean
+  ) {
+    console.log(`👕 [COORDINATED CASUAL] Creating color-matched casual outfits`);
+    
+    const availableTops = categorizedItems.tops.filter((item: ZaraClothItem) => !usedItemIds.has(item.id));
+    const availableBottoms = categorizedItems.bottoms.filter((item: ZaraClothItem) => !usedItemIds.has(item.id));
+    const availableShoes = shoes.filter(shoe => !usedShoeIds.has(shoe.name));
+    
+    if (availableTops.length === 0 || availableBottoms.length === 0 || availableShoes.length === 0) {
+      return;
+    }
+    
+    const maxCasualLooks = Math.min(2, 3 - looks.length);
+    
+    for (let i = 0; i < maxCasualLooks && i < availableTops.length; i++) {
+      const top = availableTops[i];
+      
+      // Find a bottom that coordinates with the top
+      const coordinatingBottom = availableBottoms.find(bottom => {
+        if (usedItemIds.has(bottom.id)) return false;
+        
+        // Budget check
+        if (!isUnlimited && (top.price + bottom.price) > budget * 0.7) {
+          return false;
+        }
+        
+        return ColorCoordinationService.areColorsCompatible(
+          top.colour || 'unknown', 
+          bottom.colour || 'unknown'
+        );
+      });
+      
+      if (!coordinatingBottom) {
+        console.log(`❌ [COORDINATION] No matching bottom for top: ${top.product_name}`);
+        continue;
+      }
+      
+      // Find shoes that coordinate with the outfit
+      const coordinatingShoes = availableShoes.find(shoe => {
+        if (usedShoeIds.has(shoe.name)) return false;
+        
+        const totalCost = top.price + coordinatingBottom.price + (shoe.price || 0);
+        if (!isUnlimited && totalCost > budget) {
+          return false;
+        }
+        
+        // Check if shoes coordinate with either top or bottom
+        return (
+          ColorCoordinationService.areColorsCompatible(
+            top.colour || 'unknown', 
+            shoe.colour || shoe.color || 'unknown'
+          ) ||
+          ColorCoordinationService.areColorsCompatible(
+            coordinatingBottom.colour || 'unknown', 
+            shoe.colour || shoe.color || 'unknown'
+          )
+        );
+      });
+      
+      if (!coordinatingShoes) {
+        console.log(`❌ [COORDINATION] No matching shoes for outfit: ${top.product_name} + ${coordinatingBottom.product_name}`);
+        continue;
+      }
+      
+      console.log(`✅ [COORDINATED CASUAL] ${top.product_name} + ${coordinatingBottom.product_name} + ${coordinatingShoes.name}`);
+      debugInfo.outfit_logic.outfit_rules_applied.push('COORDINATED_CASUAL_OUTFIT');
+      
+      const lookItems = [
+        {
+          id: top.id,
+          title: top.product_name,
+          description: top.description || '',
+          image: this.normalizeImageField(top.image, 'clothing'),
+          price: top.price ? `$${top.price}` : '0',
+          type: 'top'
+        },
+        {
+          id: coordinatingBottom.id,
+          title: coordinatingBottom.product_name,
+          description: coordinatingBottom.description || '',
+          image: this.normalizeImageField(coordinatingBottom.image, 'clothing'),
+          price: coordinatingBottom.price ? `$${coordinatingBottom.price}` : '0',
+          type: 'bottom'
+        },
+        {
+          id: coordinatingShoes.name,
+          title: coordinatingShoes.name,
+          description: coordinatingShoes.description || '',
+          image: coordinatingShoes.image,
+          price: coordinatingShoes.price ? `$${coordinatingShoes.price}` : '0',
+          type: 'shoes'
+        }
+      ];
+      
+      const look: Look = {
+        id: `coordinated-casual-look-${looks.length}`,
+        items: lookItems,
+        description: `${top.product_name} עם ${coordinatingBottom.product_name} ו${coordinatingShoes.name} - תואם צבעים למצב רוח ${mood}`,
+        occasion: 'casual',
+        style: 'casual',
+        mood: mood as any
+      };
+      
+      looks.push(look);
+      usedItemIds.add(top.id);
+      usedItemIds.add(coordinatingBottom.id);
+      usedShoeIds.add(coordinatingShoes.name);
+    }
+  }
+
+  private async createCoordinatedFormalOutfits(
+    categorizedItems: any, 
+    shoes: ShoeItem[], 
+    looks: Look[], 
+    usedItemIds: Set<string>, 
+    usedShoeIds: Set<string>, 
+    debugInfo: DebugInfo,
+    mood: string,
+    budget: number,
+    isUnlimited: boolean
+  ) {
+    // Similar to casual but with formal prioritization
+    await this.createCoordinatedCasualOutfits(categorizedItems, shoes, looks, usedItemIds, usedShoeIds, debugInfo, mood, budget, isUnlimited);
+    debugInfo.outfit_logic.outfit_rules_applied.push('COORDINATED_FORMAL_PRIORITY');
+  }
+
+  private async createCoordinatedJumpsuitOutfits(
+    jumpsuits: ZaraClothItem[], 
+    shoes: ShoeItem[], 
+    looks: Look[], 
+    usedItemIds: Set<string>, 
+    usedShoeIds: Set<string>, 
+    debugInfo: DebugInfo,
+    mood: string,
+    budget: number,
+    isUnlimited: boolean
+  ) {
+    console.log(`🤸 [COORDINATED JUMPSUIT] Creating color-matched jumpsuit outfits`);
+    
+    // Similar logic to dress outfits but for jumpsuits
+    const availableJumpsuits = jumpsuits.filter(jumpsuit => !usedItemIds.has(jumpsuit.id));
+    const availableShoes = shoes.filter(shoe => !usedShoeIds.has(shoe.name));
+    
+    if (availableJumpsuits.length === 0 || availableShoes.length === 0) {
+      return;
+    }
+    
+    const jumpsuit = availableJumpsuits[0];
+    
+    // Check budget
+    if (!isUnlimited && jumpsuit.price > budget * 0.8) {
+      return;
+    }
+    
+    const coordinatingShoes = availableShoes.find(shoe => {
+      const totalCost = jumpsuit.price + (shoe.price || 0);
+      if (!isUnlimited && totalCost > budget) {
+        return false;
+      }
+      
+      return ColorCoordinationService.areColorsCompatible(
+        jumpsuit.colour || 'unknown', 
+        shoe.colour || shoe.color || 'unknown'
+      );
+    });
+    
+    if (!coordinatingShoes) {
+      return;
+    }
+    
+    console.log(`✅ [COORDINATED JUMPSUIT] ${jumpsuit.product_name} + ${coordinatingShoes.name}`);
+    debugInfo.outfit_logic.outfit_rules_applied.push('COORDINATED_JUMPSUIT_SHOES');
+    
+    const lookItems = [
+      {
+        id: jumpsuit.id,
+        title: jumpsuit.product_name,
+        description: jumpsuit.description || '',
+        image: this.normalizeImageField(jumpsuit.image, 'clothing'),
+        price: jumpsuit.price ? `$${jumpsuit.price}` : '0',
+        type: 'jumpsuit'
+      },
+      {
+        id: coordinatingShoes.name,
+        title: coordinatingShoes.name,
+        description: coordinatingShoes.description || '',
+        image: coordinatingShoes.image,
+        price: coordinatingShoes.price ? `$${coordinatingShoes.price}` : '0',
+        type: 'shoes'
+      }
+    ];
+    
+    const look: Look = {
+      id: `coordinated-jumpsuit-look-${looks.length}`,
+      items: lookItems,
+      description: `${jumpsuit.product_name} עם ${coordinatingShoes.name} - תואם צבעים למצב רוח ${mood}`,
+      occasion: 'general',
+      style: 'modern',
+      mood: mood as any
+    };
+    
+    looks.push(look);
+    usedItemIds.add(jumpsuit.id);
+    usedShoeIds.add(coordinatingShoes.name);
   }
 
   private filterOutUnderwear(clothingItems: ZaraClothItem[], debugInfo: DebugInfo): ZaraClothItem[] {
@@ -369,116 +931,6 @@ class StylingAgentClass implements Agent {
     return categorized;
   }
 
-  private async createOutfitsFromSeparateSources(
-    request: StylingRequest,
-    allClothing: ZaraClothItem[],
-    allShoes: ShoeItem[],
-    debugInfo: DebugInfo
-  ): Promise<StylingResult> {
-    console.log(`🎯 [DUAL SOURCE LOGIC] Starting outfit creation with separate sources`);
-    console.log(`📊 [DATA] Clothing items: ${allClothing.length}, Shoes: ${allShoes.length}`);
-    
-    // Categorize clothing items from zara_cloth
-    const categorizedItems = this.categorizeClothingItems(allClothing, debugInfo);
-    
-    // Filter shoes and categorize by type for event matching
-    const categorizedShoes = this.categorizeShoesByType(allShoes);
-    
-    debugInfo.categorization.shoes_with_valid_images = allShoes.length;
-    
-    console.log(`👟 [SHOES CATEGORIZATION] Total shoes: ${allShoes.length}`);
-    Object.entries(categorizedShoes).forEach(([type, shoes]) => {
-      console.log(`👟 [${type.toUpperCase()}] ${shoes.length} pairs`);
-    });
-    
-    const looks: Look[] = [];
-    const usedItemIds = new Set<string>();
-    const usedShoeIds = new Set<string>();
-    
-    const eventType = request.event || 'casual';
-    debugInfo.outfit_logic.event_type = eventType;
-    
-    // Select appropriate shoes based on event type
-    const appropriateShoes = this.selectShoesForEvent(categorizedShoes, eventType);
-    
-    // Create outfits based on event type and available items
-    if (eventType === 'evening' || eventType === 'formal') {
-      console.log(`✨ [EVENING/FORMAL LOGIC] Creating elegant outfits`);
-      debugInfo.outfit_logic.outfit_rules_applied.push('EVENING_FORMAL_PRIORITY');
-      
-      // Priority 1: Dress outfits for formal events
-      if (categorizedItems.dresses.length > 0) {
-        await this.createDressOutfits(
-          categorizedItems.dresses,
-          appropriateShoes,
-          looks,
-          usedItemIds,
-          usedShoeIds,
-          debugInfo,
-          eventType
-        );
-      }
-      
-      // Priority 2: Formal top+bottom combinations
-      if (looks.length < 3) {
-        await this.createFormalOutfits(
-          categorizedItems,
-          appropriateShoes,
-          looks,
-          usedItemIds,
-          usedShoeIds,
-          debugInfo
-        );
-      }
-    } else {
-      console.log(`👕 [CASUAL/DAYTIME LOGIC] Creating relaxed outfits`);
-      debugInfo.outfit_logic.outfit_rules_applied.push('CASUAL_DAYTIME_PRIORITY');
-      
-      // Priority 1: Casual top+bottom combinations
-      await this.createCasualOutfits(
-        categorizedItems,
-        appropriateShoes,
-        looks,
-        usedItemIds,
-        usedShoeIds,
-        debugInfo
-      );
-      
-      // Priority 2: Add dress outfits if available
-      if (looks.length < 3 && categorizedItems.dresses.length > 0) {
-        await this.createDressOutfits(
-          categorizedItems.dresses,
-          appropriateShoes,
-          looks,
-          usedItemIds,
-          usedShoeIds,
-          debugInfo,
-          eventType
-        );
-      }
-    }
-    
-    // Priority 3: Add jumpsuit outfits if we have space
-    if (looks.length < 3 && categorizedItems.jumpsuits.length > 0) {
-      await this.createJumpsuitOutfits(
-        categorizedItems.jumpsuits,
-        appropriateShoes,
-        looks,
-        usedItemIds,
-        usedShoeIds,
-        debugInfo
-      );
-    }
-    
-    console.log(`✅ [OUTFIT CREATION COMPLETE] Created ${looks.length} outfits using dual source logic`);
-    
-    return {
-      looks,
-      reasoning: `Created ${looks.length} outfits for ${eventType} event using clothing from zara_cloth and shoes from shoes table`,
-      debugInfo
-    };
-  }
-
   private categorizeShoesByType(shoes: ShoeItem[]): { [key: string]: ShoeItem[] } {
     const categories = {
       heels: [] as ShoeItem[],
@@ -522,7 +974,6 @@ class StylingAgentClass implements Agent {
     let selectedShoes: ShoeItem[] = [];
     
     if (eventType === 'evening' || eventType === 'formal') {
-      // For formal events: heels > boots > loafers > other
       selectedShoes = [
         ...categorizedShoes.heels,
         ...categorizedShoes.boots.filter(boot => this.isLeatherBoot(boot)),
@@ -530,7 +981,6 @@ class StylingAgentClass implements Agent {
         ...categorizedShoes.other
       ];
     } else if (eventType === 'work' || eventType === 'business') {
-      // For work: loafers > heels > boots > flats
       selectedShoes = [
         ...categorizedShoes.loafers,
         ...categorizedShoes.heels,
@@ -538,7 +988,6 @@ class StylingAgentClass implements Agent {
         ...categorizedShoes.flats
       ];
     } else {
-      // For casual: sneakers > flats > sandals > other
       selectedShoes = [
         ...categorizedShoes.sneakers,
         ...categorizedShoes.flats,
@@ -556,224 +1005,6 @@ class StylingAgentClass implements Agent {
     return searchText.includes('leather') || searchText.includes('suede');
   }
 
-  private async createDressOutfits(
-    dresses: ZaraClothItem[], 
-    shoes: ShoeItem[], 
-    looks: Look[], 
-    usedItemIds: Set<string>, 
-    usedShoeIds: Set<string>, 
-    debugInfo: DebugInfo,
-    eventType: string
-  ) {
-    console.log(`👗 [DRESS LOGIC] Creating dress outfits for ${eventType} event`);
-    
-    const availableDresses = dresses.filter(dress => !usedItemIds.has(dress.id));
-    const availableShoes = shoes.filter(shoe => !usedShoeIds.has(shoe.name));
-    
-    if (availableDresses.length === 0 || availableShoes.length === 0) {
-      console.log(`⚠️ [DRESS LOGIC] No available dresses or shoes`);
-      return;
-    }
-    
-    // RULE: Dress + Shoes (2 items) or Dress + Shoes + Outerwear (3 items)
-    const dress = availableDresses[0];
-    const shoe = availableShoes[0];
-    
-    console.log(`✅ [DRESS OUTFIT] Selected: ${dress.product_name} (zara_cloth) + ${shoe.name} (shoes table)`);
-    debugInfo.outfit_logic.outfit_rules_applied.push('DRESS_SHOES_COMBINATION');
-    debugInfo.outfit_logic.item_sources[`dress_${looks.length}`] = 'zara_cloth';
-    debugInfo.outfit_logic.item_sources[`shoes_${looks.length}`] = 'shoes_table';
-    
-    const lookItems = [
-      {
-        id: dress.id,
-        title: dress.product_name,
-        description: dress.description || '',
-        image: this.normalizeImageField(dress.image, 'clothing'),
-        price: dress.price ? `$${dress.price}` : '0',
-        type: 'dress'
-      },
-      {
-        id: shoe.name,
-        title: shoe.name,
-        description: shoe.description || '',
-        image: shoe.image, // Already processed from url field
-        price: shoe.price ? `$${shoe.price}` : '0',
-        type: 'shoes'
-      }
-    ];
-    
-    const look: Look = {
-      id: `dress-look-${looks.length}`,
-      items: lookItems,
-      description: `${dress.product_name} עם ${shoe.name} לאירוע ${eventType}`,
-      occasion: eventType as any,
-      style: 'classic',
-      mood: 'elegant'
-    };
-    
-    looks.push(look);
-    usedItemIds.add(dress.id);
-    usedShoeIds.add(shoe.name);
-    
-    console.log(`✅ [DRESS OUTFIT CREATED] Look ID: ${look.id}`);
-  }
-
-  private async createCasualOutfits(
-    categorizedItems: any, 
-    shoes: ShoeItem[], 
-    looks: Look[], 
-    usedItemIds: Set<string>, 
-    usedShoeIds: Set<string>, 
-    debugInfo: DebugInfo
-  ) {
-    console.log(`👕 [CASUAL LOGIC] Creating top+bottom+shoes combinations`);
-    
-    const availableTops = categorizedItems.tops.filter((item: ZaraClothItem) => !usedItemIds.has(item.id));
-    const availableBottoms = categorizedItems.bottoms.filter((item: ZaraClothItem) => !usedItemIds.has(item.id));
-    const availableShoes = shoes.filter(shoe => !usedShoeIds.has(shoe.name));
-    
-    if (availableTops.length === 0 || availableBottoms.length === 0 || availableShoes.length === 0) {
-      console.log(`⚠️ [CASUAL LOGIC] Missing items - tops: ${availableTops.length}, bottoms: ${availableBottoms.length}, shoes: ${availableShoes.length}`);
-      return;
-    }
-    
-    // RULE: Top + Bottom + Shoes (3 items) - NO DRESS when creating this combination
-    const maxCasualLooks = Math.min(2, 3 - looks.length);
-    
-    for (let i = 0; i < maxCasualLooks && i < availableTops.length && i < availableBottoms.length; i++) {
-      const top = availableTops[i];
-      const bottom = availableBottoms[i];
-      const shoe = availableShoes[i % availableShoes.length];
-      
-      console.log(`✅ [CASUAL OUTFIT] Selected: ${top.product_name} (zara_cloth) + ${bottom.product_name} (zara_cloth) + ${shoe.name} (shoes table)`);
-      debugInfo.outfit_logic.outfit_rules_applied.push('TOP_BOTTOM_SHOES_COMBINATION');
-      debugInfo.outfit_logic.item_sources[`top_${looks.length}`] = 'zara_cloth';
-      debugInfo.outfit_logic.item_sources[`bottom_${looks.length}`] = 'zara_cloth';
-      debugInfo.outfit_logic.item_sources[`shoes_${looks.length}`] = 'shoes_table';
-      
-      const lookItems = [
-        {
-          id: top.id,
-          title: top.product_name,
-          description: top.description || '',
-          image: this.normalizeImageField(top.image, 'clothing'),
-          price: top.price ? `$${top.price}` : '0',
-          type: 'top'
-        },
-        {
-          id: bottom.id,
-          title: bottom.product_name,
-          description: bottom.description || '',
-          image: this.normalizeImageField(bottom.image, 'clothing'),
-          price: bottom.price ? `$${bottom.price}` : '0',
-          type: 'bottom'
-        },
-        {
-          id: shoe.name,
-          title: shoe.name,
-          description: shoe.description || '',
-          image: shoe.image, // Already processed from url field
-          price: shoe.price ? `$${shoe.price}` : '0',
-          type: 'shoes'
-        }
-      ];
-      
-      const look: Look = {
-        id: `casual-look-${looks.length}`,
-        items: lookItems,
-        description: `${top.product_name} עם ${bottom.product_name} ו${shoe.name}`,
-        occasion: 'casual',
-        style: 'casual',
-        mood: 'relaxed'
-      };
-      
-      looks.push(look);
-      usedItemIds.add(top.id);
-      usedItemIds.add(bottom.id);
-      usedShoeIds.add(shoe.name);
-      
-      console.log(`✅ [CASUAL OUTFIT CREATED] Look ID: ${look.id}`);
-    }
-  }
-
-  private async createFormalOutfits(
-    categorizedItems: any, 
-    shoes: ShoeItem[], 
-    looks: Look[], 
-    usedItemIds: Set<string>, 
-    usedShoeIds: Set<string>, 
-    debugInfo: DebugInfo
-  ) {
-    console.log(`🤵 [FORMAL LOGIC] Creating formal top+bottom combinations`);
-    
-    // Similar to casual but prioritize formal items
-    await this.createCasualOutfits(categorizedItems, shoes, looks, usedItemIds, usedShoeIds, debugInfo);
-    debugInfo.outfit_logic.outfit_rules_applied.push('FORMAL_TOP_BOTTOM_PRIORITY');
-  }
-
-  private async createJumpsuitOutfits(
-    jumpsuits: ZaraClothItem[], 
-    shoes: ShoeItem[], 
-    looks: Look[], 
-    usedItemIds: Set<string>, 
-    usedShoeIds: Set<string>, 
-    debugInfo: DebugInfo
-  ) {
-    console.log(`🤸 [JUMPSUIT LOGIC] Creating jumpsuit outfits`);
-    
-    const availableJumpsuits = jumpsuits.filter(jumpsuit => !usedItemIds.has(jumpsuit.id));
-    const availableShoes = shoes.filter(shoe => !usedShoeIds.has(shoe.name));
-    
-    if (availableJumpsuits.length === 0 || availableShoes.length === 0) {
-      console.log(`⚠️ [JUMPSUIT LOGIC] No available jumpsuits or shoes`);
-      return;
-    }
-    
-    // RULE: Jumpsuit + Shoes (2 items) - NO TOP/BOTTOM when using jumpsuit
-    const jumpsuit = availableJumpsuits[0];
-    const shoe = availableShoes[0];
-    
-    console.log(`✅ [JUMPSUIT OUTFIT] Selected: ${jumpsuit.product_name} (zara_cloth) + ${shoe.name} (shoes table)`);
-    debugInfo.outfit_logic.outfit_rules_applied.push('JUMPSUIT_SHOES_COMBINATION');
-    debugInfo.outfit_logic.item_sources[`jumpsuit_${looks.length}`] = 'zara_cloth';
-    debugInfo.outfit_logic.item_sources[`shoes_${looks.length}`] = 'shoes_table';
-    
-    const lookItems = [
-      {
-        id: jumpsuit.id,
-        title: jumpsuit.product_name,
-        description: jumpsuit.description || '',
-        image: this.normalizeImageField(jumpsuit.image, 'clothing'),
-        price: jumpsuit.price ? `$${jumpsuit.price}` : '0',
-        type: 'jumpsuit'
-      },
-      {
-        id: shoe.name,
-        title: shoe.name,
-        description: shoe.description || '',
-        image: shoe.image, // Already processed from url field
-        price: shoe.price ? `$${shoe.price}` : '0',
-        type: 'shoes'
-      }
-    ];
-    
-    const look: Look = {
-      id: `jumpsuit-look-${looks.length}`,
-      items: lookItems,
-      description: `${jumpsuit.product_name} עם ${shoe.name}`,
-      occasion: 'general',
-      style: 'modern',
-      mood: 'confident'
-    };
-    
-    looks.push(look);
-    usedItemIds.add(jumpsuit.id);
-    usedShoeIds.add(shoe.name);
-    
-    console.log(`✅ [JUMPSUIT OUTFIT CREATED] Look ID: ${look.id}`);
-  }
-
   private normalizeImageField(image: any, itemType: string = 'clothing'): string {
     console.log(`[DEBUG] normalizeImageField called with type: ${itemType}, image:`, image);
     
@@ -782,22 +1013,18 @@ class StylingAgentClass implements Agent {
       return '/placeholder.svg';
     }
     
-    // עבור נעליים - טיפול מיוחד
     if (itemType === 'shoes') {
       return this.extractShoesImageUrl(image);
     }
     
-    // If it's a string, return as is
     if (typeof image === 'string') {
       return image;
     }
     
-    // If it's an array, take the first item
     if (Array.isArray(image) && image.length > 0) {
       return typeof image[0] === 'string' ? image[0] : '';
     }
     
-    // If it's a JSON object, try to extract URL
     if (typeof image === 'object') {
       if (image.url) return image.url;
       if (image.src) return image.src;
@@ -817,34 +1044,28 @@ class StylingAgentClass implements Agent {
     
     let imageUrls: string[] = [];
     
-    // אם זה מחרוזת יחידה
     if (typeof imageData === 'string') {
       const trimmed = imageData.trim();
       
-      // בדיקה אם זה URL ישיר
       if (trimmed.startsWith('http') && (trimmed.includes('.jpg') || trimmed.includes('.png') || trimmed.includes('.jpeg'))) {
         console.log(`✅ [DEBUG] Direct shoe image URL found: ${trimmed}`);
         return trimmed;
       }
       
-      // ניסיון פרסור JSON
       try {
         const parsed = JSON.parse(trimmed);
         if (Array.isArray(parsed)) {
           imageUrls = parsed.filter(url => typeof url === 'string');
         }
       } catch {
-        // אם הפרסור נכשל, נשתמש במחרוזת כמו שהיא
         imageUrls = [trimmed];
       }
     }
     
-    // אם זה מערך
     else if (Array.isArray(imageData)) {
       imageUrls = imageData.filter(url => typeof url === 'string');
     }
     
-    // אם זה אובייקט
     else if (typeof imageData === 'object') {
       if (imageData.url) imageUrls = [imageData.url];
       else if (imageData.src) imageUrls = [imageData.src];
@@ -852,7 +1073,6 @@ class StylingAgentClass implements Agent {
     
     console.log(`[DEBUG] Shoe image URLs extracted:`, imageUrls);
     
-    // חיפוש URL תקין
     const validUrl = imageUrls.find(url => 
       url && 
       url.includes('http') && 

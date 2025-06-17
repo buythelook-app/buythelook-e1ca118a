@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import { useToast } from "../ui/use-toast";
@@ -13,24 +13,53 @@ export const FilterOptions = () => {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const { toast } = useToast();
 
-  const handleBudgetChange = (value: number[]) => {
-    if (value[0] >= 1000) {
-      setIsUnlimited(true);
-      setBudget(1000);
-    } else {
-      setIsUnlimited(false);
-      setBudget(value[0]);
+  // 🆕 Load budget from localStorage on component mount
+  useEffect(() => {
+    try {
+      const savedBudget = localStorage.getItem('outfit-budget');
+      if (savedBudget) {
+        const parsed = JSON.parse(savedBudget);
+        setBudget(parsed.budget || 100);
+        setIsUnlimited(parsed.isUnlimited || false);
+      }
+    } catch (error) {
+      console.log('Could not load saved budget:', error);
     }
+  }, []);
+
+  const handleBudgetChange = (value: number[]) => {
+    const newBudget = value[0];
+    const newIsUnlimited = newBudget >= 1000;
+    
+    setBudget(newIsUnlimited ? 1000 : newBudget);
+    setIsUnlimited(newIsUnlimited);
+    
+    // 🆕 Save budget to localStorage for styling agent
+    const budgetData = {
+      budget: newIsUnlimited ? 1000 : newBudget,
+      isUnlimited: newIsUnlimited,
+      timestamp: new Date().toISOString()
+    };
+    
+    localStorage.setItem('outfit-budget', JSON.stringify(budgetData));
+    console.log('💰 [BUDGET SAVED] Budget data saved to localStorage:', budgetData);
   };
 
   const handleInputChange = (value: number) => {
-    if (value >= 1000) {
-      setIsUnlimited(true);
-      setBudget(1000);
-    } else {
-      setIsUnlimited(false);
-      setBudget(value);
-    }
+    const newIsUnlimited = value >= 1000;
+    
+    setBudget(newIsUnlimited ? 1000 : value);
+    setIsUnlimited(newIsUnlimited);
+    
+    // 🆕 Save budget to localStorage for styling agent
+    const budgetData = {
+      budget: newIsUnlimited ? 1000 : value,
+      isUnlimited: newIsUnlimited,
+      timestamp: new Date().toISOString()
+    };
+    
+    localStorage.setItem('outfit-budget', JSON.stringify(budgetData));
+    console.log('💰 [BUDGET SAVED] Budget data saved to localStorage:', budgetData);
   };
 
   const handleSyncCalendar = () => {
