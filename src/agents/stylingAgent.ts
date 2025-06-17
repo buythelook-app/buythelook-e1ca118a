@@ -1,3 +1,4 @@
+
 import { Look } from '../types/lookTypes';
 import { Agent } from './index';
 
@@ -75,6 +76,7 @@ interface DebugInfo {
     shoes_fetched: number;
     clothing_available: number;
     shoes_available: number;
+    underwear_filtered: number;
   };
   categorization: {
     tops: number;
@@ -125,7 +127,7 @@ class StylingAgentClass implements Agent {
     const startTime = performance.now();
     const debugInfo: DebugInfo = {
       filters_applied: [],
-      raw_data: { clothing_fetched: 0, shoes_fetched: 0, clothing_available: 0, shoes_available: 0 },
+      raw_data: { clothing_fetched: 0, shoes_fetched: 0, clothing_available: 0, shoes_available: 0, underwear_filtered: 0 },
       categorization: { tops: 0, bottoms: 0, dresses: 0, jumpsuits: 0, outerwear: 0, shoes_with_valid_images: 0 },
       filtering_steps: [],
       items_selected: {},
@@ -139,8 +141,8 @@ class StylingAgentClass implements Agent {
       }
     };
 
-    console.log(`🎯 [StylingAgent] Starting DUAL SOURCE outfit generation for user: ${userId}`);
-    console.log(`📊 [DEBUG] Using SEPARATE TABLES for clothing and shoes...`);
+    console.log(`🎯 [StylingAgent] Starting CLEAN outfit generation for user: ${userId}`);
+    console.log(`📊 [DEBUG] Filtering OUT underwear and creating proper outfits...`);
     
     try {
       // Get user profile data from localStorage
@@ -161,7 +163,7 @@ class StylingAgentClass implements Agent {
       const bodyShape = parsedData?.analysis?.bodyShape || 'H';
       const style = parsedData?.analysis?.styleProfile || 'classic';
       
-      debugInfo.filters_applied.push('bodyShape', 'mood', 'style', 'event');
+      debugInfo.filters_applied.push('bodyShape', 'mood', 'style', 'event', 'NO_UNDERWEAR');
       debugInfo.logic_notes.push(`Profile loaded: bodyShape=${bodyShape}, style=${style}, mood=${currentMood}, event=${currentEvent}`);
       debugInfo.outfit_logic.event_type = currentEvent;
       
@@ -172,7 +174,7 @@ class StylingAgentClass implements Agent {
       
       console.log(`🔍 [DEBUG] Fetching from DUAL SOURCES: zara_cloth + shoes tables...`);
       
-      const { data: allClothing, error: clothError } = await supabase
+      const { data: allClothingRaw, error: clothError } = await supabase
         .from('zara_cloth')
         .select('*')
         .eq('availability', true);
@@ -182,7 +184,7 @@ class StylingAgentClass implements Agent {
         .select('*')
         .eq('availability', 'in stock');
       
-      if (clothError || !allClothing) {
+      if (clothError || !allClothingRaw) {
         debugInfo.logic_notes.push(`ERROR: Failed to fetch clothing - ${clothError?.message}`);
         return {
           success: false,
@@ -200,6 +202,17 @@ class StylingAgentClass implements Agent {
         };
       }
 
+      debugInfo.raw_data.clothing_fetched = allClothingRaw.length;
+      debugInfo.raw_data.shoes_fetched = allShoesRaw.length;
+      
+      // ✅ CRITICAL: Filter out underwear and invalid items
+      const allClothing = this.filterOutUnderwear(allClothingRaw, debugInfo);
+      debugInfo.raw_data.clothing_available = allClothing.length;
+      debugInfo.raw_data.underwear_filtered = allClothingRaw.length - allClothing.length;
+      
+      console.log(`🚫 [UNDERWEAR FILTER] Removed ${debugInfo.raw_data.underwear_filtered} underwear items`);
+      console.log(`✅ [CLEAN CLOTHING] ${allClothing.length} valid clothing items remain`);
+
       // Transform shoes data to match ShoeItem interface
       const allShoes: ShoeItem[] = allShoesRaw.map(shoe => ({
         ...shoe,
@@ -208,13 +221,10 @@ class StylingAgentClass implements Agent {
         colour: shoe.color || shoe.colour || 'unknown'
       }));
       
-      debugInfo.raw_data.clothing_fetched = allClothing.length;
-      debugInfo.raw_data.shoes_fetched = allShoes.length;
-      debugInfo.raw_data.clothing_available = allClothing.length;
       debugInfo.raw_data.shoes_available = allShoes.length;
       
-      console.log(`📊 [DUAL SOURCE DATA] Retrieved ${allClothing.length} clothing items and ${allShoes.length} shoes`);
-      console.log(`🔍 [SOURCE SEPARATION] Clothing from zara_cloth, Shoes from shoes table`);
+      console.log(`📊 [CLEAN DATA] Retrieved ${allClothing.length} CLEAN clothing items and ${allShoes.length} shoes`);
+      console.log(`🔍 [SOURCE SEPARATION] Clothing from zara_cloth (NO UNDERWEAR), Shoes from shoes table`);
       
       // Create styling request
       const request: StylingRequest = {
@@ -238,7 +248,7 @@ class StylingAgentClass implements Agent {
       const endTime = performance.now();
       debugInfo.performance.total_time_ms = endTime - startTime;
       
-      console.log(`✅ [STYLING COMPLETE] Created ${result.looks.length} outfits using DUAL SOURCE logic`);
+      console.log(`✅ [STYLING COMPLETE] Created ${result.looks.length} CLEAN outfits using DUAL SOURCE logic`);
       console.log(`📊 [FINAL DEBUG REPORT]`, JSON.stringify(debugInfo.outfit_logic, null, 2));
       
       return {
@@ -267,6 +277,50 @@ class StylingAgentClass implements Agent {
     }
   }
 
+  private filterOutUnderwear(clothingItems: ZaraClothItem[], debugInfo: DebugInfo): ZaraClothItem[] {
+    console.log(`🚫 [UNDERWEAR FILTER] Starting to filter ${clothingItems.length} items...`);
+    
+    const underwearKeywords = [
+      'bra', 'briefs', 'underwear', 'panties', 'boxers', 'thong',
+      'lingerie', 'underpants', 'bikini bottom', 'bralette',
+      'bodysuit', 'camisole', 'slip', 'nightgown', 'nightdress',
+      'תחתון', 'תחתונים', 'חזייה', 'בגד תחתון', 'תחתוני',
+      'bodice', 'corset', 'bustier', 'strapless bra', 'push up bra',
+      'sports bra', 'triangle bra', 'balconette', 'underwire'
+    ];
+    
+    const filtered = clothingItems.filter(item => {
+      const name = (item.product_name || '').toLowerCase();
+      const subfamily = (item.product_subfamily || '').toLowerCase();
+      const family = (item.product_family || '').toLowerCase();
+      const description = (item.description || '').toLowerCase();
+      const section = (item.section || '').toLowerCase();
+      
+      const searchText = `${name} ${subfamily} ${family} ${description} ${section}`;
+      
+      const isUnderwear = underwearKeywords.some(keyword => 
+        searchText.includes(keyword)
+      );
+      
+      if (isUnderwear) {
+        console.log(`🚫 [FILTERED] Underwear: ${item.product_name} (${item.product_subfamily})`);
+        return false;
+      }
+      
+      return true;
+    });
+    
+    debugInfo.filtering_steps.push({
+      step: 'Filter Underwear',
+      items_before: clothingItems.length,
+      items_after: filtered.length,
+      criteria: 'Remove all underwear, lingerie, and intimate apparel'
+    });
+    
+    console.log(`✅ [UNDERWEAR FILTER] Filtered from ${clothingItems.length} to ${filtered.length} items`);
+    return filtered;
+  }
+
   private categorizeClothingItems(clothingItems: ZaraClothItem[], debugInfo: DebugInfo) {
     const categorized = {
       tops: [] as ZaraClothItem[],
@@ -276,7 +330,7 @@ class StylingAgentClass implements Agent {
       outerwear: [] as ZaraClothItem[]
     };
 
-    console.log(`🏷️ [CATEGORIZATION] Processing ${clothingItems.length} clothing items from zara_cloth...`);
+    console.log(`🏷️ [CATEGORIZATION] Processing ${clothingItems.length} CLEAN clothing items...`);
 
     for (const item of clothingItems) {
       let category = 'unknown';
@@ -309,6 +363,8 @@ class StylingAgentClass implements Agent {
     debugInfo.categorization.dresses = categorized.dresses.length;
     debugInfo.categorization.jumpsuits = categorized.jumpsuits.length;
     debugInfo.categorization.outerwear = categorized.outerwear.length;
+    
+    console.log(`📊 [CATEGORIZATION SUMMARY] Tops: ${categorized.tops.length}, Bottoms: ${categorized.bottoms.length}, Dresses: ${categorized.dresses.length}, Jumpsuits: ${categorized.jumpsuits.length}, Outerwear: ${categorized.outerwear.length}`);
     
     return categorized;
   }
@@ -1092,35 +1148,27 @@ class StylingAgentClass implements Agent {
     const name = (item.product_name || item.name || '').toLowerCase();
     const family = item.product_family?.toLowerCase() || '';
     
-    // EXCLUDE dresses and jumpsuits
+    // EXCLUDE dresses, jumpsuits, underwear, and bottoms
     const excludeKeywords = [
       'dress', 'שמלה', 'gown', 'frock',
-      'jumpsuit', 'אוברול', 'overall', 'romper'
+      'jumpsuit', 'אוברול', 'overall', 'romper',
+      'pants', 'trousers', 'jeans', 'shorts', 'skirt', 'leggings',
+      'מכנס', 'מכנסיים', 'ג\'ינס', 'שורט', 'חצאית', 'לגינס',
+      'bra', 'briefs', 'underwear', 'panties', 'lingerie', 'תחתון'
     ];
+    
     const isExcluded = excludeKeywords.some(keyword => 
       subfamily.includes(keyword) || name.includes(keyword) || family.includes(keyword)
     );
     
-    // EXCLUDE bottoms
-    const bottomKeywords = [
-      'pants', 'trousers', 'jeans', 'shorts',
-      'skirt', 'leggings', 'joggers', 'chinos',
-      'מכנס', 'מכנסיים', 'ג\'ינס', 'שורט',
-      'חצאית', 'לגינס'
-    ];
-    
-    const isBottomItem = bottomKeywords.some(keyword => 
-      subfamily.includes(keyword) || name.includes(keyword) || family.includes(keyword)
-    );
-    
-    if (isExcluded || isBottomItem) {
+    if (isExcluded) {
       return false;
     }
     
     const topKeywords = [
       'shirt', 'blouse', 't-shirt', 'top', 'tee',
       'sweater', 'cardigan', 'pullover', 'jumper',
-      'tank', 'camisole', 'vest', 'hoodie',
+      'tank', 'vest', 'hoodie',
       'חולצה', 'טופ', 'סוודר', 'קרדיגן'
     ];
     
@@ -1225,7 +1273,7 @@ class StylingAgentClass implements Agent {
   async createOutfits(request: StylingRequest): Promise<StylingResult> {
     const debugInfo: DebugInfo = {
       filters_applied: [],
-      raw_data: { clothing_fetched: 0, shoes_fetched: 0, clothing_available: 0, shoes_available: 0 },
+      raw_data: { clothing_fetched: 0, shoes_fetched: 0, clothing_available: 0, shoes_available: 0, underwear_filtered: 0 },
       categorization: { tops: 0, bottoms: 0, dresses: 0, jumpsuits: 0, outerwear: 0, shoes_with_valid_images: 0 },
       filtering_steps: [],
       items_selected: {},
