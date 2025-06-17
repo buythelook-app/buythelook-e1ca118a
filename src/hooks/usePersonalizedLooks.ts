@@ -346,7 +346,7 @@ export function usePersonalizedLooks() {
       const style = parsed?.analysis?.styleProfile || 'classic';
       const mood = localStorage.getItem('current-mood') || 'energized';
       
-      clearOutfitCache(bodyShape, style, mood);
+      clearOutfitCache();
     }
     
     setCombinations(prev => ({
