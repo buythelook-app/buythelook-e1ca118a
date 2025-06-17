@@ -123,7 +123,7 @@ export function useOutfitGeneration() {
       });
       
       // Use the coordinated agent crew workflow with enhanced parameters
-      const result = await agentCrew.run(userId, generationContext);
+      const result = await agentCrew.run(generationContext);
       
       if (!result.success) {
         logger.error("❌ Coordinated outfit generation failed", {
