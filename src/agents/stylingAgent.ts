@@ -44,16 +44,27 @@ type ZaraClothItem = {
 
 type ShoeItem = {
   name: string;
-  brand?: string;
-  description?: string;
-  price: number;
-  colour: string;
-  image: string | string[] | null;
-  discount?: string;
-  category?: string;
+  brand?: string | null;
+  description?: string | null;
+  price: number | null;
+  colour?: any;
+  image: string; // This will be populated from url field
+  discount?: string | null;
+  category?: string | null;
   availability: string;
-  url?: string;
+  url?: string | null;
   breadcrumbs?: any;
+  // Raw database fields
+  buy_the_look?: any;
+  possible_sizes?: any;
+  you_might_also_like?: any;
+  product_id?: number | null;
+  color?: any;
+  about_me?: string | null;
+  look_after_me?: string | null;
+  product_details?: string | null;
+  size_fit?: string | null;
+  currency?: string | null;
 };
 
 // Debug information structure
@@ -166,7 +177,7 @@ class StylingAgentClass implements Agent {
         .select('*')
         .eq('availability', true);
 
-      const { data: allShoes, error: shoesError } = await supabase
+      const { data: allShoesRaw, error: shoesError } = await supabase
         .from('shoes')
         .select('*')
         .eq('availability', 'in stock');
@@ -180,7 +191,7 @@ class StylingAgentClass implements Agent {
         };
       }
 
-      if (shoesError || !allShoes) {
+      if (shoesError || !allShoesRaw) {
         debugInfo.logic_notes.push(`ERROR: Failed to fetch shoes - ${shoesError?.message}`);
         return {
           success: false,
@@ -188,6 +199,14 @@ class StylingAgentClass implements Agent {
           debugInfo
         };
       }
+
+      // Transform shoes data to match ShoeItem interface
+      const allShoes: ShoeItem[] = allShoesRaw.map(shoe => ({
+        ...shoe,
+        image: shoe.url || '/placeholder.svg', // Use url field for image
+        price: shoe.price || 0,
+        colour: shoe.color || shoe.colour || 'unknown'
+      }));
       
       debugInfo.raw_data.clothing_fetched = allClothing.length;
       debugInfo.raw_data.shoes_fetched = allShoes.length;
@@ -306,15 +325,15 @@ class StylingAgentClass implements Agent {
     // Categorize clothing items from zara_cloth
     const categorizedItems = this.categorizeClothingItems(allClothing, debugInfo);
     
-    // Filter shoes with valid images from shoes table
-    const validShoes = allShoes.filter(shoe => 
-      shoe.availability === 'in stock' && 
-      this.isValidImagePattern(shoe.image, 'shoes')
-    );
+    // Filter shoes and categorize by type for event matching
+    const categorizedShoes = this.categorizeShoesByType(allShoes);
     
-    debugInfo.categorization.shoes_with_valid_images = validShoes.length;
+    debugInfo.categorization.shoes_with_valid_images = allShoes.length;
     
-    console.log(`👟 [SHOES FILTERING] Valid shoes with images: ${validShoes.length}/${allShoes.length}`);
+    console.log(`👟 [SHOES CATEGORIZATION] Total shoes: ${allShoes.length}`);
+    Object.entries(categorizedShoes).forEach(([type, shoes]) => {
+      console.log(`👟 [${type.toUpperCase()}] ${shoes.length} pairs`);
+    });
     
     const looks: Look[] = [];
     const usedItemIds = new Set<string>();
@@ -323,15 +342,19 @@ class StylingAgentClass implements Agent {
     const eventType = request.event || 'casual';
     debugInfo.outfit_logic.event_type = eventType;
     
+    // Select appropriate shoes based on event type
+    const appropriateShoes = this.selectShoesForEvent(categorizedShoes, eventType);
+    
     // Create outfits based on event type and available items
     if (eventType === 'evening' || eventType === 'formal') {
       console.log(`✨ [EVENING/FORMAL LOGIC] Creating elegant outfits`);
+      debugInfo.outfit_logic.outfit_rules_applied.push('EVENING_FORMAL_PRIORITY');
       
       // Priority 1: Dress outfits for formal events
       if (categorizedItems.dresses.length > 0) {
         await this.createDressOutfits(
           categorizedItems.dresses,
-          validShoes,
+          appropriateShoes,
           looks,
           usedItemIds,
           usedShoeIds,
@@ -344,7 +367,7 @@ class StylingAgentClass implements Agent {
       if (looks.length < 3) {
         await this.createFormalOutfits(
           categorizedItems,
-          validShoes,
+          appropriateShoes,
           looks,
           usedItemIds,
           usedShoeIds,
@@ -353,11 +376,12 @@ class StylingAgentClass implements Agent {
       }
     } else {
       console.log(`👕 [CASUAL/DAYTIME LOGIC] Creating relaxed outfits`);
+      debugInfo.outfit_logic.outfit_rules_applied.push('CASUAL_DAYTIME_PRIORITY');
       
       // Priority 1: Casual top+bottom combinations
       await this.createCasualOutfits(
         categorizedItems,
-        validShoes,
+        appropriateShoes,
         looks,
         usedItemIds,
         usedShoeIds,
@@ -368,7 +392,7 @@ class StylingAgentClass implements Agent {
       if (looks.length < 3 && categorizedItems.dresses.length > 0) {
         await this.createDressOutfits(
           categorizedItems.dresses,
-          validShoes,
+          appropriateShoes,
           looks,
           usedItemIds,
           usedShoeIds,
@@ -382,7 +406,7 @@ class StylingAgentClass implements Agent {
     if (looks.length < 3 && categorizedItems.jumpsuits.length > 0) {
       await this.createJumpsuitOutfits(
         categorizedItems.jumpsuits,
-        validShoes,
+        appropriateShoes,
         looks,
         usedItemIds,
         usedShoeIds,
@@ -397,6 +421,83 @@ class StylingAgentClass implements Agent {
       reasoning: `Created ${looks.length} outfits for ${eventType} event using clothing from zara_cloth and shoes from shoes table`,
       debugInfo
     };
+  }
+
+  private categorizeShoesByType(shoes: ShoeItem[]): { [key: string]: ShoeItem[] } {
+    const categories = {
+      heels: [] as ShoeItem[],
+      boots: [] as ShoeItem[],
+      sneakers: [] as ShoeItem[],
+      sandals: [] as ShoeItem[],
+      loafers: [] as ShoeItem[],
+      flats: [] as ShoeItem[],
+      other: [] as ShoeItem[]
+    };
+
+    shoes.forEach(shoe => {
+      const name = shoe.name?.toLowerCase() || '';
+      const description = shoe.description?.toLowerCase() || '';
+      const breadcrumbs = JSON.stringify(shoe.breadcrumbs || {}).toLowerCase();
+      const searchText = `${name} ${description} ${breadcrumbs}`;
+
+      if (searchText.includes('heel') || searchText.includes('stiletto') || searchText.includes('pump')) {
+        categories.heels.push(shoe);
+      } else if (searchText.includes('boot') || searchText.includes('ankle boot') || searchText.includes('knee boot')) {
+        categories.boots.push(shoe);
+      } else if (searchText.includes('sneaker') || searchText.includes('trainer') || searchText.includes('athletic')) {
+        categories.sneakers.push(shoe);
+      } else if (searchText.includes('sandal') || searchText.includes('flip flop') || searchText.includes('slide')) {
+        categories.sandals.push(shoe);
+      } else if (searchText.includes('loafer') || searchText.includes('oxford') || searchText.includes('derby')) {
+        categories.loafers.push(shoe);
+      } else if (searchText.includes('flat') || searchText.includes('ballet') || searchText.includes('slip on')) {
+        categories.flats.push(shoe);
+      } else {
+        categories.other.push(shoe);
+      }
+    });
+
+    return categories;
+  }
+
+  private selectShoesForEvent(categorizedShoes: { [key: string]: ShoeItem[] }, eventType: string): ShoeItem[] {
+    console.log(`👠 [SHOE SELECTION] Selecting shoes for event: ${eventType}`);
+    
+    let selectedShoes: ShoeItem[] = [];
+    
+    if (eventType === 'evening' || eventType === 'formal') {
+      // For formal events: heels > boots > loafers > other
+      selectedShoes = [
+        ...categorizedShoes.heels,
+        ...categorizedShoes.boots.filter(boot => this.isLeatherBoot(boot)),
+        ...categorizedShoes.loafers,
+        ...categorizedShoes.other
+      ];
+    } else if (eventType === 'work' || eventType === 'business') {
+      // For work: loafers > heels > boots > flats
+      selectedShoes = [
+        ...categorizedShoes.loafers,
+        ...categorizedShoes.heels,
+        ...categorizedShoes.boots,
+        ...categorizedShoes.flats
+      ];
+    } else {
+      // For casual: sneakers > flats > sandals > other
+      selectedShoes = [
+        ...categorizedShoes.sneakers,
+        ...categorizedShoes.flats,
+        ...categorizedShoes.sandals,
+        ...categorizedShoes.other
+      ];
+    }
+    
+    console.log(`👠 [SHOE SELECTION] Selected ${selectedShoes.length} appropriate shoes for ${eventType}`);
+    return selectedShoes;
+  }
+
+  private isLeatherBoot(shoe: ShoeItem): boolean {
+    const searchText = `${shoe.name} ${shoe.description}`.toLowerCase();
+    return searchText.includes('leather') || searchText.includes('suede');
   }
 
   private async createDressOutfits(
@@ -440,7 +541,7 @@ class StylingAgentClass implements Agent {
         id: shoe.name,
         title: shoe.name,
         description: shoe.description || '',
-        image: this.normalizeImageField(shoe.image, 'shoes'),
+        image: shoe.image, // Already processed from url field
         price: shoe.price ? `$${shoe.price}` : '0',
         type: 'shoes'
       }
@@ -516,7 +617,7 @@ class StylingAgentClass implements Agent {
           id: shoe.name,
           title: shoe.name,
           description: shoe.description || '',
-          image: this.normalizeImageField(shoe.image, 'shoes'),
+          image: shoe.image, // Already processed from url field
           price: shoe.price ? `$${shoe.price}` : '0',
           type: 'shoes'
         }
@@ -595,7 +696,7 @@ class StylingAgentClass implements Agent {
         id: shoe.name,
         title: shoe.name,
         description: shoe.description || '',
-        image: this.normalizeImageField(shoe.image, 'shoes'),
+        image: shoe.image, // Already processed from url field
         price: shoe.price ? `$${shoe.price}` : '0',
         type: 'shoes'
       }
@@ -802,7 +903,7 @@ class StylingAgentClass implements Agent {
     const availableShoes = shoesItems.filter(shoe => 
       shoe.availability === 'in stock' && 
       (shoe.price || 0) <= budget * 0.4 &&
-      this.isValidImagePattern(shoe.image, 'shoes')
+      shoe.image !== '/placeholder.svg'
     );
     
     console.log(`[DEBUG] Available items - tops: ${tops.length}, bottoms: ${bottoms.length}, shoes with valid images: ${availableShoes.length}/${shoesItems.length}`);
