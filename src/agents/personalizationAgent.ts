@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabaseClient";
 import { Agent, AgentResult } from "./index";
 import { createCasualOutfit, getCasualStyleRecommendations } from "../services/casualOutfitService";
@@ -6,10 +5,6 @@ import logger from "@/lib/logger";
 
 export class PersonalizationAgent implements Agent {
   name = "personalization-agent";
-  role = "Fashion Personalization Specialist";
-  goal = "Create personalized outfit recommendations based on user preferences and style analysis";
-  backstory = "An expert in fashion personalization with deep understanding of body shapes, color preferences, and style profiles";
-  tools: any[] = [];
 
   async run(userId: string): Promise<AgentResult> {
     try {
@@ -50,13 +45,10 @@ export class PersonalizationAgent implements Agent {
           };
         }
 
-        // בניית מערך פריטים - תמיד 3 פריטים בסיסיים לקזואל
-        const items = [casualOutfit.top, casualOutfit.bottom, casualOutfit.shoes];
-
         outfitData = {
           looks: [{
             id: `casual-look-${Date.now()}`,
-            items,
+            items: [casualOutfit.top, casualOutfit.bottom, casualOutfit.shoes],
             style: 'casual',
             occasion: 'casual',
             description: `מראה קזואל נוח ומעוצב - ${casualOutfit.top.name}, ${casualOutfit.bottom.name} ו${casualOutfit.shoes.name}`,
@@ -110,14 +102,6 @@ export class PersonalizationAgent implements Agent {
           item.product_name?.toLowerCase().includes('נעל')
         ).slice(0, 3);
 
-        // חיפוש מעילים/ג'קטים
-        const outerwear = filteredItems.filter(item => 
-          item.product_name?.toLowerCase().includes('מעיל') || 
-          item.product_name?.toLowerCase().includes('ג\'קט') ||
-          item.product_name?.toLowerCase().includes('קרדיגן') ||
-          item.product_name?.toLowerCase().includes('בלייזר')
-        ).slice(0, 2);
-
         if (tops.length === 0 || bottoms.length === 0 || shoes.length === 0) {
           return {
             success: false,
@@ -125,58 +109,45 @@ export class PersonalizationAgent implements Agent {
           };
         }
 
-        // בניית מערך פריטים - 3 פריטים בסיסיים + מעיל אם יש
-        const items = [
-          {
-            id: tops[0].id,
-            name: tops[0].product_name,
-            type: 'top',
-            price: `₪${tops[0].price}`,
-            image: this.extractImageUrl(tops[0].image)
-          },
-          {
-            id: bottoms[0].id,
-            name: bottoms[0].product_name,
-            type: 'bottom',
-            price: `₪${bottoms[0].price}`,
-            image: this.extractImageUrl(bottoms[0].image)
-          },
-          {
-            id: shoes[0].id,
-            name: shoes[0].product_name,
-            type: 'shoes',
-            price: `₪${shoes[0].price}`,
-            image: this.extractImageUrl(shoes[0].image)
-          }
-        ];
-
-        // הוספת מעיל אם קיים (פריט רביעי)
-        if (outerwear.length > 0) {
-          items.push({
-            id: outerwear[0].id,
-            name: outerwear[0].product_name,
-            type: 'outerwear',
-            price: `₪${outerwear[0].price}`,
-            image: this.extractImageUrl(outerwear[0].image)
-          });
-        }
-
+        // יצירת לוק ראשון
         const firstLook = {
           id: `look-${Date.now()}`,
-          items,
+          items: [
+            {
+              id: tops[0].id,
+              name: tops[0].product_name,
+              type: 'top',
+              price: `₪${tops[0].price}`,
+              image: this.extractImageUrl(tops[0].image)
+            },
+            {
+              id: bottoms[0].id,
+              name: bottoms[0].product_name,
+              type: 'bottom',
+              price: `₪${bottoms[0].price}`,
+              image: this.extractImageUrl(bottoms[0].image)
+            },
+            {
+              id: shoes[0].id,
+              name: shoes[0].product_name,
+              type: 'shoes',
+              price: `₪${shoes[0].price}`,
+              image: this.extractImageUrl(shoes[0].image)
+            }
+          ],
           style: styleProfile,
           occasion: 'general',
-          description: `מראה ${styleProfile} מותאם לפרופיל הסטייל שלך${outerwear.length > 0 ? ' עם מעיל נוסף' : ''}`
+          description: `מראה ${styleProfile} מותאם לפרופיל הסטייל שלך`
         };
 
         outfitData = {
           looks: [firstLook],
-          reasoning: `נבחר על בסיס הפרופיל ${styleProfile} וההעדפות שלך${outerwear.length > 0 ? ', כולל מעיל מתאים' : ''}`
+          reasoning: `נבחר על בסיס הפרופיל ${styleProfile} וההעדפות שלך`
         };
 
         recommendations = [
           'התאם אביזרים מתאימים כדי להשלים את המראה',
-          outerwear.length > 0 ? 'המעיל מוסיף שכבה אלגנטית למראה' : 'שקול להוסיף שכבות נוספות בהתאם למזג האוויר',
+          'שקול להוסיף שכבות נוספות בהתאם למזג האוויר',
           'וודא שהצבעים מתאימים זה לזה'
         ];
       }

@@ -595,40 +595,11 @@ class StylingAgentClass implements Agent {
           type: 'shoes'
         }
       ];
-
-      // חיפוש מעיל מתאים לשמלה (פריט רביעי)
-      const { supabase } = await import('../lib/supabaseClient');
-      const { data: outerwearItems } = await supabase
-        .from('zara_cloth')
-        .select('*')
-        .eq('availability', true)
-        .limit(20);
-
-      if (outerwearItems) {
-        const outerwear = outerwearItems.filter(item => 
-          this.isOuterwearItem(item) && 
-          !usedItemIds.has(item.id) &&
-          (isUnlimited || item.price <= budget * 0.3)
-        );
-
-        if (outerwear.length > 0) {
-          const selectedOuterwear = outerwear[0];
-          lookItems.push({
-            id: selectedOuterwear.id,
-            title: selectedOuterwear.product_name,
-            description: selectedOuterwear.description || '',
-            image: this.normalizeImageField(selectedOuterwear.image, 'clothing'),
-            price: selectedOuterwear.price ? `$${selectedOuterwear.price}` : '0',
-            type: 'outerwear'
-          });
-          usedItemIds.add(selectedOuterwear.id);
-        }
-      }
       
       const look: Look = {
         id: `coordinated-dress-look-${looks.length}`,
         items: lookItems,
-        description: `${dress.product_name} עם ${coordinatingShoes.name} מטבלת הנעליים${lookItems.length > 2 ? ' ומעיל מתאים' : ''}`,
+        description: `${dress.product_name} עם ${coordinatingShoes.name} מטבלת הנעליים`,
         occasion: eventType as any,
         style: 'elegant',
         mood: mood as any
@@ -741,30 +712,11 @@ class StylingAgentClass implements Agent {
           type: 'shoes'
         }
       ];
-
-      // חיפוש מעיל מתאים לתלבושת קזואלית (פריט רביעי)
-      const availableOuterwear = categorizedItems.outerwear.filter((item: ZaraClothItem) => 
-        !usedItemIds.has(item.id) &&
-        (isUnlimited || item.price <= budget * 0.2)
-      );
-
-      if (availableOuterwear.length > 0) {
-        const selectedOuterwear = availableOuterwear[0];
-        lookItems.push({
-          id: selectedOuterwear.id,
-          title: selectedOuterwear.product_name,
-          description: selectedOuterwear.description || '',
-          image: this.normalizeImageField(selectedOuterwear.image, 'clothing'),
-          price: selectedOuterwear.price ? `$${selectedOuterwear.price}` : '0',
-          type: 'outerwear'
-        });
-        usedItemIds.add(selectedOuterwear.id);
-      }
       
       const look: Look = {
         id: `coordinated-casual-look-${looks.length}`,
         items: lookItems,
-        description: `${top.product_name} עם ${coordinatingBottom.product_name} ו${coordinatingShoes.name} מטבלת הנעליים${lookItems.length > 3 ? ' ומעיל מתאים' : ''}`,
+        description: `${top.product_name} עם ${coordinatingBottom.product_name} ו${coordinatingShoes.name} מטבלת הנעליים`,
         occasion: 'casual',
         style: 'casual',
         mood: mood as any
