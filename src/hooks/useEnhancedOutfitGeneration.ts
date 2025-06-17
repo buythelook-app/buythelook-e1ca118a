@@ -100,7 +100,7 @@ export function useEnhancedOutfitGeneration() {
           itemCount: items.length,
           lookId: firstLook.id,
           hasRecommendations: result.data?.recommendations?.length > 0,
-          learningApplied: result.data?.learningData?.applied
+          learningApplied: (result.data as any)?.learningData?.applied
         }
       });
       
@@ -111,7 +111,7 @@ export function useEnhancedOutfitGeneration() {
       return {
         success: true,
         items: items,
-        learningData: result.data?.learningData
+        learningData: (result.data as any)?.learningData
       };
       
     } catch (error) {

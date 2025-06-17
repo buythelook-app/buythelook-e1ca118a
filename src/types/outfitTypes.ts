@@ -1,4 +1,3 @@
-
 export interface OutfitItem {
   color: string;
   product_name: string;
@@ -30,8 +29,16 @@ export interface CoordinatedOutfitData {
   agentFlow: string;
 }
 
+export interface EnhancedOutfitData extends CoordinatedOutfitData {
+  learningData?: {
+    applied: boolean;
+    insights: number;
+    homepageIntegration: boolean;
+  };
+}
+
 export interface OutfitResponse {
   success: boolean;
-  data?: CoordinatedOutfitData;
+  data?: EnhancedOutfitData;
   error?: string;
 }

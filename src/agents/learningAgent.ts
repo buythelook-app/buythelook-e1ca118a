@@ -104,13 +104,13 @@ export class LearningAgent {
     try {
       console.log(`💾 [LearningAgent] שומר נתוני למידה למסד הנתונים`);
       
-      // שמירה בטבלת agent_runs עם סוג מיוחד
+      // שמירה בטבלת agent_runs עם סוג מיוחד - cast to Json
       const { error } = await supabase
         .from('agent_runs')
         .insert({
           user_id: learningData.userId,
           agent_name: 'learning-agent',
-          result: learningData,
+          result: learningData as any, // Cast to Json type
           score: learningData.contextData.userEngagement * 10, // ציון מבוסס על מעורבות
           status: 'learning_data'
         });
@@ -150,7 +150,7 @@ export class LearningAgent {
         return [];
       }
       
-      const learningDataArray = data?.map(row => row.result as LearningData) || [];
+      const learningDataArray = data?.map(row => row.result as unknown as LearningData) || [];
       
       console.log(`✅ [LearningAgent] נטענו ${learningDataArray.length} רשומות למידה`);
       return learningDataArray;
