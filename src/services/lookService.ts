@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -5,7 +6,7 @@ import { findCasualItems } from "./casualOutfitService";
 import logger from "@/lib/logger";
 
 /**
- * מחזיר הצעת תלבושת ראשונה על בסיס ניתוח הסטייל
+ * מחזיר הצעת תלבושת ראשונה על בסיס ניתוח הסטייל - תמיד בדיוק 3 פריטים
  */
 export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false): Promise<DashboardItem[]> {
   try {
@@ -40,6 +41,7 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
 
       const casualOutfit: DashboardItem[] = [];
       
+      // תמיד בדיוק 3 פריטים: עליון, תחתון, נעליים
       if (casualTops.length > 0) {
         casualOutfit.push({
           id: casualTops[0].id,
@@ -73,8 +75,9 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
         });
       }
 
-      if (casualOutfit.length >= 3) {
-        logger.info("תלבושת קזואלית הוחזרה בהצלחה", {
+      // ודא שיש בדיוק 3 פריטים
+      if (casualOutfit.length === 3) {
+        logger.info("תלבושת קזואלית הוחזרה בהצלחה עם 3 פריטים", {
           context: "lookService",
           data: { itemCount: casualOutfit.length }
         });
@@ -82,9 +85,8 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       }
     }
 
-    // לוגיקה רגילה לסגנונות אחרים או אם הקזואל נכשל
+    // לוגיקה רגילה לסגנונות אחרים
     const colorPreferences = parsedStyleAnalysis?.analysis?.colorPreferences || [];
-    const bodyShape = parsedStyleAnalysis?.analysis?.bodyShape;
 
     // קבלת פריטים מהמאגר
     const { data: allItems, error } = await supabase
@@ -132,7 +134,7 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       return name.includes('נעל') || name.includes('סנדל') || name.includes('מגף');
     });
 
-    // בחירת פריט אחד מכל קטגוריה
+    // בחירת פריט אחד מכל קטגוריה - תמיד בדיוק 3 פריטים
     const selectedItems: DashboardItem[] = [];
 
     if (tops.length > 0) {
@@ -171,11 +173,11 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       });
     }
 
-    if (selectedItems.length < 3) {
-      throw new Error('לא נמצאו מספיק פריטים מתאימים ליצירת תלבושת שלמה');
+    if (selectedItems.length !== 3) {
+      throw new Error('לא נמצאו מספיק פריטים ליצירת תלבושת שלמה עם 3 פריטים');
     }
 
-    logger.info("הצעת תלבושת הוחזרה בהצלחה", {
+    logger.info("הצעת תלבושת הוחזרה בהצלחה עם 3 פריטים", {
       context: "lookService",
       data: { 
         itemCount: selectedItems.length,
@@ -192,5 +194,53 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       data: error
     });
     throw error;
+  }
+}
+
+/**
+ * מחזיר פריטים לדשבורד - תמיד בדיוק 3 פריטים לכל אירוע
+ */
+export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardItem[] }> {
+  try {
+    const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
+    const result: { [key: string]: DashboardItem[] } = {};
+    
+    for (const occasion of occasions) {
+      // כל אירוע מקבל בדיוק 3 פריטים
+      const items = await fetchFirstOutfitSuggestion(false);
+      result[occasion] = items;
+    }
+    
+    return result;
+  } catch (error) {
+    logger.error("שגיאה בהחזרת פריטי דשבורד:", {
+      context: "lookService",
+      data: error
+    });
+    throw error;
+  }
+}
+
+/**
+ * מנקה את המטמון של התלבושות
+ */
+export function clearOutfitCache(bodyShape?: string, style?: string, mood?: string): void {
+  // נקה נתונים מקומיים
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('outfit-colors');
+    localStorage.removeItem('last-outfit-data');
+    console.log('🧹 [LookService] מטמון תלבושות נוקה');
+  }
+}
+
+/**
+ * מנקה מעקב פריטים גלובלי
+ */
+export function clearGlobalItemTrackers(): void {
+  // נקה נתונים מקומיים
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('outfit-feedback');
+    localStorage.removeItem('style-recommendations');
+    console.log('🧹 [LookService] מעקב פריטים גלובלי נוקה');
   }
 }

@@ -6,11 +6,15 @@ export { validatorAgent } from './validatorAgent';
 export { recommendationAgent } from './recommendationAgent';
 export { trainerAgent, runValidationCycle } from './trainerAgent';
 
-// Define and export the common Agent interface from this central location
+// Define and export the common Agent interface and result types
 export interface Agent {
-  role: string;
-  goal: string;
-  backstory: string;
-  tools: any[];
-  run: (userId: string) => Promise<any>; // Make run method required
+  name: string;
+  run: (userId: string) => Promise<AgentResult>;
+}
+
+export interface AgentResult {
+  success: boolean;
+  data?: any;
+  error?: string;
+  recommendations?: string[];
 }
