@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -132,6 +133,13 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       return name.includes('נעל') || name.includes('סנדל') || name.includes('מגף');
     });
 
+    // חיפוש מעילים/ג'קטים
+    const outerwear = filteredItems.filter(item => {
+      const name = item.product_name?.toLowerCase() || '';
+      return name.includes('מעיל') || name.includes('ג\'קט') || 
+             name.includes('קרדיגן') || name.includes('בלייזר');
+    });
+
     // בחירת פריט אחד מכל קטגוריה
     const selectedItems: DashboardItem[] = [];
 
@@ -171,6 +179,19 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       });
     }
 
+    // הוספת מעיל אם קיים (פריט רביעי)
+    if (outerwear.length > 0) {
+      const coat = outerwear[0];
+      selectedItems.push({
+        id: coat.id,
+        name: coat.product_name,
+        image: extractImageUrl(coat.image),
+        type: 'outerwear',
+        price: `₪${coat.price}`,
+        description: coat.description || ''
+      });
+    }
+
     if (selectedItems.length < 3) {
       throw new Error('לא נמצאו מספיק פריטים מתאימים ליצירת תלבושת שלמה');
     }
@@ -193,4 +214,32 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
     });
     throw error;
   }
+}
+
+/**
+ * מחזיר פריטים לדשבורד
+ */
+export async function fetchDashboardItems(): Promise<DashboardItem[]> {
+  return await fetchFirstOutfitSuggestion();
+}
+
+/**
+ * מנקה מטמון התלבושות
+ */
+export function clearOutfitCache(): void {
+  // ניקוי מידע מקומי
+  localStorage.removeItem('cached-outfit');
+  localStorage.removeItem('outfit-timestamp');
+  console.log('מטמון התלבושות נוקה');
+}
+
+/**
+ * מנקה מעקב פריטים גלובלי
+ */
+export function clearGlobalItemTrackers(): void {
+  // ניקוי מידע מקומי
+  localStorage.removeItem('outfit-feedback');
+  localStorage.removeItem('style-recommendations');
+  localStorage.removeItem('user-preferences');
+  console.log('מעקב פריטים גלובלי נוקה');
 }
