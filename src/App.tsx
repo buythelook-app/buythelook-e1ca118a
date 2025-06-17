@@ -10,7 +10,7 @@ import AgentDebugPage from './pages/AgentDebugPage';
 import Index from './pages/Index';
 import { Auth } from './pages/Auth';
 import { Entrance } from './pages/Entrance';
-import PasswordRecovery from './pages/PasswordRecovery';
+import { PasswordRecovery } from './pages/PasswordRecovery';
 import OutfitGenerationPage from './pages/OutfitGenerationPage';
 import RecommendationTest from './pages/RecommendationTest';
 import AgentSimulationPage from './pages/AgentSimulationPage';
