@@ -294,6 +294,111 @@ class StylingAgentClass implements Agent {
     return categorized;
   }
 
+  private async createOutfitsFromSeparateSources(
+    request: StylingRequest,
+    allClothing: ZaraClothItem[],
+    allShoes: ShoeItem[],
+    debugInfo: DebugInfo
+  ): Promise<StylingResult> {
+    console.log(`🎯 [DUAL SOURCE LOGIC] Starting outfit creation with separate sources`);
+    console.log(`📊 [DATA] Clothing items: ${allClothing.length}, Shoes: ${allShoes.length}`);
+    
+    // Categorize clothing items from zara_cloth
+    const categorizedItems = this.categorizeClothingItems(allClothing, debugInfo);
+    
+    // Filter shoes with valid images from shoes table
+    const validShoes = allShoes.filter(shoe => 
+      shoe.availability === 'in stock' && 
+      this.isValidImagePattern(shoe.image, 'shoes')
+    );
+    
+    debugInfo.categorization.shoes_with_valid_images = validShoes.length;
+    
+    console.log(`👟 [SHOES FILTERING] Valid shoes with images: ${validShoes.length}/${allShoes.length}`);
+    
+    const looks: Look[] = [];
+    const usedItemIds = new Set<string>();
+    const usedShoeIds = new Set<string>();
+    
+    const eventType = request.event || 'casual';
+    debugInfo.outfit_logic.event_type = eventType;
+    
+    // Create outfits based on event type and available items
+    if (eventType === 'evening' || eventType === 'formal') {
+      console.log(`✨ [EVENING/FORMAL LOGIC] Creating elegant outfits`);
+      
+      // Priority 1: Dress outfits for formal events
+      if (categorizedItems.dresses.length > 0) {
+        await this.createDressOutfits(
+          categorizedItems.dresses,
+          validShoes,
+          looks,
+          usedItemIds,
+          usedShoeIds,
+          debugInfo,
+          eventType
+        );
+      }
+      
+      // Priority 2: Formal top+bottom combinations
+      if (looks.length < 3) {
+        await this.createFormalOutfits(
+          categorizedItems,
+          validShoes,
+          looks,
+          usedItemIds,
+          usedShoeIds,
+          debugInfo
+        );
+      }
+    } else {
+      console.log(`👕 [CASUAL/DAYTIME LOGIC] Creating relaxed outfits`);
+      
+      // Priority 1: Casual top+bottom combinations
+      await this.createCasualOutfits(
+        categorizedItems,
+        validShoes,
+        looks,
+        usedItemIds,
+        usedShoeIds,
+        debugInfo
+      );
+      
+      // Priority 2: Add dress outfits if available
+      if (looks.length < 3 && categorizedItems.dresses.length > 0) {
+        await this.createDressOutfits(
+          categorizedItems.dresses,
+          validShoes,
+          looks,
+          usedItemIds,
+          usedShoeIds,
+          debugInfo,
+          eventType
+        );
+      }
+    }
+    
+    // Priority 3: Add jumpsuit outfits if we have space
+    if (looks.length < 3 && categorizedItems.jumpsuits.length > 0) {
+      await this.createJumpsuitOutfits(
+        categorizedItems.jumpsuits,
+        validShoes,
+        looks,
+        usedItemIds,
+        usedShoeIds,
+        debugInfo
+      );
+    }
+    
+    console.log(`✅ [OUTFIT CREATION COMPLETE] Created ${looks.length} outfits using dual source logic`);
+    
+    return {
+      looks,
+      reasoning: `Created ${looks.length} outfits for ${eventType} event using clothing from zara_cloth and shoes from shoes table`,
+      debugInfo
+    };
+  }
+
   private async createDressOutfits(
     dresses: ZaraClothItem[], 
     shoes: ShoeItem[], 
