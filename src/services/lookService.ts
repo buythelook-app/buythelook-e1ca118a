@@ -237,6 +237,47 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
 }
 
 /**
+ * מחזיר נתונים לכל ההזדמנויות
+ */
+export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardItem[] }> {
+  try {
+    console.log('🔍 [fetchDashboardItems] Starting to fetch items for all occasions...');
+    
+    // קבלת תלבושת בסיס
+    const baseOutfit = await fetchFirstOutfitSuggestion();
+    console.log('✅ [fetchDashboardItems] Base outfit received:', baseOutfit.length, 'items');
+    
+    // יצירת וריאציות לכל הזדמנות
+    const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
+    const data: { [key: string]: DashboardItem[] } = {};
+    
+    occasions.forEach(occasion => {
+      // יצירת עותק של התלבושת הבסיסית לכל הזדמנות
+      data[occasion] = baseOutfit.map(item => ({
+        ...item,
+        id: `${item.id}-${occasion.toLowerCase()}` // מזהה ייחודי לכל הזדמנות
+      }));
+      
+      console.log(`✅ [fetchDashboardItems] Created ${occasion} outfit with ${data[occasion].length} items`);
+    });
+    
+    console.log('✅ [fetchDashboardItems] All occasions processed successfully');
+    return data;
+    
+  } catch (error) {
+    console.error('❌ [fetchDashboardItems] Error:', error);
+    
+    // החזרת תלבושות ריקות במקרה של שגיאה
+    const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
+    const emptyData: { [key: string]: DashboardItem[] } = {};
+    occasions.forEach(occasion => {
+      emptyData[occasion] = [];
+    });
+    return emptyData;
+  }
+}
+
+/**
  * זיהוי שמלות וטוניקות
  */
 function isDressOrTunic(item: any): boolean {
@@ -257,10 +298,6 @@ function isDressOrTunic(item: any): boolean {
 // Export placeholder functions for compatibility
 export function clearGlobalItemTrackers() {
   console.log('clearGlobalItemTrackers called');
-}
-
-export function fetchDashboardItems() {
-  return fetchFirstOutfitSuggestion();
 }
 
 export function clearOutfitCache() {
