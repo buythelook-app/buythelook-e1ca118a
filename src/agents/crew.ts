@@ -5,6 +5,17 @@ import { CompatibilityCheckerTool } from "../tools/compatibilityCheckerTool";
 import { GenerateRecommendationsTool } from "../tools/generateRecommendationsTool";
 import { OutfitResponse } from "../types/outfitTypes";
 
+interface GenerationContext {
+  userId: string;
+  forceRefresh?: boolean;
+  randomSeed?: number;
+  timestamp?: number;
+  excludeCombinations?: string[];
+  excludeItems?: string[];
+  preferredItems?: string[];
+  attempt?: number;
+}
+
 /**
  * The AgentCrew orchestrates running all agents in sequence to generate a complete outfit recommendation
  */
@@ -22,11 +33,16 @@ export class AgentCrew {
 
   /**
    * Runs all agents in coordinated sequence to generate a complete outfit recommendation
-   * @param userId The ID of the user to generate recommendations for
+   * @param context The generation context containing userId and other parameters
    * @returns A complete outfit recommendation with styling tips
    */
-  async run(userId: string): Promise<OutfitResponse> {
+  async run(context: GenerationContext | string): Promise<OutfitResponse> {
+    // Handle both old string format and new context object format for backward compatibility
+    const userId = typeof context === 'string' ? context : context.userId;
+    const generationContext = typeof context === 'string' ? { userId: context } : context;
+    
     console.log(`🚀 [AgentCrew] Starting COORDINATED agent workflow for user: ${userId}`);
+    console.log(`🎲 [AgentCrew] Generation context:`, generationContext);
     
     try {
       // Step 1: Run personalization agent to gather user profile and preferences
@@ -80,7 +96,8 @@ export class AgentCrew {
         ],
         validation: validatorResult?.data || null,
         timestamp: new Date().toISOString(),
-        agentFlow: 'coordinated'
+        agentFlow: 'coordinated',
+        generationContext: generationContext
       };
       
       console.log(`🎉 [AgentCrew] COORDINATED workflow completed successfully!`);
