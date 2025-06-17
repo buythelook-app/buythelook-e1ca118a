@@ -1,44 +1,40 @@
 
-import { supabase } from "@/lib/supabaseClient";
-import { Agent, AgentResult } from "./index";
-import logger from "@/lib/logger";
+import { CompatibilityCheckerTool } from "../tools/compatibilityCheckerTool";
 
-export class ValidatorAgentClass implements Agent {
-  name = "validator-agent";
+// Interface defined but not exported to avoid conflicts
+interface Agent {
+  role: string;
+  goal: string;
+  backstory: string;
+  tools: any[];
+  run: (userId: string) => Promise<any>;
+}
 
-  async run(userId: string): Promise<AgentResult> {
+/**
+ * Outfit Validator Agent
+ * Ensures outfit suggestions are compatible and appropriate
+ */
+export const validatorAgent: Agent = {
+  role: "Outfit Validator",
+  goal: "Ensure outfit suggestions are compatible and appropriate",
+  backstory: "Knows what fits what, and validates look quality",
+  tools: [CompatibilityCheckerTool],
+  
+  async run(userId: string) {
+    console.log(`[ValidatorAgent] Running validation for user: ${userId}`);
     try {
-      console.log(`🔍 [ValidatorAgent] מתחיל בדיקת תאימות עבור: ${userId}`);
-      
-      // כאן נוכל להוסיף לוגיקה לבדיקת תאימות תלבושות
-      // לעת עתה נחזיר תוצאה חיובית
-      
-      const validationData = {
-        isCompatible: true,
-        score: 85,
-        feedback: "התלבושת מתאימה ונראית טוב",
-        suggestions: [
-          "צירוף אביזרים יכול לשפר את המראה",
-          "התאמת צבעים מושלמת"
-        ]
-      };
-
-      console.log(`✅ [ValidatorAgent] בדיקה הושלמה בהצלחה עבור ${userId}`);
-
+      // For now, return success since we need the outfit data to validate
+      // This will be called with specific outfit data in the crew workflow
       return {
         success: true,
-        data: validationData,
-        recommendations: validationData.suggestions
+        data: { isCompatible: true, message: "Validation passed" }
       };
-
     } catch (error) {
-      console.error(`❌ [ValidatorAgent] שגיאה:`, error);
+      console.error(`[ValidatorAgent] Error:`, error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "שגיאה לא ידועה"
+        error: error instanceof Error ? error.message : "Unknown error in validation"
       };
     }
   }
-}
-
-export const validatorAgent = new ValidatorAgentClass();
+};

@@ -45,7 +45,6 @@ export class PersonalizationAgent implements Agent {
           };
         }
 
-        // יצירת תלבושת עם בדיוק 3 פריטים: עליון, תחתון, נעליים
         outfitData = {
           looks: [{
             id: `casual-look-${Date.now()}`,
@@ -91,14 +90,12 @@ export class PersonalizationAgent implements Agent {
         // חלוקת פריטים לקטגוריות
         const tops = filteredItems.filter(item => 
           item.product_name?.toLowerCase().includes('חולצ') || 
-          item.product_name?.toLowerCase().includes('טופ') ||
-          item.product_name?.toLowerCase().includes('בלוז')
+          item.product_name?.toLowerCase().includes('טופ')
         ).slice(0, 3);
 
         const bottoms = filteredItems.filter(item => 
           item.product_name?.toLowerCase().includes('מכנס') || 
-          item.product_name?.toLowerCase().includes('חצאית') ||
-          item.product_name?.toLowerCase().includes('ג\'ינס')
+          item.product_name?.toLowerCase().includes('חצאית')
         ).slice(0, 3);
 
         const shoes = filteredItems.filter(item => 
@@ -112,7 +109,7 @@ export class PersonalizationAgent implements Agent {
           };
         }
 
-        // יצירת לוק עם בדיוק 3 פריטים: עליון, תחתון, נעליים
+        // יצירת לוק ראשון
         const firstLook = {
           id: `look-${Date.now()}`,
           items: [

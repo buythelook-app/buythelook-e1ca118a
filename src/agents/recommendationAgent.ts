@@ -1,45 +1,43 @@
 
-import { supabase } from "@/lib/supabaseClient";
-import { Agent, AgentResult } from "./index";
-import logger from "@/lib/logger";
+import { GenerateRecommendationsTool } from "../tools/generateRecommendationsTool";
 
-export class RecommendationAgentClass implements Agent {
-  name = "recommendation-agent";
+// Interface defined but not exported to avoid conflicts
+interface Agent {
+  role: string;
+  goal: string;
+  backstory: string;
+  tools: any[];
+  run: (userId: string) => Promise<any>;
+}
 
-  async run(userId: string): Promise<AgentResult> {
+/**
+ * Recommendation Enhancer Agent
+ * Adds styling advice and contextual info to outfits
+ */
+export const recommendationAgent: Agent = {
+  role: "Recommendation Enhancer",
+  goal: "Add styling advice and contextual info to outfits",
+  backstory: "Adds value to the recommendation using knowledge of fashion and occasion",
+  tools: [GenerateRecommendationsTool],
+  
+  async run(userId: string) {
+    console.log(`[RecommendationAgent] Running for user: ${userId}`);
     try {
-      console.log(`💡 [RecommendationAgent] מתחיל יצירת המלצות עבור: ${userId}`);
-      
-      // קבלת המלצות בסיסיות על סמך העדפות המשתמש
-      const recommendations = [
-        "השתמש באביזרים מתאימים כדי להשלים את המראה",
-        "ודא שהצבעים מתאימים זה לזה ויוצרים הרמוניה",
-        "התאם את הבחירה לאירוע המתוכנן",
-        "שקול את מזג האוויר בבחירת השכבות"
-      ];
-
-      const recommendationData = {
-        tips: recommendations,
-        styleAdvice: "המראה שנבחר מתאים לסגנון שלך",
-        occasion: "general"
-      };
-
-      console.log(`✅ [RecommendationAgent] המלצות נוצרו בהצלחה עבור ${userId}`);
-
+      // Return general styling recommendations
       return {
         success: true,
-        data: recommendationData,
-        recommendations
+        recommendations: [
+          'תוכל להוסיף אביזרים מתאימים כדי להשלים את המראה',
+          'שקול להתאים את הבחירה לאירוע הספציפי',
+          'חשוב על הצבעים ואיך הם משלימים זה את זה'
+        ]
       };
-
     } catch (error) {
-      console.error(`❌ [RecommendationAgent] שגיאה:`, error);
+      console.error(`[RecommendationAgent] Error:`, error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "שגיאה לא ידועה"
+        error: error instanceof Error ? error.message : "Unknown error in recommendations"
       };
     }
   }
-}
-
-export const recommendationAgent = new RecommendationAgentClass();
+};

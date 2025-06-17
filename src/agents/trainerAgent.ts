@@ -1,4 +1,3 @@
-
 import { personalizationAgent, stylingAgent, validatorAgent, recommendationAgent, Agent } from "./index";
 import { ProfileFetcherTool } from "../tools/profileFetcherTool";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
@@ -256,10 +255,14 @@ interface ValidationResult {
 }
 
 /**
- * Trainer Agent - implements the Agent interface correctly
+ * Trainer Agent
+ * Runs automated validation of all agents and their outputs periodically
  */
 export const trainerAgent: Agent = {
-  name: "trainer-agent",
+  role: "Trainer Agent",
+  goal: "Run automated validation of all agents and their outputs periodically",
+  backstory: "Responsible for testing the accuracy and consistency of agent logic",
+  tools: [RunValidationCycleTool],
   
   async run(userId: string) {
     console.log(`[TrainerAgent] Running validation cycle for user: ${userId}`);
