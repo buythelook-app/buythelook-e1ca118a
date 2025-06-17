@@ -1,10 +1,14 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { Agent, AgentResult } from "./index";
 import { createCasualOutfit, getCasualStyleRecommendations } from "../services/casualOutfitService";
 import logger from "@/lib/logger";
 
 export class PersonalizationAgent implements Agent {
-  name = "personalization-agent";
+  role = "Personal Stylist Agent";
+  goal = "Create personalized outfit recommendations based on user preferences";
+  backstory = "An experienced personal stylist with deep knowledge of fashion trends and body types";
+  tools: any[] = [];
 
   async run(userId: string): Promise<AgentResult> {
     try {
@@ -87,10 +91,17 @@ export class PersonalizationAgent implements Agent {
           return colorMatch;
         });
 
-        // חלוקת פריטים לקטגוריות
+        // זיהוי שמלות וטוניקות (פריטים שלא צריכים חלק תחתון)
+        const dressesAndTunics = filteredItems.filter(item => 
+          this.isDressOrTunic(item)
+        );
+
+        // חלוקת פריטים לקטגוריות (ללא שמלות וטוניקות)
         const tops = filteredItems.filter(item => 
-          item.product_name?.toLowerCase().includes('חולצ') || 
-          item.product_name?.toLowerCase().includes('טופ')
+          !this.isDressOrTunic(item) && (
+            item.product_name?.toLowerCase().includes('חולצ') || 
+            item.product_name?.toLowerCase().includes('טופ')
+          )
         ).slice(0, 3);
 
         const bottoms = filteredItems.filter(item => 
@@ -102,48 +113,81 @@ export class PersonalizationAgent implements Agent {
           item.product_name?.toLowerCase().includes('נעל')
         ).slice(0, 3);
 
-        if (tops.length === 0 || bottoms.length === 0 || shoes.length === 0) {
+        // אם יש שמלה או טוניקה, יצירת לוק עם 2 פריטים בלבד
+        if (dressesAndTunics.length > 0 && shoes.length > 0) {
+          const dressOrTunic = dressesAndTunics[0];
+          const selectedShoes = shoes[0];
+
+          const dressLook = {
+            id: `dress-look-${Date.now()}`,
+            items: [
+              {
+                id: dressOrTunic.id,
+                name: dressOrTunic.product_name,
+                type: 'dress',
+                price: `₪${dressOrTunic.price}`,
+                image: this.extractImageUrl(dressOrTunic.image)
+              },
+              {
+                id: selectedShoes.id,
+                name: selectedShoes.product_name,
+                type: 'shoes',
+                price: `₪${selectedShoes.price}`,
+                image: this.extractImageUrl(selectedShoes.image)
+              }
+            ],
+            style: styleProfile,
+            occasion: 'general',
+            description: `${this.isDress(dressOrTunic) ? 'שמלה' : 'טוניקה'} ${dressOrTunic.product_name} עם ${selectedShoes.product_name}`
+          };
+
+          outfitData = {
+            looks: [dressLook],
+            reasoning: `נבחר ${this.isDress(dressOrTunic) ? 'שמלה' : 'טוניקה'} על בסיס הפרופיל ${styleProfile} - אין צורך בחלק תחתון`
+          };
+
+        } else if (tops.length > 0 && bottoms.length > 0 && shoes.length > 0) {
+          // לוק רגיל עם 3 פריטים
+          const firstLook = {
+            id: `look-${Date.now()}`,
+            items: [
+              {
+                id: tops[0].id,
+                name: tops[0].product_name,
+                type: 'top',
+                price: `₪${tops[0].price}`,
+                image: this.extractImageUrl(tops[0].image)
+              },
+              {
+                id: bottoms[0].id,
+                name: bottoms[0].product_name,
+                type: 'bottom',
+                price: `₪${bottoms[0].price}`,
+                image: this.extractImageUrl(bottoms[0].image)
+              },
+              {
+                id: shoes[0].id,
+                name: shoes[0].product_name,
+                type: 'shoes',
+                price: `₪${shoes[0].price}`,
+                image: this.extractImageUrl(shoes[0].image)
+              }
+            ],
+            style: styleProfile,
+            occasion: 'general',
+            description: `מראה ${styleProfile} מותאם לפרופיל הסטייל שלך`
+          };
+
+          outfitData = {
+            looks: [firstLook],
+            reasoning: `נבחר על בסיס הפרופיל ${styleProfile} וההעדפות שלך`
+          };
+        } else {
           return {
             success: false,
-            error: "לא נמצאו מספיק פריטים מתאימים"
+            error: "לא נמצאו מספיק פריטים מתאימים ליצירת תלבושת שלמה"
           };
         }
-
-        // יצירת לוק ראשון
-        const firstLook = {
-          id: `look-${Date.now()}`,
-          items: [
-            {
-              id: tops[0].id,
-              name: tops[0].product_name,
-              type: 'top',
-              price: `₪${tops[0].price}`,
-              image: this.extractImageUrl(tops[0].image)
-            },
-            {
-              id: bottoms[0].id,
-              name: bottoms[0].product_name,
-              type: 'bottom',
-              price: `₪${bottoms[0].price}`,
-              image: this.extractImageUrl(bottoms[0].image)
-            },
-            {
-              id: shoes[0].id,
-              name: shoes[0].product_name,
-              type: 'shoes',
-              price: `₪${shoes[0].price}`,
-              image: this.extractImageUrl(shoes[0].image)
-            }
-          ],
-          style: styleProfile,
-          occasion: 'general',
-          description: `מראה ${styleProfile} מותאם לפרופיל הסטייל שלך`
-        };
-
-        outfitData = {
-          looks: [firstLook],
-          reasoning: `נבחר על בסיס הפרופיל ${styleProfile} וההעדפות שלך`
-        };
 
         recommendations = [
           'התאם אביזרים מתאימים כדי להשלים את המראה',
@@ -170,6 +214,32 @@ export class PersonalizationAgent implements Agent {
         error: error instanceof Error ? error.message : "שגיאה לא ידועה"
       };
     }
+  }
+
+  private isDressOrTunic(item: any): boolean {
+    const name = (item.product_name || '').toLowerCase();
+    const subfamily = (item.product_subfamily || '').toLowerCase();
+    const family = (item.product_family || '').toLowerCase();
+    
+    const dressKeywords = ['שמלה', 'dress', 'gown'];
+    const tunicKeywords = ['טוניקה', 'tunic'];
+    
+    const searchText = `${name} ${subfamily} ${family}`;
+    
+    return [...dressKeywords, ...tunicKeywords].some(keyword => 
+      searchText.includes(keyword)
+    );
+  }
+
+  private isDress(item: any): boolean {
+    const name = (item.product_name || '').toLowerCase();
+    const subfamily = (item.product_subfamily || '').toLowerCase();
+    const family = (item.product_family || '').toLowerCase();
+    
+    const dressKeywords = ['שמלה', 'dress', 'gown'];
+    const searchText = `${name} ${subfamily} ${family}`;
+    
+    return dressKeywords.some(keyword => searchText.includes(keyword));
   }
 
   private extractImageUrl(imageJson: any): string {
@@ -232,13 +302,13 @@ export class PersonalizationAgent implements Agent {
         .from('agent_runs')
         .insert({
           user_id: userId,
-          agent_name: this.name,
+          agent_name: 'personalization-agent',
           result: data as any,
           score,
           status: 'success'
         });
     } catch (error) {
-      console.error(`שגיאה בשמירת תוצאה עבור ${this.name}:`, error);
+      console.error(`שגיאה בשמירת תוצאה עבור personalization-agent:`, error);
     }
   }
 }

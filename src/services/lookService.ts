@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -116,10 +117,15 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       return true;
     });
 
-    // חלוקת פריטים לקטגוריות
+    // זיהוי שמלות וטוניקות
+    const dressesAndTunics = filteredItems.filter(item => 
+      isDressOrTunic(item)
+    );
+
+    // חלוקת פריטים לקטגוריות (ללא שמלות וטוניקות)
     const tops = filteredItems.filter(item => {
       const name = item.product_name?.toLowerCase() || '';
-      return name.includes('חולצ') || name.includes('טופ') || name.includes('בלוז');
+      return !isDressOrTunic(item) && (name.includes('חולצ') || name.includes('טופ') || name.includes('בלוז'));
     });
 
     const bottoms = filteredItems.filter(item => {
@@ -132,9 +138,44 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       return name.includes('נעל') || name.includes('סנדל') || name.includes('מגף');
     });
 
-    // בחירת פריט אחד מכל קטגוריה
     const selectedItems: DashboardItem[] = [];
 
+    // אם יש שמלה או טוניקה, יצירת לוק עם 2 פריטים בלבד
+    if (dressesAndTunics.length > 0 && shoes.length > 0) {
+      const dressOrTunic = dressesAndTunics[0];
+      const selectedShoes = shoes[0];
+
+      selectedItems.push({
+        id: dressOrTunic.id,
+        name: dressOrTunic.product_name,
+        image: extractImageUrl(dressOrTunic.image),
+        type: 'dress',
+        price: `₪${dressOrTunic.price}`,
+        description: dressOrTunic.description || ''
+      });
+
+      selectedItems.push({
+        id: selectedShoes.id,
+        name: selectedShoes.product_name,
+        image: extractImageUrl(selectedShoes.image),
+        type: 'shoes',
+        price: `₪${selectedShoes.price}`,
+        description: selectedShoes.description || ''
+      });
+
+      logger.info("תלבושת עם שמלה/טוניקה הוחזרה בהצלחה", {
+        context: "lookService",
+        data: { 
+          itemCount: selectedItems.length,
+          type: 'dress_outfit',
+          items: selectedItems.map(item => ({ name: item.name, type: item.type }))
+        }
+      });
+
+      return selectedItems;
+    }
+
+    // בחירת פריט אחד מכל קטגוריה (לוק רגיל)
     if (tops.length > 0) {
       const top = tops[0];
       selectedItems.push({
@@ -171,7 +212,7 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       });
     }
 
-    if (selectedItems.length < 3) {
+    if (selectedItems.length < 2) {
       throw new Error('לא נמצאו מספיק פריטים מתאימים ליצירת תלבושת שלמה');
     }
 
@@ -193,4 +234,35 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
     });
     throw error;
   }
+}
+
+/**
+ * זיהוי שמלות וטוניקות
+ */
+function isDressOrTunic(item: any): boolean {
+  const name = (item.product_name || '').toLowerCase();
+  const subfamily = (item.product_subfamily || '').toLowerCase();
+  const family = (item.product_family || '').toLowerCase();
+  
+  const dressKeywords = ['שמלה', 'dress', 'gown'];
+  const tunicKeywords = ['טוניקה', 'tunic'];
+  
+  const searchText = `${name} ${subfamily} ${family}`;
+  
+  return [...dressKeywords, ...tunicKeywords].some(keyword => 
+    searchText.includes(keyword)
+  );
+}
+
+// Export placeholder functions for compatibility
+export function clearGlobalItemTrackers() {
+  console.log('clearGlobalItemTrackers called');
+}
+
+export function fetchDashboardItems() {
+  return fetchFirstOutfitSuggestion();
+}
+
+export function clearOutfitCache() {
+  console.log('clearOutfitCache called');
 }

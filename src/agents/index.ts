@@ -14,3 +14,11 @@ export interface Agent {
   tools: any[];
   run: (userId: string) => Promise<any>; // Make run method required
 }
+
+// Define agent result interface
+export interface AgentResult {
+  success: boolean;
+  data?: any;
+  error?: string;
+  recommendations?: string[];
+}
