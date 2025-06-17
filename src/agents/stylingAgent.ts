@@ -119,7 +119,7 @@ interface DebugInfo {
 
 class StylingAgentClass implements Agent {
   role = "Senior Fashion Stylist";
-  goal = "Create fashionable and appropriate outfit combinations based on user preferences, budget, mood, and color coordination";
+  goal = "Create fashionable and appropriate outfit combinations using clothing from zara_cloth table and shoes from shoes table";
   backstory = "An experienced fashion stylist with expertise in body shapes, color coordination, fabric matching, and budget-conscious styling";
   tools: any[] = [];
 
@@ -141,7 +141,7 @@ class StylingAgentClass implements Agent {
       }
     };
 
-    console.log(`🎯 [StylingAgent] Starting ENHANCED outfit generation with ALL FILTERS for user: ${userId}`);
+    console.log(`🎯 [StylingAgent] Starting outfit generation for user: ${userId} - USING SHOES TABLE ONLY`);
     
     try {
       // Get user preferences from localStorage
@@ -149,14 +149,15 @@ class StylingAgentClass implements Agent {
       const currentMood = localStorage.getItem('current-mood') || 'elegant';
       const currentEvent = localStorage.getItem('current-event') || 'casual';
       
-      // 🆕 GET BUDGET FROM FILTERS
+      // Get budget from filters
       const budgetData = this.getBudgetFromFilters();
       const budget = budgetData.budget;
       const isUnlimited = budgetData.isUnlimited;
       
       console.log(`💰 [BUDGET FILTER] Budget: ${isUnlimited ? 'UNLIMITED' : `$${budget}`}`);
-      debugInfo.filters_applied.push('BUDGET_FILTER');
+      debugInfo.filters_applied.push('BUDGET_FILTER', 'SHOES_TABLE_ONLY');
       debugInfo.logic_notes.push(`Budget applied: ${isUnlimited ? 'UNLIMITED' : `$${budget}`}`);
+      debugInfo.logic_notes.push(`SHOES SOURCE: "shoes" table only - NO other sources`);
       
       if (!styleData) {
         debugInfo.logic_notes.push('ERROR: No style profile found in localStorage');
@@ -171,23 +172,22 @@ class StylingAgentClass implements Agent {
       const bodyShape = parsedData?.analysis?.bodyShape || 'H';
       const style = parsedData?.analysis?.styleProfile || 'classic';
       
-      debugInfo.filters_applied.push('bodyShape', 'mood', 'style', 'event', 'NO_UNDERWEAR', 'COLOR_COORDINATION', 'FABRIC_MATCHING');
-      debugInfo.logic_notes.push(`Enhanced profile: bodyShape=${bodyShape}, style=${style}, mood=${currentMood}, event=${currentEvent}, budget=${isUnlimited ? 'unlimited' : budget}`);
       debugInfo.outfit_logic.event_type = currentEvent;
       
       console.log(`🎭 [ENHANCED LOGIC] Event: ${currentEvent}, Style: ${style}, Mood: ${currentMood}, Budget: ${isUnlimited ? 'unlimited' : budget}`);
       
-      // Fetch from dual sources
+      // Fetch from dual sources - CLOTHING FROM zara_cloth, SHOES FROM shoes TABLE ONLY
       const { supabase } = await import('../lib/supabaseClient');
       
-      console.log(`🔍 [DEBUG] Fetching from DUAL SOURCES with BUDGET FILTER...`);
+      console.log(`🔍 [SHOES TABLE] Fetching shoes ONLY from "shoes" table...`);
       
-      // 🆕 BUDGET-FILTERED QUERIES
+      // Fetch clothing from zara_cloth table with budget filter
       let clothingQuery = supabase
         .from('zara_cloth')
         .select('*')
         .eq('availability', true);
         
+      // 🆕 FETCH SHOES ONLY FROM "SHOES" TABLE
       let shoesQuery = supabase
         .from('shoes')
         .select('*')
@@ -195,8 +195,8 @@ class StylingAgentClass implements Agent {
       
       // Apply budget filter if not unlimited
       if (!isUnlimited && budget > 0) {
-        clothingQuery = clothingQuery.lte('price', budget * 0.7); // 70% of budget for clothing
-        shoesQuery = shoesQuery.lte('price', budget * 0.3); // 30% of budget for shoes
+        clothingQuery = clothingQuery.lte('price', budget * 0.7);
+        shoesQuery = shoesQuery.lte('price', budget * 0.3);
         console.log(`💰 [BUDGET] Filtering clothing ≤ $${budget * 0.7}, shoes ≤ $${budget * 0.3}`);
       }
       
@@ -213,10 +213,10 @@ class StylingAgentClass implements Agent {
       }
 
       if (shoesError || !allShoesRaw) {
-        debugInfo.logic_notes.push(`ERROR: Failed to fetch shoes - ${shoesError?.message}`);
+        debugInfo.logic_notes.push(`ERROR: Failed to fetch shoes from "shoes" table - ${shoesError?.message}`);
         return {
           success: false,
-          error: 'Failed to fetch available shoes from shoes table',
+          error: 'Failed to fetch available shoes from "shoes" table',
           debugInfo
         };
       }
@@ -224,7 +224,9 @@ class StylingAgentClass implements Agent {
       debugInfo.raw_data.clothing_fetched = allClothingRaw.length;
       debugInfo.raw_data.shoes_fetched = allShoesRaw.length;
       
-      // Filter out underwear and apply mood-based color filtering
+      console.log(`📊 [SHOES TABLE SUCCESS] Fetched ${allShoesRaw.length} shoes from "shoes" table`);
+      
+      // Filter out underwear and apply mood-based filtering for clothing
       const allClothing = this.filterClothingByMoodAndBudget(
         this.filterOutUnderwear(allClothingRaw, debugInfo), 
         currentMood, 
@@ -236,10 +238,10 @@ class StylingAgentClass implements Agent {
       debugInfo.raw_data.clothing_available = allClothing.length;
       debugInfo.raw_data.underwear_filtered = allClothingRaw.length - allClothing.length;
       
-      console.log(`🚫 [UNDERWEAR + MOOD FILTER] Removed ${debugInfo.raw_data.underwear_filtered} items`);
-      console.log(`✅ [FILTERED CLOTHING] ${allClothing.length} mood-appropriate, budget-friendly items remain`);
+      console.log(`🚫 [UNDERWEAR FILTER] Removed ${debugInfo.raw_data.underwear_filtered} underwear items`);
+      console.log(`✅ [FILTERED CLOTHING] ${allClothing.length} clothing items remain`);
 
-      // Transform and filter shoes
+      // Transform and filter shoes FROM "shoes" TABLE ONLY
       const allShoes: ShoeItem[] = allShoesRaw.map(shoe => ({
         ...shoe,
         image: shoe.url || '/placeholder.svg',
@@ -247,11 +249,12 @@ class StylingAgentClass implements Agent {
         colour: shoe.color || shoe.colour || 'unknown'
       }));
       
-      // 🆕 FILTER SHOES BY MOOD COLORS
+      // Filter shoes by mood colors
       const filteredShoes = this.filterShoesByMood(allShoes, currentMood, debugInfo);
       debugInfo.raw_data.shoes_available = filteredShoes.length;
       
-      console.log(`👠 [MOOD FILTER] Filtered shoes from ${allShoes.length} to ${filteredShoes.length} mood-appropriate pairs`);
+      console.log(`👠 [SHOES TABLE FILTERED] Filtered shoes from ${allShoes.length} to ${filteredShoes.length} mood-appropriate pairs`);
+      debugInfo.logic_notes.push(`Shoes source confirmed: "shoes" table - ${filteredShoes.length} available`);
       
       // Create enhanced styling request
       const request: StylingRequest = {
@@ -261,8 +264,6 @@ class StylingAgentClass implements Agent {
         event: currentEvent,
         availableItems: []
       };
-      
-      debugInfo.logic_notes.push(`Enhanced StylingRequest: ${JSON.stringify(request)}`);
       
       // Generate outfits with enhanced coordination
       const result = await this.createEnhancedOutfitsWithCoordination(
@@ -277,7 +278,7 @@ class StylingAgentClass implements Agent {
       const endTime = performance.now();
       debugInfo.performance.total_time_ms = endTime - startTime;
       
-      console.log(`✅ [ENHANCED STYLING COMPLETE] Created ${result.looks.length} COORDINATED outfits with mood, budget, and color matching`);
+      console.log(`✅ [STYLING COMPLETE] Created ${result.looks.length} outfits with shoes from "shoes" table only`);
       
       return {
         success: true,
@@ -294,7 +295,7 @@ class StylingAgentClass implements Agent {
       debugInfo.logic_notes.push(`CRITICAL ERROR: ${error instanceof Error ? error.message : 'Unknown error'}`);
       debugInfo.performance.total_time_ms = performance.now() - startTime;
       
-      console.error('❌ [StylingAgent] Error in enhanced outfit generation:', error);
+      console.error('❌ [StylingAgent] Error in outfit generation:', error);
       
       return {
         success: false,
@@ -342,12 +343,10 @@ class StylingAgentClass implements Agent {
     console.log(`🎨 [MOOD COLORS] ${mood} → [${moodColors.join(', ')}]`);
     
     const filtered = clothingItems.filter(item => {
-      // Budget check (if not unlimited)
       if (!isUnlimited && item.price > budget * 0.7) {
         return false;
       }
       
-      // Color mood check - allow items that match mood or are neutral
       const itemColor = (item.colour || '').toLowerCase();
       const itemName = (item.product_name || '').toLowerCase();
       
@@ -357,7 +356,6 @@ class StylingAgentClass implements Agent {
         ColorCoordinationService.areColorsCompatible(itemColor, moodColor)
       );
       
-      // Allow neutral colors (they go with any mood)
       const neutralColors = ['black', 'white', 'gray', 'beige', 'brown'];
       const isNeutral = neutralColors.some(neutral => 
         itemColor.includes(neutral) || itemName.includes(neutral)
@@ -381,7 +379,7 @@ class StylingAgentClass implements Agent {
    * 🆕 Filter shoes by mood appropriateness
    */
   private filterShoesByMood(shoes: ShoeItem[], mood: string, debugInfo: DebugInfo): ShoeItem[] {
-    console.log(`👠 [SHOES MOOD FILTER] Filtering ${shoes.length} shoes for mood: ${mood}`);
+    console.log(`👠 [SHOES MOOD FILTER] Filtering ${shoes.length} shoes from "shoes" table for mood: ${mood}`);
     
     const moodColors = ColorCoordinationService.getColorsForMood(mood);
     
@@ -395,7 +393,6 @@ class StylingAgentClass implements Agent {
         ColorCoordinationService.areColorsCompatible(shoeColor, moodColor)
       );
       
-      // Allow neutral shoes
       const neutralColors = ['black', 'white', 'brown', 'beige', 'gray'];
       const isNeutral = neutralColors.some(neutral => 
         shoeColor.includes(neutral) || shoeName.includes(neutral)
@@ -405,13 +402,13 @@ class StylingAgentClass implements Agent {
     });
     
     debugInfo.filtering_steps.push({
-      step: 'Shoes Mood Filter',
+      step: 'Shoes Mood Filter (shoes table)',
       items_before: shoes.length,
       items_after: filtered.length,
-      criteria: `Mood colors: [${moodColors.join(', ')}]`
+      criteria: `Mood colors: [${moodColors.join(', ')}] from "shoes" table`
     });
     
-    console.log(`👠 [SHOES MOOD RESULT] Filtered from ${shoes.length} to ${filtered.length} mood-appropriate shoes`);
+    console.log(`👠 [SHOES TABLE RESULT] Filtered from ${shoes.length} to ${filtered.length} mood-appropriate shoes`);
     return filtered;
   }
 
@@ -426,8 +423,8 @@ class StylingAgentClass implements Agent {
     isUnlimited: boolean,
     debugInfo: DebugInfo
   ): Promise<StylingResult> {
-    console.log(`🎯 [ENHANCED COORDINATION] Creating outfits with color/fabric matching`);
-    console.log(`📊 [DATA] Clothing: ${allClothing.length}, Shoes: ${allShoes.length}, Budget: ${isUnlimited ? 'unlimited' : `$${budget}`}`);
+    console.log(`🎯 [ENHANCED COORDINATION] Creating outfits with shoes from "shoes" table only`);
+    console.log(`📊 [DATA] Clothing: ${allClothing.length}, Shoes from "shoes" table: ${allShoes.length}, Budget: ${isUnlimited ? 'unlimited' : `$${budget}`}`);
     
     const categorizedItems = this.categorizeClothingItems(allClothing, debugInfo);
     const categorizedShoes = this.categorizeShoesByType(allShoes);
@@ -443,7 +440,7 @@ class StylingAgentClass implements Agent {
     
     const appropriateShoes = this.selectShoesForEvent(categorizedShoes, eventType);
     
-    console.log(`🎯 [ENHANCED] Creating ${eventType} outfits with color coordination and mood: ${request.mood}`);
+    console.log(`🎯 [ENHANCED] Creating ${eventType} outfits with shoes from "shoes" table`);
     
     // Create coordinated outfits based on event type
     if (eventType === 'evening' || eventType === 'formal') {
@@ -502,7 +499,6 @@ class StylingAgentClass implements Agent {
       }
     }
     
-    // Add jumpsuit outfits if needed
     if (looks.length < 3 && categorizedItems.jumpsuits.length > 0) {
       await this.createCoordinatedJumpsuitOutfits(
         categorizedItems.jumpsuits,
@@ -517,18 +513,18 @@ class StylingAgentClass implements Agent {
       );
     }
     
-    // 🆕 SCORE OUTFITS BASED ON COORDINATION
+    // Score outfits based on coordination
     looks.forEach((look, index) => {
       const coordinationScore = ColorCoordinationService.scoreOutfitCoordination(look.items, request.mood);
       console.log(`🏆 [COORDINATION SCORE] Look ${index + 1}: ${coordinationScore}/100`);
       debugInfo.logic_notes.push(`Look ${index + 1} coordination score: ${coordinationScore}/100`);
     });
     
-    console.log(`✅ [ENHANCED CREATION COMPLETE] Created ${looks.length} coordinated outfits`);
+    console.log(`✅ [CREATION COMPLETE] Created ${looks.length} outfits with shoes from "shoes" table only`);
     
     return {
       looks,
-      reasoning: `Created ${looks.length} enhanced outfits for ${eventType} event with color coordination, fabric matching, mood alignment (${request.mood}), and budget consideration (${isUnlimited ? 'unlimited' : `$${budget}`})`,
+      reasoning: `Created ${looks.length} outfits for ${eventType} event with color coordination, fabric matching, mood alignment (${request.mood}), budget consideration (${isUnlimited ? 'unlimited' : `$${budget}`}), and shoes from "shoes" table only`,
       debugInfo
     };
   }
@@ -548,7 +544,7 @@ class StylingAgentClass implements Agent {
     budget: number,
     isUnlimited: boolean
   ) {
-    console.log(`👗 [COORDINATED DRESS] Creating color-matched dress outfits`);
+    console.log(`👗 [COORDINATED DRESS] Creating dress outfits with shoes from "shoes" table`);
     
     const availableDresses = dresses.filter(dress => !usedItemIds.has(dress.id));
     const availableShoes = shoes.filter(shoe => !usedShoeIds.has(shoe.name));
@@ -557,14 +553,11 @@ class StylingAgentClass implements Agent {
       return;
     }
     
-    // Find the best color-coordinated dress + shoes combination
     for (const dress of availableDresses.slice(0, 2)) {
-      // Check budget if not unlimited
       if (!isUnlimited && dress.price > budget * 0.8) {
         continue;
       }
       
-      // Find shoes that coordinate with the dress
       const coordinatingShoes = availableShoes.find(shoe => {
         const totalCost = dress.price + (shoe.price || 0);
         if (!isUnlimited && totalCost > budget) {
@@ -578,12 +571,11 @@ class StylingAgentClass implements Agent {
       });
       
       if (!coordinatingShoes) {
-        console.log(`❌ [COORDINATION] No matching shoes found for dress: ${dress.product_name}`);
         continue;
       }
       
-      console.log(`✅ [COORDINATED DRESS] ${dress.product_name} + ${coordinatingShoes.name}`);
-      debugInfo.outfit_logic.outfit_rules_applied.push('COORDINATED_DRESS_SHOES');
+      console.log(`✅ [DRESS + SHOES TABLE] ${dress.product_name} + ${coordinatingShoes.name} (from shoes table)`);
+      debugInfo.outfit_logic.outfit_rules_applied.push('COORDINATED_DRESS_SHOES_TABLE');
       
       const lookItems = [
         {
@@ -607,7 +599,7 @@ class StylingAgentClass implements Agent {
       const look: Look = {
         id: `coordinated-dress-look-${looks.length}`,
         items: lookItems,
-        description: `${dress.product_name} עם ${coordinatingShoes.name} - תואם צבעים למצב רוח ${mood}`,
+        description: `${dress.product_name} עם ${coordinatingShoes.name} מטבלת הנעליים`,
         occasion: eventType as any,
         style: 'elegant',
         mood: mood as any
@@ -617,7 +609,7 @@ class StylingAgentClass implements Agent {
       usedItemIds.add(dress.id);
       usedShoeIds.add(coordinatingShoes.name);
       
-      break; // One coordinated dress outfit is enough
+      break;
     }
   }
 
@@ -635,7 +627,7 @@ class StylingAgentClass implements Agent {
     budget: number,
     isUnlimited: boolean
   ) {
-    console.log(`👕 [COORDINATED CASUAL] Creating color-matched casual outfits`);
+    console.log(`👕 [COORDINATED CASUAL] Creating casual outfits with shoes from "shoes" table`);
     
     const availableTops = categorizedItems.tops.filter((item: ZaraClothItem) => !usedItemIds.has(item.id));
     const availableBottoms = categorizedItems.bottoms.filter((item: ZaraClothItem) => !usedItemIds.has(item.id));
@@ -650,11 +642,9 @@ class StylingAgentClass implements Agent {
     for (let i = 0; i < maxCasualLooks && i < availableTops.length; i++) {
       const top = availableTops[i];
       
-      // Find a bottom that coordinates with the top
       const coordinatingBottom = availableBottoms.find(bottom => {
         if (usedItemIds.has(bottom.id)) return false;
         
-        // Budget check
         if (!isUnlimited && (top.price + bottom.price) > budget * 0.7) {
           return false;
         }
@@ -666,11 +656,9 @@ class StylingAgentClass implements Agent {
       });
       
       if (!coordinatingBottom) {
-        console.log(`❌ [COORDINATION] No matching bottom for top: ${top.product_name}`);
         continue;
       }
       
-      // Find shoes that coordinate with the outfit
       const coordinatingShoes = availableShoes.find(shoe => {
         if (usedShoeIds.has(shoe.name)) return false;
         
@@ -679,7 +667,6 @@ class StylingAgentClass implements Agent {
           return false;
         }
         
-        // Check if shoes coordinate with either top or bottom
         return (
           ColorCoordinationService.areColorsCompatible(
             top.colour || 'unknown', 
@@ -693,12 +680,11 @@ class StylingAgentClass implements Agent {
       });
       
       if (!coordinatingShoes) {
-        console.log(`❌ [COORDINATION] No matching shoes for outfit: ${top.product_name} + ${coordinatingBottom.product_name}`);
         continue;
       }
       
-      console.log(`✅ [COORDINATED CASUAL] ${top.product_name} + ${coordinatingBottom.product_name} + ${coordinatingShoes.name}`);
-      debugInfo.outfit_logic.outfit_rules_applied.push('COORDINATED_CASUAL_OUTFIT');
+      console.log(`✅ [CASUAL + SHOES TABLE] ${top.product_name} + ${coordinatingBottom.product_name} + ${coordinatingShoes.name} (from shoes table)`);
+      debugInfo.outfit_logic.outfit_rules_applied.push('COORDINATED_CASUAL_SHOES_TABLE');
       
       const lookItems = [
         {
@@ -730,7 +716,7 @@ class StylingAgentClass implements Agent {
       const look: Look = {
         id: `coordinated-casual-look-${looks.length}`,
         items: lookItems,
-        description: `${top.product_name} עם ${coordinatingBottom.product_name} ו${coordinatingShoes.name} - תואם צבעים למצב רוח ${mood}`,
+        description: `${top.product_name} עם ${coordinatingBottom.product_name} ו${coordinatingShoes.name} מטבלת הנעליים`,
         occasion: 'casual',
         style: 'casual',
         mood: mood as any
@@ -754,9 +740,8 @@ class StylingAgentClass implements Agent {
     budget: number,
     isUnlimited: boolean
   ) {
-    // Similar to casual but with formal prioritization
     await this.createCoordinatedCasualOutfits(categorizedItems, shoes, looks, usedItemIds, usedShoeIds, debugInfo, mood, budget, isUnlimited);
-    debugInfo.outfit_logic.outfit_rules_applied.push('COORDINATED_FORMAL_PRIORITY');
+    debugInfo.outfit_logic.outfit_rules_applied.push('COORDINATED_FORMAL_PRIORITY_SHOES_TABLE');
   }
 
   private async createCoordinatedJumpsuitOutfits(
@@ -770,9 +755,8 @@ class StylingAgentClass implements Agent {
     budget: number,
     isUnlimited: boolean
   ) {
-    console.log(`🤸 [COORDINATED JUMPSUIT] Creating color-matched jumpsuit outfits`);
+    console.log(`🤸 [COORDINATED JUMPSUIT] Creating jumpsuit outfits with shoes from "shoes" table`);
     
-    // Similar logic to dress outfits but for jumpsuits
     const availableJumpsuits = jumpsuits.filter(jumpsuit => !usedItemIds.has(jumpsuit.id));
     const availableShoes = shoes.filter(shoe => !usedShoeIds.has(shoe.name));
     
@@ -782,7 +766,6 @@ class StylingAgentClass implements Agent {
     
     const jumpsuit = availableJumpsuits[0];
     
-    // Check budget
     if (!isUnlimited && jumpsuit.price > budget * 0.8) {
       return;
     }
@@ -803,8 +786,8 @@ class StylingAgentClass implements Agent {
       return;
     }
     
-    console.log(`✅ [COORDINATED JUMPSUIT] ${jumpsuit.product_name} + ${coordinatingShoes.name}`);
-    debugInfo.outfit_logic.outfit_rules_applied.push('COORDINATED_JUMPSUIT_SHOES');
+    console.log(`✅ [JUMPSUIT + SHOES TABLE] ${jumpsuit.product_name} + ${coordinatingShoes.name} (from shoes table)`);
+    debugInfo.outfit_logic.outfit_rules_applied.push('COORDINATED_JUMPSUIT_SHOES_TABLE');
     
     const lookItems = [
       {
@@ -828,7 +811,7 @@ class StylingAgentClass implements Agent {
     const look: Look = {
       id: `coordinated-jumpsuit-look-${looks.length}`,
       items: lookItems,
-      description: `${jumpsuit.product_name} עם ${coordinatingShoes.name} - תואם צבעים למצב רוח ${mood}`,
+      description: `${jumpsuit.product_name} עם ${coordinatingShoes.name} מטבלת הנעליים`,
       occasion: 'general',
       style: 'modern',
       mood: mood as any
@@ -892,7 +875,7 @@ class StylingAgentClass implements Agent {
       outerwear: [] as ZaraClothItem[]
     };
 
-    console.log(`🏷️ [CATEGORIZATION] Processing ${clothingItems.length} CLEAN clothing items...`);
+    console.log(`🏷️ [CATEGORIZATION] Processing ${clothingItems.length} clothing items...`);
 
     for (const item of clothingItems) {
       let category = 'unknown';
@@ -915,18 +898,17 @@ class StylingAgentClass implements Agent {
       }
       
       if (category !== 'unknown') {
-        console.log(`🏷️ [ITEM] ${item.product_name} → ${category.toUpperCase()} (family: ${item.product_family}, subfamily: ${item.product_subfamily})`);
+        console.log(`🏷️ [ITEM] ${item.product_name} → ${category.toUpperCase()}`);
       }
     }
 
-    // Update debug info with categorization
     debugInfo.categorization.tops = categorized.tops.length;
     debugInfo.categorization.bottoms = categorized.bottoms.length;
     debugInfo.categorization.dresses = categorized.dresses.length;
     debugInfo.categorization.jumpsuits = categorized.jumpsuits.length;
     debugInfo.categorization.outerwear = categorized.outerwear.length;
     
-    console.log(`📊 [CATEGORIZATION SUMMARY] Tops: ${categorized.tops.length}, Bottoms: ${categorized.bottoms.length}, Dresses: ${categorized.dresses.length}, Jumpsuits: ${categorized.jumpsuits.length}, Outerwear: ${categorized.outerwear.length}`);
+    console.log(`📊 [CATEGORIZATION] Tops: ${categorized.tops.length}, Bottoms: ${categorized.bottoms.length}, Dresses: ${categorized.dresses.length}, Jumpsuits: ${categorized.jumpsuits.length}, Outerwear: ${categorized.outerwear.length}`);
     
     return categorized;
   }
@@ -969,7 +951,7 @@ class StylingAgentClass implements Agent {
   }
 
   private selectShoesForEvent(categorizedShoes: { [key: string]: ShoeItem[] }, eventType: string): ShoeItem[] {
-    console.log(`👠 [SHOE SELECTION] Selecting shoes for event: ${eventType}`);
+    console.log(`👠 [SHOE SELECTION] Selecting shoes from "shoes" table for event: ${eventType}`);
     
     let selectedShoes: ShoeItem[] = [];
     
@@ -996,7 +978,7 @@ class StylingAgentClass implements Agent {
       ];
     }
     
-    console.log(`👠 [SHOE SELECTION] Selected ${selectedShoes.length} appropriate shoes for ${eventType}`);
+    console.log(`👠 [SHOES FROM "SHOES" TABLE] Selected ${selectedShoes.length} appropriate shoes for ${eventType}`);
     return selectedShoes;
   }
 
@@ -1006,10 +988,7 @@ class StylingAgentClass implements Agent {
   }
 
   private normalizeImageField(image: any, itemType: string = 'clothing'): string {
-    console.log(`[DEBUG] normalizeImageField called with type: ${itemType}, image:`, image);
-    
     if (!image) {
-      console.log(`[DEBUG] No image provided for ${itemType}`);
       return '/placeholder.svg';
     }
     
@@ -1035,10 +1014,7 @@ class StylingAgentClass implements Agent {
   }
 
   private extractShoesImageUrl(imageData: any): string {
-    console.log(`[DEBUG] extractShoesImageUrl called with:`, imageData);
-    
     if (!imageData) {
-      console.log(`⚠️ [DEBUG] No image data for shoe`);
       return '/placeholder.svg';
     }
     
@@ -1048,7 +1024,6 @@ class StylingAgentClass implements Agent {
       const trimmed = imageData.trim();
       
       if (trimmed.startsWith('http') && (trimmed.includes('.jpg') || trimmed.includes('.png') || trimmed.includes('.jpeg'))) {
-        console.log(`✅ [DEBUG] Direct shoe image URL found: ${trimmed}`);
         return trimmed;
       }
       
@@ -1071,53 +1046,19 @@ class StylingAgentClass implements Agent {
       else if (imageData.src) imageUrls = [imageData.src];
     }
     
-    console.log(`[DEBUG] Shoe image URLs extracted:`, imageUrls);
-    
     const validUrl = imageUrls.find(url => 
       url && 
       url.includes('http') && 
       (url.includes('.jpg') || url.includes('.png') || url.includes('.jpeg'))
     );
     
-    if (validUrl) {
-      console.log(`✅ [DEBUG] Valid shoe image URL found: ${validUrl}`);
-      return validUrl;
-    }
-    
-    console.log(`⚠️ [DEBUG] No valid shoe image URL found, using placeholder`);
-    return '/placeholder.svg';
+    return validUrl || '/placeholder.svg';
   }
 
   private isValidImagePattern(imageData: any, itemType: string = 'clothing'): boolean {
-    console.log(`[DEBUG] isValidImagePattern for ${itemType}:`, imageData);
-    
     if (!imageData) {
       console.log('🔍 [DEBUG] No image data provided');
       return false;
-    }
-    
-    // עבור נעליים - בדיקה פשוטה יותר
-    if (itemType === 'shoes') {
-      let imageUrls: string[] = [];
-      
-      if (typeof imageData === 'string') {
-        imageUrls = [imageData];
-      } else if (Array.isArray(imageData)) {
-        imageUrls = imageData.filter(url => typeof url === 'string');
-      } else if (typeof imageData === 'object' && imageData.url) {
-        imageUrls = [imageData.url];
-      }
-      
-      console.log(`[DEBUG] Shoe ${itemType} image(s):`, imageUrls);
-      
-      const hasValidUrl = imageUrls.some(url => 
-        url && 
-        url.includes('http') && 
-        (url.includes('.jpg') || url.includes('.png') || url.includes('.jpeg'))
-      );
-      
-      console.log(`[DEBUG] Shoe has valid image pattern: ${hasValidUrl}`);
-      return hasValidUrl;
     }
     
     // Handle different image data formats for clothing
@@ -1368,7 +1309,6 @@ class StylingAgentClass implements Agent {
     const name = (item.product_name || item.name || '').toLowerCase();
     const family = item.product_family?.toLowerCase() || '';
     
-    // EXCLUDE dresses, jumpsuits, underwear, and bottoms
     const excludeKeywords = [
       'dress', 'שמלה', 'gown', 'frock',
       'jumpsuit', 'אוברול', 'overall', 'romper',
@@ -1404,7 +1344,6 @@ class StylingAgentClass implements Agent {
     const name = (item.product_name || item.name || '').toLowerCase();
     const family = item.product_family?.toLowerCase() || '';
     
-    // EXCLUDE dresses, jumpsuits and underwear
     const excludeKeywords = [
       'dress', 'שמלה', 'gown', 'frock',
       'jumpsuit', 'אוברול', 'overall', 'romper',

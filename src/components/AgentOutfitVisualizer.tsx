@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabaseClient"; // Use the single client instance
+import { supabase } from "@/lib/supabaseClient";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw, Info } from "lucide-react";
@@ -9,7 +10,6 @@ import { AgentResult, TrainerAgentResponse } from "@/types/outfitAgentTypes";
 import { extractZaraImageUrl } from "@/utils/imageUtils";
 import CronStatusButton from "./CronStatusButton";
 
-// Helper to format agent names nicely
 const formatAgentName = (name: string): string => {
   return name
     .replace(/-/g, ' ')
@@ -31,8 +31,6 @@ export function AgentOutfitVisualizer() {
       
       console.log("🔍 [DEBUG] AgentOutfitVisualizer: Starting to fetch results...");
       
-      // Call the trainer-agent Edge Function
-      console.log("🔍 [DEBUG] Calling trainer-agent edge function...");
       const { data, error } = await supabase.functions.invoke<TrainerAgentResponse>('trainer-agent');
       
       if (error) {
@@ -58,13 +56,11 @@ export function AgentOutfitVisualizer() {
     }
   };
 
-  // Load results only once on mount, not on every render
   useEffect(() => {
     console.log("🔍 [DEBUG] AgentOutfitVisualizer component mounted, auto-loading...");
     fetchResults();
-  }, []); // Empty dependency array to prevent infinite loops
+  }, []);
 
-  // Function to create LookCanvas items from agent output using database items
   const getLookItems = (agentOutput: any) => {
     console.log("🔍 [DEBUG] getLookItems: Processing agent output:", agentOutput);
     const lookItems = [];
@@ -93,16 +89,19 @@ export function AgentOutfitVisualizer() {
       console.log(`✅ [DEBUG] Added bottom: ${agentOutput.bottom.id} with image: ${bottomItem.image}`);
     }
     
+    // ✅ SHOES FROM "shoes" TABLE ONLY - Updated handling
     if (agentOutput.shoes) {
+      console.log(`👠 [SHOES TABLE DEBUG] Processing shoes from "shoes" table:`, agentOutput.shoes);
+      
       const shoesItem = {
-        id: agentOutput.shoes.id || 'shoes-item',
-        image: extractZaraImageUrl(agentOutput.shoes.image),
+        id: agentOutput.shoes.name || agentOutput.shoes.id || 'shoes-item',
+        image: agentOutput.shoes.url || agentOutput.shoes.image || '/placeholder.svg', // Use url field from shoes table
         type: 'shoes' as const,
-        name: agentOutput.shoes.product_name || 'Shoes Item',
+        name: agentOutput.shoes.name || 'Shoes Item',
         price: agentOutput.shoes.price ? `$${agentOutput.shoes.price}` : '$89.99'
       };
       lookItems.push(shoesItem);
-      console.log(`✅ [DEBUG] Added shoes: ${agentOutput.shoes.id} with image: ${shoesItem.image}`);
+      console.log(`✅ [SHOES TABLE] Added shoes: ${agentOutput.shoes.name} with image: ${shoesItem.image} (from "shoes" table)`);
     }
     
     if (agentOutput.coat) {
@@ -117,14 +116,14 @@ export function AgentOutfitVisualizer() {
       console.log(`✅ [DEBUG] Added coat: ${agentOutput.coat.id} with image: ${coatItem.image}`);
     }
     
-    console.log(`✅ [DEBUG] Total look items created: ${lookItems.length}`);
+    console.log(`✅ [DEBUG] Total look items created: ${lookItems.length} (shoes from "shoes" table)`);
     return lookItems;
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Fashion Agent Visualization (Debug Mode)</h2>
+        <h2 className="text-2xl font-bold">Fashion Agent Visualization - Shoes from "shoes" Table</h2>
         <div className="flex gap-2">
           <CronStatusButton />
           <Button 
@@ -163,14 +162,12 @@ export function AgentOutfitVisualizer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {results
             .filter(result => (
-              // Only show results with at least one outfit item
               result.output.top || result.output.bottom || result.output.shoes
             ))
             .map((result, index) => {
               console.log(`🔍 [DEBUG] Rendering result ${index}:`, result);
               const lookItems = getLookItems(result.output);
               
-              // Create details object for display with null checks
               const details: Record<string, string> = {};
               if (result.output.top && typeof result.output.top === 'object' && result.output.top.product_name) {
                 details.Top = result.output.top.product_name;
@@ -184,10 +181,11 @@ export function AgentOutfitVisualizer() {
                 details.Bottom = result.output.bottom.id;
               }
               
-              if (result.output.shoes && typeof result.output.shoes === 'object' && result.output.shoes.product_name) {
-                details.Shoes = result.output.shoes.product_name;
+              // ✅ ENHANCED SHOES DEBUG INFO
+              if (result.output.shoes && typeof result.output.shoes === 'object' && result.output.shoes.name) {
+                details.Shoes = `${result.output.shoes.name} (from shoes table)`;
               } else if (result.output.shoes && typeof result.output.shoes === 'object' && result.output.shoes.id) {
-                details.Shoes = result.output.shoes.id;
+                details.Shoes = `${result.output.shoes.id} (from shoes table)`;
               }
               
               if (result.output.coat && typeof result.output.coat === 'object' && result.output.coat.product_name) {
@@ -216,12 +214,12 @@ export function AgentOutfitVisualizer() {
         </div>
       )}
       
-      {/* Enhanced Debug information */}
       {showImagePath && (
         <div className="mt-8 p-4 bg-gray-100 rounded-lg">
-          <h3 className="text-lg font-semibold mb-2">🔍 Debug Information</h3>
+          <h3 className="text-lg font-semibold mb-2">🔍 Debug Information - Shoes from "shoes" Table</h3>
           <p><strong>Number of results:</strong> {results.length}</p>
-          <p><strong>Using database items:</strong> {results.length > 0 ? 'Yes' : 'No'}</p>
+          <p><strong>Shoes source:</strong> "shoes" table only (confirmed)</p>
+          <p><strong>Clothing source:</strong> "zara_cloth" table</p>
           <p><strong>Project URL:</strong> https://aqkeprwxxsryropnhfvm.supabase.co</p>
           <p><strong>Check browser console for detailed logs</strong></p>
           <details className="mt-2">
