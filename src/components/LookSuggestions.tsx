@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +10,7 @@ import { HomeButton } from "./HomeButton";
 import { StyleRulers } from "./look/StyleRulers";
 import { fetchFirstOutfitSuggestion } from "@/services/lookService";
 import { useOutfitGeneration } from "@/hooks/useOutfitGeneration";
+import { useEnhancedOutfitGeneration } from "@/hooks/useEnhancedOutfitGeneration";
 import {
   Card,
   CardContent,
@@ -45,6 +45,13 @@ export const LookSuggestions = () => {
   const [colorIntensity, setColorIntensity] = useState(60);
   const [userStylePreference, setUserStylePreference] = useState<string | null>(null);
   const { isGenerating, generateOutfit } = useOutfitGeneration();
+  
+  // הוספת Enhanced Outfit Generation
+  const { 
+    isGenerating: isGeneratingEnhanced, 
+    generateOutfitWithLearning, 
+    recommendations: enhancedRecommendations 
+  } = useEnhancedOutfitGeneration();
   
   const hasQuizData = localStorage.getItem('styleAnalysis') !== null;
 
@@ -216,36 +223,44 @@ export const LookSuggestions = () => {
     setIsRefetching(true);
     
     try {
-      console.log("🔄 Generating new outfit look...");
+      console.log("🔄 מייצר מראה חדש עם למידה...");
       
-      // Generate a completely new outfit using the enhanced generateOutfit function
-      const result = await generateOutfit(true);
+      // שימוש בגרסה המשופרת עם למידה מעמוד הבית
+      const result = await generateOutfitWithLearning(true);
       
       if (result.success && result.items.length > 0) {
-        // Force refetch the query to get new data
+        // כפיית רענון השאילתה לקבלת נתונים חדשים
         await refetch();
         
-        console.log("✅ New outfit generated successfully:", result.items);
+        console.log("✅ תלבושת חדשה נוצרה בהצלחה עם למידה:", result.items);
+        console.log("🧠 נתוני למידה:", result.learningData);
+        
+        // עדכון המלצות משופרות
+        if (enhancedRecommendations.length > 0) {
+          setRecommendations(enhancedRecommendations);
+        }
         
         toast({
-          title: "תלבושת חדשה נוצרה!",
-          description: "הנה קומבינציית סטייל חדשה במיוחד בשבילך!",
+          title: "תלבושת חדשה נוצרה עם למידה! 🧠",
+          description: result.learningData?.applied 
+            ? "הנה קומבינציית סטייל חדשה שלומדת מההעדפות שלך!"
+            : "הנה קומבינציית סטייל חדשה במיוחד בשבילך!",
         });
       } else {
-        console.warn("⚠️ Failed to generate new outfit");
+        console.warn("⚠️ נכשל ביצירת תלבושת חדשה עם למידה");
         
         toast({
           title: "שגיאה ביצירת תלבושת",
-          description: "לא הצלחנו ליצור תלבושת חדשה. אנא נסה שוב.",
+          description: "לא הצלחנו ליצור תלבושת חדשה עם למידה. אנא נסה שוב.",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error("❌ Error generating different look:", error);
+      console.error("❌ שגיאה ביצירת מראה שונה עם למידה:", error);
       
       toast({
         title: "שגיאה",
-        description: "אירעה שגיאה ביצירת תלבושת חדשה. אנא נסה שוב.",
+        description: "אירעה שגיאה ביצירת תלבושת חדשה עם למידה. אנא נסה שוב.",
         variant: "destructive",
       });
     } finally {
@@ -311,12 +326,15 @@ export const LookSuggestions = () => {
     <>
       <HomeButton />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <h1 className="text-3xl font-bold mb-2">Your Curated Look</h1>
+        <h1 className="text-3xl font-bold mb-2">Your Curated Look with AI Learning</h1>
         {userStylePreference && (
-          <p className="text-lg text-netflix-accent mb-6">
+          <p className="text-lg text-netflix-accent mb-2">
             Based on your {userStylePreference} style preference
           </p>
         )}
+        <p className="text-sm text-gray-600 mb-6">
+          🧠 AI agents are now learning from your homepage preferences to create better outfits
+        </p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
@@ -324,11 +342,13 @@ export const LookSuggestions = () => {
               <div className="relative w-[300px]">
                 <div className="bg-white rounded-lg shadow-lg overflow-hidden pb-4">
                   <div className="relative">
-                    {(isRefetching || isGenerating) ? (
+                    {(isRefetching || isGenerating || isGeneratingEnhanced) ? (
                       <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
                         <div className="text-center">
                           <Loader2 className="h-8 w-8 animate-spin text-netflix-accent mx-auto mb-2" />
-                          <p className="text-sm text-gray-600">יוצר תלבושת חדשה...</p>
+                          <p className="text-sm text-gray-600">
+                            {isGeneratingEnhanced ? "יוצר תלבושת עם למידה..." : "יוצר תלבושת חדשה..."}
+                          </p>
                         </div>
                       </div>
                     ) : null}
@@ -337,7 +357,7 @@ export const LookSuggestions = () => {
                       <Button 
                         onClick={() => handleAddToCart(dashboardItems)}
                         className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
-                        disabled={isRefetching || isGenerating || !hasAllRequiredItems()}
+                        disabled={isRefetching || isGenerating || isGeneratingEnhanced || !hasAllRequiredItems()}
                       >
                         <ShoppingCart className="mr-1 h-3 w-3" />
                         Buy the look
@@ -345,10 +365,10 @@ export const LookSuggestions = () => {
                       <Button
                         onClick={handleTryDifferentLook}
                         className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
-                        disabled={isRefetching || isGenerating}
+                        disabled={isRefetching || isGenerating || isGeneratingEnhanced}
                       >
                         <Shuffle className="mr-1 h-3 w-3" />
-                        {isRefetching ? "מחולל..." : "Try different"}
+                        {(isRefetching || isGeneratingEnhanced) ? "מחולל..." : "Try different"}
                       </Button>
                     </div>
                   </div>
@@ -366,7 +386,7 @@ export const LookSuggestions = () => {
                       size="icon"
                       onClick={() => handleAddToCart(item)}
                       className="bg-white/10 hover:bg-netflix-accent/20 hover:text-netflix-accent rounded-full shadow-md"
-                      disabled={isRefetching || isGenerating}
+                      disabled={isRefetching || isGenerating || isGeneratingEnhanced}
                     >
                       <ShoppingCart className="h-5 w-5" />
                     </Button>
