@@ -216,6 +216,12 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       throw new Error('לא נמצאו מספיק פריטים מתאימים ליצירת תלבושת שלמה');
     }
 
+    console.log("✅ [fetchFirstOutfitSuggestion] החזרת תלבושת מוצלחת:", selectedItems.map(item => ({
+      id: item.id,
+      name: item.name,
+      type: item.type
+    })));
+
     logger.info("הצעת תלבושת הוחזרה בהצלחה", {
       context: "lookService",
       data: { 
@@ -228,6 +234,7 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
     return selectedItems;
 
   } catch (error) {
+    console.error("❌ [fetchFirstOutfitSuggestion] שגיאה:", error);
     logger.error("שגיאה בהחזרת הצעת תלבושת:", {
       context: "lookService",
       data: error
@@ -246,6 +253,12 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
     // קבלת תלבושת בסיס
     const baseOutfit = await fetchFirstOutfitSuggestion();
     console.log('✅ [fetchDashboardItems] Base outfit received:', baseOutfit.length, 'items');
+    console.log('📋 [fetchDashboardItems] Base outfit items:', baseOutfit.map(item => ({
+      id: item.id,
+      name: item.name,
+      type: item.type,
+      image: item.image ? 'has_image' : 'no_image'
+    })));
     
     // יצירת וריאציות לכל הזדמנות
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
@@ -258,7 +271,8 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
         id: `${item.id}-${occasion.toLowerCase()}` // מזהה ייחודי לכל הזדמנות
       }));
       
-      console.log(`✅ [fetchDashboardItems] Created ${occasion} outfit with ${data[occasion].length} items`);
+      console.log(`✅ [fetchDashboardItems] Created ${occasion} outfit with ${data[occasion].length} items:`, 
+        data[occasion].map(item => ({ id: item.id, name: item.name, type: item.type })));
     });
     
     console.log('✅ [fetchDashboardItems] All occasions processed successfully');

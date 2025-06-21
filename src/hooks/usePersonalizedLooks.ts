@@ -63,6 +63,16 @@ export function usePersonalizedLooks() {
       const data = await fetchDashboardItems();
       console.log('🔍 [usePersonalizedLooks] Raw data received:', data);
       
+      // Log each occasion's data
+      Object.keys(data).forEach(occasion => {
+        console.log(`📋 [usePersonalizedLooks] ${occasion} items:`, data[occasion].map(item => ({
+          id: item.id,
+          name: item.name,
+          type: item.type,
+          hasImage: !!item.image
+        })));
+      });
+      
       console.log('✅ [usePersonalizedLooks] All occasions processed:', data);
       return data;
       
@@ -105,6 +115,12 @@ export function usePersonalizedLooks() {
 
   const createLookFromItems = useCallback((items: DashboardItem[] = [], occasion: string, index: number): Look | null => {
     console.log(`🔍 [usePersonalizedLooks] Creating look from ${items.length} items for ${occasion}`);
+    console.log(`📋 [usePersonalizedLooks] Items details:`, items.map(item => ({
+      id: item.id,
+      name: item.name,
+      type: item.type,
+      hasImage: !!item.image
+    })));
     
     if (!items || items.length === 0) {
       console.log(`❌ [usePersonalizedLooks] No items for ${occasion} look`);
@@ -143,7 +159,12 @@ export function usePersonalizedLooks() {
       occasion: occasion
     };
     
-    console.log(`✅ [usePersonalizedLooks] Created look for ${occasion}:`, look);
+    console.log(`✅ [usePersonalizedLooks] Created look for ${occasion}:`, {
+      id: look.id,
+      title: look.title,
+      itemCount: look.items.length,
+      items: look.items.map(item => ({ id: item.id, name: item.name, type: item.type }))
+    });
     return look;
   }, [userStyle]);
 
@@ -179,7 +200,10 @@ export function usePersonalizedLooks() {
   // Always return database data only
   const getOutfitData = useCallback(() => {
     const data = occasionOutfits || { Work: [], Casual: [], Evening: [], Weekend: [] };
-    console.log('🔍 [usePersonalizedLooks] Returning outfit data:', data);
+    console.log('🔍 [usePersonalizedLooks] Returning outfit data:', Object.keys(data).map(occasion => ({
+      occasion,
+      itemCount: data[occasion].length
+    })));
     return data;
   }, [occasionOutfits]);
 
