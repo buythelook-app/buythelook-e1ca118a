@@ -20,11 +20,22 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
     const currentMood = localStorage.getItem('current-mood');
     
     if (!styleAnalysis) {
-      throw new Error('לא נמצא ניתוח סטייל');
+      console.log('❌ [lookService] No style analysis found, using fallback outfit');
     }
 
-    const parsedStyleAnalysis = JSON.parse(styleAnalysis);
-    const styleProfile = parsedStyleAnalysis?.analysis?.styleProfile?.toLowerCase();
+    let parsedStyleAnalysis = null;
+    let styleProfile = 'casual';
+    let colorPreferences = [];
+
+    if (styleAnalysis) {
+      try {
+        parsedStyleAnalysis = JSON.parse(styleAnalysis);
+        styleProfile = parsedStyleAnalysis?.analysis?.styleProfile?.toLowerCase() || 'casual';
+        colorPreferences = parsedStyleAnalysis?.analysis?.colorPreferences || [];
+      } catch (e) {
+        console.log('❌ [lookService] Error parsing style analysis, using defaults');
+      }
+    }
     
     console.log(`🎯 [LookService] פרופיל סטייל זוהה: ${styleProfile}`);
 
@@ -32,60 +43,65 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
     if (styleProfile === 'casual' || currentMood === 'casual') {
       console.log(`👕 [LookService] מחזיר תלבושת קזואלית מותאמת`);
       
-      // שימוש בשירות הקזואל
-      const [casualTops, casualBottoms, casualShoes] = await Promise.all([
-        findCasualItems('top', 1),
-        findCasualItems('bottom', 1), 
-        findCasualItems('shoes', 1)
-      ]);
+      try {
+        // שימוש בשירות הקזואל
+        const [casualTops, casualBottoms, casualShoes] = await Promise.all([
+          findCasualItems('top', 1),
+          findCasualItems('bottom', 1), 
+          findCasualItems('shoes', 1)
+        ]);
 
-      const casualOutfit: DashboardItem[] = [];
-      
-      if (casualTops.length > 0) {
-        casualOutfit.push({
-          id: casualTops[0].id,
-          name: casualTops[0].name,
-          image: casualTops[0].image,
-          type: 'top',
-          price: casualTops[0].price,
-          description: casualTops[0].description || ''
-        });
-      }
+        const casualOutfit: DashboardItem[] = [];
+        
+        if (casualTops.length > 0) {
+          casualOutfit.push({
+            id: casualTops[0].id,
+            name: casualTops[0].name,
+            image: casualTops[0].image,
+            type: 'top',
+            price: casualTops[0].price,
+            description: casualTops[0].description || ''
+          });
+        }
 
-      if (casualBottoms.length > 0) {
-        casualOutfit.push({
-          id: casualBottoms[0].id,
-          name: casualBottoms[0].name,
-          image: casualBottoms[0].image,
-          type: 'bottom',
-          price: casualBottoms[0].price,
-          description: casualBottoms[0].description || ''
-        });
-      }
+        if (casualBottoms.length > 0) {
+          casualOutfit.push({
+            id: casualBottoms[0].id,
+            name: casualBottoms[0].name,
+            image: casualBottoms[0].image,
+            type: 'bottom',
+            price: casualBottoms[0].price,
+            description: casualBottoms[0].description || ''
+          });
+        }
 
-      if (casualShoes.length > 0) {
-        casualOutfit.push({
-          id: casualShoes[0].id,
-          name: casualShoes[0].name,
-          image: casualShoes[0].image,
-          type: 'shoes',
-          price: casualShoes[0].price,
-          description: casualShoes[0].description || ''
-        });
-      }
+        if (casualShoes.length > 0) {
+          casualOutfit.push({
+            id: casualShoes[0].id,
+            name: casualShoes[0].name,
+            image: casualShoes[0].image,
+            type: 'shoes',
+            price: casualShoes[0].price,
+            description: casualShoes[0].description || ''
+          });
+        }
 
-      if (casualOutfit.length >= 3) {
-        logger.info("תלבושת קזואלית הוחזרה בהצלחה", {
-          context: "lookService",
-          data: { itemCount: casualOutfit.length }
-        });
-        return casualOutfit;
+        if (casualOutfit.length >= 3) {
+          console.log("✅ [fetchFirstOutfitSuggestion] תלבושת קזואלית הוחזרה בהצלחה:", casualOutfit.map(item => ({
+            id: item.id,
+            name: item.name,
+            type: item.type,
+            hasImage: !!item.image
+          })));
+          return casualOutfit;
+        }
+      } catch (casualError) {
+        console.log('❌ [lookService] Casual outfit failed, trying regular logic');
       }
     }
 
     // לוגיקה רגילה לסגנונות אחרים או אם הקזואל נכשל
-    const colorPreferences = parsedStyleAnalysis?.analysis?.colorPreferences || [];
-    const bodyShape = parsedStyleAnalysis?.analysis?.bodyShape;
+    console.log('🔍 [lookService] Using regular outfit logic from database');
 
     // קבלת פריטים מהמאגר
     const { data: allItems, error } = await supabase
@@ -95,27 +111,35 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       .limit(100);
 
     if (error) {
+      console.error('❌ [lookService] Database error:', error);
       throw new Error(`שגיאה בטעינת פריטים: ${error.message}`);
     }
 
     if (!allItems || allItems.length === 0) {
+      console.error('❌ [lookService] No items found in database');
       throw new Error('לא נמצאו פריטים במאגר');
     }
 
+    console.log(`🔍 [lookService] Found ${allItems.length} items in database`);
+
     // סינון פריטים על פי העדפות
-    const filteredItems = allItems.filter(item => {
-      const itemColor = item.colour?.toLowerCase() || '';
-      
-      // התאמה לצבעים מועדפים
-      if (colorPreferences.length > 0) {
-        const colorMatch = colorPreferences.some((pref: string) => 
+    let filteredItems = allItems;
+    
+    if (colorPreferences.length > 0) {
+      filteredItems = allItems.filter(item => {
+        const itemColor = item.colour?.toLowerCase() || '';
+        return colorPreferences.some((pref: string) => 
           itemColor.includes(pref.toLowerCase())
         );
-        if (!colorMatch) return false;
+      });
+      
+      if (filteredItems.length === 0) {
+        console.log('⚠️ [lookService] No items match color preferences, using all items');
+        filteredItems = allItems;
       }
+    }
 
-      return true;
-    });
+    console.log(`🔍 [lookService] After filtering: ${filteredItems.length} items`);
 
     // זיהוי שמלות וטוניקות
     const dressesAndTunics = filteredItems.filter(item => 
@@ -137,6 +161,8 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       const name = item.product_name?.toLowerCase() || '';
       return name.includes('נעל') || name.includes('סנדל') || name.includes('מגף');
     });
+
+    console.log(`🔍 [lookService] Categories found - Dresses: ${dressesAndTunics.length}, Tops: ${tops.length}, Bottoms: ${bottoms.length}, Shoes: ${shoes.length}`);
 
     const selectedItems: DashboardItem[] = [];
 
@@ -163,14 +189,12 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
         description: selectedShoes.description || ''
       });
 
-      logger.info("תלבושת עם שמלה/טוניקה הוחזרה בהצלחה", {
-        context: "lookService",
-        data: { 
-          itemCount: selectedItems.length,
-          type: 'dress_outfit',
-          items: selectedItems.map(item => ({ name: item.name, type: item.type }))
-        }
-      });
+      console.log("✅ [fetchFirstOutfitSuggestion] תלבושת עם שמלה/טוניקה הוחזרה בהצלחה:", selectedItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        hasImage: !!item.image
+      })));
 
       return selectedItems;
     }
@@ -213,13 +237,45 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
     }
 
     if (selectedItems.length < 2) {
-      throw new Error('לא נמצאו מספיק פריטים מתאימים ליצירת תלבושת שלמה');
+      console.error('❌ [lookService] Not enough items found for outfit');
+      
+      // Return fallback items if database items are insufficient
+      const fallbackItems: DashboardItem[] = [
+        {
+          id: 'fallback-top',
+          name: 'חולצה בסיסית',
+          image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=400&fit=crop',
+          type: 'top',
+          price: '₪89',
+          description: 'חולצה בסיסית'
+        },
+        {
+          id: 'fallback-bottom',
+          name: 'מכנסיים בסיסיים',
+          image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop',
+          type: 'bottom',
+          price: '₪129',
+          description: 'מכנסיים בסיסיים'
+        },
+        {
+          id: 'fallback-shoes',
+          name: 'נעליים בסיסיות',
+          image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=400&fit=crop',
+          type: 'shoes',
+          price: '₪199',
+          description: 'נעליים בסיסיות'
+        }
+      ];
+      
+      console.log("⚠️ [fetchFirstOutfitSuggestion] Using fallback items");
+      return fallbackItems;
     }
 
     console.log("✅ [fetchFirstOutfitSuggestion] החזרת תלבושת מוצלחת:", selectedItems.map(item => ({
       id: item.id,
       name: item.name,
-      type: item.type
+      type: item.type,
+      hasImage: !!item.image
     })));
 
     logger.info("הצעת תלבושת הוחזרה בהצלחה", {
@@ -239,7 +295,37 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       context: "lookService",
       data: error
     });
-    throw error;
+    
+    // Return fallback items on error
+    const fallbackItems: DashboardItem[] = [
+      {
+        id: 'error-fallback-top',
+        name: 'חולצה בסיסית',
+        image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=400&fit=crop',
+        type: 'top',
+        price: '₪89',
+        description: 'חולצה בסיסית'
+      },
+      {
+        id: 'error-fallback-bottom',
+        name: 'מכנסיים בסיסיים',
+        image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop',
+        type: 'bottom',
+        price: '₪129',
+        description: 'מכנסיים בסיסיים'
+      },
+      {
+        id: 'error-fallback-shoes',
+        name: 'נעליים בסיסיות',
+        image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=400&fit=crop',
+        type: 'shoes',
+        price: '₪199',
+        description: 'נעליים בסיסיות'
+      }
+    ];
+    
+    console.log("⚠️ [fetchFirstOutfitSuggestion] Returning error fallback items");
+    return fallbackItems;
   }
 }
 
@@ -281,13 +367,41 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
   } catch (error) {
     console.error('❌ [fetchDashboardItems] Error:', error);
     
-    // החזרת תלבושות ריקות במקרה של שגיאה
+    // החזרת תלבושות עם פריטי fallback במקרה של שגיאה
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
-    const emptyData: { [key: string]: DashboardItem[] } = {};
+    const fallbackData: { [key: string]: DashboardItem[] } = {};
+    
     occasions.forEach(occasion => {
-      emptyData[occasion] = [];
+      fallbackData[occasion] = [
+        {
+          id: `fallback-top-${occasion.toLowerCase()}`,
+          name: 'חולצה בסיסית',
+          image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=400&fit=crop',
+          type: 'top',
+          price: '₪89',
+          description: 'חולצה בסיסית'
+        },
+        {
+          id: `fallback-bottom-${occasion.toLowerCase()}`,
+          name: 'מכנסיים בסיסיים',
+          image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop',
+          type: 'bottom',
+          price: '₪129',
+          description: 'מכנסיים בסיסיים'
+        },
+        {
+          id: `fallback-shoes-${occasion.toLowerCase()}`,
+          name: 'נעליים בסיסיות',
+          image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=400&fit=crop',
+          type: 'shoes',
+          price: '₪199',
+          description: 'נעליים בסיסיות'
+        }
+      ];
     });
-    return emptyData;
+    
+    console.log('⚠️ [fetchDashboardItems] Returning fallback data with placeholder items');
+    return fallbackData;
   }
 }
 
