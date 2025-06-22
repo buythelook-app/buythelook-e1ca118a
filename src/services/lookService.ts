@@ -3,6 +3,7 @@ import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
 import { findCasualItems } from "./casualOutfitService";
 import { ColorCoordinationService } from "./colorCoordinationService";
+import { extractZaraImageUrl } from "@/utils/imageUtils";
 import logger from "@/lib/logger";
 
 /**
@@ -221,12 +222,13 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
   if (categories.dresses.length > 0) {
     const dress = categories.dresses[0];
     
-    // וידוא שלשמלה יש תמונה תקינה
-    if (dress.image && typeof dress.image === 'string' && dress.image.trim() !== '') {
+    // וידוא שלשמלה יש תמונה תקינה - המרה ל-string
+    const imageUrl = extractZaraImageUrl(dress.image);
+    if (imageUrl && imageUrl !== '/placeholder.svg') {
       selectedItems.push({
         id: dress.id,
         name: dress.product_name,
-        image: dress.image, // שימוש בתמונה המקורית מהמאגר
+        image: imageUrl, // תמונה מומרת לstring
         type: 'dress',
         price: `₪${dress.price}`,
         description: dress.description || '',
@@ -252,11 +254,14 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
     const outerwear = categories.outerwear[0];
     const top = selectCompatibleTop(categories.tops, outerwear);
     
-    if (top && outerwear.image && top.image) {
+    const outerwearImageUrl = extractZaraImageUrl(outerwear.image);
+    const topImageUrl = top ? extractZaraImageUrl(top.image) : null;
+    
+    if (top && outerwearImageUrl !== '/placeholder.svg' && topImageUrl !== '/placeholder.svg') {
       selectedItems.push({
         id: outerwear.id,
         name: outerwear.product_name,
-        image: outerwear.image, // תמונה מקורית מהמאגר
+        image: outerwearImageUrl, // תמונה מומרת לstring
         type: 'outerwear',
         price: `₪${outerwear.price}`,
         description: outerwear.description || '',
@@ -266,7 +271,7 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
       selectedItems.push({
         id: top.id,
         name: top.product_name,
-        image: top.image, // תמונה מקורית מהמאגר
+        image: topImageUrl, // תמונה מומרת לstring
         type: 'top',
         price: `₪${top.price}`,
         description: top.description || '',
@@ -285,11 +290,14 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
     const top = categories.tops[0];
     const bottom = selectCompatibleBottom(categories.bottoms, top);
     
-    if (bottom && top.image && bottom.image) {
+    const topImageUrl = extractZaraImageUrl(top.image);
+    const bottomImageUrl = bottom ? extractZaraImageUrl(bottom.image) : null;
+    
+    if (bottom && topImageUrl !== '/placeholder.svg' && bottomImageUrl !== '/placeholder.svg') {
       selectedItems.push({
         id: top.id,
         name: top.product_name,
-        image: top.image, // תמונה מקורית מהמאגר
+        image: topImageUrl, // תמונה מומרת לstring
         type: 'top',
         price: `₪${top.price}`,
         description: top.description || '',
@@ -299,7 +307,7 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
       selectedItems.push({
         id: bottom.id,
         name: bottom.product_name,
-        image: bottom.image, // תמונה מקורית מהמאגר
+        image: bottomImageUrl, // תמונה מומרת לstring
         type: 'bottom',
         price: `₪${bottom.price}`,
         description: bottom.description || '',
@@ -398,10 +406,14 @@ async function selectMatchingShoesFromDB(eventType: string, usedColors: string[]
 
     if (selectedShoes) {
       console.log(`✅ [selectMatchingShoesFromDB] נעליים נבחרו מטבלת shoes: ${selectedShoes.name}`);
+      
+      // המרת תמונת נעליים ל-string באמצעות extractZaraImageUrl
+      const shoesImageUrl = extractZaraImageUrl(selectedShoes.image);
+      
       return {
         id: selectedShoes.name || selectedShoes.product_id?.toString() || 'shoes-item',
         name: selectedShoes.name || 'נעליים',
-        image: selectedShoes.image, // תמונה מקורית מטבלת נעליים
+        image: shoesImageUrl, // תמונה מומרת לstring
         type: 'shoes',
         price: selectedShoes.price ? `₪${selectedShoes.price}` : '₪199',
         description: selectedShoes.description || '',
@@ -597,15 +609,20 @@ async function getCasualShoesFromDB(): Promise<DashboardItem[]> {
 
     return shoesData
       .filter(shoe => shoe.image && typeof shoe.image === 'string')
-      .map(shoe => ({
-        id: shoe.name || shoe.product_id?.toString() || 'casual-shoes',
-        name: shoe.name || 'נעליים קז\'ואליות',
-        image: shoe.image,
-        type: 'shoes' as const,
-        price: shoe.price ? `₪${shoe.price}` : '₪149',
-        description: shoe.description || '',
-        color: extractColorFromName(shoe.name || '')
-      }));
+      .map(shoe => {
+        // המרת תמונת נעליים ל-string באמצעות extractZaraImageUrl
+        const shoesImageUrl = extractZaraImageUrl(shoe.image);
+        
+        return {
+          id: shoe.name || shoe.product_id?.toString() || 'casual-shoes',
+          name: shoe.name || 'נעליים קז\'ואליות',
+          image: shoesImageUrl, // תמונה מומרת לstring
+          type: 'shoes' as const,
+          price: shoe.price ? `₪${shoe.price}` : '₪149',
+          description: shoe.description || '',
+          color: extractColorFromName(shoe.name || '')
+        };
+      });
   } catch (error) {
     console.error('❌ [getCasualShoesFromDB] Error:', error);
     return [];
