@@ -211,7 +211,8 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
       image: extractImageUrl(dress.image),
       type: 'dress',
       price: `₪${dress.price}`,
-      description: dress.description || ''
+      description: dress.description || '',
+      color: dress.colour // Use 'colour' from database
     });
 
     usedColors.push(dress.colour?.toLowerCase() || '');
@@ -239,7 +240,8 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
         image: extractImageUrl(outerwear.image),
         type: 'outerwear',
         price: `₪${outerwear.price}`,
-        description: outerwear.description || ''
+        description: outerwear.description || '',
+        color: outerwear.colour // Use 'colour' from database
       });
 
       selectedItems.push({
@@ -248,7 +250,8 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
         image: extractImageUrl(top.image),
         type: 'top',
         price: `₪${top.price}`,
-        description: top.description || ''
+        description: top.description || '',
+        color: top.colour // Use 'colour' from database
       });
 
       usedColors.push(outerwear.colour?.toLowerCase() || '');
@@ -270,7 +273,8 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
         image: extractImageUrl(top.image),
         type: 'top',
         price: `₪${top.price}`,
-        description: top.description || ''
+        description: top.description || '',
+        color: top.colour // Use 'colour' from database
       });
 
       selectedItems.push({
@@ -279,7 +283,8 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
         image: extractImageUrl(bottom.image),
         type: 'bottom',
         price: `₪${bottom.price}`,
-        description: bottom.description || ''
+        description: bottom.description || '',
+        color: bottom.colour // Use 'colour' from database
       });
 
       usedColors.push(top.colour?.toLowerCase() || '');
@@ -480,7 +485,7 @@ async function createCasualOutfitWithLogic(eventType: string): Promise<Dashboard
   const selectedTop = casualTops[0];
   const selectedBottom = casualBottoms.find(bottom => 
     ColorCoordinationService.areColorsCompatible(
-      selectedTop.colour || '', 
+      selectedTop.colour || '', // Use 'color' property from CasualOutfitItem
       bottom.colour || ''
     )
   ) || casualBottoms[0];
@@ -501,7 +506,8 @@ async function createCasualOutfitWithLogic(eventType: string): Promise<Dashboard
     image: selectedTop.image,
     type: 'top',
     price: selectedTop.price,
-    description: selectedTop.description || ''
+    description: selectedTop.description || '',
+    color: selectedTop.colour
   });
 
   casualOutfit.push({
@@ -510,7 +516,8 @@ async function createCasualOutfitWithLogic(eventType: string): Promise<Dashboard
     image: selectedBottom.image,
     type: 'bottom',
     price: selectedBottom.price,
-    description: selectedBottom.description || ''
+    description: selectedBottom.description || '',
+    color: selectedBottom.colour
   });
 
   casualOutfit.push({
@@ -519,7 +526,8 @@ async function createCasualOutfitWithLogic(eventType: string): Promise<Dashboard
     image: selectedShoes.image,
     type: 'shoes',
     price: selectedShoes.price,
-    description: selectedShoes.description || ''
+    description: selectedShoes.description || '',
+    color: selectedShoes.colour
   });
 
   console.log("✅ [createCasualOutfitWithLogic] תלבושת קזואלית מתקדמת נוצרה");

@@ -6,6 +6,7 @@ export interface DashboardItem {
   image?: string;
   price?: string;
   type: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' | 'cart';
+  color?: string; // Add color property
 }
 
 export interface OutfitItem {
