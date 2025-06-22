@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -485,15 +486,15 @@ async function createCasualOutfitWithLogic(eventType: string): Promise<Dashboard
   const selectedTop = casualTops[0];
   const selectedBottom = casualBottoms.find(bottom => 
     ColorCoordinationService.areColorsCompatible(
-      selectedTop.colour || '', // Use 'color' property from CasualOutfitItem
-      bottom.colour || ''
+      selectedTop.color || '', // Fix: use 'color' property from CasualOutfitItem
+      bottom.color || ''
     )
   ) || casualBottoms[0];
   
   const selectedShoes = casualShoes.find(shoes => {
-    const topColor = selectedTop.colour || '';
-    const bottomColor = selectedBottom.colour || '';
-    const shoeColor = shoes.colour || '';
+    const topColor = selectedTop.color || '';
+    const bottomColor = selectedBottom.color || '';
+    const shoeColor = shoes.color || '';
     
     return ColorCoordinationService.areColorsCompatible(shoeColor, topColor) ||
            ColorCoordinationService.areColorsCompatible(shoeColor, bottomColor) ||
@@ -507,7 +508,7 @@ async function createCasualOutfitWithLogic(eventType: string): Promise<Dashboard
     type: 'top',
     price: selectedTop.price,
     description: selectedTop.description || '',
-    color: selectedTop.colour
+    color: selectedTop.color // Fix: use 'color' property from CasualOutfitItem
   });
 
   casualOutfit.push({
@@ -517,7 +518,7 @@ async function createCasualOutfitWithLogic(eventType: string): Promise<Dashboard
     type: 'bottom',
     price: selectedBottom.price,
     description: selectedBottom.description || '',
-    color: selectedBottom.colour
+    color: selectedBottom.color // Fix: use 'color' property from CasualOutfitItem
   });
 
   casualOutfit.push({
@@ -527,7 +528,7 @@ async function createCasualOutfitWithLogic(eventType: string): Promise<Dashboard
     type: 'shoes',
     price: selectedShoes.price,
     description: selectedShoes.description || '',
-    color: selectedShoes.colour
+    color: selectedShoes.color // Fix: use 'color' property from CasualOutfitItem
   });
 
   console.log("✅ [createCasualOutfitWithLogic] תלבושת קזואלית מתקדמת נוצרה");
