@@ -98,7 +98,7 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
     .not('image', 'is', null)
     .neq('availability', false)
     .order('price', { ascending: true })
-    .limit(300);
+    .limit(500);
 
   if (error || !allItems || allItems.length === 0) {
     console.error('❌ [createAdvancedOutfit] Database error:', error);
@@ -121,9 +121,7 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
   
   if (filteredItems.length === 0) {
     console.error(`❌ [createAdvancedOutfit] No valid clothing items found for ${occasion}`);
-    // Reset tracking for this occasion and try again
-    globalUsedItemIds[occasion].clear();
-    filteredItems = allItems.filter(item => hasValidImageData(item.image) && isActualClothingItem(item));
+    return [];
   }
   
   // חלוקת פריטים לקטגוריות עם לוגיקה מתקדמת
@@ -138,7 +136,11 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
   const outfitItems = await selectOutfitByRules(categorizedItems, eventType, styleProfile, occasion);
   
   // Mark selected items as used for this occasion
-  outfitItems.forEach(item => globalUsedItemIds[occasion].add(item.id));
+  outfitItems.forEach(item => {
+    if (item.id && !item.id.includes('shoes-from-db')) {
+      globalUsedItemIds[occasion].add(item.id.split('-')[0]); // Remove occasion suffix
+    }
+  });
   
   return outfitItems;
 }
@@ -159,23 +161,32 @@ function isItemAppropriateForOccasion(item: any, occasion: string): boolean {
              !searchText.includes('חוף') && 
              !searchText.includes('ספורט') &&
              !searchText.includes('טרנינג') &&
-             !searchText.includes('שינה');
+             !searchText.includes('שינה') &&
+             !searchText.includes('sport') &&
+             !searchText.includes('swim') &&
+             !searchText.includes('bikini');
     
     case 'casual':
       // פריטים קז'ואליים
       return !searchText.includes('ערב') &&
              !searchText.includes('חתונה') &&
-             !searchText.includes('פורמלי');
+             !searchText.includes('פורמלי') &&
+             !searchText.includes('evening') &&
+             !searchText.includes('formal');
     
     case 'evening':
       // פריטים לערב
       return !searchText.includes('ספורט') &&
              !searchText.includes('טרנינג') &&
-             !searchText.includes('בית');
+             !searchText.includes('בית') &&
+             !searchText.includes('sport') &&
+             !searchText.includes('casual');
     
     case 'weekend':
       // פריטים לסוף שבוע - יותר נינוח
-      return true; // כל הפריטים מתאימים לסוף שבוע
+      return !searchText.includes('פורמלי') &&
+             !searchText.includes('formal') &&
+             !searchText.includes('עבודה');
     
     default:
       return true;
@@ -187,7 +198,7 @@ function isItemAppropriateForOccasion(item: any, occasion: string): boolean {
  */
 function isActualClothingItem(item: any): boolean {
   const name = (item.product_name || '').toLowerCase();
-  const subfamily = (item.product_subfamily || '').toLowerCase();
+  const subfamily = (item.product_subfamily || '').toLowerCase();  
   const family = (item.product_family || '').toLowerCase();
   const description = (item.description || '').toLowerCase();
   
@@ -201,7 +212,7 @@ function isActualClothingItem(item: any): boolean {
     'nail polish', 'לק', 'nail', 'ציפורניים',
     'face', 'פנים', 'עיניים', 'עור', 'skin', 'cream', 'קרם',
     'serum', 'סרום', 'moisturizer', 'לחות', 'cleanser', 'מנקה',
-    'קוסמטיקה', 'יופי', 'beauty'
+    'קוסמטיקה', 'יופי', 'beauty', 'מברשת', 'brush'
   ];
   
   // אביזרים ופריטים שאינם בגדים עיקריים
@@ -258,10 +269,7 @@ function categorizeItemsAdvanced(items: any[], eventType: string) {
     tunics: [] as any[],
     tops: [] as any[],
     bottoms: [] as any[],
-    outerwear: [] as any[],
-    eveningShoes: [] as any[],
-    casualShoes: [] as any[],
-    formalShoes: [] as any[]
+    outerwear: [] as any[]
   };
 
   items.forEach(item => {
@@ -416,9 +424,11 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
   if (matchingShoes) {
     selectedItems.push(matchingShoes);
     console.log(`👠 [selectOutfitByRules] נעליים נוספו מטבלת shoes: ${matchingShoes.name}`);
+  } else {
+    console.log(`❌ [selectOutfitByRules] לא נמצאו נעליים מתאימות עבור ${occasion}`);
   }
 
-  console.log(`✅ [selectOutfitByRules] תלבושת אושרה עם ${selectedItems.length} פריטים כולל נעליים`);
+  console.log(`✅ [selectOutfitByRules] תלבושת אושרה עם ${selectedItems.length} פריטים`);
   return selectedItems;
 }
 
@@ -430,8 +440,9 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
     console.log(`👠 [selectMatchingShoesFromDB] מחפש נעליים עבור ${occasion}`);
     
     // Initialize occasion tracking for shoes if not exists
-    if (!globalUsedItemIds[occasion]) {
-      globalUsedItemIds[occasion] = new Set();
+    const shoesOccasion = `${occasion}-shoes`;
+    if (!globalUsedItemIds[shoesOccasion]) {
+      globalUsedItemIds[shoesOccasion] = new Set();
     }
     
     // קבלת נעליים מטבלת shoes
@@ -439,7 +450,7 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
       .from('shoes')
       .select('*')
       .not('image', 'is', null)
-      .limit(50);
+      .limit(100);
 
     if (error || !shoesData || shoesData.length === 0) {
       console.error('❌ [selectMatchingShoesFromDB] Error fetching shoes:', error);
@@ -451,14 +462,15 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
     // סינון נעליים שלא נבחרו עדיין עבור ההזדמנות הזו
     let availableShoes = shoesData.filter(shoe => {
       const shoeId = shoe.name || shoe.product_id?.toString() || `shoes-${Math.random()}`;
-      return !globalUsedItemIds[occasion].has(shoeId) && shoe.image;
+      const hasImage = shoe.image && (
+        (typeof shoe.image === 'string' && shoe.image.trim() !== '') ||
+        (typeof shoe.image === 'object' && shoe.image !== null)
+      );
+      return !globalUsedItemIds[shoesOccasion].has(shoeId) && hasImage;
     });
 
     if (availableShoes.length === 0) {
-      console.log(`⚠️ [selectMatchingShoesFromDB] No available shoes for ${occasion}, resetting`);
-      // Reset shoes tracking for this occasion
-      const shoesIds = shoesData.map(shoe => shoe.name || shoe.product_id?.toString() || `shoes-${Math.random()}`);
-      shoesIds.forEach(id => globalUsedItemIds[occasion].delete(id));
+      console.log(`⚠️ [selectMatchingShoesFromDB] No available shoes for ${occasion}, using all shoes`);
       availableShoes = shoesData.filter(shoe => shoe.image);
     }
 
@@ -476,7 +488,8 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
           return !searchText.includes('ספורט') && 
                  !searchText.includes('sport') &&
                  !searchText.includes('סניקרס') &&
-                 !searchText.includes('sneaker');
+                 !searchText.includes('sneaker') &&
+                 !searchText.includes('trainer');
         
         case 'evening':
           // נעלי ערב
@@ -485,7 +498,8 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
                  searchText.includes('elegant') || 
                  searchText.includes('אלגנט') ||
                  searchText.includes('evening') ||
-                 searchText.includes('ערב');
+                 searchText.includes('ערב') ||
+                 searchText.includes('boot');
         
         case 'casual':
         case 'weekend':
@@ -511,14 +525,34 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
       const shoeId = selectedShoes.name || selectedShoes.product_id?.toString() || `shoes-${Date.now()}`;
       
       // Mark this shoe as used for this occasion
-      globalUsedItemIds[occasion].add(shoeId);
+      globalUsedItemIds[shoesOccasion].add(shoeId);
       
       console.log(`✅ [selectMatchingShoesFromDB] נעליים נבחרו עבור ${occasion}: ${selectedShoes.name}`);
       
-      const shoesImageUrl = extractZaraImageUrl(selectedShoes.image as ZaraImageData);
+      // Extract image URL from shoes table
+      let shoesImageUrl = '/placeholder.svg';
+      if (selectedShoes.image) {
+        if (typeof selectedShoes.image === 'string') {
+          shoesImageUrl = selectedShoes.image;
+        } else if (typeof selectedShoes.image === 'object' && selectedShoes.image !== null) {
+          // Handle JSON image data from shoes table
+          try {
+            const imageData = selectedShoes.image as any;
+            if (imageData.url) {
+              shoesImageUrl = imageData.url;
+            } else if (Array.isArray(imageData) && imageData.length > 0) {
+              shoesImageUrl = imageData[0];
+            } else if (typeof imageData === 'string') {
+              shoesImageUrl = imageData;
+            }
+          } catch (e) {
+            console.error('Error processing shoes image data:', e);
+          }
+        }
+      }
       
       return {
-        id: shoeId,
+        id: `shoes-from-db-${shoeId}`,
         name: selectedShoes.name || 'נעליים',
         image: shoesImageUrl,
         type: 'shoes',
