@@ -27,7 +27,7 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
     let parsedStyleAnalysis = null;
     let styleProfile = 'casual';
     let colorPreferences = [];
-    let eventType = 'casual'; // default event type
+    let eventType = 'casual';
 
     if (styleAnalysis) {
       try {
@@ -80,6 +80,41 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
 }
 
 /**
+ * בדיקה אם יש תמונה תקינה בפריט
+ */
+function hasValidImageData(imageData: any): boolean {
+  if (!imageData) return false;
+  
+  // Handle different image data formats
+  let imageUrls: string[] = [];
+  
+  if (typeof imageData === 'string') {
+    try {
+      const parsed = JSON.parse(imageData);
+      if (Array.isArray(parsed)) {
+        imageUrls = parsed.filter(url => typeof url === 'string' && url.trim() !== '');
+      } else if (typeof parsed === 'string' && parsed.trim() !== '') {
+        imageUrls = [parsed];
+      }
+    } catch {
+      if (imageData.trim() !== '') {
+        imageUrls = [imageData];
+      }
+    }
+  } else if (Array.isArray(imageData)) {
+    imageUrls = imageData.filter(url => typeof url === 'string' && url.trim() !== '');
+  }
+  
+  // Check if we have any valid Zara image URLs
+  const hasValidZaraImage = imageUrls.some(url => {
+    return url.includes('static.zara.net') && url.includes('.jpg');
+  });
+  
+  console.log(`🔍 [hasValidImageData] Found ${imageUrls.length} URLs, valid Zara images: ${hasValidZaraImage}`);
+  return hasValidZaraImage;
+}
+
+/**
  * יצירת תלבושת מתקדמת עם כללי התאמה
  */
 async function createAdvancedOutfit(styleProfile: string, eventType: string, colorPreferences: string[]): Promise<DashboardItem[]> {
@@ -99,25 +134,27 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
     return [];
   }
 
-  console.log(`🔍 [createAdvancedOutfit] Found ${allItems.length} items with images in database`);
+  console.log(`🔍 [createAdvancedOutfit] Found ${allItems.length} items with non-null images in database`);
 
-  // סינון פריטים בסיסי - רק פריטים עם תמונות אמיתיות
+  // סינון פריטים בסיסי - רק פריטים עם תמונות אמיתיות מזארה
   let filteredItems = allItems.filter(item => {
-    const hasValidImage = item.image && 
-                         typeof item.image === 'string' && 
-                         item.image.trim() !== '' &&
-                         item.image !== '[]' &&
-                         item.image !== 'null';
+    const hasValid = hasValidImageData(item.image);
     
-    if (!hasValidImage && item.image !== null) {
-      // Only log if we have some image data but it's not valid
-      console.log(`❌ [createAdvancedOutfit] Filtering out item without valid image: ${item.id}`);
+    if (!hasValid) {
+      console.log(`❌ [createAdvancedOutfit] Filtering out item without valid Zara image: ${item.id} - ${item.product_name}`);
+    } else {
+      console.log(`✅ [createAdvancedOutfit] Keeping item with valid image: ${item.id} - ${item.product_name}`);
     }
     
-    return hasValidImage && item.availability !== false;
+    return hasValid && item.availability !== false;
   });
   
-  console.log(`🔍 [createAdvancedOutfit] ${filteredItems.length} items after image filtering`);
+  console.log(`🔍 [createAdvancedOutfit] ${filteredItems.length} items after Zara image filtering`);
+  
+  if (filteredItems.length === 0) {
+    console.error('❌ [createAdvancedOutfit] No items with valid Zara images found');
+    return [];
+  }
   
   // סינון לפי צבעים מועדפים
   if (colorPreferences.length > 0) {
@@ -225,11 +262,13 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
     
     // וידוא שלשמלה יש תמונה תקינה - המרה ל-string עם type casting
     const imageUrl = extractZaraImageUrl(dress.image as ZaraImageData);
-    if (imageUrl && imageUrl !== '/placeholder.svg') {
+    console.log(`🔍 [selectOutfitByRules] Dress image URL: ${imageUrl}`);
+    
+    if (imageUrl && imageUrl !== '/placeholder.svg' && imageUrl.includes('static.zara.net')) {
       selectedItems.push({
         id: dress.id,
         name: dress.product_name,
-        image: imageUrl, // תמונה מומרת לstring
+        image: imageUrl,
         type: 'dress',
         price: `₪${dress.price}`,
         description: dress.description || '',
@@ -247,6 +286,8 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
       }
       
       return selectedItems;
+    } else {
+      console.log(`❌ [selectOutfitByRules] Dress has invalid image URL: ${imageUrl}`);
     }
   }
 
@@ -258,11 +299,16 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
     const outerwearImageUrl = extractZaraImageUrl(outerwear.image as ZaraImageData);
     const topImageUrl = top ? extractZaraImageUrl(top.image as ZaraImageData) : null;
     
-    if (top && outerwearImageUrl !== '/placeholder.svg' && topImageUrl !== '/placeholder.svg') {
+    console.log(`🔍 [selectOutfitByRules] Outerwear image: ${outerwearImageUrl}, Top image: ${topImageUrl}`);
+    
+    if (top && 
+        outerwearImageUrl && outerwearImageUrl !== '/placeholder.svg' && outerwearImageUrl.includes('static.zara.net') &&
+        topImageUrl && topImageUrl !== '/placeholder.svg' && topImageUrl.includes('static.zara.net')) {
+      
       selectedItems.push({
         id: outerwear.id,
         name: outerwear.product_name,
-        image: outerwearImageUrl, // תמונה מומרת לstring
+        image: outerwearImageUrl,
         type: 'outerwear',
         price: `₪${outerwear.price}`,
         description: outerwear.description || '',
@@ -272,7 +318,7 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
       selectedItems.push({
         id: top.id,
         name: top.product_name,
-        image: topImageUrl, // תמונה מומרת לstring
+        image: topImageUrl,
         type: 'top',
         price: `₪${top.price}`,
         description: top.description || '',
@@ -294,11 +340,16 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
     const topImageUrl = extractZaraImageUrl(top.image as ZaraImageData);
     const bottomImageUrl = bottom ? extractZaraImageUrl(bottom.image as ZaraImageData) : null;
     
-    if (bottom && topImageUrl !== '/placeholder.svg' && bottomImageUrl !== '/placeholder.svg') {
+    console.log(`🔍 [selectOutfitByRules] Top image: ${topImageUrl}, Bottom image: ${bottomImageUrl}`);
+    
+    if (bottom && 
+        topImageUrl && topImageUrl !== '/placeholder.svg' && topImageUrl.includes('static.zara.net') &&
+        bottomImageUrl && bottomImageUrl !== '/placeholder.svg' && bottomImageUrl.includes('static.zara.net')) {
+      
       selectedItems.push({
         id: top.id,
         name: top.product_name,
-        image: topImageUrl, // תמונה מומרת לstring
+        image: topImageUrl,
         type: 'top',
         price: `₪${top.price}`,
         description: top.description || '',
@@ -308,11 +359,11 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
       selectedItems.push({
         id: bottom.id,
         name: bottom.product_name,
-        image: bottomImageUrl, // תמונה מומרת לstring
+        image: bottomImageUrl,
         type: 'bottom',
         price: `₪${bottom.price}`,
         description: bottom.description || '',
-        color: bottom.colour
+        color: bottom.color
       });
 
       usedColors.push(top.colour?.toLowerCase() || '');
@@ -347,6 +398,7 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
     }
   }
 
+  console.log(`⚠️ [selectOutfitByRules] No valid outfit found with real images, returning ${selectedItems.length} items`);
   return selectedItems;
 }
 
@@ -414,7 +466,7 @@ async function selectMatchingShoesFromDB(eventType: string, usedColors: string[]
       return {
         id: selectedShoes.name || selectedShoes.product_id?.toString() || 'shoes-item',
         name: selectedShoes.name || 'נעליים',
-        image: shoesImageUrl, // תמונה מומרת לstring
+        image: shoesImageUrl,
         type: 'shoes',
         price: selectedShoes.price ? `₪${selectedShoes.price}` : '₪199',
         description: selectedShoes.description || '',
@@ -561,7 +613,7 @@ async function createCasualOutfitWithLogic(eventType: string): Promise<Dashboard
   casualOutfit.push({
     id: selectedTop.id,
     name: selectedTop.name,
-    image: selectedTop.image, // תמונה אמיתית מהמאגר
+    image: selectedTop.image,
     type: 'top',
     price: selectedTop.price,
     description: selectedTop.description || '',
@@ -571,7 +623,7 @@ async function createCasualOutfitWithLogic(eventType: string): Promise<Dashboard
   casualOutfit.push({
     id: selectedBottom.id,
     name: selectedBottom.name,
-    image: selectedBottom.image, // תמונה אמיתית מהמאגר
+    image: selectedBottom.image,
     type: 'bottom',
     price: selectedBottom.price,
     description: selectedBottom.description || '',
@@ -581,7 +633,7 @@ async function createCasualOutfitWithLogic(eventType: string): Promise<Dashboard
   casualOutfit.push({
     id: selectedShoes.id,
     name: selectedShoes.name,
-    image: selectedShoes.image, // תמונה אמיתית מטבלת נעליים
+    image: selectedShoes.image,
     type: 'shoes',
     price: selectedShoes.price,
     description: selectedShoes.description || '',
@@ -617,7 +669,7 @@ async function getCasualShoesFromDB(): Promise<DashboardItem[]> {
         return {
           id: shoe.name || shoe.product_id?.toString() || 'casual-shoes',
           name: shoe.name || 'נעליים קז\'ואליות',
-          image: shoesImageUrl, // תמונה מומרת לstring
+          image: shoesImageUrl,
           type: 'shoes' as const,
           price: shoe.price ? `₪${shoe.price}` : '₪149',
           description: shoe.description || '',
