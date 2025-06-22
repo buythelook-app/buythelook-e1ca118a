@@ -3,7 +3,7 @@ import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
 import { findCasualItems } from "./casualOutfitService";
 import { ColorCoordinationService } from "./colorCoordinationService";
-import { extractZaraImageUrl } from "@/utils/imageUtils";
+import { extractZaraImageUrl, ZaraImageData } from "@/utils/imageUtils";
 import logger from "@/lib/logger";
 
 /**
@@ -109,7 +109,8 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
                          item.image !== '[]' &&
                          item.image !== 'null';
     
-    if (!hasValidImage) {
+    if (!hasValidImage && item.image !== null) {
+      // Only log if we have some image data but it's not valid
       console.log(`❌ [createAdvancedOutfit] Filtering out item without valid image: ${item.id}`);
     }
     
@@ -222,8 +223,8 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
   if (categories.dresses.length > 0) {
     const dress = categories.dresses[0];
     
-    // וידוא שלשמלה יש תמונה תקינה - המרה ל-string
-    const imageUrl = extractZaraImageUrl(dress.image);
+    // וידוא שלשמלה יש תמונה תקינה - המרה ל-string עם type casting
+    const imageUrl = extractZaraImageUrl(dress.image as ZaraImageData);
     if (imageUrl && imageUrl !== '/placeholder.svg') {
       selectedItems.push({
         id: dress.id,
@@ -254,8 +255,8 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
     const outerwear = categories.outerwear[0];
     const top = selectCompatibleTop(categories.tops, outerwear);
     
-    const outerwearImageUrl = extractZaraImageUrl(outerwear.image);
-    const topImageUrl = top ? extractZaraImageUrl(top.image) : null;
+    const outerwearImageUrl = extractZaraImageUrl(outerwear.image as ZaraImageData);
+    const topImageUrl = top ? extractZaraImageUrl(top.image as ZaraImageData) : null;
     
     if (top && outerwearImageUrl !== '/placeholder.svg' && topImageUrl !== '/placeholder.svg') {
       selectedItems.push({
@@ -290,8 +291,8 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
     const top = categories.tops[0];
     const bottom = selectCompatibleBottom(categories.bottoms, top);
     
-    const topImageUrl = extractZaraImageUrl(top.image);
-    const bottomImageUrl = bottom ? extractZaraImageUrl(bottom.image) : null;
+    const topImageUrl = extractZaraImageUrl(top.image as ZaraImageData);
+    const bottomImageUrl = bottom ? extractZaraImageUrl(bottom.image as ZaraImageData) : null;
     
     if (bottom && topImageUrl !== '/placeholder.svg' && bottomImageUrl !== '/placeholder.svg') {
       selectedItems.push({
@@ -407,8 +408,8 @@ async function selectMatchingShoesFromDB(eventType: string, usedColors: string[]
     if (selectedShoes) {
       console.log(`✅ [selectMatchingShoesFromDB] נעליים נבחרו מטבלת shoes: ${selectedShoes.name}`);
       
-      // המרת תמונת נעליים ל-string באמצעות extractZaraImageUrl
-      const shoesImageUrl = extractZaraImageUrl(selectedShoes.image);
+      // המרת תמונת נעליים ל-string באמצעות extractZaraImageUrl עם type casting
+      const shoesImageUrl = extractZaraImageUrl(selectedShoes.image as ZaraImageData);
       
       return {
         id: selectedShoes.name || selectedShoes.product_id?.toString() || 'shoes-item',
@@ -610,8 +611,8 @@ async function getCasualShoesFromDB(): Promise<DashboardItem[]> {
     return shoesData
       .filter(shoe => shoe.image && typeof shoe.image === 'string')
       .map(shoe => {
-        // המרת תמונת נעליים ל-string באמצעות extractZaraImageUrl
-        const shoesImageUrl = extractZaraImageUrl(shoe.image);
+        // המרת תמונת נעליים ל-string באמצעות extractZaraImageUrl עם type casting
+        const shoesImageUrl = extractZaraImageUrl(shoe.image as ZaraImageData);
         
         return {
           id: shoe.name || shoe.product_id?.toString() || 'casual-shoes',
