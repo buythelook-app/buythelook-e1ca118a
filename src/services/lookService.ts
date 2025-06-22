@@ -26,53 +26,10 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       lastResetTime = Date.now();
     }
 
-    // קבלת נתוני ניתוח הסטייל
-    const styleAnalysis = localStorage.getItem('styleAnalysis');
-    const currentMood = localStorage.getItem('current-mood');
+    const occasionOutfit = await createAdvancedOutfit('casual', 'general', [], 'general');
     
-    if (!styleAnalysis) {
-      console.log('❌ [lookService] No style analysis found, using fallback outfit');
-    }
-
-    let parsedStyleAnalysis = null;
-    let styleProfile = 'casual';
-    let colorPreferences = [];
-    let eventType = 'casual';
-
-    if (styleAnalysis) {
-      try {
-        parsedStyleAnalysis = JSON.parse(styleAnalysis);
-        styleProfile = parsedStyleAnalysis?.analysis?.styleProfile?.toLowerCase() || 'casual';
-        colorPreferences = parsedStyleAnalysis?.analysis?.colorPreferences || [];
-        eventType = parsedStyleAnalysis?.analysis?.eventType?.toLowerCase() || 'casual';
-      } catch (e) {
-        console.log('❌ [lookService] Error parsing style analysis, using defaults');
-      }
-    }
-    
-    console.log(`🎯 [LookService] פרופיל סטייל זוהה: ${styleProfile}, אירוע: ${eventType}`);
-
-    // לוגיקה מיוחדת לסגנון קזואל
-    if (styleProfile === 'casual' || currentMood === 'casual') {
-      console.log(`👕 [LookService] מחזיר תלבושת קזואלית מותאמת`);
-      
-      try {
-        const casualOutfit = await createCasualOutfitWithLogic(eventType);
-        if (casualOutfit && casualOutfit.length >= 2) {
-          return casualOutfit;
-        }
-      } catch (casualError) {
-        console.log('❌ [lookService] Casual outfit failed, trying regular logic');
-      }
-    }
-
-    // לוגיקה רגילה עם כללי ההתאמה החדשים
-    console.log('🔍 [lookService] Using advanced outfit logic from database');
-
-    const outfitItems = await createAdvancedOutfit(styleProfile, eventType, colorPreferences, 'general');
-    
-    if (outfitItems && outfitItems.length >= 2) {
-      return outfitItems;
+    if (occasionOutfit && occasionOutfit.length >= 2) {
+      return occasionOutfit;
     }
 
     // fallback
@@ -124,7 +81,7 @@ function hasValidImageData(imageData: any): boolean {
 }
 
 /**
- * יצירת תלבושת מתקדמת עם כללי התאמה
+ * יצירת תלבושת מתקדמת עם כללי התאמה לפי אירוע
  */
 async function createAdvancedOutfit(styleProfile: string, eventType: string, colorPreferences: string[], occasion: string): Promise<DashboardItem[]> {
   console.log(`🎨 [createAdvancedOutfit] יצירת תלבושת עבור ${styleProfile} לאירוע ${eventType}, הזדמנות: ${occasion}`);
@@ -155,16 +112,9 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
     const hasValid = hasValidImageData(item.image);
     const notUsed = !globalUsedItemIds[occasion].has(item.id);
     const isClothing = isActualClothingItem(item);
+    const isAppropriateForOccasion = isItemAppropriateForOccasion(item, occasion);
     
-    if (!hasValid) {
-      console.log(`❌ [createAdvancedOutfit] Filtering out item without valid Zara image: ${item.id} - ${item.product_name}`);
-    } else if (!notUsed) {
-      console.log(`⚠️ [createAdvancedOutfit] Skipping already used item for ${occasion}: ${item.id} - ${item.product_name}`);
-    } else if (!isClothing) {
-      console.log(`❌ [createAdvancedOutfit] Filtering out non-clothing item: ${item.id} - ${item.product_name}`);
-    }
-    
-    return hasValid && notUsed && isClothing && item.availability !== false;
+    return hasValid && notUsed && isClothing && isAppropriateForOccasion && item.availability !== false;
   });
   
   console.log(`🔍 [createAdvancedOutfit] ${filteredItems.length} valid clothing items after filtering for ${occasion}`);
@@ -176,21 +126,6 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
     filteredItems = allItems.filter(item => hasValidImageData(item.image) && isActualClothingItem(item));
   }
   
-  // סינון לפי צבעים מועדפים
-  if (colorPreferences.length > 0) {
-    const colorFilteredItems = filteredItems.filter(item => {
-      const itemColor = item.colour?.toLowerCase() || '';
-      return colorPreferences.some((pref: string) => 
-        itemColor.includes(pref.toLowerCase())
-      );
-    });
-    
-    if (colorFilteredItems.length > 0) {
-      filteredItems = colorFilteredItems;
-      console.log(`🎨 [createAdvancedOutfit] צבעים מועדפים: נמצאו ${filteredItems.length} פריטים תואמים`);
-    }
-  }
-
   // חלוקת פריטים לקטגוריות עם לוגיקה מתקדמת
   const categorizedItems = categorizeItemsAdvanced(filteredItems, eventType);
   
@@ -206,6 +141,45 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
   outfitItems.forEach(item => globalUsedItemIds[occasion].add(item.id));
   
   return outfitItems;
+}
+
+/**
+ * בדיקה אם פריט מתאים לאירוע מסוים
+ */
+function isItemAppropriateForOccasion(item: any, occasion: string): boolean {
+  const name = (item.product_name || '').toLowerCase();
+  const subfamily = (item.product_subfamily || '').toLowerCase();
+  const family = (item.product_family || '').toLowerCase();
+  const searchText = `${name} ${subfamily} ${family}`;
+  
+  switch (occasion.toLowerCase()) {
+    case 'work':
+      // פריטים פורמליים לעבודה
+      return !searchText.includes('ביקיני') && 
+             !searchText.includes('חוף') && 
+             !searchText.includes('ספורט') &&
+             !searchText.includes('טרנינג') &&
+             !searchText.includes('שינה');
+    
+    case 'casual':
+      // פריטים קז'ואליים
+      return !searchText.includes('ערב') &&
+             !searchText.includes('חתונה') &&
+             !searchText.includes('פורמלי');
+    
+    case 'evening':
+      // פריטים לערב
+      return !searchText.includes('ספורט') &&
+             !searchText.includes('טרנינג') &&
+             !searchText.includes('בית');
+    
+    case 'weekend':
+      // פריטים לסוף שבוע - יותר נינוח
+      return true; // כל הפריטים מתאימים לסוף שבוע
+    
+    default:
+      return true;
+  }
 }
 
 /**
@@ -226,7 +200,8 @@ function isActualClothingItem(item: any): boolean {
     'perfume', 'fragrance', 'בושם', 'eau de', 'cologne',
     'nail polish', 'לק', 'nail', 'ציפורניים',
     'face', 'פנים', 'עיניים', 'עור', 'skin', 'cream', 'קרם',
-    'serum', 'סרום', 'moisturizer', 'לחות', 'cleanser', 'מנקה'
+    'serum', 'סרום', 'moisturizer', 'לחות', 'cleanser', 'מנקה',
+    'קוסמטיקה', 'יופי', 'beauty'
   ];
   
   // אביזרים ופריטים שאינם בגדים עיקריים
@@ -252,7 +227,7 @@ function isActualClothingItem(item: any): boolean {
     'חולצ', 'טי שירט', 'בלוז', 'טופ', 'חזיי', 'גופי', 'בלוזה',
     'shirt', 'top', 'blouse', 'tee', 'tank', 'camisole', 't-shirt',
     
-    // מכנסיים וחצאיות
+    // מכנסיים וחצאיות  
     'מכנס', 'ג\'ינס', 'חצאית', 'שורט', 'טייץ', 'לגינס', 'מכנסיים',
     'pants', 'jeans', 'skirt', 'shorts', 'leggings', 'trousers',
     
@@ -262,11 +237,7 @@ function isActualClothingItem(item: any): boolean {
     
     // מעילים ועליוניות
     'מעיל', 'ז\'קט', 'קרדיגן', 'בלייזר', 'סוודר', 'הודי', 'זקט',
-    'jacket', 'coat', 'cardigan', 'blazer', 'sweater', 'hoodie',
-    
-    // נעליים
-    'נעל', 'סנדל', 'מגף', 'כפכפ', 'נעלי', 'נעליים',
-    'shoe', 'sandal', 'boot', 'sneaker', 'heel'
+    'jacket', 'coat', 'cardigan', 'blazer', 'sweater', 'hoodie'
   ];
   
   const isClothing = clothingKeywords.some(keyword => searchText.includes(keyword));
@@ -326,19 +297,7 @@ function categorizeItemsAdvanced(items: any[], eventType: string) {
       console.log(`👖 [categorizeItemsAdvanced] חלק תחתון זוהה: ${item.product_name}`);
       categories.bottoms.push(item);
     }
-    // זיהוי נעליים לפי סוג
-    else if (isShoe(searchText)) {
-      if (isEveningShoe(searchText)) {
-        console.log(`👠 [categorizeItemsAdvanced] נעלי ערב זוהו: ${item.product_name}`);
-        categories.eveningShoes.push(item);
-      } else if (isFormalShoe(searchText)) {
-        console.log(`👞 [categorizeItemsAdvanced] נעליים פורמליות זוהו: ${item.product_name}`);
-        categories.formalShoes.push(item);
-      } else {
-        console.log(`👟 [categorizeItemsAdvanced] נעליים קז'ואליות זוהו: ${item.product_name}`);
-        categories.casualShoes.push(item);
-      }
-    } else {
+    else {
       console.log(`❓ [categorizeItemsAdvanced] פריט לא מזוהה: ${item.product_name} - ${searchText}`);
     }
   });
@@ -347,7 +306,7 @@ function categorizeItemsAdvanced(items: any[], eventType: string) {
 }
 
 /**
- * בחירת תלבושת לפי כללים - עם דגש על איכות תמונות
+ * בחירת תלבושת לפי כללים - כולל נעליים מטבלת shoes
  */
 async function selectOutfitByRules(categories: any, eventType: string, styleProfile: string, occasion: string): Promise<DashboardItem[]> {
   console.log(`🎯 [selectOutfitByRules] בחירת תלבושת עבור ${eventType}, הזדמנות: ${occasion}`);
@@ -359,7 +318,6 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
   if (categories.dresses.length > 0) {
     const dress = categories.dresses[0];
     
-    // וידוא שלשמלה יש תמונה תקינה - המרה ל-string עם type casting
     const imageUrl = extractZaraImageUrl(dress.image as ZaraImageData);
     console.log(`🔍 [selectOutfitByRules] Dress image URL: ${imageUrl}`);
     
@@ -376,29 +334,16 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
 
       usedColors.push(dress.colour?.toLowerCase() || '');
       console.log(`👗 [selectOutfitByRules] שמלה נבחרה עם תמונה: ${dress.product_name}`);
-
-      // בחירת נעליים מתאימות לשמלה מטבלת נעליים
-      const matchingShoes = await selectMatchingShoesFromDB(eventType, usedColors, occasion);
-      if (matchingShoes) {
-        selectedItems.push(matchingShoes);
-        usedColors.push(matchingShoes.color || '');
-      }
-      
-      return selectedItems;
-    } else {
-      console.log(`❌ [selectOutfitByRules] Dress has invalid image URL: ${imageUrl}`);
     }
   }
 
   // כלל 2: אם יש עליונית עם תמונה תקינה
-  if (categories.outerwear.length > 0 && categories.tops.length > 0) {
+  if (selectedItems.length === 0 && categories.outerwear.length > 0 && categories.tops.length > 0) {
     const outerwear = categories.outerwear[0];
     const top = selectCompatibleTop(categories.tops, outerwear);
     
     const outerwearImageUrl = extractZaraImageUrl(outerwear.image as ZaraImageData);
     const topImageUrl = top ? extractZaraImageUrl(top.image as ZaraImageData) : null;
-    
-    console.log(`🔍 [selectOutfitByRules] Outerwear image: ${outerwearImageUrl}, Top image: ${topImageUrl}`);
     
     if (top && 
         outerwearImageUrl && outerwearImageUrl !== '/placeholder.svg' && outerwearImageUrl.includes('static.zara.net') &&
@@ -426,8 +371,6 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
 
       usedColors.push(outerwear.colour?.toLowerCase() || '');
       usedColors.push(top.colour?.toLowerCase() || '');
-      
-      console.log(`🧥 [selectOutfitByRules] עליונית + חולצה נבחרו עם תמונות: ${outerwear.product_name} + ${top.product_name}`);
     }
   }
 
@@ -438,8 +381,6 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
     
     const topImageUrl = extractZaraImageUrl(top.image as ZaraImageData);
     const bottomImageUrl = bottom ? extractZaraImageUrl(bottom.image as ZaraImageData) : null;
-    
-    console.log(`🔍 [selectOutfitByRules] Top image: ${topImageUrl}, Bottom image: ${bottomImageUrl}`);
     
     if (bottom && 
         topImageUrl && topImageUrl !== '/placeholder.svg' && topImageUrl.includes('static.zara.net') &&
@@ -462,51 +403,31 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
         type: 'bottom',
         price: `₪${bottom.price}`,
         description: bottom.description || '',
-        color: bottom.color
+        color: bottom.colour
       });
 
       usedColors.push(top.colour?.toLowerCase() || '');
       usedColors.push(bottom.colour?.toLowerCase() || '');
-      
-      console.log(`👕 [selectOutfitByRules] חולצה + תחתון נבחרו עם תמונות: ${top.product_name} + ${bottom.product_name}`);
     }
   }
 
-  // הוספת נעליים אם עדיין אין - מטבלת נעליים
-  if (selectedItems.length > 0 && !selectedItems.some(item => item.type === 'shoes')) {
-    const matchingShoes = await selectMatchingShoesFromDB(eventType, usedColors, occasion);
-    if (matchingShoes) {
-      selectedItems.push(matchingShoes);
-    }
+  // הוספת נעליים מטבלת shoes - תמיד!
+  const matchingShoes = await selectMatchingShoesFromDB(occasion, usedColors);
+  if (matchingShoes) {
+    selectedItems.push(matchingShoes);
+    console.log(`👠 [selectOutfitByRules] נעליים נוספו מטבלת shoes: ${matchingShoes.name}`);
   }
 
-  // בדיקת התאמת צבעים סופית
-  if (selectedItems.length >= 2) {
-    const colorScore = ColorCoordinationService.scoreOutfitCoordination(
-      selectedItems.map(item => ({ colour: item.color || extractColorFromName(item.name) })), 
-      eventType
-    );
-    
-    console.log(`🎨 [selectOutfitByRules] ציון התאמת צבעים: ${colorScore}/100`);
-    
-    if (colorScore >= 60) {
-      console.log(`✅ [selectOutfitByRules] תלבושת אושרה עם ${selectedItems.length} פריטים עם תמונות אמיתיות`);
-      return selectedItems;
-    } else {
-      console.log(`❌ [selectOutfitByRules] ציון צבעים נמוך מדי: ${colorScore}`);
-    }
-  }
-
-  console.log(`⚠️ [selectOutfitByRules] No valid outfit found with real images, returning ${selectedItems.length} items`);
+  console.log(`✅ [selectOutfitByRules] תלבושת אושרה עם ${selectedItems.length} פריטים כולל נעליים`);
   return selectedItems;
 }
 
 /**
- * בחירת נעליים מתאימות מטבלת הנעליים
+ * בחירת נעליים מתאימות מטבלת הנעליים לפי אירוע
  */
-async function selectMatchingShoesFromDB(eventType: string, usedColors: string[], occasion: string): Promise<DashboardItem | null> {
+async function selectMatchingShoesFromDB(occasion: string, usedColors: string[]): Promise<DashboardItem | null> {
   try {
-    console.log(`👠 [selectMatchingShoesFromDB] מחפש נעליים עבור ${eventType}, הזדמנות: ${occasion}`);
+    console.log(`👠 [selectMatchingShoesFromDB] מחפש נעליים עבור ${occasion}`);
     
     // Initialize occasion tracking for shoes if not exists
     if (!globalUsedItemIds[occasion]) {
@@ -549,17 +470,28 @@ async function selectMatchingShoesFromDB(eventType: string, usedColors: string[]
       const shoeDescription = (shoe.description || '').toLowerCase();
       const searchText = `${shoeName} ${shoeDescription}`;
       
-      if (eventType === 'evening' || eventType === 'formal') {
-        // נעלי ערב/פורמליות
-        return searchText.includes('heel') || 
-               searchText.includes('עקב') || 
-               searchText.includes('elegant') || 
-               searchText.includes('אלגנט') ||
-               searchText.includes('evening') ||
-               searchText.includes('ערב');
-      } else {
-        // נעליים קז'ואליות
-        return !searchText.includes('sport') && !searchText.includes('ספורט');
+      switch (occasion.toLowerCase()) {
+        case 'work':
+          // נעליים פורמליות לעבודה
+          return !searchText.includes('ספורט') && 
+                 !searchText.includes('sport') &&
+                 !searchText.includes('סניקרס') &&
+                 !searchText.includes('sneaker');
+        
+        case 'evening':
+          // נעלי ערב
+          return searchText.includes('heel') || 
+                 searchText.includes('עקב') || 
+                 searchText.includes('elegant') || 
+                 searchText.includes('אלגנט') ||
+                 searchText.includes('evening') ||
+                 searchText.includes('ערב');
+        
+        case 'casual':
+        case 'weekend':
+        default:
+          // נעליים קז'ואליות - הכל מתאים
+          return true;
       }
     });
 
@@ -581,9 +513,8 @@ async function selectMatchingShoesFromDB(eventType: string, usedColors: string[]
       // Mark this shoe as used for this occasion
       globalUsedItemIds[occasion].add(shoeId);
       
-      console.log(`✅ [selectMatchingShoesFromDB] נעליים נבחרו מטבלת shoes עבור ${occasion}: ${selectedShoes.name}`);
+      console.log(`✅ [selectMatchingShoesFromDB] נעליים נבחרו עבור ${occasion}: ${selectedShoes.name}`);
       
-      // המרת תמונת נעליים ל-string באמצעות extractZaraImageUrl עם type casting
       const shoesImageUrl = extractZaraImageUrl(selectedShoes.image as ZaraImageData);
       
       return {
@@ -610,7 +541,6 @@ async function selectMatchingShoesFromDB(eventType: string, usedColors: string[]
 function selectCompatibleTop(tops: any[], outerwear: any): any | null {
   return tops.find(top => {
     const topName = top.product_name?.toLowerCase() || '';
-    // ודא שזו חולצה מלאה ולא טופ קצר
     const isFullTop = !topName.includes('קרופ') && !topName.includes('crop') && !topName.includes('קצר');
     const colorCompatible = ColorCoordinationService.areColorsCompatible(
       top.colour?.toLowerCase() || '', 
@@ -618,7 +548,7 @@ function selectCompatibleTop(tops: any[], outerwear: any): any | null {
     );
     
     return isFullTop && colorCompatible;
-  }) || tops[0]; // fallback לחולצה ראשונה
+  }) || tops[0];
 }
 
 /**
@@ -630,7 +560,7 @@ function selectCompatibleBottom(bottoms: any[], top: any): any | null {
       bottom.colour?.toLowerCase() || '', 
       top.colour?.toLowerCase() || ''
     );
-  }) || bottoms[0]; // fallback לחלק תחתון ראשון
+  }) || bottoms[0];
 }
 
 // פונקציות עזר לזיהוי סוגי פריטים - מותאמות לעברית ואנגלית
@@ -668,24 +598,6 @@ function isBottom(searchText: string): boolean {
   return bottomKeywords.some(keyword => searchText.includes(keyword));
 }
 
-function isShoe(searchText: string): boolean {
-  const shoeKeywords = [
-    'נעל', 'נעלי', 'סנדל', 'מגף', 'כפכפ',
-    'shoe', 'sandal', 'boot', 'heel', 'sneaker'
-  ];
-  return shoeKeywords.some(keyword => searchText.includes(keyword));
-}
-
-function isEveningShoe(searchText: string): boolean {
-  const eveningShoeKeywords = ['עקב', 'heel', 'ערב', 'evening', 'פלטפורמה', 'platform'];
-  return eveningShoeKeywords.some(keyword => searchText.includes(keyword));
-}
-
-function isFormalShoe(searchText: string): boolean {
-  const formalShoeKeywords = ['פורמלי', 'formal', 'עור', 'leather', 'אלגנט', 'elegant'];
-  return formalShoeKeywords.some(keyword => searchText.includes(keyword));
-}
-
 function isNeutralColor(color: string): boolean {
   const neutralColors = ['שחור', 'לבן', 'אפור', 'בז\'', 'חום', 'black', 'white', 'gray', 'grey', 'beige', 'brown', 'nude'];
   return neutralColors.some(neutral => color.includes(neutral));
@@ -719,7 +631,7 @@ async function createCasualOutfitWithLogic(eventType: string): Promise<Dashboard
   // קבלת נעליים מטבלת shoes
   const casualShoes = await getCasualShoesFromDB();
 
-  if (casualTops.length === 0 || casualBottoms.length === 0 || casualShoes.length === 0) {
+  if (casualTops.length === 0 || casualBottoms.length === 0 || casualShoes.length === 0)  {
     console.log('❌ [createCasualOutfitWithLogic] חסרים פריטים קז\'ואליים');
     return [];
   }
@@ -844,7 +756,7 @@ function getFallbackOutfit(): DashboardItem[] {
 }
 
 /**
- * מחזיר נתונים לכל ההזדמנויות
+ * מחזיר נתונים לכל ההזדמנויות - עם פריטים שונים לכל אירוע
  */
 export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardItem[] }> {
   try {
@@ -887,7 +799,6 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
   } catch (error) {
     console.error('❌ [fetchDashboardItems] Error:', error);
     
-    // החזרת תלבושות עם פריטי fallback במקרה של שגיאה
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     const fallbackData: { [key: string]: DashboardItem[] } = {};
     
