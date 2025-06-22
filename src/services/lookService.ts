@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -85,10 +84,12 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
 async function createAdvancedOutfit(styleProfile: string, eventType: string, colorPreferences: string[]): Promise<DashboardItem[]> {
   console.log(`🎨 [createAdvancedOutfit] יצירת תלבושת עבור ${styleProfile} לאירוע ${eventType}`);
   
-  // קבלת פריטים מהמאגר
+  // קבלת פריטים מהמאגר - רק פריטים עם תמונות תקינות
   const { data: allItems, error } = await supabase
     .from('zara_cloth')
     .select('*')
+    .not('image', 'is', null)
+    .neq('availability', false)
     .order('price', { ascending: true })
     .limit(200);
 
@@ -97,10 +98,24 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
     return [];
   }
 
-  console.log(`🔍 [createAdvancedOutfit] Found ${allItems.length} items in database`);
+  console.log(`🔍 [createAdvancedOutfit] Found ${allItems.length} items with images in database`);
 
-  // סינון פריטים בסיסי
-  let filteredItems = allItems.filter(item => item.availability !== false);
+  // סינון פריטים בסיסי - רק פריטים עם תמונות אמיתיות
+  let filteredItems = allItems.filter(item => {
+    const hasValidImage = item.image && 
+                         typeof item.image === 'string' && 
+                         item.image.trim() !== '' &&
+                         item.image !== '[]' &&
+                         item.image !== 'null';
+    
+    if (!hasValidImage) {
+      console.log(`❌ [createAdvancedOutfit] Filtering out item without valid image: ${item.id}`);
+    }
+    
+    return hasValidImage && item.availability !== false;
+  });
+  
+  console.log(`🔍 [createAdvancedOutfit] ${filteredItems.length} items after image filtering`);
   
   // סינון לפי צבעים מועדפים
   if (colorPreferences.length > 0) {
@@ -125,7 +140,7 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
     count: categorizedItems[key].length
   })));
 
-  // יצירת תלבושת לפי כללים
+  // יצירת תלבושת לפי כללים - עם דגש על תמונות אמיתיות
   const outfitItems = await selectOutfitByRules(categorizedItems, eventType, styleProfile);
   
   return outfitItems;
@@ -194,7 +209,7 @@ function categorizeItemsAdvanced(items: any[], eventType: string) {
 }
 
 /**
- * בחירת תלבושת לפי כללים
+ * בחירת תלבושת לפי כללים - עם דגש על איכות תמונות
  */
 async function selectOutfitByRules(categories: any, eventType: string, styleProfile: string): Promise<DashboardItem[]> {
   console.log(`🎯 [selectOutfitByRules] בחירת תלבושת עבור ${eventType}`);
@@ -206,98 +221,101 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
   if (categories.dresses.length > 0) {
     const dress = categories.dresses[0];
     
-    selectedItems.push({
-      id: dress.id,
-      name: dress.product_name,
-      image: extractImageUrl(dress.image),
-      type: 'dress',
-      price: `₪${dress.price}`,
-      description: dress.description || '',
-      color: dress.colour // Use 'colour' from database
-    });
+    // וידוא שלשמלה יש תמונה תקינה
+    if (dress.image && typeof dress.image === 'string' && dress.image.trim() !== '') {
+      selectedItems.push({
+        id: dress.id,
+        name: dress.product_name,
+        image: dress.image, // שימוש בתמונה המקורית מהמאגר
+        type: 'dress',
+        price: `₪${dress.price}`,
+        description: dress.description || '',
+        color: dress.colour
+      });
 
-    usedColors.push(dress.colour?.toLowerCase() || '');
-    console.log(`👗 [selectOutfitByRules] שמלה נבחרה: ${dress.product_name}`);
+      usedColors.push(dress.colour?.toLowerCase() || '');
+      console.log(`👗 [selectOutfitByRules] שמלה נבחרה עם תמונה: ${dress.product_name}`);
 
-    // בחירת נעליים מתאימות לשמלה
-    const matchingShoes = selectMatchingShoes(categories, eventType, usedColors);
-    if (matchingShoes) {
-      selectedItems.push(matchingShoes);
-      usedColors.push(matchingShoes.color || '');
+      // בחירת נעליים מתאימות לשמלה מטבלת נעליים
+      const matchingShoes = await selectMatchingShoesFromDB(eventType, usedColors);
+      if (matchingShoes) {
+        selectedItems.push(matchingShoes);
+        usedColors.push(matchingShoes.color || '');
+      }
+      
+      return selectedItems;
     }
-    
-    return selectedItems;
   }
 
-  // כלל 2: אם יש עליונית
+  // כלל 2: אם יש עליונית עם תמונה תקינה
   if (categories.outerwear.length > 0 && categories.tops.length > 0) {
     const outerwear = categories.outerwear[0];
     const top = selectCompatibleTop(categories.tops, outerwear);
     
-    if (top) {
+    if (top && outerwear.image && top.image) {
       selectedItems.push({
         id: outerwear.id,
         name: outerwear.product_name,
-        image: extractImageUrl(outerwear.image),
+        image: outerwear.image, // תמונה מקורית מהמאגר
         type: 'outerwear',
         price: `₪${outerwear.price}`,
         description: outerwear.description || '',
-        color: outerwear.colour // Use 'colour' from database
+        color: outerwear.colour
       });
 
       selectedItems.push({
         id: top.id,
         name: top.product_name,
-        image: extractImageUrl(top.image),
+        image: top.image, // תמונה מקורית מהמאגר
         type: 'top',
         price: `₪${top.price}`,
         description: top.description || '',
-        color: top.colour // Use 'colour' from database
+        color: top.colour
       });
 
       usedColors.push(outerwear.colour?.toLowerCase() || '');
       usedColors.push(top.colour?.toLowerCase() || '');
       
-      console.log(`🧥 [selectOutfitByRules] עליונית + חולצה נבחרו: ${outerwear.product_name} + ${top.product_name}`);
+      console.log(`🧥 [selectOutfitByRules] עליונית + חולצה נבחרו עם תמונות: ${outerwear.product_name} + ${top.product_name}`);
     }
   }
 
-  // כלל 3: לוק רגיל (חולצה + מכנס/חצאית)
+  // כלל 3: לוק רגיל (חולצה + מכנס/חצאית) עם תמונות תקינות
   if (selectedItems.length === 0 && categories.tops.length > 0 && categories.bottoms.length > 0) {
     const top = categories.tops[0];
     const bottom = selectCompatibleBottom(categories.bottoms, top);
     
-    if (bottom) {
+    if (bottom && top.image && bottom.image) {
       selectedItems.push({
         id: top.id,
         name: top.product_name,
-        image: extractImageUrl(top.image),
+        image: top.image, // תמונה מקורית מהמאגר
         type: 'top',
         price: `₪${top.price}`,
         description: top.description || '',
-        color: top.colour // Use 'colour' from database
+        color: top.colour
       });
 
       selectedItems.push({
         id: bottom.id,
         name: bottom.product_name,
-        image: extractImageUrl(bottom.image),
+        image: bottom.image, // תמונה מקורית מהמאגר
         type: 'bottom',
         price: `₪${bottom.price}`,
         description: bottom.description || '',
-        color: bottom.colour // Use 'colour' from database
+        color: bottom.colour
       });
 
       usedColors.push(top.colour?.toLowerCase() || '');
       usedColors.push(bottom.colour?.toLowerCase() || '');
       
-      console.log(`👕 [selectOutfitByRules] חולצה + תחתון נבחרו: ${top.product_name} + ${bottom.product_name}`);
+      console.log(`👕 [selectOutfitByRules] חולצה + תחתון נבחרו עם תמונות: ${top.product_name} + ${bottom.product_name}`);
     }
   }
 
-  // הוספת נעליים אם עדיין אין
+  // הוספת נעליים אם עדיין אין - מטבלת נעליים
   if (selectedItems.length > 0 && !selectedItems.some(item => item.type === 'shoes')) {
-    const matchingShoes = selectMatchingShoes(categories, eventType, usedColors);
+    const matchingShoes = await selectMatchingShoesFromDB(eventType, usedColors);
     if (matchingShoes) {
       selectedItems.push(matchingShoes);
     }
@@ -313,6 +331,7 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
     console.log(`🎨 [selectOutfitByRules] ציון התאמת צבעים: ${colorScore}/100`);
     
     if (colorScore >= 60) {
+      console.log(`✅ [selectOutfitByRules] תלבושת אושרה עם ${selectedItems.length} פריטים עם תמונות אמיתיות`);
       return selectedItems;
     } else {
       console.log(`❌ [selectOutfitByRules] ציון צבעים נמוך מדי: ${colorScore}`);
@@ -323,56 +342,78 @@ async function selectOutfitByRules(categories: any, eventType: string, styleProf
 }
 
 /**
- * בחירת נעליים מתאימות
+ * בחירת נעליים מתאימות מטבלת הנעליים
  */
-function selectMatchingShoes(categories: any, eventType: string, usedColors: string[]): DashboardItem | null {
-  let shoesToCheck: any[] = [];
-  
-  if (eventType === 'evening' || eventType === 'formal') {
-    shoesToCheck = [...categories.eveningShoes, ...categories.formalShoes];
-    console.log(`👠 [selectMatchingShoes] בחירת נעלי ערב/פורמליות עבור ${eventType}`);
-  } else {
-    shoesToCheck = [...categories.casualShoes, ...categories.formalShoes];
-    console.log(`👟 [selectMatchingShoes] בחירת נעליים קז'ואליות עבור ${eventType}`);
+async function selectMatchingShoesFromDB(eventType: string, usedColors: string[]): Promise<DashboardItem | null> {
+  try {
+    console.log(`👠 [selectMatchingShoesFromDB] מחפש נעליים עבור ${eventType}`);
+    
+    // קבלת נעליים מטבלת shoes
+    const { data: shoesData, error } = await supabase
+      .from('shoes')
+      .select('*')
+      .not('image', 'is', null)
+      .limit(50);
+
+    if (error || !shoesData || shoesData.length === 0) {
+      console.error('❌ [selectMatchingShoesFromDB] Error fetching shoes:', error);
+      return null;
+    }
+
+    console.log(`🔍 [selectMatchingShoesFromDB] מצא ${shoesData.length} זוגות נעליים במאגר`);
+
+    // סינון נעליים לפי סוג האירוע
+    let filteredShoes = shoesData.filter(shoe => {
+      if (!shoe.image) return false;
+      
+      const shoeName = (shoe.name || '').toLowerCase();
+      const shoeDescription = (shoe.description || '').toLowerCase();
+      const searchText = `${shoeName} ${shoeDescription}`;
+      
+      if (eventType === 'evening' || eventType === 'formal') {
+        // נעלי ערב/פורמליות
+        return searchText.includes('heel') || 
+               searchText.includes('עקב') || 
+               searchText.includes('elegant') || 
+               searchText.includes('אלגנט') ||
+               searchText.includes('evening') ||
+               searchText.includes('ערב');
+      } else {
+        // נעליים קז'ואליות
+        return !searchText.includes('sport') && !searchText.includes('ספורט');
+      }
+    });
+
+    if (filteredShoes.length === 0) {
+      filteredShoes = shoesData; // fallback לכל הנעליים
+    }
+
+    // בחירת נעליים תואמות צבע או ניוטרליות
+    const selectedShoes = filteredShoes.find(shoe => {
+      const shoeColor = (shoe.name || '').toLowerCase();
+      return usedColors.some(usedColor => 
+        ColorCoordinationService.areColorsCompatible(shoeColor, usedColor)
+      ) || isNeutralColor(shoeColor);
+    }) || filteredShoes[0];
+
+    if (selectedShoes) {
+      console.log(`✅ [selectMatchingShoesFromDB] נעליים נבחרו מטבלת shoes: ${selectedShoes.name}`);
+      return {
+        id: selectedShoes.name || selectedShoes.product_id?.toString() || 'shoes-item',
+        name: selectedShoes.name || 'נעליים',
+        image: selectedShoes.image, // תמונה מקורית מטבלת נעליים
+        type: 'shoes',
+        price: selectedShoes.price ? `₪${selectedShoes.price}` : '₪199',
+        description: selectedShoes.description || '',
+        color: extractColorFromName(selectedShoes.name || '')
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('❌ [selectMatchingShoesFromDB] Error:', error);
+    return null;
   }
-  
-  // בחירת נעליים תואמות צבע
-  const matchingShoes = shoesToCheck.find(shoe => {
-    const shoeColor = shoe.colour?.toLowerCase() || '';
-    return usedColors.some(usedColor => 
-      ColorCoordinationService.areColorsCompatible(shoeColor, usedColor)
-    ) || isNeutralColor(shoeColor);
-  });
-  
-  if (matchingShoes) {
-    console.log(`✅ [selectMatchingShoes] נעליים נבחרו: ${matchingShoes.product_name}`);
-    return {
-      id: matchingShoes.id,
-      name: matchingShoes.product_name,
-      image: extractImageUrl(matchingShoes.image),
-      type: 'shoes',
-      price: `₪${matchingShoes.price}`,
-      description: matchingShoes.description || '',
-      color: matchingShoes.colour
-    };
-  }
-  
-  // fallback - בחירת נעליים ראשונות זמינות
-  if (shoesToCheck.length > 0) {
-    const fallbackShoes = shoesToCheck[0];
-    console.log(`⚠️ [selectMatchingShoes] נעליים fallback נבחרו: ${fallbackShoes.product_name}`);
-    return {
-      id: fallbackShoes.id,
-      name: fallbackShoes.product_name,
-      image: extractImageUrl(fallbackShoes.image),
-      type: 'shoes',
-      price: `₪${fallbackShoes.price}`,
-      description: fallbackShoes.description || '',
-      color: fallbackShoes.colour
-    };
-  }
-  
-  return null;
 }
 
 /**
@@ -467,16 +508,19 @@ function extractColorFromName(name: string): string {
 }
 
 /**
- * יצירת תלבושת קזואלית עם לוגיקה מתקדמת
+ * יצירת תלבושת קזואלית עם לוגיקה מתקדמת - עם תמונות אמיתיות
  */
 async function createCasualOutfitWithLogic(eventType: string): Promise<DashboardItem[]> {
-  const [casualTops, casualBottoms, casualShoes] = await Promise.all([
+  const [casualTops, casualBottoms] = await Promise.all([
     findCasualItems('top', 3),
-    findCasualItems('bottom', 3), 
-    findCasualItems('shoes', 3)
+    findCasualItems('bottom', 3)
   ]);
 
+  // קבלת נעליים מטבלת shoes
+  const casualShoes = await getCasualShoesFromDB();
+
   if (casualTops.length === 0 || casualBottoms.length === 0 || casualShoes.length === 0) {
+    console.log('❌ [createCasualOutfitWithLogic] חסרים פריטים קז\'ואליים');
     return [];
   }
 
@@ -486,7 +530,7 @@ async function createCasualOutfitWithLogic(eventType: string): Promise<Dashboard
   const selectedTop = casualTops[0];
   const selectedBottom = casualBottoms.find(bottom => 
     ColorCoordinationService.areColorsCompatible(
-      selectedTop.color || '', // Fix: use 'color' property from CasualOutfitItem
+      selectedTop.color || '',
       bottom.color || ''
     )
   ) || casualBottoms[0];
@@ -504,35 +548,68 @@ async function createCasualOutfitWithLogic(eventType: string): Promise<Dashboard
   casualOutfit.push({
     id: selectedTop.id,
     name: selectedTop.name,
-    image: selectedTop.image,
+    image: selectedTop.image, // תמונה אמיתית מהמאגר
     type: 'top',
     price: selectedTop.price,
     description: selectedTop.description || '',
-    color: selectedTop.color // Fix: use 'color' property from CasualOutfitItem
+    color: selectedTop.color
   });
 
   casualOutfit.push({
     id: selectedBottom.id,
     name: selectedBottom.name,
-    image: selectedBottom.image,
+    image: selectedBottom.image, // תמונה אמיתית מהמאגר
     type: 'bottom',
     price: selectedBottom.price,
     description: selectedBottom.description || '',
-    color: selectedBottom.color // Fix: use 'color' property from CasualOutfitItem
+    color: selectedBottom.color
   });
 
   casualOutfit.push({
     id: selectedShoes.id,
     name: selectedShoes.name,
-    image: selectedShoes.image,
+    image: selectedShoes.image, // תמונה אמיתית מטבלת נעליים
     type: 'shoes',
     price: selectedShoes.price,
     description: selectedShoes.description || '',
-    color: selectedShoes.color // Fix: use 'color' property from CasualOutfitItem
+    color: selectedShoes.color
   });
 
-  console.log("✅ [createCasualOutfitWithLogic] תלבושת קזואלית מתקדמת נוצרה");
+  console.log("✅ [createCasualOutfitWithLogic] תלבושת קזואלית נוצרה עם תמונות אמיתיות");
   return casualOutfit;
+}
+
+/**
+ * קבלת נעליים קז'ואליות מטבלת shoes
+ */
+async function getCasualShoesFromDB(): Promise<DashboardItem[]> {
+  try {
+    const { data: shoesData, error } = await supabase
+      .from('shoes')
+      .select('*')
+      .not('image', 'is', null)
+      .limit(20);
+
+    if (error || !shoesData) {
+      console.error('❌ [getCasualShoesFromDB] Error:', error);
+      return [];
+    }
+
+    return shoesData
+      .filter(shoe => shoe.image && typeof shoe.image === 'string')
+      .map(shoe => ({
+        id: shoe.name || shoe.product_id?.toString() || 'casual-shoes',
+        name: shoe.name || 'נעליים קז\'ואליות',
+        image: shoe.image,
+        type: 'shoes' as const,
+        price: shoe.price ? `₪${shoe.price}` : '₪149',
+        description: shoe.description || '',
+        color: extractColorFromName(shoe.name || '')
+      }));
+  } catch (error) {
+    console.error('❌ [getCasualShoesFromDB] Error:', error);
+    return [];
+  }
 }
 
 function getFallbackOutfit(): DashboardItem[] {

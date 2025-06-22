@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 
 interface OutfitItem {
@@ -19,187 +20,97 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
   const [loadingState, setLoadingState] = useState<'loading' | 'success' | 'error'>('loading');
   const [loadedCount, setLoadedCount] = useState(0);
 
-  // Ensure we always have the right items based on outfit type
-  const validateAndOrderItems = (inputItems: OutfitItem[]): OutfitItem[] => {
-    console.log('🔍 [LookCanvas] Validating and ordering items:', inputItems.map(item => ({
-      id: item.id,
-      type: item.type,
-      name: item.name || 'Unknown'
-    })));
-
-    // Check if we have a dress
-    const dressItem = inputItems.find(item => item.type === 'dress');
-    const topItem = inputItems.find(item => item.type === 'top');
-    const bottomItem = inputItems.find(item => item.type === 'bottom');
-    const shoesItem = inputItems.find(item => item.type === 'shoes');
-
-    const orderedItems: OutfitItem[] = [];
+  // Enhanced function to extract the best available image from database entries
+  const extractBestImageUrl = (imageData: any): string => {
+    console.log(`🔍 [LookCanvas] Processing image data:`, imageData);
     
-    if (dressItem) {
-      // For dress outfits: dress + optional hosiery/tights + shoes
-      console.log('✅ [LookCanvas] Dress outfit detected');
-      
-      // Add the dress
-      orderedItems.push(dressItem);
-      
-      // Check if bottom item is hosiery/tights (צמוד)
-      if (bottomItem && (
-        bottomItem.name?.includes('גרביון') || 
-        bottomItem.name?.includes('טייץ') ||
-        bottomItem.name?.includes('גרב') ||
-        bottomItem.product_subfamily?.includes('גרביון') ||
-        bottomItem.product_subfamily?.includes('טייץ')
-      )) {
-        console.log('✅ [LookCanvas] Adding hosiery/tights with dress');
-        orderedItems.push(bottomItem);
-      }
-      
-      // Add shoes
-      if (shoesItem) {
-        orderedItems.push(shoesItem);
-      } else {
-        console.warn('❌ [LookCanvas] No shoes item found, using default shoes image');
-        orderedItems.push({
-          id: 'placeholder-shoes',
-          image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=400&fit=crop',
-          type: 'shoes',
-          name: 'נעליים'
-        });
-      }
-    } else {
-      // For regular outfits: top + bottom + shoes
-      console.log('✅ [LookCanvas] Regular outfit (top + bottom + shoes)');
-      
-      if (topItem) {
-        orderedItems.push(topItem);
-      } else {
-        console.warn('❌ [LookCanvas] No top item found, using placeholder');
-        orderedItems.push({
-          id: 'placeholder-top',
-          image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=400&fit=crop',
-          type: 'top',
-          name: 'חולצה'
-        });
-      }
-
-      if (bottomItem) {
-        orderedItems.push(bottomItem);
-      } else {
-        console.warn('❌ [LookCanvas] No bottom item found, using placeholder');
-        orderedItems.push({
-          id: 'placeholder-bottom',
-          image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop',
-          type: 'bottom',
-          name: 'מכנסיים'
-        });
-      }
-
-      if (shoesItem) {
-        orderedItems.push(shoesItem);
-      } else {
-        console.warn('❌ [LookCanvas] No shoes item found, using default shoes image');
-        orderedItems.push({
-          id: 'placeholder-shoes',
-          image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=400&fit=crop',
-          type: 'shoes',
-          name: 'נעליים'
-        });
-      }
-    }
-
-    console.log('✅ [LookCanvas] Final ordered items:', orderedItems.map((item, i) => `${i}. ${item.type} (${item.id})`));
-    return orderedItems;
-  };
-
-  // Enhanced function to extract product-only images (no models)
-  const extractProductOnlyImage = (imageData: any): string => {
     if (!imageData) {
-      console.log('🔍 [LookCanvas] No image data provided');
-      return 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop';
+      console.log('❌ [LookCanvas] No image data provided');
+      return '';
     }
     
     let imageUrls: string[] = [];
     
-    // Handle different image data formats
+    // Handle different image data formats from database
     if (typeof imageData === 'string') {
       try {
         const parsed = JSON.parse(imageData);
         if (Array.isArray(parsed)) {
-          imageUrls = parsed.filter(url => typeof url === 'string');
-        } else {
-          imageUrls = [imageData];
+          imageUrls = parsed.filter(url => typeof url === 'string' && url.trim() !== '');
+        } else if (typeof parsed === 'string') {
+          imageUrls = [parsed];
         }
       } catch {
-        imageUrls = [imageData];
+        // If not JSON, treat as direct URL
+        if (imageData.trim() !== '') {
+          imageUrls = [imageData];
+        }
       }
     } else if (Array.isArray(imageData)) {
-      imageUrls = imageData.filter(url => typeof url === 'string');
+      imageUrls = imageData.filter(url => typeof url === 'string' && url.trim() !== '');
+    } else if (typeof imageData === 'object' && imageData.url) {
+      // Handle shoes table format with url field
+      imageUrls = [imageData.url];
     }
     
-    // Priority order: 8th, 7th, 6th images (more likely to be product-only)
-    const productOnlyPatterns = [
-      /_8_\d+_1\.jpg/, // 8th image - highest priority
-      /_7_\d+_1\.jpg/, // 7th image
-      /_6_\d+_1\.jpg/, // 6th image
-      /_9_\d+_1\.jpg/, // 9th image if available
+    if (imageUrls.length === 0) {
+      console.log('❌ [LookCanvas] No valid image URLs found');
+      return '';
+    }
+    
+    console.log(`🔍 [LookCanvas] Found ${imageUrls.length} image URLs:`, imageUrls);
+    
+    // Priority for Zara images: prefer higher quality/product-only images
+    const productImagePatterns = [
+      /_8_\d+_1\.jpg/,  // 8th image - usually product only
+      /_7_\d+_1\.jpg/,  // 7th image
+      /_6_\d+_1\.jpg/,  // 6th image
+      /_5_\d+_1\.jpg/,  // 5th image
+      /_4_\d+_1\.jpg/,  // 4th image
+      /_3_\d+_1\.jpg/,  // 3rd image
+      /_2_\d+_1\.jpg/,  // 2nd image
+      /_1_\d+_1\.jpg/   // 1st image
     ];
     
-    for (const pattern of productOnlyPatterns) {
+    // Try to find best quality product image
+    for (const pattern of productImagePatterns) {
       const matchingImage = imageUrls.find(url => pattern.test(url));
       if (matchingImage) {
-        console.log(`🔍 [LookCanvas] Found product-only image with pattern ${pattern}:`, matchingImage);
+        console.log(`✅ [LookCanvas] Selected product image:`, matchingImage);
         return matchingImage;
       }
     }
     
-    console.log('🔍 [LookCanvas] No suitable product-only images found, using fallback');
-    return 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop';
+    // Fallback: use first available image
+    const selectedImage = imageUrls[0];
+    console.log(`✅ [LookCanvas] Using fallback image:`, selectedImage);
+    return selectedImage;
   };
 
-  // Get best available image for an item
-  const getBestImage = (item: OutfitItem): string => {
-    console.log(`🔍 [LookCanvas] Getting best image for item ${item.id}`);
-    
-    // If it's a placeholder, return the image directly
-    if (item.id.startsWith('placeholder-')) {
-      console.log(`✅ [LookCanvas] Using placeholder image for ${item.id}: ${item.image}`);
-      return item.image;
-    }
-    
-    // First try to extract product-only image directly
-    const directProductImage = extractProductOnlyImage(item.image);
-    if (directProductImage !== 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop') {
-      console.log(`✅ [LookCanvas] Found direct product image for ${item.id}: ${directProductImage}`);
-      return directProductImage;
-    }
-
-    // Fallback to original image or placeholder
-    const fallbackImage = item.image || 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop';
-    console.log(`📦 [LookCanvas] Using fallback image for ${item.id}: ${fallbackImage}`);
-    return fallbackImage;
-  };
-
-  // Load image without background removal
+  // Load image with proper error handling
   const loadImageForCanvas = async (imageUrl: string): Promise<HTMLImageElement> => {
-    try {
-      console.log(`🔍 [LookCanvas] Loading image: ${imageUrl}`);
-      
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = imageUrl;
-      });
-      
-      console.log(`✅ [LookCanvas] Image loaded successfully: ${imageUrl}`);
-      return img;
-      
-    } catch (error) {
-      console.error(`❌ [LookCanvas] Image loading failed for: ${imageUrl}`, error);
-      throw error;
+    if (!imageUrl || imageUrl.trim() === '') {
+      throw new Error('Empty image URL');
     }
+    
+    console.log(`🔍 [LookCanvas] Loading image: ${imageUrl}`);
+    
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    
+    return new Promise((resolve, reject) => {
+      img.onload = () => {
+        console.log(`✅ [LookCanvas] Image loaded successfully: ${imageUrl}`);
+        resolve(img);
+      };
+      
+      img.onerror = (error) => {
+        console.error(`❌ [LookCanvas] Image loading failed: ${imageUrl}`, error);
+        reject(new Error(`Failed to load image: ${imageUrl}`));
+      };
+      
+      img.src = imageUrl;
+    });
   };
 
   useEffect(() => {
@@ -210,13 +121,14 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     if (!ctx) return;
 
     console.log('🔍 [LookCanvas] ===== STARTING CANVAS RENDER =====');
-    console.log('🔍 [LookCanvas] Received items:', items.map(item => ({
+    console.log('🔍 [LookCanvas] Items to render:', items.map(item => ({
       id: item.id,
       type: item.type,
-      name: item.name || 'Unknown'
+      name: item.name || 'Unknown',
+      hasImage: !!item.image
     })));
 
-    // Reset loading state when items change
+    // Reset loading state
     setLoadingState('loading');
     setLoadedCount(0);
 
@@ -226,166 +138,174 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     canvas.height = height * scale;
     ctx.scale(scale, scale);
 
-    // Clear and set background to clean white
+    // Clear and set background
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
-    // Validate and ensure we have the right items
-    const validatedItems = validateAndOrderItems(items);
-
-    // Determine if this is a dress outfit for layout purposes
-    const isDressOutfit = validatedItems.some(item => item.type === 'dress');
-    
-    // Smart layout based on outfit type
-    const padding = 15;
-    const itemSpacing = 12;
-    const availableHeight = height - (padding * 2);
-    
-    // Calculate layout based on number of items
-    const totalSpacing = (validatedItems.length - 1) * itemSpacing;
-    const itemHeight = Math.floor((availableHeight - totalSpacing) / validatedItems.length);
-    const itemWidth = width * 0.8;
-    const centerX = (width - itemWidth) / 2;
-    
-    console.log(`🔍 [LookCanvas] Layout: ${isDressOutfit ? 'DRESS' : 'REGULAR'} outfit, ${validatedItems.length} items, itemHeight=${itemHeight}`);
-    
     // Show loading state
     ctx.font = '16px Arial';
     ctx.fillStyle = '#666666';
     ctx.textAlign = 'center';
-    ctx.fillText('טוען תמונות...', width / 2, height / 2);
+    ctx.fillText('טוען פריטי לבוש...', width / 2, height / 2);
+
+    // Filter valid items (must have actual image data from database)
+    const validItems = items.filter(item => {
+      const hasValidImage = item.image && 
+                           item.image !== '/placeholder.svg' && 
+                           !item.image.includes('unsplash.com') &&
+                           !item.id.startsWith('fallback-') &&
+                           !item.id.startsWith('placeholder-');
+      
+      if (!hasValidImage) {
+        console.log(`❌ [LookCanvas] Filtering out item with invalid image: ${item.id}`);
+      }
+      
+      return hasValidImage;
+    });
+
+    if (validItems.length === 0) {
+      console.log('❌ [LookCanvas] No valid items with database images found');
+      setLoadingState('error');
+      
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      ctx.font = '16px Arial';
+      ctx.fillStyle = '#ff6b6b';
+      ctx.textAlign = 'center';
+      ctx.fillText('לא נמצאו פריטי לבוש עם תמונות', width / 2, height / 2 - 10);
+      ctx.fillText('מהמאגר', width / 2, height / 2 + 10);
+      return;
+    }
+
+    console.log(`✅ [LookCanvas] Processing ${validItems.length} valid items with database images`);
 
     const loadImages = async () => {
       try {
         let successCount = 0;
-        let errorCount = 0;
         
-        console.log(`🔍 [LookCanvas] Loading exactly ${validatedItems.length} items for display`);
-        
-        // Clear the canvas for clean rendering
+        // Clear canvas for clean rendering
         ctx.clearRect(0, 0, width, height);
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, width, height);
         
-        // Process all validated items
-        for (let i = 0; i < validatedItems.length; i++) {
-          const item = validatedItems[i];
-          const itemPosition = isDressOutfit ? 
-            ['DRESS', 'HOSIERY/TIGHTS', 'SHOES'][i] || `ITEM_${i}` :
-            ['TOP', 'BOTTOM', 'SHOES'][i] || `ITEM_${i}`;
+        // Calculate layout
+        const padding = 15;
+        const itemSpacing = 12;
+        const availableHeight = height - (padding * 2);
+        const totalSpacing = (validItems.length - 1) * itemSpacing;
+        const itemHeight = Math.floor((availableHeight - totalSpacing) / validItems.length);
+        const itemWidth = Math.min(width * 0.8, 280); // Max width for better display
+        const centerX = (width - itemWidth) / 2;
+        
+        console.log(`🎨 [LookCanvas] Layout: ${validItems.length} items, itemHeight=${itemHeight}, itemWidth=${itemWidth}`);
+        
+        // Process each valid item
+        for (let i = 0; i < validItems.length; i++) {
+          const item = validItems[i];
           
-          console.log(`🔍 [LookCanvas] Processing ${itemPosition} item: ${item.id} (${item.type}) at position ${i}`);
+          console.log(`🔍 [LookCanvas] Processing item ${i + 1}: ${item.id} (${item.type})`);
           
           try {
-            // Get best available image
-            const imageUrl = getBestImage(item);
+            // Extract best image URL from database data
+            const imageUrl = extractBestImageUrl(item.image);
             
-            // Load image without background removal
+            if (!imageUrl) {
+              console.error(`❌ [LookCanvas] No valid image URL for item: ${item.id}`);
+              continue;
+            }
+            
+            // Load the image
             const img = await loadImageForCanvas(imageUrl);
-            
-            console.log(`✅ [LookCanvas] Image loaded: ${item.id} (${itemPosition})`);
             successCount++;
             setLoadedCount(prev => prev + 1);
 
-            // Calculate position for this item
+            // Calculate position
             const yPosition = padding + (i * (itemHeight + itemSpacing));
             
-            // Smart cropping: crop top and bottom to focus on the clothing item
+            // Smart cropping for clothing items
             const sourceWidth = img.width;
             const sourceHeight = img.height;
             
-            // For cropping, remove 20% from top and 15% from bottom to focus on the item
-            const cropTop = sourceHeight * 0.2;
-            const cropBottom = sourceHeight * 0.15;
+            // Crop top 15% and bottom 10% to focus on the clothing item
+            const cropTop = sourceHeight * 0.15;
+            const cropBottom = sourceHeight * 0.10;
             const croppedHeight = sourceHeight - cropTop - cropBottom;
             
-            // Calculate proper aspect ratio with cropped dimensions
+            // Calculate proper aspect ratio
             const aspectRatio = sourceWidth / croppedHeight;
             let drawWidth = itemWidth;
             let drawHeight = drawWidth / aspectRatio;
 
-            // If height is too large, constrain by height
-            const maxHeight = itemHeight * 0.95;
+            // Constrain by height if needed
+            const maxHeight = itemHeight * 0.9;
             if (drawHeight > maxHeight) {
               drawHeight = maxHeight;
               drawWidth = drawHeight * aspectRatio;
             }
 
-            // Center the item horizontally and vertically within its allocated space
+            // Center the item
             const drawX = centerX + (itemWidth - drawWidth) / 2;
             const drawY = yPosition + (itemHeight - drawHeight) / 2;
 
-            console.log(`🔍 [LookCanvas] Drawing ${itemPosition}: pos=${i}, y=${Math.round(yPosition)}, drawY=${Math.round(drawY)}, h=${Math.round(drawHeight)}, maxY=${Math.round(drawY + drawHeight)}, canvasH=${height}`);
+            console.log(`🎨 [LookCanvas] Drawing ${item.type}: pos=${i}, y=${Math.round(yPosition)}, size=${Math.round(drawWidth)}x${Math.round(drawHeight)}`);
 
+            // Draw with shadow effect
             ctx.save();
-            
-            // Add subtle shadow effect for depth
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
-            ctx.shadowBlur = 6;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+            ctx.shadowBlur = 8;
             ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 3;
+            ctx.shadowOffsetY = 4;
             
             // Draw the cropped item image
             ctx.drawImage(
               img,
-              0, cropTop, sourceWidth, croppedHeight, // Source crop (x, y, width, height)
-              drawX, drawY, drawWidth, drawHeight      // Destination (x, y, width, height)
+              0, cropTop, sourceWidth, croppedHeight, // Source crop
+              drawX, drawY, drawWidth, drawHeight      // Destination
             );
             
             ctx.restore();
+
+            // Add item type label
+            ctx.save();
+            ctx.font = '12px Arial';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.textAlign = 'center';
+            const typeLabels = {
+              top: 'חולצה',
+              bottom: 'מכנס',
+              dress: 'שמלה',
+              shoes: 'נעליים',
+              outerwear: 'מעיל'
+            };
+            const label = typeLabels[item.type as keyof typeof typeLabels] || item.type;
+            ctx.fillText(label, drawX + drawWidth / 2, drawY + drawHeight + 16);
+            ctx.restore();
             
-            // Add label for placeholders to make them clear
-            if (item.id.startsWith('placeholder-')) {
-              ctx.save();
-              ctx.font = '14px Arial';
-              ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-              ctx.textAlign = 'center';
-              ctx.fillText(item.name || item.type, drawX + drawWidth / 2, drawY + drawHeight + 20);
-              ctx.restore();
-            }
-            
-            console.log(`✅ [LookCanvas] Drew ${itemPosition} at position ${i}: x=${Math.round(drawX)}, y=${Math.round(drawY)}, w=${Math.round(drawWidth)}, h=${Math.round(drawHeight)}`);
+            console.log(`✅ [LookCanvas] Successfully drew ${item.type} from database`);
 
           } catch (imgError) {
             console.error(`❌ [LookCanvas] Error processing item: ${item.id}`, imgError);
-            errorCount++;
             setLoadedCount(prev => prev + 1);
-            
-            // Draw error placeholder for failed items
-            const yPosition = padding + (i * (itemHeight + itemSpacing));
-            const drawX = centerX;
-            const drawY = yPosition + (itemHeight - 40) / 2;
-            
-            ctx.save();
-            ctx.fillStyle = '#f0f0f0';
-            ctx.fillRect(drawX, drawY, itemWidth, 40);
-            ctx.font = '14px Arial';
-            ctx.fillStyle = '#666666';
-            ctx.textAlign = 'center';
-            const errorTexts = isDressOutfit ? 
-              ['שגיאה בטעינת שמלה', 'שגיאה בטעינת גרביון', 'שגיאה בטעינת נעליים'] :
-              ['שגיאה בטעינת חולצה', 'שגיאה בטעינת מכנסיים', 'שגיאה בטעינת נעליים'];
-            ctx.fillText(errorTexts[i] || `שגיאה בטעינת פריט ${i + 1}`, drawX + itemWidth / 2, drawY + 25);
-            ctx.restore();
           }
         }
 
-        // Update loading state based on success/error count
+        // Update loading state
         if (successCount > 0) {
           setLoadingState('success');
-          console.log(`✅ [LookCanvas] Successfully loaded ${successCount} out of ${validatedItems.length} items`);
+          console.log(`✅ [LookCanvas] Successfully rendered ${successCount} database items`);
         } else {
           setLoadingState('error');
           
-          // Draw error message
           ctx.clearRect(0, 0, width, height);
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(0, 0, width, height);
           ctx.font = '16px Arial';
-          ctx.fillStyle = '#ff0000';
+          ctx.fillStyle = '#ff6b6b';
           ctx.textAlign = 'center';
-          ctx.fillText('לא נמצאו תמונות מתאימות', width / 2, height / 2);
+          ctx.fillText('שגיאה בטעינת תמונות', width / 2, height / 2 - 10);
+          ctx.fillText('מהמאגר', width / 2, height / 2 + 10);
         }
 
       } catch (error) {
@@ -412,7 +332,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 rounded-lg">
           <div className="bg-white p-4 rounded-lg shadow-md text-center border">
             <div className="animate-spin w-6 h-6 border-2 border-gray-300 border-t-blue-500 rounded-full mx-auto mb-2"></div>
-            <p className="text-sm text-gray-700">טוען תמונות...</p>
+            <p className="text-sm text-gray-700">טוען פריטי לבוש מהמאגר...</p>
             <p className="text-xs text-gray-500 mt-1">{loadedCount} פריטים נטענו</p>
           </div>
         </div>
@@ -420,8 +340,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       {loadingState === 'error' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white bg-opacity-95 rounded-lg">
           <div className="bg-white p-4 rounded-lg shadow-md text-center border border-red-200">
-            <p className="text-red-500 mb-1 font-medium">שגיאה בטעינת התמונות</p>
-            <p className="text-xs text-gray-600">נסה לרענן את הדף</p>
+            <p className="text-red-500 mb-1 font-medium">לא נמצאו תמונות מהמאגר</p>
+            <p className="text-xs text-gray-600">נא לוודא שיש פריטים עם תמונות במאגר</p>
           </div>
         </div>
       )}
