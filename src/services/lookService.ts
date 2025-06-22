@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -5,6 +6,10 @@ import { findCasualItems } from "./casualOutfitService";
 import { ColorCoordinationService } from "./colorCoordinationService";
 import { extractZaraImageUrl, ZaraImageData } from "@/utils/imageUtils";
 import logger from "@/lib/logger";
+
+// Global tracking to ensure variety across occasions
+let globalUsedItemIds: Set<string> = new Set();
+let lastResetTime = Date.now();
 
 /**
  * מחזיר הצעת תלבושת ראשונה על בסיס ניתוח הסטייל
@@ -15,6 +20,12 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       context: "lookService",
       data: { forceRefresh }
     });
+
+    // Reset global tracking if needed
+    if (forceRefresh || Date.now() - lastResetTime > 300000) { // Reset every 5 minutes
+      globalUsedItemIds.clear();
+      lastResetTime = Date.now();
+    }
 
     // קבלת נתוני ניתוח הסטייל
     const styleAnalysis = localStorage.getItem('styleAnalysis');
@@ -110,7 +121,6 @@ function hasValidImageData(imageData: any): boolean {
     return url.includes('static.zara.net') && url.includes('.jpg');
   });
   
-  console.log(`🔍 [hasValidImageData] Found ${imageUrls.length} URLs, valid Zara images: ${hasValidZaraImage}`);
   return hasValidZaraImage;
 }
 
@@ -127,7 +137,7 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
     .not('image', 'is', null)
     .neq('availability', false)
     .order('price', { ascending: true })
-    .limit(200);
+    .limit(300);
 
   if (error || !allItems || allItems.length === 0) {
     console.error('❌ [createAdvancedOutfit] Database error:', error);
@@ -136,24 +146,30 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
 
   console.log(`🔍 [createAdvancedOutfit] Found ${allItems.length} items with non-null images in database`);
 
-  // סינון פריטים בסיסי - רק פריטים עם תמונות אמיתיות מזארה
+  // סינון פריטים בסיסי - רק פריטים עם תמונות אמיתיות מזארה וללא פריטים שכבר נבחרו
   let filteredItems = allItems.filter(item => {
     const hasValid = hasValidImageData(item.image);
+    const notUsed = !globalUsedItemIds.has(item.id);
+    const isClothing = isActualClothingItem(item);
     
     if (!hasValid) {
       console.log(`❌ [createAdvancedOutfit] Filtering out item without valid Zara image: ${item.id} - ${item.product_name}`);
-    } else {
-      console.log(`✅ [createAdvancedOutfit] Keeping item with valid image: ${item.id} - ${item.product_name}`);
+    } else if (!notUsed) {
+      console.log(`⚠️ [createAdvancedOutfit] Skipping already used item: ${item.id} - ${item.product_name}`);
+    } else if (!isClothing) {
+      console.log(`❌ [createAdvancedOutfit] Filtering out non-clothing item: ${item.id} - ${item.product_name}`);
     }
     
-    return hasValid && item.availability !== false;
+    return hasValid && notUsed && isClothing && item.availability !== false;
   });
   
-  console.log(`🔍 [createAdvancedOutfit] ${filteredItems.length} items after Zara image filtering`);
+  console.log(`🔍 [createAdvancedOutfit] ${filteredItems.length} valid clothing items after filtering`);
   
   if (filteredItems.length === 0) {
-    console.error('❌ [createAdvancedOutfit] No items with valid Zara images found');
-    return [];
+    console.error('❌ [createAdvancedOutfit] No valid clothing items found');
+    // Reset tracking and try again
+    globalUsedItemIds.clear();
+    filteredItems = allItems.filter(item => hasValidImageData(item.image) && isActualClothingItem(item));
   }
   
   // סינון לפי צבעים מועדפים
@@ -182,7 +198,77 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
   // יצירת תלבושת לפי כללים - עם דגש על תמונות אמיתיות
   const outfitItems = await selectOutfitByRules(categorizedItems, eventType, styleProfile);
   
+  // Mark selected items as used
+  outfitItems.forEach(item => globalUsedItemIds.add(item.id));
+  
   return outfitItems;
+}
+
+/**
+ * בדיקה אם הפריט הוא באמת בגד ולא איפור/אביזרים
+ */
+function isActualClothingItem(item: any): boolean {
+  const name = (item.product_name || '').toLowerCase();
+  const subfamily = (item.product_subfamily || '').toLowerCase();
+  const family = (item.product_family || '').toLowerCase();
+  const description = (item.description || '').toLowerCase();
+  
+  const searchText = `${name} ${subfamily} ${family} ${description}`;
+  
+  // פריטי איפור ויופי לסינון
+  const cosmeticKeywords = [
+    'lipstick', 'lip gloss', 'איפור', 'שפתון', 'גלוס', 'makeup', 'cosmetic',
+    'foundation', 'concealer', 'mascara', 'eyeshadow', 'בסיס', 'מסקרה',
+    'perfume', 'fragrance', 'בושם', 'eau de', 'cologne',
+    'nail polish', 'לק', 'nail', 'ציפורניים'
+  ];
+  
+  // אביזרים ופריטים שאינם בגדים עיקריים
+  const nonClothingKeywords = [
+    'phone case', 'כיסוי טלפון', 'charger', 'מטען',
+    'keychain', 'מחזיק מפתחות', 'sticker', 'מדבקה'
+  ];
+  
+  // בדיקה שהפריט אינו איפור או אביזר
+  const isCosmeticOrAccessory = [...cosmeticKeywords, ...nonClothingKeywords].some(keyword => 
+    searchText.includes(keyword)
+  );
+  
+  if (isCosmeticOrAccessory) {
+    console.log(`🚫 [isActualClothingItem] Filtered cosmetic/accessory: ${item.product_name}`);
+    return false;
+  }
+  
+  // בדיקה חיובית - הפריט הוא בגד
+  const clothingKeywords = [
+    // חולצות ועליוניות
+    'חולצ', 'טי שירט', 'בלוז', 'טופ', 'חזיי', 'גופי',
+    'shirt', 'top', 'blouse', 'tee', 'tank', 'camisole',
+    
+    // מכנסיים וחצאיות
+    'מכנס', 'ג\'ינס', 'חצאית', 'שורט', 'טייץ', 'לגינס',
+    'pants', 'jeans', 'skirt', 'shorts', 'leggings', 'trousers',
+    
+    // שמלות וסט
+    'שמלה', 'טוניקה', 'סט', 'קומבינזון',
+    'dress', 'tunic', 'set', 'jumpsuit', 'romper',
+    
+    // מעילים ועליוניות
+    'מעיל', 'ז\'קט', 'קרדיגן', 'בלייזר', 'סוודר', 'הודי',
+    'jacket', 'coat', 'cardigan', 'blazer', 'sweater', 'hoodie',
+    
+    // נעליים
+    'נעל', 'סנדל', 'מגף', 'כפכפ', 'נעלי',
+    'shoe', 'sandal', 'boot', 'sneaker', 'heel'
+  ];
+  
+  const isClothing = clothingKeywords.some(keyword => searchText.includes(keyword));
+  
+  if (!isClothing) {
+    console.log(`❓ [isActualClothingItem] Unknown item type: ${item.product_name}`);
+  }
+  
+  return isClothing;
 }
 
 /**
@@ -225,10 +311,12 @@ function categorizeItemsAdvanced(items: any[], eventType: string) {
     }
     // זיהוי חולצות
     else if (isTop(searchText)) {
+      console.log(`👕 [categorizeItemsAdvanced] חולצה זוהתה: ${item.product_name}`);
       categories.tops.push(item);
     }
     // זיהוי חלקים תחתונים
     else if (isBottom(searchText)) {
+      console.log(`👖 [categorizeItemsAdvanced] חלק תחתון זוהה: ${item.product_name}`);
       categories.bottoms.push(item);
     }
     // זיהוי נעליים לפי סוג
@@ -237,10 +325,14 @@ function categorizeItemsAdvanced(items: any[], eventType: string) {
         console.log(`👠 [categorizeItemsAdvanced] נעלי ערב זוהו: ${item.product_name}`);
         categories.eveningShoes.push(item);
       } else if (isFormalShoe(searchText)) {
+        console.log(`👞 [categorizeItemsAdvanced] נעליים פורמליות זוהו: ${item.product_name}`);
         categories.formalShoes.push(item);
       } else {
+        console.log(`👟 [categorizeItemsAdvanced] נעליים קז'ואליות זוהו: ${item.product_name}`);
         categories.casualShoes.push(item);
       }
+    } else {
+      console.log(`❓ [categorizeItemsAdvanced] פריט לא מזוהה: ${item.product_name} - ${searchText}`);
     }
   });
 
@@ -510,9 +602,9 @@ function selectCompatibleBottom(bottoms: any[], top: any): any | null {
   }) || bottoms[0]; // fallback לחלק תחתון ראשון
 }
 
-// פונקציות עזר לזיהוי סוגי פריטים
+// פונקציות עזר לזיהוי סוגי פריטים - מותאמות לעברית ואנגלית
 function isDress(searchText: string): boolean {
-  const dressKeywords = ['שמלה', 'dress', 'gown', 'שמלת'];
+  const dressKeywords = ['שמלה', 'שמלת', 'dress', 'gown'];
   return dressKeywords.some(keyword => searchText.includes(keyword));
 }
 
@@ -522,22 +614,34 @@ function isTunic(searchText: string): boolean {
 }
 
 function isOuterwear(searchText: string): boolean {
-  const outerwearKeywords = ['ז\'קט', 'מעיל', 'קרדיגן', 'בלייזר', 'jacket', 'coat', 'cardigan', 'blazer', 'עליון'];
+  const outerwearKeywords = [
+    'ז\'קט', 'זקט', 'מעיל', 'קרדיגן', 'בלייזר', 'סוודר', 'הודי',
+    'jacket', 'coat', 'cardigan', 'blazer', 'sweater', 'hoodie', 'עליון'
+  ];
   return outerwearKeywords.some(keyword => searchText.includes(keyword));
 }
 
 function isTop(searchText: string): boolean {
-  const topKeywords = ['חולצ', 'טופ', 'בלוז', 'top', 'shirt', 'blouse'];
+  const topKeywords = [
+    'חולצ', 'טי שירט', 'בלוז', 'טופ', 'חזיי', 'גופי',
+    'top', 'shirt', 'blouse', 'tee', 'tank', 'camisole'
+  ];
   return topKeywords.some(keyword => searchText.includes(keyword));
 }
 
 function isBottom(searchText: string): boolean {
-  const bottomKeywords = ['מכנס', 'חצאית', 'ג\'ינס', 'pants', 'trousers', 'skirt', 'jeans'];
+  const bottomKeywords = [
+    'מכנס', 'מכנסי', 'חצאית', 'ג\'ינס', 'שורט', 'טייץ', 'לגינס',
+    'pants', 'trousers', 'skirt', 'jeans', 'shorts', 'leggings'
+  ];
   return bottomKeywords.some(keyword => searchText.includes(keyword));
 }
 
 function isShoe(searchText: string): boolean {
-  const shoeKeywords = ['נעל', 'סנדל', 'מגף', 'shoe', 'sandal', 'boot', 'heel'];
+  const shoeKeywords = [
+    'נעל', 'נעלי', 'סנדל', 'מגף', 'כפכפ',
+    'shoe', 'sandal', 'boot', 'heel', 'sneaker'
+  ];
   return shoeKeywords.some(keyword => searchText.includes(keyword));
 }
 
@@ -644,9 +748,6 @@ async function createCasualOutfitWithLogic(eventType: string): Promise<Dashboard
   return casualOutfit;
 }
 
-/**
- * קבלת נעליים קז'ואליות מטבלת shoes
- */
 async function getCasualShoesFromDB(): Promise<DashboardItem[]> {
   try {
     const { data: shoesData, error } = await supabase
@@ -718,30 +819,36 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
   try {
     console.log('🔍 [fetchDashboardItems] Starting to fetch items for all occasions...');
     
-    // קבלת תלבושת בסיס
-    const baseOutfit = await fetchFirstOutfitSuggestion();
-    console.log('✅ [fetchDashboardItems] Base outfit received:', baseOutfit.length, 'items');
-    console.log('📋 [fetchDashboardItems] Base outfit items:', baseOutfit.map(item => ({
-      id: item.id,
-      name: item.name,
-      type: item.type,
-      image: item.image ? 'has_image' : 'no_image'
-    })));
+    // Reset global tracking for fresh selection
+    globalUsedItemIds.clear();
     
-    // יצירת וריאציות לכל הזדמנות
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     const data: { [key: string]: DashboardItem[] } = {};
     
-    occasions.forEach(occasion => {
-      // יצירת עותק של התלבושת הבסיסית לכל הזדמנות
-      data[occasion] = baseOutfit.map(item => ({
-        ...item,
-        id: `${item.id}-${occasion.toLowerCase()}` // מזהה ייחודי לכל הזדמנות
-      }));
+    // יצירת תלבושת שונה לכל הזדמנות
+    for (const occasion of occasions) {
+      console.log(`🔍 [fetchDashboardItems] Processing ${occasion}...`);
       
-      console.log(`✅ [fetchDashboardItems] Created ${occasion} outfit with ${data[occasion].length} items:`, 
-        data[occasion].map(item => ({ id: item.id, name: item.name, type: item.type })));
-    });
+      const occasionOutfit = await createAdvancedOutfit('casual', occasion.toLowerCase(), []);
+      
+      if (occasionOutfit && occasionOutfit.length > 0) {
+        data[occasion] = occasionOutfit.map(item => ({
+          ...item,
+          id: `${item.id}-${occasion.toLowerCase()}` // מזהה ייחודי לכל הזדמנות
+        }));
+        
+        console.log(`✅ [fetchDashboardItems] Created ${occasion} outfit with ${data[occasion].length} items:`, 
+          data[occasion].map(item => ({ id: item.id, name: item.name, type: item.type })));
+      } else {
+        // fallback אם לא נמצא תלבושת
+        data[occasion] = getFallbackOutfit().map(item => ({
+          ...item,
+          id: `${item.id}-${occasion.toLowerCase()}`
+        }));
+        
+        console.log(`⚠️ [fetchDashboardItems] Using fallback for ${occasion}`);
+      }
+    }
     
     console.log('✅ [fetchDashboardItems] All occasions processed successfully');
     return data;
@@ -754,32 +861,10 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
     const fallbackData: { [key: string]: DashboardItem[] } = {};
     
     occasions.forEach(occasion => {
-      fallbackData[occasion] = [
-        {
-          id: `fallback-top-${occasion.toLowerCase()}`,
-          name: 'חולצה בסיסית',
-          image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=400&fit=crop',
-          type: 'top',
-          price: '₪89',
-          description: 'חולצה בסיסית'
-        },
-        {
-          id: `fallback-bottom-${occasion.toLowerCase()}`,
-          name: 'מכנסיים בסיסיים',
-          image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop',
-          type: 'bottom',
-          price: '₪129',
-          description: 'מכנסיים בסיסיים'
-        },
-        {
-          id: `fallback-shoes-${occasion.toLowerCase()}`,
-          name: 'נעליים בסיסיות',
-          image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=400&fit=crop',
-          type: 'shoes',
-          price: '₪199',
-          description: 'נעליים בסיסיות'
-        }
-      ];
+      fallbackData[occasion] = getFallbackOutfit().map(item => ({
+        ...item,
+        id: `${item.id}-${occasion.toLowerCase()}`
+      }));
     });
     
     console.log('⚠️ [fetchDashboardItems] Returning fallback data with placeholder items');
@@ -807,9 +892,12 @@ function isDressOrTunic(item: any): boolean {
 
 // Export placeholder functions for compatibility
 export function clearGlobalItemTrackers() {
-  console.log('clearGlobalItemTrackers called');
+  globalUsedItemIds.clear();
+  lastResetTime = Date.now();
+  console.log('🔄 [clearGlobalItemTrackers] Global trackers cleared');
 }
 
 export function clearOutfitCache() {
-  console.log('clearOutfitCache called');
+  globalUsedItemIds.clear();
+  console.log('🔄 [clearOutfitCache] Outfit cache cleared');
 }
