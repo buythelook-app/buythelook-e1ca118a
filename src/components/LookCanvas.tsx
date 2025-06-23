@@ -149,22 +149,27 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     ctx.textAlign = 'center';
     ctx.fillText('טוען פריטי לבוש...', width / 2, height / 2);
 
-    // Filter valid items - עדכון הסינון כדי לכלול נעליים אמיתיות
+    // Filter valid items - FIXED: Accept shoes from database with proper ID format
     const validItems = items.filter(item => {
       const hasValidImage = item.image && 
                            item.image !== '/placeholder.svg' && 
                            !item.id.startsWith('placeholder-') &&
-                           // הסרת הסינון נגד fallback כדי לכלול נעליים אמיתיות
-                           (item.id.startsWith('real-') || !item.id.startsWith('fallback-')) &&
                            !item.image.includes('unsplash.com');
       
-      if (!hasValidImage) {
-        console.log(`❌ [LookCanvas] Filtering out item with invalid image: ${item.id}`);
+      // Accept items from database (including shoes with shoes-db- prefix)
+      const isFromDatabase = item.id.startsWith('real-') || 
+                             item.id.includes('-db-') || // This includes shoes-db- items
+                             (!item.id.startsWith('fallback-') && !item.id.includes('unsplash'));
+      
+      const isValid = hasValidImage && isFromDatabase;
+      
+      if (!isValid) {
+        console.log(`❌ [LookCanvas] Filtering out item: ${item.id} (validImage: ${hasValidImage}, fromDB: ${isFromDatabase})`);
       } else {
         console.log(`✅ [LookCanvas] Valid item accepted: ${item.id} (${item.type})`);
       }
       
-      return hasValidImage;
+      return isValid;
     });
 
     if (validItems.length === 0) {
@@ -214,9 +219,9 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             // For shoes from database, use the image directly
             // For other items, extract best image URL from database data
             let imageUrl = '';
-            if (item.type === 'shoes' && item.id.includes('real-shoes-db')) {
-              imageUrl = item.image; // Use direct URL for shoes
-              console.log(`👠 [LookCanvas] Using direct shoes URL: ${imageUrl}`);
+            if (item.type === 'shoes' && item.id.includes('shoes-db-')) {
+              imageUrl = item.image; // Use direct URL for shoes from database
+              console.log(`👠 [LookCanvas] Using direct shoes URL from database: ${imageUrl}`);
             } else {
               imageUrl = extractBestImageUrl(item.image);
             }

@@ -312,11 +312,9 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
   console.log(`👠 [selectOutfitByOccasion] מחפש נעליים מתאימות עבור ${occasion}...`);
   console.log(`🎨 [selectOutfitByOccasion] צבעים בשימוש:`, usedColors);
   
-  // הוספת נעליים - חובה! שינוי ID כדי שיוצגו בקנבס
+  // הוספת נעליים - חובה! 
   const matchingShoes = await selectMatchingShoesFromDB(occasion, usedColors);
   if (matchingShoes) {
-    // שינוי ה-ID כדי שהקנבס יזהה את הנעליים ולא כ-fallback
-    matchingShoes.id = `real-shoes-db-${matchingShoes.id}`;
     selectedItems.push(matchingShoes);
     console.log(`✅ [selectOutfitByOccasion] נעליים נוספו בהצלחה: ${matchingShoes.name} עם ID: ${matchingShoes.id}`);
   } else {
@@ -324,7 +322,6 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
     // אם לא נמצאו נעליים, נוסיף נעליים כלליות
     const fallbackShoes = await getFallbackShoes();
     if (fallbackShoes) {
-      fallbackShoes.id = `real-shoes-db-${fallbackShoes.id}`;
       selectedItems.push(fallbackShoes);
     }
   }
@@ -536,8 +533,9 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
       
       console.log(`🎯 [selectMatchingShoesFromDB] תמונה סופית לנעליים: ${shoesImageUrl}`);
       
+      // FIX: Use shoe.name as the unique identifier instead of non-existent id
       return {
-        id: `shoes-from-db-${shoeId}`,
+        id: `shoes-db-${shoeId.replace(/\s+/g, '-')}`, // Use name-based ID that LookCanvas will recognize
         name: selectedShoes.name || 'נעליים',
         image: shoesImageUrl,
         type: 'shoes',
@@ -635,7 +633,7 @@ async function getFallbackShoes(): Promise<DashboardItem | null> {
     if (shoesData && shoesData.length > 0) {
       const shoe = shoesData[0];
       return {
-        id: `fallback-shoes-${shoe.name}`,
+        id: `shoes-db-fallback-${shoe.name.replace(/\s+/g, '-')}`, // Use name-based ID for consistency
         name: shoe.name || 'נעליים',
         image: extractBestShoesImageUrl(shoe.image),
         type: 'shoes',
@@ -648,7 +646,7 @@ async function getFallbackShoes(): Promise<DashboardItem | null> {
   }
   
   return {
-    id: 'real-fallback-shoes',
+    id: 'shoes-db-basic-fallback',
     name: 'נעליים בסיסיות',
     image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=400&fit=crop',
     type: 'shoes',
