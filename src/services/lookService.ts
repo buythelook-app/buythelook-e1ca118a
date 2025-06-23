@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -10,6 +9,22 @@ import logger from "@/lib/logger";
 // Global tracking to ensure variety across occasions - separate for each occasion
 let globalUsedItemIds: { [occasion: string]: Set<string> } = {};
 let lastResetTime = Date.now();
+
+// Type for shoes data with proper id field
+type ShoesData = {
+  id: string;
+  name: string;
+  brand: string | null;
+  description: string | null;
+  price: number | null;
+  colour: string | null;
+  image: any;
+  discount: string | null;
+  category: string | null;
+  availability: string | null;
+  url: string | null;
+  [key: string]: any;
+};
 
 /**
  * מחזיר הצעת תלבושת ראשונה על בסיס ניתוח הסטייל
@@ -70,21 +85,22 @@ async function debugShoesTable(): Promise<void> {
       console.log("🔍 [DEBUG SHOES] דוגמאות נתונים:");
       
       shoesData.slice(0, 5).forEach((shoe, index) => {
+        const shoeWithId = shoe as ShoesData;
         console.log(`👟 [DEBUG SHOES] נעליים ${index + 1}:`, {
-          id: shoe.id,
-          name: shoe.name,
-          brand: shoe.brand,
-          price: shoe.price,
-          imageType: typeof shoe.image,
-          imageData: shoe.image,
-          url: shoe.url,
-          availability: shoe.availability,
-          hasValidImage: hasValidImageData(shoe.image)
+          id: shoeWithId.id,
+          name: shoeWithId.name,
+          brand: shoeWithId.brand,
+          price: shoeWithId.price,
+          imageType: typeof shoeWithId.image,
+          imageData: shoeWithId.image,
+          url: shoeWithId.url,
+          availability: shoeWithId.availability,
+          hasValidImage: hasValidImageData(shoeWithId.image)
         });
         
         // בדיקת מבנה התמונה
-        if (shoe.image) {
-          console.log(`🖼️ [DEBUG SHOES] מבנה תמונה לנעליים ${index + 1}:`, shoe.image);
+        if (shoeWithId.image) {
+          console.log(`🖼️ [DEBUG SHOES] מבנה תמונה לנעליים ${index + 1}:`, shoeWithId.image);
         }
       });
       
@@ -454,8 +470,8 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
       return null;
     }
 
-    // סינון נעליים עם תמונות תקינות
-    let availableShoes = shoesData.filter(shoe => {
+    // Cast to proper type and filter shoes with valid images
+    let availableShoes = (shoesData as ShoesData[]).filter(shoe => {
       const shoeId = shoe.name || shoe.id || `shoes-${Math.random()}`;
       const hasImage = hasValidImageData(shoe.image);
       const notUsed = !globalUsedItemIds[shoesOccasion].has(shoeId);
@@ -469,7 +485,7 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
 
     if (availableShoes.length === 0) {
       console.log(`⚠️ [selectMatchingShoesFromDB] אין נעליים זמינות, מנסה את כל הנעליים`);
-      availableShoes = shoesData.filter(shoe => hasValidImageData(shoe.image));
+      availableShoes = (shoesData as ShoesData[]).filter(shoe => hasValidImageData(shoe.image));
     }
 
     if (availableShoes.length === 0) {
@@ -604,7 +620,7 @@ async function getFallbackShoes(): Promise<DashboardItem | null> {
       .limit(1);
       
     if (shoesData && shoesData.length > 0) {
-      const shoe = shoesData[0];
+      const shoe = shoesData[0] as ShoesData;
       return {
         id: `fallback-shoes-${shoe.id}`,
         name: shoe.name || 'נעליים',
