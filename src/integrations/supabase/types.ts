@@ -190,7 +190,10 @@ export type Database = {
           currency: string | null
           description: string | null
           discount: string | null
+          discovery_input: Json | null
+          id: string
           image: Json | null
+          input: Json | null
           look_after_me: string | null
           name: string
           possible_sizes: Json | null
@@ -212,7 +215,10 @@ export type Database = {
           currency?: string | null
           description?: string | null
           discount?: string | null
+          discovery_input?: Json | null
+          id?: string
           image?: Json | null
+          input?: Json | null
           look_after_me?: string | null
           name: string
           possible_sizes?: Json | null
@@ -234,7 +240,10 @@ export type Database = {
           currency?: string | null
           description?: string | null
           discount?: string | null
+          discovery_input?: Json | null
+          id?: string
           image?: Json | null
+          input?: Json | null
           look_after_me?: string | null
           name?: string
           possible_sizes?: Json | null
