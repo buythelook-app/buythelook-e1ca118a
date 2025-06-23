@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -455,7 +456,7 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
 
     // סינון נעליים עם תמונות תקינות
     let availableShoes = shoesData.filter(shoe => {
-      const shoeId = shoe.name || shoe.id?.toString() || `shoes-${Math.random()}`;
+      const shoeId = shoe.name || shoe.id || `shoes-${Math.random()}`;
       const hasImage = hasValidImageData(shoe.image);
       const notUsed = !globalUsedItemIds[shoesOccasion].has(shoeId);
       
@@ -501,7 +502,7 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
     }) || availableShoes[0];
 
     if (selectedShoes) {
-      const shoeId = selectedShoes.name || selectedShoes.id?.toString() || `shoes-${Date.now()}`;
+      const shoeId = selectedShoes.name || selectedShoes.id || `shoes-${Date.now()}`;
       
       // Mark this shoe as used for this occasion
       globalUsedItemIds[shoesOccasion].add(shoeId);
