@@ -10,9 +10,8 @@ import logger from "@/lib/logger";
 let globalUsedItemIds: { [occasion: string]: Set<string> } = {};
 let lastResetTime = Date.now();
 
-// Type for shoes data with proper id field
+// Type for shoes data matching the actual database schema
 type ShoesData = {
-  id: string;
   name: string;
   brand: string | null;
   description: string | null;
@@ -87,7 +86,6 @@ async function debugShoesTable(): Promise<void> {
       shoesData.slice(0, 5).forEach((shoe, index) => {
         const shoeWithId = shoe as ShoesData;
         console.log(`👟 [DEBUG SHOES] נעליים ${index + 1}:`, {
-          id: shoeWithId.id,
           name: shoeWithId.name,
           brand: shoeWithId.brand,
           price: shoeWithId.price,
@@ -470,9 +468,9 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
       return null;
     }
 
-    // Cast to proper type and filter shoes with valid images
-    let availableShoes = (shoesData as ShoesData[]).filter(shoe => {
-      const shoeId = shoe.name || shoe.id || `shoes-${Math.random()}`;
+    // Filter shoes with valid images
+    let availableShoes = shoesData.filter(shoe => {
+      const shoeId = shoe.name || `shoes-${Math.random()}`;
       const hasImage = hasValidImageData(shoe.image);
       const notUsed = !globalUsedItemIds[shoesOccasion].has(shoeId);
       
@@ -485,7 +483,7 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
 
     if (availableShoes.length === 0) {
       console.log(`⚠️ [selectMatchingShoesFromDB] אין נעליים זמינות, מנסה את כל הנעליים`);
-      availableShoes = (shoesData as ShoesData[]).filter(shoe => hasValidImageData(shoe.image));
+      availableShoes = shoesData.filter(shoe => hasValidImageData(shoe.image));
     }
 
     if (availableShoes.length === 0) {
@@ -518,7 +516,7 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
     }) || availableShoes[0];
 
     if (selectedShoes) {
-      const shoeId = selectedShoes.name || selectedShoes.id || `shoes-${Date.now()}`;
+      const shoeId = selectedShoes.name || `shoes-${Date.now()}`;
       
       // Mark this shoe as used for this occasion
       globalUsedItemIds[shoesOccasion].add(shoeId);
@@ -620,9 +618,9 @@ async function getFallbackShoes(): Promise<DashboardItem | null> {
       .limit(1);
       
     if (shoesData && shoesData.length > 0) {
-      const shoe = shoesData[0] as ShoesData;
+      const shoe = shoesData[0];
       return {
-        id: `fallback-shoes-${shoe.id}`,
+        id: `fallback-shoes-${shoe.name}`,
         name: shoe.name || 'נעליים',
         image: extractShoesImageUrl(shoe.image),
         type: 'shoes',
