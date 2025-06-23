@@ -149,16 +149,19 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     ctx.textAlign = 'center';
     ctx.fillText('טוען פריטי לבוש...', width / 2, height / 2);
 
-    // Filter valid items (must have actual image data from database)
+    // Filter valid items - עדכון הסינון כדי לכלול נעליים אמיתיות
     const validItems = items.filter(item => {
       const hasValidImage = item.image && 
                            item.image !== '/placeholder.svg' && 
-                           !item.image.includes('unsplash.com') &&
-                           !item.id.startsWith('fallback-') &&
-                           !item.id.startsWith('placeholder-');
+                           !item.id.startsWith('placeholder-') &&
+                           // הסרת הסינון נגד fallback כדי לכלול נעליים אמיתיות
+                           (item.id.startsWith('real-') || !item.id.startsWith('fallback-')) &&
+                           !item.image.includes('unsplash.com');
       
       if (!hasValidImage) {
         console.log(`❌ [LookCanvas] Filtering out item with invalid image: ${item.id}`);
+      } else {
+        console.log(`✅ [LookCanvas] Valid item accepted: ${item.id} (${item.type})`);
       }
       
       return hasValidImage;
@@ -208,8 +211,15 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
           console.log(`🔍 [LookCanvas] Processing item ${i + 1}: ${item.id} (${item.type})`);
           
           try {
-            // Extract best image URL from database data
-            const imageUrl = extractBestImageUrl(item.image);
+            // For shoes from database, use the image directly
+            // For other items, extract best image URL from database data
+            let imageUrl = '';
+            if (item.type === 'shoes' && item.id.includes('real-shoes-db')) {
+              imageUrl = item.image; // Use direct URL for shoes
+              console.log(`👠 [LookCanvas] Using direct shoes URL: ${imageUrl}`);
+            } else {
+              imageUrl = extractBestImageUrl(item.image);
+            }
             
             if (!imageUrl) {
               console.error(`❌ [LookCanvas] No valid image URL for item: ${item.id}`);
@@ -294,7 +304,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         // Update loading state
         if (successCount > 0) {
           setLoadingState('success');
-          console.log(`✅ [LookCanvas] Successfully rendered ${successCount} database items`);
+          console.log(`✅ [LookCanvas] Successfully rendered ${successCount} database items (including shoes!)`);
         } else {
           setLoadingState('error');
           

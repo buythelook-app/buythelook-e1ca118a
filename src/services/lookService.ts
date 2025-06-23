@@ -169,22 +169,19 @@ function hasValidImageData(imageData: any): boolean {
 async function createAdvancedOutfit(styleProfile: string, eventType: string, colorPreferences: string[], occasion: string): Promise<DashboardItem[]> {
   console.log(`🎨 [createAdvancedOutfit] יצירת תלבושת עבור ${styleProfile} לאירוע ${eventType}, הזדמנות: ${occasion}`);
   
-  // DEBUG: בדיקת טבלת הנעליים
-  await debugShoesTable();
-  
   // Initialize occasion tracking if not exists
   if (!globalUsedItemIds[occasion]) {
     globalUsedItemIds[occasion] = new Set();
   }
   
-  // קבלת פריטים מהמאגר - הגדלת הכמות ושיפור הסינון
+  // קבלת פריטים מהמאגר
   const { data: allItems, error } = await supabase
     .from('zara_cloth')
     .select('*')
     .not('image', 'is', null)
     .neq('availability', false)
     .order('price', { ascending: true })
-    .limit(1000); // הגדלת הכמות
+    .limit(1000);
 
   if (error || !allItems || allItems.length === 0) {
     console.error('❌ [createAdvancedOutfit] Database error:', error);
@@ -193,7 +190,7 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
 
   console.log(`🔍 [createAdvancedOutfit] Found ${allItems.length} items with non-null images in database`);
 
-  // סינון פריטים בסיסי - יותר גמיש
+  // סינון פריטים בסיסי
   let filteredItems = allItems.filter(item => {
     const hasValid = hasValidImageData(item.image);
     const notUsed = !globalUsedItemIds[occasion].has(item.id);
@@ -225,7 +222,7 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
   
   // Mark selected items as used for this occasion
   outfitItems.forEach(item => {
-    if (item.id && !item.id.includes('shoes-from-db')) {
+    if (item.id && !item.id.includes('real-shoes-db')) {
       globalUsedItemIds[occasion].add(item.id.split('-')[0]); // Remove occasion suffix
     }
   });
@@ -246,7 +243,7 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 /**
- * בחירת תלבושת לפי סוג אירוע - עם דגש על נעליים
+ * בחירת תלבושת לפי סוג אירוע - עם דגש על נעליים חובה
  */
 async function selectOutfitByOccasion(categories: any, occasion: string): Promise<DashboardItem[]> {
   console.log(`🎯 [selectOutfitByOccasion] בחירת תלבושת עבור ${occasion}`);
@@ -312,24 +309,27 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
       break;
   }
 
-  console.log(`👠 [selectOutfitByOccasion] מנסה להוסיף נעליים עבור ${occasion}...`);
+  console.log(`👠 [selectOutfitByOccasion] מחפש נעליים מתאימות עבור ${occasion}...`);
   console.log(`🎨 [selectOutfitByOccasion] צבעים בשימוש:`, usedColors);
   
-  // הוספת נעליים מתאימות - חובה!
+  // הוספת נעליים - חובה! שינוי ID כדי שיוצגו בקנבס
   const matchingShoes = await selectMatchingShoesFromDB(occasion, usedColors);
   if (matchingShoes) {
+    // שינוי ה-ID כדי שהקנבס יזהה את הנעליים ולא כ-fallback
+    matchingShoes.id = `real-shoes-db-${matchingShoes.id}`;
     selectedItems.push(matchingShoes);
-    console.log(`✅ [selectOutfitByOccasion] נעליים נוספו בהצלחה: ${matchingShoes.name}`);
+    console.log(`✅ [selectOutfitByOccasion] נעליים נוספו בהצלחה: ${matchingShoes.name} עם ID: ${matchingShoes.id}`);
   } else {
     console.log(`❌ [selectOutfitByOccasion] לא נמצאו נעליים - מוסיף נעליים כלליות`);
     // אם לא נמצאו נעליים, נוסיף נעליים כלליות
     const fallbackShoes = await getFallbackShoes();
     if (fallbackShoes) {
+      fallbackShoes.id = `real-shoes-db-${fallbackShoes.id}`;
       selectedItems.push(fallbackShoes);
     }
   }
 
-  console.log(`✅ [selectOutfitByOccasion] תלבושת אושרה עם ${selectedItems.length} פריטים עבור ${occasion}`);
+  console.log(`✅ [selectOutfitByOccasion] תלבושת אושרה עם ${selectedItems.length} פריטים עבור ${occasion} (כולל נעליים)`);
   return selectedItems;
 }
 
@@ -435,7 +435,7 @@ function categorizeItemsAdvanced(items: any[], eventType: string) {
 }
 
 /**
- * בחירת נעליים מתאימות מטבלת הנעליים לפי אירוע - משופר
+ * בחירת נעליים מתאימות מטבלת הנעליים לפי אירוע - משופר עם תיקון תמונות
  */
 async function selectMatchingShoesFromDB(occasion: string, usedColors: string[]): Promise<DashboardItem | null> {
   try {
@@ -468,7 +468,7 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
       return null;
     }
 
-    // Filter shoes with valid images
+    // Filter shoes with valid images and extract proper URLs
     let availableShoes = shoesData.filter(shoe => {
       const shoeId = shoe.name || `shoes-${Math.random()}`;
       const hasImage = hasValidImageData(shoe.image);
@@ -523,11 +523,15 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
       
       console.log(`✅ [selectMatchingShoesFromDB] נעליים נבחרו עבור ${occasion}: ${selectedShoes.name}`);
       
-      // Extract image URL from shoes table
-      let shoesImageUrl = '/placeholder.svg';
+      // Extract image URL from shoes table - תיקון קריטי!
+      let shoesImageUrl = extractBestShoesImageUrl(selectedShoes.image);
       
-      if (selectedShoes.image) {
-        shoesImageUrl = extractShoesImageUrl(selectedShoes.image);
+      // וידוא שיש תמונה תקינה
+      if (!shoesImageUrl || shoesImageUrl === '/placeholder.svg') {
+        console.log(`⚠️ [selectMatchingShoesFromDB] תמונה לא תקינה, מנסה דרכים אחרות...`);
+        shoesImageUrl = selectedShoes.url || 
+                       (typeof selectedShoes.image === 'string' ? selectedShoes.image : null) ||
+                       '/placeholder.svg';
       }
       
       console.log(`🎯 [selectMatchingShoesFromDB] תמונה סופית לנעליים: ${shoesImageUrl}`);
@@ -551,59 +555,70 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
 }
 
 /**
- * חילוץ URL תמונה מנתוני נעליים - משופר
+ * חילוץ תמונה מתאימה מנתוני נעליים - משופר עם בדיקות נוספות
  */
-function extractShoesImageUrl(imageData: any): string {
-  console.log(`🔍 [extractShoesImageUrl] מעבד נתוני תמונה:`, imageData);
+function extractBestShoesImageUrl(imageData: any): string {
+  console.log(`🔍 [extractBestShoesImageUrl] מעבד נתוני תמונה:`, imageData);
   
   if (!imageData) {
-    console.log('❌ [extractShoesImageUrl] אין נתוני תמונה');
+    console.log('❌ [extractBestShoesImageUrl] אין נתוני תמונה');
     return '/placeholder.svg';
   }
   
+  let potentialUrls: string[] = [];
+  
   // Handle different formats from shoes table
   if (typeof imageData === 'string') {
-    try {
-      const parsed = JSON.parse(imageData);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        console.log(`✅ [extractShoesImageUrl] תמונה מ-JSON array: ${parsed[0]}`);
-        return parsed[0];
-      } else if (typeof parsed === 'string') {
-        console.log(`✅ [extractShoesImageUrl] תמונה מ-JSON string: ${parsed}`);
-        return parsed;
-      }
-    } catch {
-      if (imageData.includes('http')) {
-        console.log(`✅ [extractShoesImageUrl] תמונה ישירה: ${imageData}`);
-        return imageData;
+    if (imageData.includes('http')) {
+      potentialUrls.push(imageData);
+    } else {
+      try {
+        const parsed = JSON.parse(imageData);
+        if (Array.isArray(parsed)) {
+          potentialUrls = parsed.filter(url => typeof url === 'string' && url.includes('http'));
+        } else if (typeof parsed === 'string' && parsed.includes('http')) {
+          potentialUrls.push(parsed);
+        }
+      } catch {
+        // Not JSON, skip
       }
     }
-  } else if (Array.isArray(imageData) && imageData.length > 0) {
-    console.log(`✅ [extractShoesImageUrl] תמונה מ-array: ${imageData[0]}`);
-    return imageData[0];
+  } else if (Array.isArray(imageData)) {
+    potentialUrls = imageData.filter(url => typeof url === 'string' && url.includes('http'));
   } else if (typeof imageData === 'object' && imageData !== null) {
     // Handle shoes table object format
-    if (imageData.url && typeof imageData.url === 'string') {
-      console.log(`✅ [extractShoesImageUrl] תמונה מ-object.url: ${imageData.url}`);
-      return imageData.url;
-    } else if (imageData.image && typeof imageData.image === 'string') {
-      console.log(`✅ [extractShoesImageUrl] תמונה מ-object.image: ${imageData.image}`);
-      return imageData.image;
-    } else if (Array.isArray(imageData.urls) && imageData.urls.length > 0) {
-      console.log(`✅ [extractShoesImageUrl] תמונה מ-object.urls: ${imageData.urls[0]}`);
-      return imageData.urls[0];
+    if (imageData.url && typeof imageData.url === 'string' && imageData.url.includes('http')) {
+      potentialUrls.push(imageData.url);
+    }
+    if (imageData.image && typeof imageData.image === 'string' && imageData.image.includes('http')) {
+      potentialUrls.push(imageData.image);
+    }
+    if (Array.isArray(imageData.urls)) {
+      potentialUrls = potentialUrls.concat(imageData.urls.filter(url => typeof url === 'string' && url.includes('http')));
     }
     
     // Search for any URL in the object
     for (const key in imageData) {
-      if (typeof imageData[key] === 'string' && imageData[key].includes('http')) {
-        console.log(`✅ [extractShoesImageUrl] תמונה נמצאה ב-${key}: ${imageData[key]}`);
-        return imageData[key];
+      if (typeof imageData[key] === 'string' && imageData[key].includes('http') && 
+          (imageData[key].includes('.jpg') || imageData[key].includes('.jpeg') || 
+           imageData[key].includes('.png') || imageData[key].includes('.webp'))) {
+        potentialUrls.push(imageData[key]);
       }
     }
   }
   
-  console.log(`❌ [extractShoesImageUrl] לא נמצא URL תקין, משתמש ב-placeholder`);
+  // Return first valid URL or placeholder
+  const validUrl = potentialUrls.find(url => 
+    url.includes('http') && 
+    (url.includes('.jpg') || url.includes('.jpeg') || url.includes('.png') || url.includes('.webp'))
+  );
+  
+  if (validUrl) {
+    console.log(`✅ [extractBestShoesImageUrl] תמונה תקינה נמצאה: ${validUrl}`);
+    return validUrl;
+  }
+  
+  console.log(`❌ [extractBestShoesImageUrl] לא נמצא URL תקין, משתמש ב-placeholder`);
   return '/placeholder.svg';
 }
 
@@ -622,7 +637,7 @@ async function getFallbackShoes(): Promise<DashboardItem | null> {
       return {
         id: `fallback-shoes-${shoe.name}`,
         name: shoe.name || 'נעליים',
-        image: extractShoesImageUrl(shoe.image),
+        image: extractBestShoesImageUrl(shoe.image),
         type: 'shoes',
         price: shoe.price ? `₪${shoe.price}` : '₪199',
         description: shoe.description || ''
@@ -633,7 +648,7 @@ async function getFallbackShoes(): Promise<DashboardItem | null> {
   }
   
   return {
-    id: 'fallback-shoes',
+    id: 'real-fallback-shoes',
     name: 'נעליים בסיסיות',
     image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=400&fit=crop',
     type: 'shoes',
