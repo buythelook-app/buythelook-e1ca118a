@@ -20,24 +20,21 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
   const [loadingState, setLoadingState] = useState<'loading' | 'success' | 'error'>('loading');
   const [loadedCount, setLoadedCount] = useState(0);
 
-  // Enhanced validation - more permissive for shoes
+  // Ultra simplified validation - just check for HTTP URLs
   const isValidImageUrl = (imageUrl: string, itemType: string): boolean => {
+    console.log(`🔍 [LookCanvas] Validating ${itemType} image: "${imageUrl}"`);
+    
     if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '') {
+      console.log(`❌ [LookCanvas] Invalid URL: empty or not string`);
       return false;
     }
     
-    // Basic URL validation
     const hasHttp = imageUrl.includes('http');
     const notPlaceholder = !imageUrl.includes('placeholder.svg');
+    const isValid = hasHttp && notPlaceholder;
     
-    // More permissive for shoes
-    if (itemType === 'shoes') {
-      console.log(`👠 [LookCanvas] Validating shoes image: ${imageUrl.substring(0, 50)}...`);
-      return hasHttp && notPlaceholder;
-    }
-    
-    // Standard validation for other items
-    return hasHttp && notPlaceholder && !imageUrl.includes('unsplash.com');
+    console.log(`🔍 [LookCanvas] ${itemType} validation result: ${isValid} (hasHttp: ${hasHttp}, notPlaceholder: ${notPlaceholder})`);
+    return isValid;
   };
 
   // Load image with comprehensive error handling
@@ -69,8 +66,9 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    console.log('🔍 [LookCanvas] ===== STARTING CANVAS RENDER =====');
-    console.log('🔍 [LookCanvas] All items received:', items.map(item => ({
+    console.log('🔥 [LookCanvas] ===== STARTING CANVAS RENDER =====');
+    console.log('🔥 [LookCanvas] All items received:', items.map((item, index) => ({
+      index: index + 1,
       id: item.id,
       type: item.type,
       name: item.name || 'Unknown',
@@ -100,35 +98,41 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     ctx.textAlign = 'center';
     ctx.fillText('טוען פריטי לבוש...', width / 2, height / 2);
 
-    // Filter for valid items - special handling for shoes
+    // FORCE INCLUDE SHOES - do not filter them out
     const validItems = items.filter(item => {
-      const hasValidImage = isValidImageUrl(item.image, item.type);
-      
       if (item.type === 'shoes') {
-        console.log(`👠 [LookCanvas] Shoes validation: "${item.name}"`, {
+        console.log(`👠 [LookCanvas] SHOES ITEM PROCESSING: "${item.name}"`, {
+          id: item.id,
           imageUrl: item.image?.substring(0, 50) + '...',
-          isValid: hasValidImage,
-          fullImage: item.image
+          hasImage: !!item.image,
+          imageType: typeof item.image
         });
+        // Always include shoes even if image validation fails
+        return true;
       }
       
+      const hasValidImage = isValidImageUrl(item.image, item.type);
+      
       if (!hasValidImage) {
-        console.log(`❌ [LookCanvas] Filtering out item: ${item.id} (${item.type}) - image: "${item.image?.substring(0, 50)}..."`);
+        console.log(`❌ [LookCanvas] Filtering out non-shoes item: ${item.id} (${item.type}) - image: "${item.image?.substring(0, 50)}..."`);
       } else {
-        console.log(`✅ [LookCanvas] Valid item accepted: ${item.id} (${item.type})`);
+        console.log(`✅ [LookCanvas] Valid non-shoes item accepted: ${item.id} (${item.type})`);
       }
       
       return hasValidImage;
     });
 
-    console.log(`✅ [LookCanvas] Processing ${validItems.length} valid items out of ${items.length} total`);
+    console.log(`✅ [LookCanvas] Processing ${validItems.length} items out of ${items.length} total`);
     
-    // Check if we have shoes specifically
+    // Check specifically for shoes
     const shoesItems = validItems.filter(item => item.type === 'shoes');
-    console.log(`👠 [LookCanvas] Found ${shoesItems.length} valid shoes items`);
+    console.log(`👠 [LookCanvas] Found ${shoesItems.length} shoes items in validItems`);
+    shoesItems.forEach((shoe, index) => {
+      console.log(`👠 [LookCanvas] Shoe ${index + 1}: "${shoe.name}" with image: ${shoe.image}`);
+    });
 
     if (validItems.length === 0) {
-      console.log('❌ [LookCanvas] No valid items with images found');
+      console.log('❌ [LookCanvas] No valid items found');
       setLoadingState('error');
       
       ctx.clearRect(0, 0, width, height);
@@ -169,11 +173,18 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
           console.log(`🔍 [LookCanvas] Processing item ${i + 1}: ${item.id} (${item.type}) - ${item.name}`);
           
           if (item.type === 'shoes') {
-            console.log(`👠 [LookCanvas] Processing SHOES: "${item.name}" with image: ${item.image}`);
+            console.log(`👠 [LookCanvas] PROCESSING SHOES: "${item.name}" with image: ${item.image}`);
           }
           
           try {
-            const img = await loadImageForCanvas(item.image, item.type);
+            // For shoes, try loading even if URL seems invalid
+            let imageToLoad = item.image;
+            if (item.type === 'shoes' && (!imageToLoad || !isValidImageUrl(imageToLoad, item.type))) {
+              console.log(`👠 [LookCanvas] Shoes has invalid image, using fallback`);
+              imageToLoad = 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop';
+            }
+            
+            const img = await loadImageForCanvas(imageToLoad, item.type);
             successCount++;
             setLoadedCount(prev => prev + 1);
 
@@ -232,7 +243,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             
             ctx.restore();
 
-            // Add item type label with special handling for shoes
+            // Add item type label
             ctx.save();
             ctx.font = '12px Arial';
             ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
