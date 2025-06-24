@@ -149,24 +149,18 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     ctx.textAlign = 'center';
     ctx.fillText('טוען פריטי לבוש...', width / 2, height / 2);
 
-    // Filter valid items - CRITICAL FIX: Accept all items with database IDs including shoes
+    // 🔥 CRITICAL FIX: Accept ALL items and let them render
     const validItems = items.filter(item => {
       const hasValidImage = item.image && 
                            item.image !== '/placeholder.svg' && 
                            !item.id.startsWith('placeholder-') &&
                            !item.image.includes('unsplash.com');
       
-      // Accept items from database: real-, shoes-db-, shoes-basic-, shoes-emergency-, or any non-fallback items
-      const isFromDatabase = item.id.startsWith('real-') || 
-                             item.id.startsWith('shoes-db-') || // CRITICAL: Include shoes explicitly
-                             item.id.startsWith('shoes-basic-') || // Include basic shoes
-                             item.id.startsWith('shoes-emergency-') || // Include emergency shoes
-                             (!item.id.startsWith('fallback-') && !item.id.includes('unsplash'));
-      
-      const isValid = hasValidImage && isFromDatabase;
+      // Accept ALL items with valid images - no more filtering
+      const isValid = hasValidImage;
       
       if (!isValid) {
-        console.log(`❌ [LookCanvas] Filtering out item: ${item.id} (validImage: ${hasValidImage}, fromDB: ${isFromDatabase})`);
+        console.log(`❌ [LookCanvas] Filtering out item: ${item.id} (no valid image)`);
       } else {
         console.log(`✅ [LookCanvas] Valid item accepted: ${item.id} (${item.type})`);
       }
@@ -175,7 +169,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     });
 
     if (validItems.length === 0) {
-      console.log('❌ [LookCanvas] No valid items with database images found');
+      console.log('❌ [LookCanvas] No valid items with images found');
       setLoadingState('error');
       
       ctx.clearRect(0, 0, width, height);
@@ -189,7 +183,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       return;
     }
 
-    console.log(`✅ [LookCanvas] Processing ${validItems.length} valid items with database images`);
+    console.log(`✅ [LookCanvas] Processing ${validItems.length} valid items`);
 
     const loadImages = async () => {
       try {
@@ -218,10 +212,10 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
           console.log(`🔍 [LookCanvas] Processing item ${i + 1}: ${item.id} (${item.type})`);
           
           try {
-            // CRITICAL FIX: Handle all types of shoes and use direct URL when available
+            // 🔥 CRITICAL FIX: Use direct image URL for shoes
             let imageUrl = '';
-            if (item.type === 'shoes' && (item.id.includes('shoes-db-') || item.id.includes('shoes-basic-') || item.id.includes('shoes-emergency-'))) {
-              imageUrl = item.image; // Use direct URL for shoes from database
+            if (item.type === 'shoes') {
+              imageUrl = item.image; // Use direct URL for shoes
               console.log(`👠 [LookCanvas] Using direct shoes URL: ${imageUrl}`);
             } else {
               imageUrl = extractBestImageUrl(item.image);
@@ -299,7 +293,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             ctx.fillText(label, drawX + drawWidth / 2, drawY + drawHeight + 16);
             ctx.restore();
             
-            console.log(`✅ [LookCanvas] Successfully drew ${item.type} from database`);
+            console.log(`✅ [LookCanvas] Successfully drew ${item.type}`);
 
           } catch (imgError) {
             console.error(`❌ [LookCanvas] Error processing item: ${item.id}`, imgError);
@@ -310,7 +304,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         // Update loading state
         if (successCount > 0) {
           setLoadingState('success');
-          console.log(`✅ [LookCanvas] Successfully rendered ${successCount} database items (including shoes!)`);
+          console.log(`✅ [LookCanvas] Successfully rendered ${successCount} items (including shoes!)`);
         } else {
           setLoadingState('error');
           
