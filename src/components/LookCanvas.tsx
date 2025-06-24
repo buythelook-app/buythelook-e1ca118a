@@ -20,79 +20,18 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
   const [loadingState, setLoadingState] = useState<'loading' | 'success' | 'error'>('loading');
   const [loadedCount, setLoadedCount] = useState(0);
 
-  // Enhanced function to extract the best available image from database entries
-  const extractBestImageUrl = (imageData: any): string => {
-    console.log(`🔍 [LookCanvas] Processing image data:`, imageData);
-    
-    if (!imageData) {
-      console.log('❌ [LookCanvas] No image data provided');
-      return '';
-    }
-    
-    let imageUrls: string[] = [];
-    
-    // Handle different image data formats from database
-    if (typeof imageData === 'string') {
-      try {
-        const parsed = JSON.parse(imageData);
-        if (Array.isArray(parsed)) {
-          imageUrls = parsed.filter(url => typeof url === 'string' && url.trim() !== '');
-        } else if (typeof parsed === 'string') {
-          imageUrls = [parsed];
-        }
-      } catch {
-        // If not JSON, treat as direct URL
-        if (imageData.trim() !== '') {
-          imageUrls = [imageData];
-        }
-      }
-    } else if (Array.isArray(imageData)) {
-      imageUrls = imageData.filter(url => typeof url === 'string' && url.trim() !== '');
-    } else if (typeof imageData === 'object' && imageData.url) {
-      // Handle shoes table format with url field
-      imageUrls = [imageData.url];
-    }
-    
-    if (imageUrls.length === 0) {
-      console.log('❌ [LookCanvas] No valid image URLs found');
-      return '';
-    }
-    
-    console.log(`🔍 [LookCanvas] Found ${imageUrls.length} image URLs:`, imageUrls);
-    
-    // Priority for Zara images: prefer higher quality/product-only images
-    const productImagePatterns = [
-      /_8_\d+_1\.jpg/,  // 8th image - usually product only
-      /_7_\d+_1\.jpg/,  // 7th image
-      /_6_\d+_1\.jpg/,  // 6th image
-      /_5_\d+_1\.jpg/,  // 5th image
-      /_4_\d+_1\.jpg/,  // 4th image
-      /_3_\d+_1\.jpg/,  // 3rd image
-      /_2_\d+_1\.jpg/,  // 2nd image
-      /_1_\d+_1\.jpg/   // 1st image
-    ];
-    
-    // Try to find best quality product image
-    for (const pattern of productImagePatterns) {
-      const matchingImage = imageUrls.find(url => pattern.test(url));
-      if (matchingImage) {
-        console.log(`✅ [LookCanvas] Selected product image:`, matchingImage);
-        return matchingImage;
-      }
-    }
-    
-    // Fallback: use first available image
-    const selectedImage = imageUrls[0];
-    console.log(`✅ [LookCanvas] Using fallback image:`, selectedImage);
-    return selectedImage;
+  // Simple validation - just check if image exists and is a string with http
+  const isValidImageUrl = (imageUrl: string): boolean => {
+    return !!(imageUrl && 
+              typeof imageUrl === 'string' && 
+              imageUrl.trim() !== '' && 
+              imageUrl.includes('http') &&
+              !imageUrl.includes('placeholder.svg') &&
+              !imageUrl.includes('unsplash.com'));
   };
 
   // Load image with proper error handling
   const loadImageForCanvas = async (imageUrl: string): Promise<HTMLImageElement> => {
-    if (!imageUrl || imageUrl.trim() === '') {
-      throw new Error('Empty image URL');
-    }
-    
     console.log(`🔍 [LookCanvas] Loading image: ${imageUrl}`);
     
     const img = new Image();
@@ -121,12 +60,12 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     if (!ctx) return;
 
     console.log('🔍 [LookCanvas] ===== STARTING CANVAS RENDER =====');
-    console.log('🔍 [LookCanvas] Items to render:', items.map(item => ({
+    console.log('🔍 [LookCanvas] All items received:', items.map(item => ({
       id: item.id,
       type: item.type,
       name: item.name || 'Unknown',
-      hasImage: !!item.image,
-      imageValue: item.image
+      imageUrl: item.image,
+      isShoes: item.type === 'shoes'
     })));
 
     // Reset loading state
@@ -150,22 +89,29 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     ctx.textAlign = 'center';
     ctx.fillText('טוען פריטי לבוש...', width / 2, height / 2);
 
-    // Enhanced validation for items with actual URL validation
+    // Filter for valid items - be more permissive for shoes
     const validItems = items.filter(item => {
-      const hasValidImage = item.image && 
-                           item.image !== '/placeholder.svg' && 
-                           !item.id.startsWith('placeholder-') &&
-                           !item.image.includes('unsplash.com') &&
-                           (item.image.includes('http://') || item.image.includes('https://'));
+      const hasValidImage = isValidImageUrl(item.image);
+      const isShoes = item.type === 'shoes';
+      
+      if (isShoes) {
+        console.log(`👠 [LookCanvas] Shoes item: ${item.id}`, {
+          name: item.name,
+          imageUrl: item.image,
+          isValid: hasValidImage
+        });
+      }
       
       if (!hasValidImage) {
-        console.log(`❌ [LookCanvas] Filtering out item: ${item.id} (image: "${item.image}")`);
+        console.log(`❌ [LookCanvas] Filtering out item: ${item.id} (${item.type}) - image: "${item.image}"`);
       } else {
-        console.log(`✅ [LookCanvas] Valid item accepted: ${item.id} (${item.type}) with image: ${item.image}`);
+        console.log(`✅ [LookCanvas] Valid item accepted: ${item.id} (${item.type})`);
       }
       
       return hasValidImage;
     });
+
+    console.log(`✅ [LookCanvas] Processing ${validItems.length} valid items out of ${items.length} total`);
 
     if (validItems.length === 0) {
       console.log('❌ [LookCanvas] No valid items with images found');
@@ -182,8 +128,6 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       return;
     }
 
-    console.log(`✅ [LookCanvas] Processing ${validItems.length} valid items`);
-
     const loadImages = async () => {
       try {
         let successCount = 0;
@@ -199,7 +143,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         const availableHeight = height - (padding * 2);
         const totalSpacing = (validItems.length - 1) * itemSpacing;
         const itemHeight = Math.floor((availableHeight - totalSpacing) / validItems.length);
-        const itemWidth = Math.min(width * 0.8, 280); // Max width for better display
+        const itemWidth = Math.min(width * 0.8, 280);
         const centerX = (width - itemWidth) / 2;
         
         console.log(`🎨 [LookCanvas] Layout: ${validItems.length} items, itemHeight=${itemHeight}, itemWidth=${itemWidth}`);
@@ -208,19 +152,10 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         for (let i = 0; i < validItems.length; i++) {
           const item = validItems[i];
           
-          console.log(`🔍 [LookCanvas] Processing item ${i + 1}: ${item.id} (${item.type})`);
+          console.log(`🔍 [LookCanvas] Processing item ${i + 1}: ${item.id} (${item.type}) - ${item.name}`);
           
           try {
-            // Use direct image URL - no complex processing needed since we already validated it
-            const imageUrl = item.image;
-            
-            if (!imageUrl || !imageUrl.includes('http')) {
-              console.error(`❌ [LookCanvas] Invalid image URL for item: ${item.id}`);
-              continue;
-            }
-            
-            // Load the image
-            const img = await loadImageForCanvas(imageUrl);
+            const img = await loadImageForCanvas(item.image);
             successCount++;
             setLoadedCount(prev => prev + 1);
 

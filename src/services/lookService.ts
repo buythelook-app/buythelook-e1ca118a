@@ -62,136 +62,60 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
 }
 
 /**
- * בדיקת נתוני טבלת הנעליים - משופר
- */
-async function debugShoesTable(): Promise<void> {
-  try {
-    console.log("🔍 [DEBUG SHOES] בודק נתוני טבלת הנעליים...");
-    
-    const { data: shoesData, error } = await supabase
-      .from('shoes')
-      .select('*')
-      .limit(20);
-
-    if (error) {
-      console.error("❌ [DEBUG SHOES] שגיאה בקריאת טבלת הנעליים:", error);
-      return;
-    }
-
-    console.log(`✅ [DEBUG SHOES] נמצאו ${shoesData?.length || 0} זוגות נעליים בטבלה`);
-    
-    if (shoesData && shoesData.length > 0) {
-      console.log("🔍 [DEBUG SHOES] דוגמאות נתונים:");
-      
-      shoesData.slice(0, 5).forEach((shoe, index) => {
-        const shoeWithId = shoe as ShoesData;
-        console.log(`👟 [DEBUG SHOES] נעליים ${index + 1}:`, {
-          name: shoeWithId.name,
-          brand: shoeWithId.brand,
-          price: shoeWithId.price,
-          imageType: typeof shoeWithId.image,
-          imageData: shoeWithId.image,
-          url: shoeWithId.url,
-          availability: shoeWithId.availability,
-          hasValidImage: hasValidImageData(shoeWithId.image)
-        });
-        
-        // בדיקת מבנה התמונה
-        if (shoeWithId.image) {
-          console.log(`🖼️ [DEBUG SHOES] מבנה תמונה לנעליים ${index + 1}:`, shoeWithId.image);
-        }
-      });
-      
-      // ספירת נעליים עם תמונות תקינות
-      const validShoes = shoesData.filter(shoe => hasValidImageData(shoe.image));
-      console.log(`✅ [DEBUG SHOES] ${validShoes.length} נעליים עם תמונות תקינות מתוך ${shoesData.length}`);
-    }
-    
-  } catch (error) {
-    console.error("❌ [DEBUG SHOES] שגיאה בבדיקת טבלת הנעליים:", error);
-  }
-}
-
-/**
- * בדיקה אם יש תמונה תקינה בפריט - משופר לנעליים
- */
-function hasValidImageData(imageData: any): boolean {
-  if (!imageData) {
-    console.log("❌ [hasValidImageData] אין נתוני תמונה");
-    return false;
-  }
-  
-  // Handle different image data formats from shoes table
-  let imageUrls: string[] = [];
-  
-  if (typeof imageData === 'string') {
-    try {
-      const parsed = JSON.parse(imageData);
-      if (Array.isArray(parsed)) {
-        imageUrls = parsed.filter(url => typeof url === 'string' && url.trim() !== '');
-      } else if (typeof parsed === 'string' && parsed.trim() !== '') {
-        imageUrls = [parsed];
-      }
-    } catch {
-      if (imageData.trim() !== '') {
-        imageUrls = [imageData];
-      }
-    }
-  } else if (Array.isArray(imageData)) {
-    imageUrls = imageData.filter(url => typeof url === 'string' && url.trim() !== '');
-  } else if (typeof imageData === 'object' && imageData !== null) {
-    // Handle shoes table format - check for common image fields
-    if (imageData.url && typeof imageData.url === 'string') {
-      imageUrls = [imageData.url];
-    } else if (imageData.image && typeof imageData.image === 'string') {
-      imageUrls = [imageData.image];
-    } else if (Array.isArray(imageData.urls)) {
-      imageUrls = imageData.urls.filter(url => typeof url === 'string' && url.trim() !== '');
-    }
-  }
-  
-  // Check if we have any valid image URLs
-  const hasValidUrls = imageUrls.length > 0 && imageUrls.some(url => {
-    return url.includes('http') && (url.includes('.jpg') || url.includes('.jpeg') || url.includes('.png') || url.includes('.webp'));
-  });
-  
-  console.log(`🔍 [hasValidImageData] נמצאו ${imageUrls.length} URLs, תקינות: ${hasValidUrls}`);
-  if (hasValidUrls) {
-    console.log(`✅ [hasValidImageData] URLs תקינים:`, imageUrls);
-  }
-  
-  return hasValidUrls;
-}
-
-/**
- * Extract image URL from shoes data - handles various data formats
+ * Extract image URL from shoes data - handles various data formats from shoes table
  */
 function extractShoesImageUrl(imageData: any): string {
+  console.log(`🔍 [extractShoesImageUrl] Processing shoes image data:`, imageData);
+  
   if (!imageData) {
+    console.log('❌ [extractShoesImageUrl] No image data');
     return '';
   }
   
   // Handle direct URL string
   if (typeof imageData === 'string') {
-    return imageData;
+    if (imageData.includes('http')) {
+      console.log(`✅ [extractShoesImageUrl] Direct URL string: ${imageData}`);
+      return imageData;
+    }
+    // Try parsing as JSON
+    try {
+      const parsed = JSON.parse(imageData);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const firstUrl = parsed.find(url => typeof url === 'string' && url.includes('http'));
+        if (firstUrl) {
+          console.log(`✅ [extractShoesImageUrl] URL from parsed JSON array: ${firstUrl}`);
+          return firstUrl;
+        }
+      }
+    } catch (e) {
+      console.log('❌ [extractShoesImageUrl] Failed to parse as JSON');
+    }
+    return '';
   }
   
   // Handle array of URLs
   if (Array.isArray(imageData) && imageData.length > 0) {
-    const firstValidUrl = imageData.find(url => typeof url === 'string' && url.trim() !== '');
-    return firstValidUrl || '';
+    const firstValidUrl = imageData.find(url => typeof url === 'string' && url.includes('http'));
+    if (firstValidUrl) {
+      console.log(`✅ [extractShoesImageUrl] URL from array: ${firstValidUrl}`);
+      return firstValidUrl;
+    }
   }
   
   // Handle object with url property
   if (typeof imageData === 'object' && imageData !== null) {
-    if (imageData.url && typeof imageData.url === 'string') {
+    if (imageData.url && typeof imageData.url === 'string' && imageData.url.includes('http')) {
+      console.log(`✅ [extractShoesImageUrl] URL from object.url: ${imageData.url}`);
       return imageData.url;
     }
-    if (imageData.image && typeof imageData.image === 'string') {
+    if (imageData.image && typeof imageData.image === 'string' && imageData.image.includes('http')) {
+      console.log(`✅ [extractShoesImageUrl] URL from object.image: ${imageData.image}`);
       return imageData.image;
     }
   }
   
+  console.log('❌ [extractShoesImageUrl] No valid URL found');
   return '';
 }
 
@@ -343,10 +267,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
 
   console.log(`👠 [selectOutfitByOccasion] מחפש נעליים מתאימות עבור ${occasion}...`);
   
-  // Debug shoes table first
-  await debugShoesTable();
-  
-  // 🔥 CRITICAL FIX: ALWAYS add shoes to every outfit
+  // 🔥 CRITICAL: ALWAYS add shoes to every outfit
   const shoesItem = await getRandomShoesFromDB();
   if (shoesItem) {
     selectedItems.push(shoesItem);
@@ -357,51 +278,55 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
 
   console.log(`✅ [selectOutfitByOccasion] תלבושת סופית עם ${selectedItems.length} פריטים עבור ${occasion}:`);
   selectedItems.forEach((item, index) => {
-    console.log(`   ${index + 1}. ${item.type}: ${item.name} (ID: ${item.id})`);
+    console.log(`   ${index + 1}. ${item.type}: ${item.name} (ID: ${item.id}, Image: ${item.image?.substring(0, 50)}...)`);
   });
   
   return selectedItems;
 }
 
 /**
- * Get random shoes from shoes table - with proper type handling and validation
+ * Get random shoes from shoes table - FIXED VERSION
  */
 async function getRandomShoesFromDB(): Promise<DashboardItem | null> {
   try {
     console.log(`🔥 [getRandomShoesFromDB] ===== קבלת נעליים אקראיות מטבלת shoes =====`);
     
+    // Get shoes with better filtering
     const { data: shoesData, error } = await supabase
       .from('shoes')
       .select('*')
-      .limit(50); // Increase limit to find valid shoes
+      .not('image', 'is', null)
+      .not('url', 'is', null)
+      .limit(100);
 
     if (error || !shoesData || shoesData.length === 0) {
       console.error('❌ [getRandomShoesFromDB] שגיאה או אין נעליים:', error);
       return null;
     }
 
-    console.log(`✅ [getRandomShoesFromDB] נמצאו ${shoesData.length} נעליים`);
+    console.log(`✅ [getRandomShoesFromDB] נמצאו ${shoesData.length} נעליים במאגר`);
     
     // Find shoes with valid images
     const validShoes = shoesData.filter(shoe => {
-      // Check multiple image sources
-      const imageFromImageField = extractShoesImageUrl(shoe.image);
-      const imageFromUrlField = shoe.url;
+      const imageUrl = extractShoesImageUrl(shoe.image) || shoe.url;
+      const isValid = !!(imageUrl && imageUrl.includes('http'));
       
-      const hasValidImage = (imageFromImageField && imageFromImageField.includes('http')) || 
-                           (imageFromUrlField && imageFromUrlField.includes('http'));
-      
-      if (hasValidImage) {
-        console.log(`✅ [getRandomShoesFromDB] נעליים תקינות נמצאו: ${shoe.name}`, {
-          imageField: imageFromImageField,
-          urlField: imageFromUrlField
+      if (isValid) {
+        console.log(`✅ [getRandomShoesFromDB] נעליים תקינות: ${shoe.name}`, {
+          imageUrl: imageUrl?.substring(0, 50) + '...',
+          fullImage: imageUrl
+        });
+      } else {
+        console.log(`❌ [getRandomShoesFromDB] נעליים לא תקינות: ${shoe.name}`, {
+          image: shoe.image,
+          url: shoe.url
         });
       }
       
-      return hasValidImage;
+      return isValid;
     });
     
-    console.log(`🔍 [getRandomShoesFromDB] ${validShoes.length} נעליים עם תמונות תקינות`);
+    console.log(`🔍 [getRandomShoesFromDB] ${validShoes.length} נעליים עם תמונות תקינות מתוך ${shoesData.length}`);
     
     if (validShoes.length === 0) {
       console.log(`❌ [getRandomShoesFromDB] אין נעליים עם תמונה תקינה`);
@@ -411,13 +336,8 @@ async function getRandomShoesFromDB(): Promise<DashboardItem | null> {
     // Take random valid shoe
     const randomShoe = validShoes[Math.floor(Math.random() * validShoes.length)];
     
-    // Extract proper image URL with priority: url field first, then image field
-    let imageUrl = '';
-    if (randomShoe.url && randomShoe.url.includes('http')) {
-      imageUrl = randomShoe.url;
-    } else {
-      imageUrl = extractShoesImageUrl(randomShoe.image);
-    }
+    // Extract proper image URL - prioritize url field over image field
+    let imageUrl = randomShoe.url || extractShoesImageUrl(randomShoe.image);
     
     if (!imageUrl || !imageUrl.includes('http')) {
       console.log(`❌ [getRandomShoesFromDB] לא נמצא URL תקין לנעליים: ${randomShoe.name}`);
@@ -437,8 +357,9 @@ async function getRandomShoesFromDB(): Promise<DashboardItem | null> {
     console.log(`🔥 [getRandomShoesFromDB] החזרת נעליים תקינות:`, {
       id: shoesResult.id,
       name: shoesResult.name,
-      image: shoesResult.image,
-      imageValid: shoesResult.image.includes('http')
+      image: shoesResult.image?.substring(0, 50) + '...',
+      imageValid: shoesResult.image.includes('http'),
+      fullImageUrl: shoesResult.image
     });
     
     return shoesResult;
@@ -446,6 +367,51 @@ async function getRandomShoesFromDB(): Promise<DashboardItem | null> {
     console.error('❌ [getRandomShoesFromDB] Error:', error);
     return null;
   }
+}
+
+/**
+ * בדיקה אם יש תמונה תקינה בפריט - משופר לנעליים
+ */
+function hasValidImageData(imageData: any): boolean {
+  if (!imageData) {
+    return false;
+  }
+  
+  // Handle different image data formats from shoes table
+  let imageUrls: string[] = [];
+  
+  if (typeof imageData === 'string') {
+    try {
+      const parsed = JSON.parse(imageData);
+      if (Array.isArray(parsed)) {
+        imageUrls = parsed.filter(url => typeof url === 'string' && url.trim() !== '');
+      } else if (typeof parsed === 'string' && parsed.trim() !== '') {
+        imageUrls = [parsed];
+      }
+    } catch {
+      if (imageData.trim() !== '') {
+        imageUrls = [imageData];
+      }
+    }
+  } else if (Array.isArray(imageData)) {
+    imageUrls = imageData.filter(url => typeof url === 'string' && url.trim() !== '');
+  } else if (typeof imageData === 'object' && imageData !== null) {
+    // Handle shoes table format - check for common image fields
+    if (imageData.url && typeof imageData.url === 'string') {
+      imageUrls = [imageData.url];
+    } else if (imageData.image && typeof imageData.image === 'string') {
+      imageUrls = [imageData.image];
+    } else if (Array.isArray(imageData.urls)) {
+      imageUrls = imageData.urls.filter(url => typeof url === 'string' && url.trim() !== '');
+    }
+  }
+  
+  // Check if we have any valid image URLs
+  const hasValidUrls = imageUrls.length > 0 && imageUrls.some(url => {
+    return url.includes('http') && (url.includes('.jpg') || url.includes('.jpeg') || url.includes('.png') || url.includes('.webp'));
+  });
+  
+  return hasValidUrls;
 }
 
 /**
@@ -575,7 +541,7 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
         }));
         
         console.log(`✅ [fetchDashboardItems] Created ${occasion} outfit with ${data[occasion].length} items:`, 
-          data[occasion].map(item => ({ id: item.id, name: item.name, type: item.type })));
+          data[occasion].map(item => ({ id: item.id, name: item.name, type: item.type, image: item.image?.substring(0, 50) + '...' })));
       } else {
         // fallback אם לא נמצא תלבושת
         data[occasion] = getFallbackOutfit().map(item => ({
