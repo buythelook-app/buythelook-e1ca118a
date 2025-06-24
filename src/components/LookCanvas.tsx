@@ -125,7 +125,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       id: item.id,
       type: item.type,
       name: item.name || 'Unknown',
-      hasImage: !!item.image
+      hasImage: !!item.image,
+      imageValue: item.image
     })));
 
     // Reset loading state
@@ -149,23 +150,21 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     ctx.textAlign = 'center';
     ctx.fillText('טוען פריטי לבוש...', width / 2, height / 2);
 
-    // 🔥 CRITICAL FIX: Accept ALL items and let them render
+    // Enhanced validation for items with actual URL validation
     const validItems = items.filter(item => {
       const hasValidImage = item.image && 
                            item.image !== '/placeholder.svg' && 
                            !item.id.startsWith('placeholder-') &&
-                           !item.image.includes('unsplash.com');
+                           !item.image.includes('unsplash.com') &&
+                           (item.image.includes('http://') || item.image.includes('https://'));
       
-      // Accept ALL items with valid images - no more filtering
-      const isValid = hasValidImage;
-      
-      if (!isValid) {
-        console.log(`❌ [LookCanvas] Filtering out item: ${item.id} (no valid image)`);
+      if (!hasValidImage) {
+        console.log(`❌ [LookCanvas] Filtering out item: ${item.id} (image: "${item.image}")`);
       } else {
-        console.log(`✅ [LookCanvas] Valid item accepted: ${item.id} (${item.type})`);
+        console.log(`✅ [LookCanvas] Valid item accepted: ${item.id} (${item.type}) with image: ${item.image}`);
       }
       
-      return isValid;
+      return hasValidImage;
     });
 
     if (validItems.length === 0) {
@@ -212,17 +211,11 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
           console.log(`🔍 [LookCanvas] Processing item ${i + 1}: ${item.id} (${item.type})`);
           
           try {
-            // 🔥 CRITICAL FIX: Use direct image URL for shoes
-            let imageUrl = '';
-            if (item.type === 'shoes') {
-              imageUrl = item.image; // Use direct URL for shoes
-              console.log(`👠 [LookCanvas] Using direct shoes URL: ${imageUrl}`);
-            } else {
-              imageUrl = extractBestImageUrl(item.image);
-            }
+            // Use direct image URL - no complex processing needed since we already validated it
+            const imageUrl = item.image;
             
-            if (!imageUrl) {
-              console.error(`❌ [LookCanvas] No valid image URL for item: ${item.id}`);
+            if (!imageUrl || !imageUrl.includes('http')) {
+              console.error(`❌ [LookCanvas] Invalid image URL for item: ${item.id}`);
               continue;
             }
             
@@ -293,7 +286,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             ctx.fillText(label, drawX + drawWidth / 2, drawY + drawHeight + 16);
             ctx.restore();
             
-            console.log(`✅ [LookCanvas] Successfully drew ${item.type}`);
+            console.log(`✅ [LookCanvas] Successfully drew ${item.type}: ${item.name}`);
 
           } catch (imgError) {
             console.error(`❌ [LookCanvas] Error processing item: ${item.id}`, imgError);
@@ -304,7 +297,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         // Update loading state
         if (successCount > 0) {
           setLoadingState('success');
-          console.log(`✅ [LookCanvas] Successfully rendered ${successCount} items (including shoes!)`);
+          console.log(`✅ [LookCanvas] Successfully rendered ${successCount} items total`);
         } else {
           setLoadingState('error');
           

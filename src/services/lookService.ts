@@ -343,24 +343,16 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
 
   console.log(`👠 [selectOutfitByOccasion] מחפש נעליים מתאימות עבור ${occasion}...`);
   
+  // Debug shoes table first
+  await debugShoesTable();
+  
   // 🔥 CRITICAL FIX: ALWAYS add shoes to every outfit
   const shoesItem = await getRandomShoesFromDB();
   if (shoesItem) {
     selectedItems.push(shoesItem);
     console.log(`✅ [selectOutfitByOccasion] נעליים נוספו: ${shoesItem.name} עם ID: ${shoesItem.id}`);
   } else {
-    // Emergency fallback shoes
-    const emergencyShoes = {
-      id: `shoes-emergency-${Date.now()}`,
-      name: 'נעליים',
-      image: 'https://static.zara.net/photos///2024/V/1/1/p/1120/320/040/2/w/850/1120320040_6_1_1.jpg',
-      type: 'shoes' as const,
-      price: '₪199',
-      description: 'נעליים',
-      color: 'black'
-    };
-    selectedItems.push(emergencyShoes);
-    console.log(`🆘 [selectOutfitByOccasion] הוספת נעליים חירום: ${emergencyShoes.id}`);
+    console.log(`❌ [selectOutfitByOccasion] לא נמצאו נעליים מהמאגר - ללא נעליים`);
   }
 
   console.log(`✅ [selectOutfitByOccasion] תלבושת סופית עם ${selectedItems.length} פריטים עבור ${occasion}:`);
@@ -372,7 +364,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
 }
 
 /**
- * Get random shoes from shoes table - with proper type handling
+ * Get random shoes from shoes table - with proper type handling and validation
  */
 async function getRandomShoesFromDB(): Promise<DashboardItem | null> {
   try {
@@ -381,7 +373,7 @@ async function getRandomShoesFromDB(): Promise<DashboardItem | null> {
     const { data: shoesData, error } = await supabase
       .from('shoes')
       .select('*')
-      .limit(10);
+      .limit(50); // Increase limit to find valid shoes
 
     if (error || !shoesData || shoesData.length === 0) {
       console.error('❌ [getRandomShoesFromDB] שגיאה או אין נעליים:', error);
@@ -390,31 +382,65 @@ async function getRandomShoesFromDB(): Promise<DashboardItem | null> {
 
     console.log(`✅ [getRandomShoesFromDB] נמצאו ${shoesData.length} נעליים`);
     
-    // Take first shoe with valid image
-    const validShoe = shoesData.find(shoe => {
-      const extractedUrl = extractShoesImageUrl(shoe.image || shoe.url);
-      return extractedUrl && extractedUrl.trim() !== '';
+    // Find shoes with valid images
+    const validShoes = shoesData.filter(shoe => {
+      // Check multiple image sources
+      const imageFromImageField = extractShoesImageUrl(shoe.image);
+      const imageFromUrlField = shoe.url;
+      
+      const hasValidImage = (imageFromImageField && imageFromImageField.includes('http')) || 
+                           (imageFromUrlField && imageFromUrlField.includes('http'));
+      
+      if (hasValidImage) {
+        console.log(`✅ [getRandomShoesFromDB] נעליים תקינות נמצאו: ${shoe.name}`, {
+          imageField: imageFromImageField,
+          urlField: imageFromUrlField
+        });
+      }
+      
+      return hasValidImage;
     });
     
-    if (!validShoe) {
+    console.log(`🔍 [getRandomShoesFromDB] ${validShoes.length} נעליים עם תמונות תקינות`);
+    
+    if (validShoes.length === 0) {
       console.log(`❌ [getRandomShoesFromDB] אין נעליים עם תמונה תקינה`);
       return null;
     }
 
-    // Extract proper image URL with type safety
-    const imageUrl = extractShoesImageUrl(validShoe.image || validShoe.url) || '/placeholder.svg';
+    // Take random valid shoe
+    const randomShoe = validShoes[Math.floor(Math.random() * validShoes.length)];
+    
+    // Extract proper image URL with priority: url field first, then image field
+    let imageUrl = '';
+    if (randomShoe.url && randomShoe.url.includes('http')) {
+      imageUrl = randomShoe.url;
+    } else {
+      imageUrl = extractShoesImageUrl(randomShoe.image);
+    }
+    
+    if (!imageUrl || !imageUrl.includes('http')) {
+      console.log(`❌ [getRandomShoesFromDB] לא נמצא URL תקין לנעליים: ${randomShoe.name}`);
+      return null;
+    }
 
     const shoesResult: DashboardItem = {
-      id: `shoes-db-${validShoe.name?.replace(/\s+/g, '-').toLowerCase() || 'shoe'}`,
-      name: validShoe.name || 'נעליים',
-      image: imageUrl, // Now properly typed as string
+      id: `shoes-db-${randomShoe.name?.replace(/\s+/g, '-').toLowerCase() || 'shoe'}-${Date.now()}`,
+      name: randomShoe.name || 'נעליים',
+      image: imageUrl,
       type: 'shoes' as const,
-      price: validShoe.price ? `₪${validShoe.price}` : '₪199',
-      description: validShoe.description || '',
+      price: randomShoe.price ? `₪${randomShoe.price}` : '₪199',
+      description: randomShoe.description || '',
       color: 'black'
     };
     
-    console.log(`🔥 [getRandomShoesFromDB] החזרת נעליים:`, shoesResult);
+    console.log(`🔥 [getRandomShoesFromDB] החזרת נעליים תקינות:`, {
+      id: shoesResult.id,
+      name: shoesResult.name,
+      image: shoesResult.image,
+      imageValid: shoesResult.image.includes('http')
+    });
+    
     return shoesResult;
   } catch (error) {
     console.error('❌ [getRandomShoesFromDB] Error:', error);
@@ -627,14 +653,6 @@ function getFallbackOutfit(): DashboardItem[] {
       type: 'bottom',
       price: '₪129',
       description: 'מכנסיים בסיסיים'
-    },
-    {
-      id: 'fallback-shoes',
-      name: 'נעליים בסיסיות',
-      image: 'https://static.zara.net/photos///2024/V/1/1/p/1120/320/040/2/w/850/1120320040_6_1_1.jpg',
-      type: 'shoes',
-      price: '₪199',
-      description: 'נעליים בסיסיות'
     }
   ];
 }
