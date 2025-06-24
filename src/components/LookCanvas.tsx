@@ -149,16 +149,16 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     ctx.textAlign = 'center';
     ctx.fillText('טוען פריטי לבוש...', width / 2, height / 2);
 
-    // Filter valid items - FIXED: Accept shoes from database with proper ID format
+    // Filter valid items - CRITICAL FIX: Accept all items with database IDs including shoes
     const validItems = items.filter(item => {
       const hasValidImage = item.image && 
                            item.image !== '/placeholder.svg' && 
                            !item.id.startsWith('placeholder-') &&
                            !item.image.includes('unsplash.com');
       
-      // Accept items from database (including shoes with shoes-db- prefix)
+      // Accept items from database: real-, shoes-db-, or any non-fallback items
       const isFromDatabase = item.id.startsWith('real-') || 
-                             item.id.includes('-db-') || // This includes shoes-db- items
+                             item.id.startsWith('shoes-db-') || // CRITICAL: Include shoes explicitly
                              (!item.id.startsWith('fallback-') && !item.id.includes('unsplash'));
       
       const isValid = hasValidImage && isFromDatabase;
@@ -216,10 +216,9 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
           console.log(`🔍 [LookCanvas] Processing item ${i + 1}: ${item.id} (${item.type})`);
           
           try {
-            // For shoes from database, use the image directly
-            // For other items, extract best image URL from database data
+            // CRITICAL FIX: For shoes with shoes-db- prefix, use image directly
             let imageUrl = '';
-            if (item.type === 'shoes' && item.id.includes('shoes-db-')) {
+            if (item.type === 'shoes' && item.id.startsWith('shoes-db-')) {
               imageUrl = item.image; // Use direct URL for shoes from database
               console.log(`👠 [LookCanvas] Using direct shoes URL from database: ${imageUrl}`);
             } else {

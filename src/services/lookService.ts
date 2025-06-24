@@ -222,7 +222,7 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
   
   // Mark selected items as used for this occasion
   outfitItems.forEach(item => {
-    if (item.id && !item.id.includes('real-shoes-db')) {
+    if (item.id && !item.id.includes('shoes-db-')) {
       globalUsedItemIds[occasion].add(item.id.split('-')[0]); // Remove occasion suffix
     }
   });
@@ -312,6 +312,9 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
   console.log(`👠 [selectOutfitByOccasion] מחפש נעליים מתאימות עבור ${occasion}...`);
   console.log(`🎨 [selectOutfitByOccasion] צבעים בשימוש:`, usedColors);
   
+  // DEBUG: הוספת לוג לפני חיפוש נעליים
+  await debugShoesTable();
+  
   // הוספת נעליים - חובה! 
   const matchingShoes = await selectMatchingShoesFromDB(occasion, usedColors);
   if (matchingShoes) {
@@ -323,10 +326,15 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
     const fallbackShoes = await getFallbackShoes();
     if (fallbackShoes) {
       selectedItems.push(fallbackShoes);
+      console.log(`✅ [selectOutfitByOccasion] נעליים חלופיות נוספו: ${fallbackShoes.name} עם ID: ${fallbackShoes.id}`);
     }
   }
 
-  console.log(`✅ [selectOutfitByOccasion] תלבושת אושרה עם ${selectedItems.length} פריטים עבור ${occasion} (כולל נעליים)`);
+  console.log(`✅ [selectOutfitByOccasion] תלבושת סופית עם ${selectedItems.length} פריטים עבור ${occasion}:`);
+  selectedItems.forEach((item, index) => {
+    console.log(`   ${index + 1}. ${item.type}: ${item.name} (ID: ${item.id})`);
+  });
+  
   return selectedItems;
 }
 
@@ -436,7 +444,7 @@ function categorizeItemsAdvanced(items: any[], eventType: string) {
  */
 async function selectMatchingShoesFromDB(occasion: string, usedColors: string[]): Promise<DashboardItem | null> {
   try {
-    console.log(`👠 [selectMatchingShoesFromDB] מחפש נעליים עבור ${occasion}`);
+    console.log(`🔥 [selectMatchingShoesFromDB] ===== מתחיל חיפוש נעליים עבור ${occasion} =====`);
     console.log(`🎨 [selectMatchingShoesFromDB] צבעים לשיקול:`, usedColors);
     
     // Initialize occasion tracking for shoes if not exists
@@ -465,6 +473,13 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
       return null;
     }
 
+    // DEBUG: הדפסת פרטי הנעליים הראשונות
+    console.log(`🔍 [selectMatchingShoesFromDB] דוגמאות נעליים מהמאגר:`, shoesData.slice(0, 3).map(shoe => ({
+      name: shoe.name,
+      imageType: typeof shoe.image,
+      hasValidImage: hasValidImageData(shoe.image)
+    })));
+
     // Filter shoes with valid images and extract proper URLs
     let availableShoes = shoesData.filter(shoe => {
       const shoeId = shoe.name || `shoes-${Math.random()}`;
@@ -481,6 +496,7 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
     if (availableShoes.length === 0) {
       console.log(`⚠️ [selectMatchingShoesFromDB] אין נעליים זמינות, מנסה את כל הנעליים`);
       availableShoes = shoesData.filter(shoe => hasValidImageData(shoe.image));
+      console.log(`🔍 [selectMatchingShoesFromDB] לאחר הסרת סינון שימוש: ${availableShoes.length} נעליים`);
     }
 
     if (availableShoes.length === 0) {
@@ -533,18 +549,22 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
       
       console.log(`🎯 [selectMatchingShoesFromDB] תמונה סופית לנעליים: ${shoesImageUrl}`);
       
-      // FIX: Use shoe.name as the unique identifier instead of non-existent id
-      return {
+      // יצירת אובייקט נעליים לחזרה
+      const shoesResult = {
         id: `shoes-db-${shoeId.replace(/\s+/g, '-')}`, // Use name-based ID that LookCanvas will recognize
         name: selectedShoes.name || 'נעליים',
         image: shoesImageUrl,
-        type: 'shoes',
+        type: 'shoes' as const,
         price: selectedShoes.price ? `₪${selectedShoes.price}` : '₪199',
         description: selectedShoes.description || '',
         color: extractColorFromName(selectedShoes.name || '')
       };
+      
+      console.log(`🔥 [selectMatchingShoesFromDB] החזרת אובייקט נעליים:`, shoesResult);
+      return shoesResult;
     }
 
+    console.log(`❌ [selectMatchingShoesFromDB] לא נמצאו נעליים מתאימות`);
     return null;
   } catch (error) {
     console.error('❌ [selectMatchingShoesFromDB] Error:', error);
@@ -625,6 +645,8 @@ function extractBestShoesImageUrl(imageData: any): string {
  */
 async function getFallbackShoes(): Promise<DashboardItem | null> {
   try {
+    console.log(`🔥 [getFallbackShoes] ===== מחפש נעליים חלופיות =====`);
+    
     const { data: shoesData } = await supabase
       .from('shoes')
       .select('*')
@@ -632,27 +654,33 @@ async function getFallbackShoes(): Promise<DashboardItem | null> {
       
     if (shoesData && shoesData.length > 0) {
       const shoe = shoesData[0];
-      return {
+      const fallbackResult = {
         id: `shoes-db-fallback-${shoe.name.replace(/\s+/g, '-')}`, // Use name-based ID for consistency
         name: shoe.name || 'נעליים',
         image: extractBestShoesImageUrl(shoe.image),
-        type: 'shoes',
+        type: 'shoes' as const,
         price: shoe.price ? `₪${shoe.price}` : '₪199',
         description: shoe.description || ''
       };
+      
+      console.log(`🔥 [getFallbackShoes] החזרת נעליים חלופיות:`, fallbackResult);
+      return fallbackResult;
     }
   } catch (error) {
     console.error('Error getting fallback shoes:', error);
   }
   
-  return {
+  const basicFallback = {
     id: 'shoes-db-basic-fallback',
     name: 'נעליים בסיסיות',
     image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=400&fit=crop',
-    type: 'shoes',
+    type: 'shoes' as const,
     price: '₪199',
     description: 'נעליים בסיסיות'
   };
+  
+  console.log(`🔥 [getFallbackShoes] החזרת נעליים בסיסיות:`, basicFallback);
+  return basicFallback;
 }
 
 /**
