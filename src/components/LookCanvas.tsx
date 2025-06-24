@@ -156,9 +156,11 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
                            !item.id.startsWith('placeholder-') &&
                            !item.image.includes('unsplash.com');
       
-      // Accept items from database: real-, shoes-db-, or any non-fallback items
+      // Accept items from database: real-, shoes-db-, shoes-basic-, shoes-emergency-, or any non-fallback items
       const isFromDatabase = item.id.startsWith('real-') || 
                              item.id.startsWith('shoes-db-') || // CRITICAL: Include shoes explicitly
+                             item.id.startsWith('shoes-basic-') || // Include basic shoes
+                             item.id.startsWith('shoes-emergency-') || // Include emergency shoes
                              (!item.id.startsWith('fallback-') && !item.id.includes('unsplash'));
       
       const isValid = hasValidImage && isFromDatabase;
@@ -216,11 +218,11 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
           console.log(`🔍 [LookCanvas] Processing item ${i + 1}: ${item.id} (${item.type})`);
           
           try {
-            // CRITICAL FIX: For shoes with shoes-db- prefix, use image directly
+            // CRITICAL FIX: Handle all types of shoes and use direct URL when available
             let imageUrl = '';
-            if (item.type === 'shoes' && item.id.startsWith('shoes-db-')) {
+            if (item.type === 'shoes' && (item.id.includes('shoes-db-') || item.id.includes('shoes-basic-') || item.id.includes('shoes-emergency-'))) {
               imageUrl = item.image; // Use direct URL for shoes from database
-              console.log(`👠 [LookCanvas] Using direct shoes URL from database: ${imageUrl}`);
+              console.log(`👠 [LookCanvas] Using direct shoes URL: ${imageUrl}`);
             } else {
               imageUrl = extractBestImageUrl(item.image);
             }

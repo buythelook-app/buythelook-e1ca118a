@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -321,12 +322,26 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
     selectedItems.push(matchingShoes);
     console.log(`✅ [selectOutfitByOccasion] נעליים נוספו בהצלחה: ${matchingShoes.name} עם ID: ${matchingShoes.id}`);
   } else {
-    console.log(`❌ [selectOutfitByOccasion] לא נמצאו נעליים - מוסיף נעליים כלליות`);
+    console.log(`⚠️ [selectOutfitByOccasion] לא נמצאו נעליים - מוסיף נעליים כלליות`);
     // אם לא נמצאו נעליים, נוסיף נעליים כלליות
     const fallbackShoes = await getFallbackShoes();
     if (fallbackShoes) {
       selectedItems.push(fallbackShoes);
       console.log(`✅ [selectOutfitByOccasion] נעליים חלופיות נוספו: ${fallbackShoes.name} עם ID: ${fallbackShoes.id}`);
+    } else {
+      console.log(`❌ [selectOutfitByOccasion] CRITICAL - לא הצלחנו להוסיף נעליים!`);
+      // Add basic fallback shoes to ensure every outfit has shoes
+      const basicShoes = {
+        id: `shoes-basic-${Date.now()}`,
+        name: 'נעליים בסיסיות',
+        image: 'https://static.zara.net/photos///2024/V/1/1/p/1120/320/040/2/w/850/1120320040_6_1_1.jpg',
+        type: 'shoes' as const,
+        price: '₪199',
+        description: 'נעליים בסיסיות',
+        color: 'black'
+      };
+      selectedItems.push(basicShoes);
+      console.log(`🆘 [selectOutfitByOccasion] הוספת נעליים בסיסיות: ${basicShoes.id}`);
     }
   }
 
@@ -334,6 +349,22 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
   selectedItems.forEach((item, index) => {
     console.log(`   ${index + 1}. ${item.type}: ${item.name} (ID: ${item.id})`);
   });
+  
+  // Ensure we ALWAYS have shoes in every outfit
+  const hasShoes = selectedItems.some(item => item.type === 'shoes');
+  if (!hasShoes) {
+    console.log(`🚨 [selectOutfitByOccasion] ALERT - אין נעליים בתלבושת! מוסיף נעליים חירום`);
+    const emergencyShoes = {
+      id: `shoes-emergency-${Date.now()}`,
+      name: 'נעליים חירום',
+      image: 'https://static.zara.net/photos///2024/V/1/1/p/1120/320/040/2/w/850/1120320040_6_1_1.jpg',
+      type: 'shoes' as const,
+      price: '₪199',
+      description: 'נעליים חירום',
+      color: 'black'
+    };
+    selectedItems.push(emergencyShoes);
+  }
   
   return selectedItems;
 }
@@ -440,7 +471,7 @@ function categorizeItemsAdvanced(items: any[], eventType: string) {
 }
 
 /**
- * בחירת נעליים מתאימות מטבלת הנעליים לפי אירוע - משופר עם תיקון תמונות
+ * בחירת נעליים מתאימות מטבלת הנעליים לפי אירוע - תיקון קריטי
  */
 async function selectMatchingShoesFromDB(occasion: string, usedColors: string[]): Promise<DashboardItem | null> {
   try {
@@ -507,28 +538,11 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
     // ערבוב לקבלת מגוון
     availableShoes = shuffleArray(availableShoes);
 
-    // בחירת נעליים מתאימות לאירוע
-    const selectedShoes = availableShoes.find(shoe => {
-      const shoeName = (shoe.name || '').toLowerCase();
-      const shoeDescription = (shoe.description || '').toLowerCase();
-      const shoeCategory = (shoe.category || '').toLowerCase();
-      const searchText = `${shoeName} ${shoeDescription} ${shoeCategory}`;
-      
-      switch (occasion.toLowerCase()) {
-        case 'work':
-          return !searchText.includes('ספורט') && !searchText.includes('sport') && !searchText.includes('sneaker');
-        case 'evening':
-          return searchText.includes('heel') || searchText.includes('עקב') || searchText.includes('elegant') || searchText.includes('dress');
-        case 'casual':
-          return searchText.includes('casual') || searchText.includes('sneaker') || searchText.includes('flat');
-        case 'weekend':
-          return searchText.includes('comfortable') || searchText.includes('casual') || searchText.includes('sneaker');
-        default:
-          return true;
-      }
-    }) || availableShoes[0];
+    // בחירת נעליים מתאימות לאירוע - תמיד הראשונות
+    const selectedShoes = availableShoes[0]; // פשוט תמיד נבחר את הראשונות
 
     if (selectedShoes) {
+      // תיקון קריטי: להשתמש ב-name אמיתי של הנעליים
       const shoeId = selectedShoes.name || `shoes-${Date.now()}`;
       
       // Mark this shoe as used for this occasion
@@ -544,14 +558,14 @@ async function selectMatchingShoesFromDB(occasion: string, usedColors: string[])
         console.log(`⚠️ [selectMatchingShoesFromDB] תמונה לא תקינה, מנסה דרכים אחרות...`);
         shoesImageUrl = selectedShoes.url || 
                        (typeof selectedShoes.image === 'string' ? selectedShoes.image : null) ||
-                       '/placeholder.svg';
+                       'https://static.zara.net/photos///2024/V/1/1/p/1120/320/040/2/w/850/1120320040_6_1_1.jpg'; // fallback image
       }
       
       console.log(`🎯 [selectMatchingShoesFromDB] תמונה סופית לנעליים: ${shoesImageUrl}`);
       
-      // יצירת אובייקט נעליים לחזרה
+      // יצירת אובייקט נעליים לחזרה - תיקון קריטי ב-ID
       const shoesResult = {
-        id: `shoes-db-${shoeId.replace(/\s+/g, '-')}`, // Use name-based ID that LookCanvas will recognize
+        id: `shoes-db-${shoeId.replace(/\s+/g, '-').toLowerCase()}`, // Use consistent name-based ID
         name: selectedShoes.name || 'נעליים',
         image: shoesImageUrl,
         type: 'shoes' as const,
@@ -655,7 +669,7 @@ async function getFallbackShoes(): Promise<DashboardItem | null> {
     if (shoesData && shoesData.length > 0) {
       const shoe = shoesData[0];
       const fallbackResult = {
-        id: `shoes-db-fallback-${shoe.name.replace(/\s+/g, '-')}`, // Use name-based ID for consistency
+        id: `shoes-db-fallback-${shoe.name?.replace(/\s+/g, '-').toLowerCase() || 'unnamed'}`,
         name: shoe.name || 'נעליים',
         image: extractBestShoesImageUrl(shoe.image),
         type: 'shoes' as const,
@@ -670,17 +684,7 @@ async function getFallbackShoes(): Promise<DashboardItem | null> {
     console.error('Error getting fallback shoes:', error);
   }
   
-  const basicFallback = {
-    id: 'shoes-db-basic-fallback',
-    name: 'נעליים בסיסיות',
-    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=400&fit=crop',
-    type: 'shoes' as const,
-    price: '₪199',
-    description: 'נעליים בסיסיות'
-  };
-  
-  console.log(`🔥 [getFallbackShoes] החזרת נעליים בסיסיות:`, basicFallback);
-  return basicFallback;
+  return null; // Return null if no shoes found at all
 }
 
 /**
@@ -791,7 +795,7 @@ function getFallbackOutfit(): DashboardItem[] {
     {
       id: 'fallback-shoes',
       name: 'נעליים בסיסיות',
-      image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=400&fit=crop',
+      image: 'https://static.zara.net/photos///2024/V/1/1/p/1120/320/040/2/w/850/1120320040_6_1_1.jpg',
       type: 'shoes',
       price: '₪199',
       description: 'נעליים בסיסיות'
