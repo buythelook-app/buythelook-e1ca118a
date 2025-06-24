@@ -164,6 +164,38 @@ function hasValidImageData(imageData: any): boolean {
 }
 
 /**
+ * Extract image URL from shoes data - handles various data formats
+ */
+function extractShoesImageUrl(imageData: any): string {
+  if (!imageData) {
+    return '';
+  }
+  
+  // Handle direct URL string
+  if (typeof imageData === 'string') {
+    return imageData;
+  }
+  
+  // Handle array of URLs
+  if (Array.isArray(imageData) && imageData.length > 0) {
+    const firstValidUrl = imageData.find(url => typeof url === 'string' && url.trim() !== '');
+    return firstValidUrl || '';
+  }
+  
+  // Handle object with url property
+  if (typeof imageData === 'object' && imageData !== null) {
+    if (imageData.url && typeof imageData.url === 'string') {
+      return imageData.url;
+    }
+    if (imageData.image && typeof imageData.image === 'string') {
+      return imageData.image;
+    }
+  }
+  
+  return '';
+}
+
+/**
  * יצירת תלבושת מתקדמת עם כללי התאמה לפי אירוע
  */
 async function createAdvancedOutfit(styleProfile: string, eventType: string, colorPreferences: string[], occasion: string): Promise<DashboardItem[]> {
@@ -340,7 +372,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
 }
 
 /**
- * Get random shoes from shoes table - simplified
+ * Get random shoes from shoes table - with proper type handling
  */
 async function getRandomShoesFromDB(): Promise<DashboardItem | null> {
   try {
@@ -359,17 +391,23 @@ async function getRandomShoesFromDB(): Promise<DashboardItem | null> {
     console.log(`✅ [getRandomShoesFromDB] נמצאו ${shoesData.length} נעליים`);
     
     // Take first shoe with valid image
-    const validShoe = shoesData.find(shoe => shoe.url || shoe.image);
+    const validShoe = shoesData.find(shoe => {
+      const extractedUrl = extractShoesImageUrl(shoe.image || shoe.url);
+      return extractedUrl && extractedUrl.trim() !== '';
+    });
     
     if (!validShoe) {
       console.log(`❌ [getRandomShoesFromDB] אין נעליים עם תמונה תקינה`);
       return null;
     }
 
-    const shoesResult = {
+    // Extract proper image URL with type safety
+    const imageUrl = extractShoesImageUrl(validShoe.image || validShoe.url) || '/placeholder.svg';
+
+    const shoesResult: DashboardItem = {
       id: `shoes-db-${validShoe.name?.replace(/\s+/g, '-').toLowerCase() || 'shoe'}`,
       name: validShoe.name || 'נעליים',
-      image: validShoe.url || validShoe.image || '/placeholder.svg',
+      image: imageUrl, // Now properly typed as string
       type: 'shoes' as const,
       price: validShoe.price ? `₪${validShoe.price}` : '₪199',
       description: validShoe.description || '',
