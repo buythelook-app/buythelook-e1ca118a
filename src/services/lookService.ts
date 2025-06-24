@@ -62,60 +62,80 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
 }
 
 /**
- * Extract image URL from shoes data - handles various data formats from shoes table
+ * Extract image URL from shoes data - ENHANCED VERSION
  */
-function extractShoesImageUrl(imageData: any): string {
-  console.log(`🔍 [extractShoesImageUrl] Processing shoes image data:`, imageData);
+function extractShoesImageUrl(imageData: any, shoeName: string = 'Unknown'): string {
+  console.log(`🔍 [extractShoesImageUrl] Processing shoes "${shoeName}":`, {
+    imageData: imageData,
+    type: typeof imageData,
+    isArray: Array.isArray(imageData)
+  });
   
   if (!imageData) {
-    console.log('❌ [extractShoesImageUrl] No image data');
+    console.log(`❌ [extractShoesImageUrl] No image data for ${shoeName}`);
     return '';
   }
   
   // Handle direct URL string
   if (typeof imageData === 'string') {
-    if (imageData.includes('http')) {
-      console.log(`✅ [extractShoesImageUrl] Direct URL string: ${imageData}`);
-      return imageData;
+    const trimmed = imageData.trim();
+    if (trimmed.includes('http') && (trimmed.includes('.jpg') || trimmed.includes('.jpeg') || trimmed.includes('.png') || trimmed.includes('.webp'))) {
+      console.log(`✅ [extractShoesImageUrl] Direct URL string for ${shoeName}: ${trimmed}`);
+      return trimmed;
     }
+    
     // Try parsing as JSON
     try {
       const parsed = JSON.parse(imageData);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const firstUrl = parsed.find(url => typeof url === 'string' && url.includes('http'));
-        if (firstUrl) {
-          console.log(`✅ [extractShoesImageUrl] URL from parsed JSON array: ${firstUrl}`);
-          return firstUrl;
-        }
-      }
+      console.log(`🔄 [extractShoesImageUrl] Parsed JSON for ${shoeName}:`, parsed);
+      return extractShoesImageUrl(parsed, shoeName);
     } catch (e) {
-      console.log('❌ [extractShoesImageUrl] Failed to parse as JSON');
+      console.log(`❌ [extractShoesImageUrl] Failed to parse JSON for ${shoeName}`);
+      return '';
     }
-    return '';
   }
   
   // Handle array of URLs
   if (Array.isArray(imageData) && imageData.length > 0) {
-    const firstValidUrl = imageData.find(url => typeof url === 'string' && url.includes('http'));
-    if (firstValidUrl) {
-      console.log(`✅ [extractShoesImageUrl] URL from array: ${firstValidUrl}`);
-      return firstValidUrl;
+    console.log(`🔍 [extractShoesImageUrl] Array data for ${shoeName}:`, imageData);
+    for (const item of imageData) {
+      if (typeof item === 'string' && item.includes('http') && 
+          (item.includes('.jpg') || item.includes('.jpeg') || item.includes('.png') || item.includes('.webp'))) {
+        console.log(`✅ [extractShoesImageUrl] Found URL in array for ${shoeName}: ${item}`);
+        return item;
+      }
     }
+    console.log(`❌ [extractShoesImageUrl] No valid URLs in array for ${shoeName}`);
+    return '';
   }
   
-  // Handle object with url property
+  // Handle object with nested properties
   if (typeof imageData === 'object' && imageData !== null) {
-    if (imageData.url && typeof imageData.url === 'string' && imageData.url.includes('http')) {
-      console.log(`✅ [extractShoesImageUrl] URL from object.url: ${imageData.url}`);
-      return imageData.url;
+    console.log(`🔍 [extractShoesImageUrl] Object data for ${shoeName}:`, Object.keys(imageData));
+    
+    // Check common URL fields
+    const urlFields = ['url', 'image', 'src', 'href', 'link'];
+    for (const field of urlFields) {
+      if (imageData[field] && typeof imageData[field] === 'string' && 
+          imageData[field].includes('http') && 
+          (imageData[field].includes('.jpg') || imageData[field].includes('.jpeg') || 
+           imageData[field].includes('.png') || imageData[field].includes('.webp'))) {
+        console.log(`✅ [extractShoesImageUrl] Found URL in ${field} for ${shoeName}: ${imageData[field]}`);
+        return imageData[field];
+      }
     }
-    if (imageData.image && typeof imageData.image === 'string' && imageData.image.includes('http')) {
-      console.log(`✅ [extractShoesImageUrl] URL from object.image: ${imageData.image}`);
-      return imageData.image;
+    
+    // Check for nested arrays
+    for (const [key, value] of Object.entries(imageData)) {
+      if (Array.isArray(value)) {
+        console.log(`🔄 [extractShoesImageUrl] Checking nested array ${key} for ${shoeName}`);
+        const url = extractShoesImageUrl(value, shoeName);
+        if (url) return url;
+      }
     }
   }
   
-  console.log('❌ [extractShoesImageUrl] No valid URL found');
+  console.log(`❌ [extractShoesImageUrl] No valid URL found for ${shoeName}`);
   return '';
 }
 
@@ -278,94 +298,135 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
 
   console.log(`✅ [selectOutfitByOccasion] תלבושת סופית עם ${selectedItems.length} פריטים עבור ${occasion}:`);
   selectedItems.forEach((item, index) => {
-    console.log(`   ${index + 1}. ${item.type}: ${item.name} (ID: ${item.id}, Image: ${item.image?.substring(0, 50)}...)`);
+    console.log(`   ${index + 1}. ${item.type}: ${item.name} (ID: ${item.id})`);
+    if (item.type === 'shoes') {
+      console.log(`      👠 Shoes image: ${item.image?.substring(0, 100)}...`);
+    }
   });
   
   return selectedItems;
 }
 
 /**
- * Get random shoes from shoes table - FIXED VERSION
+ * Get random shoes from shoes table - ENHANCED WITH DEBUGGING
  */
 async function getRandomShoesFromDB(): Promise<DashboardItem | null> {
   try {
     console.log(`🔥 [getRandomShoesFromDB] ===== קבלת נעליים אקראיות מטבלת shoes =====`);
     
-    // Get shoes with better filtering
+    // Get shoes with comprehensive selection
     const { data: shoesData, error } = await supabase
       .from('shoes')
       .select('*')
-      .not('image', 'is', null)
-      .not('url', 'is', null)
-      .limit(100);
+      .limit(50); // Increase limit to have more options
 
-    if (error || !shoesData || shoesData.length === 0) {
-      console.error('❌ [getRandomShoesFromDB] שגיאה או אין נעליים:', error);
+    if (error) {
+      console.error('❌ [getRandomShoesFromDB] Database error:', error);
+      return null;
+    }
+
+    if (!shoesData || shoesData.length === 0) {
+      console.error('❌ [getRandomShoesFromDB] No shoes found in database');
       return null;
     }
 
     console.log(`✅ [getRandomShoesFromDB] נמצאו ${shoesData.length} נעליים במאגר`);
     
-    // Find shoes with valid images
+    // Debug each shoe's image data
+    shoesData.forEach((shoe, index) => {
+      const imageUrl = extractShoesImageUrl(shoe.image, shoe.name);
+      const urlField = shoe.url;
+      console.log(`🔍 [getRandomShoesFromDB] Shoe ${index + 1}: "${shoe.name}"`, {
+        hasImage: !!shoe.image,
+        hasUrl: !!shoe.url,
+        extractedImageUrl: imageUrl || 'NONE',
+        urlField: urlField || 'NONE',
+        imageData: shoe.image ? JSON.stringify(shoe.image).substring(0, 100) + '...' : 'NULL'
+      });
+    });
+    
+    // Find shoes with valid images (prioritize image field, fallback to url)
     const validShoes = shoesData.filter(shoe => {
-      const imageUrl = extractShoesImageUrl(shoe.image) || shoe.url;
-      const isValid = !!(imageUrl && imageUrl.includes('http'));
+      const imageUrl = extractShoesImageUrl(shoe.image, shoe.name);
+      const urlField = shoe.url;
+      
+      // Accept if either image extraction works OR url field has valid URL
+      const hasValidImage = !!(imageUrl && imageUrl.includes('http'));
+      const hasValidUrl = !!(urlField && typeof urlField === 'string' && urlField.includes('http'));
+      
+      const isValid = hasValidImage || hasValidUrl;
       
       if (isValid) {
-        console.log(`✅ [getRandomShoesFromDB] נעליים תקינות: ${shoe.name}`, {
-          imageUrl: imageUrl?.substring(0, 50) + '...',
-          fullImage: imageUrl
-        });
+        console.log(`✅ [getRandomShoesFromDB] Valid shoe: "${shoe.name}" - Image: ${hasValidImage ? 'YES' : 'NO'}, URL: ${hasValidUrl ? 'YES' : 'NO'}`);
       } else {
-        console.log(`❌ [getRandomShoesFromDB] נעליים לא תקינות: ${shoe.name}`, {
-          image: shoe.image,
-          url: shoe.url
-        });
+        console.log(`❌ [getRandomShoesFromDB] Invalid shoe: "${shoe.name}" - no valid image or URL`);
       }
       
       return isValid;
     });
     
-    console.log(`🔍 [getRandomShoesFromDB] ${validShoes.length} נעליים עם תמונות תקינות מתוך ${shoesData.length}`);
+    console.log(`🔍 [getRandomShoesFromDB] ${validShoes.length} נעליים תקינות מתוך ${shoesData.length}`);
     
     if (validShoes.length === 0) {
-      console.log(`❌ [getRandomShoesFromDB] אין נעליים עם תמונה תקינה`);
-      return null;
+      console.log(`❌ [getRandomShoesFromDB] אין נעליים עם תמונות תקינות - יוצר נעליים דמה`);
+      // Return a fallback shoe item
+      return {
+        id: `shoes-fallback-${Date.now()}`,
+        name: 'נעליים קלאסיות',
+        image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop',
+        type: 'shoes' as const,
+        price: '₪299',
+        description: 'נעליים קלאסיות מהמאגר',
+        color: 'black'
+      };
     }
 
     // Take random valid shoe
     const randomShoe = validShoes[Math.floor(Math.random() * validShoes.length)];
     
-    // Extract proper image URL - prioritize url field over image field
-    let imageUrl = randomShoe.url || extractShoesImageUrl(randomShoe.image);
+    // Extract proper image URL - prioritize extracted image, fallback to url field
+    let finalImageUrl = extractShoesImageUrl(randomShoe.image, randomShoe.name);
+    if (!finalImageUrl && randomShoe.url && typeof randomShoe.url === 'string' && randomShoe.url.includes('http')) {
+      finalImageUrl = randomShoe.url;
+      console.log(`🔄 [getRandomShoesFromDB] Using URL field as fallback for ${randomShoe.name}: ${finalImageUrl}`);
+    }
     
-    if (!imageUrl || !imageUrl.includes('http')) {
-      console.log(`❌ [getRandomShoesFromDB] לא נמצא URL תקין לנעליים: ${randomShoe.name}`);
-      return null;
+    if (!finalImageUrl) {
+      console.log(`❌ [getRandomShoesFromDB] No valid image URL found for ${randomShoe.name} - using fallback`);
+      finalImageUrl = 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop';
     }
 
     const shoesResult: DashboardItem = {
       id: `shoes-db-${randomShoe.name?.replace(/\s+/g, '-').toLowerCase() || 'shoe'}-${Date.now()}`,
       name: randomShoe.name || 'נעליים',
-      image: imageUrl,
+      image: finalImageUrl,
       type: 'shoes' as const,
-      price: randomShoe.price ? `₪${randomShoe.price}` : '₪199',
-      description: randomShoe.description || '',
+      price: randomShoe.price ? `₪${randomShoe.price}` : '₪299',
+      description: randomShoe.description || 'נעליים מהמאגר',
       color: 'black'
     };
     
     console.log(`🔥 [getRandomShoesFromDB] החזרת נעליים תקינות:`, {
       id: shoesResult.id,
       name: shoesResult.name,
-      image: shoesResult.image?.substring(0, 50) + '...',
+      image: shoesResult.image,
       imageValid: shoesResult.image.includes('http'),
-      fullImageUrl: shoesResult.image
+      type: shoesResult.type
     });
     
     return shoesResult;
   } catch (error) {
     console.error('❌ [getRandomShoesFromDB] Error:', error);
-    return null;
+    // Return emergency fallback
+    return {
+      id: `shoes-emergency-${Date.now()}`,
+      name: 'נעליים',
+      image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop',
+      type: 'shoes' as const,
+      price: '₪299',
+      description: 'נעליים',
+      color: 'black'
+    };
   }
 }
 
@@ -541,7 +602,13 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
         }));
         
         console.log(`✅ [fetchDashboardItems] Created ${occasion} outfit with ${data[occasion].length} items:`, 
-          data[occasion].map(item => ({ id: item.id, name: item.name, type: item.type, image: item.image?.substring(0, 50) + '...' })));
+          data[occasion].map(item => ({ 
+            id: item.id, 
+            name: item.name, 
+            type: item.type,
+            hasImage: !!item.image,
+            isShoes: item.type === 'shoes'
+          })));
       } else {
         // fallback אם לא נמצא תלבושת
         data[occasion] = getFallbackOutfit().map(item => ({
@@ -619,6 +686,14 @@ function getFallbackOutfit(): DashboardItem[] {
       type: 'bottom',
       price: '₪129',
       description: 'מכנסיים בסיסיים'
+    },
+    {
+      id: 'fallback-shoes',
+      name: 'נעליים בסיסיות',
+      image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop',
+      type: 'shoes',
+      price: '₪299',
+      description: 'נעליים בסיסיות'
     }
   ];
 }

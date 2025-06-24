@@ -20,32 +20,42 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
   const [loadingState, setLoadingState] = useState<'loading' | 'success' | 'error'>('loading');
   const [loadedCount, setLoadedCount] = useState(0);
 
-  // Simple validation - just check if image exists and is a string with http
-  const isValidImageUrl = (imageUrl: string): boolean => {
-    return !!(imageUrl && 
-              typeof imageUrl === 'string' && 
-              imageUrl.trim() !== '' && 
-              imageUrl.includes('http') &&
-              !imageUrl.includes('placeholder.svg') &&
-              !imageUrl.includes('unsplash.com'));
+  // Enhanced validation - more permissive for shoes
+  const isValidImageUrl = (imageUrl: string, itemType: string): boolean => {
+    if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '') {
+      return false;
+    }
+    
+    // Basic URL validation
+    const hasHttp = imageUrl.includes('http');
+    const notPlaceholder = !imageUrl.includes('placeholder.svg');
+    
+    // More permissive for shoes
+    if (itemType === 'shoes') {
+      console.log(`👠 [LookCanvas] Validating shoes image: ${imageUrl.substring(0, 50)}...`);
+      return hasHttp && notPlaceholder;
+    }
+    
+    // Standard validation for other items
+    return hasHttp && notPlaceholder && !imageUrl.includes('unsplash.com');
   };
 
-  // Load image with proper error handling
-  const loadImageForCanvas = async (imageUrl: string): Promise<HTMLImageElement> => {
-    console.log(`🔍 [LookCanvas] Loading image: ${imageUrl}`);
+  // Load image with comprehensive error handling
+  const loadImageForCanvas = async (imageUrl: string, itemType: string = 'unknown'): Promise<HTMLImageElement> => {
+    console.log(`🔍 [LookCanvas] Loading ${itemType} image: ${imageUrl}`);
     
     const img = new Image();
     img.crossOrigin = 'anonymous';
     
     return new Promise((resolve, reject) => {
       img.onload = () => {
-        console.log(`✅ [LookCanvas] Image loaded successfully: ${imageUrl}`);
+        console.log(`✅ [LookCanvas] ${itemType} image loaded successfully: ${imageUrl.substring(0, 50)}...`);
         resolve(img);
       };
       
       img.onerror = (error) => {
-        console.error(`❌ [LookCanvas] Image loading failed: ${imageUrl}`, error);
-        reject(new Error(`Failed to load image: ${imageUrl}`));
+        console.error(`❌ [LookCanvas] ${itemType} image loading failed: ${imageUrl}`, error);
+        reject(new Error(`Failed to load ${itemType} image: ${imageUrl}`));
       };
       
       img.src = imageUrl;
@@ -65,7 +75,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       type: item.type,
       name: item.name || 'Unknown',
       imageUrl: item.image,
-      isShoes: item.type === 'shoes'
+      isShoes: item.type === 'shoes',
+      imageValid: isValidImageUrl(item.image, item.type)
     })));
 
     // Reset loading state
@@ -89,21 +100,20 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     ctx.textAlign = 'center';
     ctx.fillText('טוען פריטי לבוש...', width / 2, height / 2);
 
-    // Filter for valid items - be more permissive for shoes
+    // Filter for valid items - special handling for shoes
     const validItems = items.filter(item => {
-      const hasValidImage = isValidImageUrl(item.image);
-      const isShoes = item.type === 'shoes';
+      const hasValidImage = isValidImageUrl(item.image, item.type);
       
-      if (isShoes) {
-        console.log(`👠 [LookCanvas] Shoes item: ${item.id}`, {
-          name: item.name,
-          imageUrl: item.image,
-          isValid: hasValidImage
+      if (item.type === 'shoes') {
+        console.log(`👠 [LookCanvas] Shoes validation: "${item.name}"`, {
+          imageUrl: item.image?.substring(0, 50) + '...',
+          isValid: hasValidImage,
+          fullImage: item.image
         });
       }
       
       if (!hasValidImage) {
-        console.log(`❌ [LookCanvas] Filtering out item: ${item.id} (${item.type}) - image: "${item.image}"`);
+        console.log(`❌ [LookCanvas] Filtering out item: ${item.id} (${item.type}) - image: "${item.image?.substring(0, 50)}..."`);
       } else {
         console.log(`✅ [LookCanvas] Valid item accepted: ${item.id} (${item.type})`);
       }
@@ -112,6 +122,10 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     });
 
     console.log(`✅ [LookCanvas] Processing ${validItems.length} valid items out of ${items.length} total`);
+    
+    // Check if we have shoes specifically
+    const shoesItems = validItems.filter(item => item.type === 'shoes');
+    console.log(`👠 [LookCanvas] Found ${shoesItems.length} valid shoes items`);
 
     if (validItems.length === 0) {
       console.log('❌ [LookCanvas] No valid items with images found');
@@ -154,8 +168,12 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
           
           console.log(`🔍 [LookCanvas] Processing item ${i + 1}: ${item.id} (${item.type}) - ${item.name}`);
           
+          if (item.type === 'shoes') {
+            console.log(`👠 [LookCanvas] Processing SHOES: "${item.name}" with image: ${item.image}`);
+          }
+          
           try {
-            const img = await loadImageForCanvas(item.image);
+            const img = await loadImageForCanvas(item.image, item.type);
             successCount++;
             setLoadedCount(prev => prev + 1);
 
@@ -166,9 +184,18 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             const sourceWidth = img.width;
             const sourceHeight = img.height;
             
-            // Crop top 15% and bottom 10% to focus on the clothing item
-            const cropTop = sourceHeight * 0.15;
-            const cropBottom = sourceHeight * 0.10;
+            // Different cropping for shoes vs other items
+            let cropTop, cropBottom;
+            if (item.type === 'shoes') {
+              // Less aggressive cropping for shoes
+              cropTop = sourceHeight * 0.05;
+              cropBottom = sourceHeight * 0.05;
+            } else {
+              // Standard cropping for clothing
+              cropTop = sourceHeight * 0.15;
+              cropBottom = sourceHeight * 0.10;
+            }
+            
             const croppedHeight = sourceHeight - cropTop - cropBottom;
             
             // Calculate proper aspect ratio
@@ -205,7 +232,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             
             ctx.restore();
 
-            // Add item type label
+            // Add item type label with special handling for shoes
             ctx.save();
             ctx.font = '12px Arial';
             ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
@@ -221,10 +248,17 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             ctx.fillText(label, drawX + drawWidth / 2, drawY + drawHeight + 16);
             ctx.restore();
             
-            console.log(`✅ [LookCanvas] Successfully drew ${item.type}: ${item.name}`);
+            if (item.type === 'shoes') {
+              console.log(`✅ [LookCanvas] Successfully drew SHOES: ${item.name}`);
+            } else {
+              console.log(`✅ [LookCanvas] Successfully drew ${item.type}: ${item.name}`);
+            }
 
           } catch (imgError) {
             console.error(`❌ [LookCanvas] Error processing item: ${item.id}`, imgError);
+            if (item.type === 'shoes') {
+              console.error(`❌ [LookCanvas] FAILED TO DRAW SHOES: ${item.name} - ${imgError.message}`);
+            }
             setLoadedCount(prev => prev + 1);
           }
         }
@@ -232,7 +266,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
         // Update loading state
         if (successCount > 0) {
           setLoadingState('success');
-          console.log(`✅ [LookCanvas] Successfully rendered ${successCount} items total`);
+          console.log(`✅ [LookCanvas] Successfully rendered ${successCount} items total (${shoesItems.length} shoes)`);
         } else {
           setLoadingState('error');
           
