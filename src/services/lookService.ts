@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -15,7 +16,7 @@ let globalUsedShoesIds: Set<string> = new Set();
 
 // Updated type for shoes data matching the actual Supabase database schema
 type ShoesData = {
-  id: string; // Added the missing id field
+  id: string; // UUID primary key from Supabase
   name: string;
   brand: string | null;
   description: string | null;
@@ -367,10 +368,10 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
     console.log(`🔥 [getMatchingShoesForOccasion] Used colors:`, usedColors);
     console.log(`🔥 [getMatchingShoesForOccasion] Previously used shoes IDs:`, Array.from(globalUsedShoesIds));
     
-    // Get random shoes from database, including id field
+    // Get shoes from database using select all (*) to ensure we get the id field
     const { data: shoesData, error } = await supabase
       .from('shoes')
-      .select('id, name, brand, description, price, image, url, availability')
+      .select('*') // Select all fields to ensure we get the id
       .limit(100); // Get more shoes for better variety
 
     if (error) {
@@ -384,12 +385,13 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
     }
 
     console.log(`✅ [getMatchingShoesForOccasion] Found ${shoesData.length} total shoes in database`);
+    console.log(`🔍 [getMatchingShoesForOccasion] Sample shoe data structure:`, shoesData[0]);
     
     // Filter out previously used shoes and ensure valid images
     const availableShoes = shoesData.filter(shoe => {
       const shoeId = shoe.id;
       const alreadyUsed = globalUsedShoesIds.has(shoeId);
-      const hasValidImage = hasValidShoesImageFromDB(shoe);
+      const hasValidImage = hasValidShoesImageFromDB(shoe as ShoesData);
       
       console.log(`🔍 [getMatchingShoesForOccasion] Checking "${shoe.name}" (ID: ${shoeId}): used=${alreadyUsed}, validImage=${hasValidImage}`);
       
@@ -403,7 +405,7 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
       globalUsedShoesIds.clear();
       
       // Try again with all shoes that have valid images
-      const validShoes = shoesData.filter(shoe => hasValidShoesImageFromDB(shoe));
+      const validShoes = shoesData.filter(shoe => hasValidShoesImageFromDB(shoe as ShoesData));
       if (validShoes.length === 0) {
         console.error('❌ [getMatchingShoesForOccasion] No shoes with valid images found');
         return null;
@@ -411,14 +413,14 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
       
       // Randomly select from valid shoes
       const randomIndex = Math.floor(Math.random() * validShoes.length);
-      const selectedShoe = validShoes[randomIndex];
+      const selectedShoe = validShoes[randomIndex] as ShoesData;
       globalUsedShoesIds.add(selectedShoe.id);
       return createShoesItemFromDB(selectedShoe, occasion);
     }
 
     // Randomly select from available shoes for variety
     const randomIndex = Math.floor(Math.random() * availableShoes.length);
-    const selectedShoe = availableShoes[randomIndex];
+    const selectedShoe = availableShoes[randomIndex] as ShoesData;
     
     console.log(`🎯 [getMatchingShoesForOccasion] Randomly selected: "${selectedShoe.name}" (ID: ${selectedShoe.id})`);
     
