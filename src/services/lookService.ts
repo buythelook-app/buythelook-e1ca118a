@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -16,8 +15,6 @@ let globalUsedShoesIds: Set<string> = new Set();
 
 // Updated type for shoes data matching the actual Supabase database schema
 type ShoesData = {
-  id?: string; // Optional since it might be named differently in the actual table
-  uuid?: string; // Alternative ID field name
   name: string;
   brand: string | null;
   description: string | null;
@@ -27,6 +24,7 @@ type ShoesData = {
   category: string | null;
   availability: string | null;
   url: string | null;
+  product_id?: number | null;
   [key: string]: any;
 };
 
@@ -369,11 +367,11 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
     console.log(`🔥 [getMatchingShoesForOccasion] Used colors:`, usedColors);
     console.log(`🔥 [getMatchingShoesForOccasion] Previously used shoes IDs:`, Array.from(globalUsedShoesIds));
     
-    // Get all available fields from shoes table - using * to get all columns including the primary key
+    // Get shoes data with explicit field selection
     const { data: shoesData, error } = await supabase
       .from('shoes')
-      .select('*') // Select all fields to ensure we get the primary key regardless of its name
-      .limit(100); // Get more shoes for better variety
+      .select('name, brand, description, price, image, url, product_id')
+      .limit(100);
 
     if (error) {
       console.error('❌ [getMatchingShoesForOccasion] Database error:', error);
@@ -390,8 +388,8 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
     
     // Filter out previously used shoes and ensure valid images
     const availableShoes = shoesData.filter(shoe => {
-      // Get the actual ID field (could be 'id', 'uuid', or another field)
-      const shoeId = shoe.id || shoe.uuid || shoe.product_id || JSON.stringify(shoe);
+      // Use product_id or name as identifier since id might not be available
+      const shoeId = shoe.product_id?.toString() || shoe.name || JSON.stringify(shoe);
       const alreadyUsed = globalUsedShoesIds.has(String(shoeId));
       const hasValidImage = hasValidShoesImageFromDB(shoe);
       
@@ -416,7 +414,7 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
       // Randomly select from valid shoes
       const randomIndex = Math.floor(Math.random() * validShoes.length);
       const selectedShoe = validShoes[randomIndex];
-      const shoeId = selectedShoe.id || selectedShoe.uuid || selectedShoe.product_id || JSON.stringify(selectedShoe);
+      const shoeId = selectedShoe.product_id?.toString() || selectedShoe.name || JSON.stringify(selectedShoe);
       globalUsedShoesIds.add(String(shoeId));
       return createShoesItemFromDB(selectedShoe, occasion);
     }
@@ -428,7 +426,7 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
     console.log(`🎯 [getMatchingShoesForOccasion] Randomly selected: "${selectedShoe.name}"`);
     
     // Mark this shoe as used
-    const shoeId = selectedShoe.id || selectedShoe.uuid || selectedShoe.product_id || JSON.stringify(selectedShoe);
+    const shoeId = selectedShoe.product_id?.toString() || selectedShoe.name || JSON.stringify(selectedShoe);
     globalUsedShoesIds.add(String(shoeId));
     
     return createShoesItemFromDB(selectedShoe, occasion);
@@ -442,7 +440,7 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
 /**
  * Check if a shoe from the database has valid image data
  */
-function hasValidShoesImageFromDB(shoe: any): boolean {
+function hasValidShoesImageFromDB(shoe: ShoesData): boolean {
   const imageUrl = extractShoesImageFromJSONB(shoe.image, shoe.name);
   const hasValidImage = !!(imageUrl && imageUrl.includes('http'));
   
@@ -454,7 +452,7 @@ function hasValidShoesImageFromDB(shoe: any): boolean {
 /**
  * Create a DashboardItem from a shoes database record with proper field extraction
  */
-function createShoesItemFromDB(shoe: any, occasion: string): DashboardItem {
+function createShoesItemFromDB(shoe: ShoesData, occasion: string): DashboardItem {
   // Extract real image URL from the JSONB image field
   const finalImageUrl = extractShoesImageFromJSONB(shoe.image, shoe.name);
   
@@ -464,8 +462,8 @@ function createShoesItemFromDB(shoe: any, occasion: string): DashboardItem {
   // Use real product URL from database
   const productUrl = shoe.url || '#';
   
-  // Get the actual ID field (could be 'id', 'uuid', or another field)
-  const actualId = shoe.id || shoe.uuid || shoe.product_id || `shoe-${Date.now()}`;
+  // Use product_id or generate a unique ID
+  const actualId = shoe.product_id?.toString() || `shoe-${Date.now()}`;
   
   console.log(`✅ [createShoesItemFromDB] Creating item for "${shoe.name}"`);
   console.log(`   - ID: ${actualId}`);
