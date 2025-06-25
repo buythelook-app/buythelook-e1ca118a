@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -16,12 +15,12 @@ let globalUsedShoesIds: Set<string> = new Set();
 
 // Type for shoes data matching the actual database schema
 type ShoesData = {
+  id: string;
   name: string;
   brand: string | null;
   description: string | null;
   price: number | null;
-  colour: string | null;
-  image: any;
+  image: any; // JSONB field
   discount: string | null;
   category: string | null;
   availability: string | null;
@@ -92,89 +91,82 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
 }
 
 /**
- * Enhanced shoes image URL extraction with comprehensive debugging
+ * Extract image URL from shoes JSONB field
  */
-function extractShoesImageUrl(imageData: any, shoeName: string = 'Unknown'): string {
-  console.log(`🔍 [extractShoesImageUrl] ===== PROCESSING SHOES: "${shoeName}" =====`);
-  console.log(`🔍 [extractShoesImageUrl] Raw imageData:`, imageData);
-  console.log(`🔍 [extractShoesImageUrl] Type: ${typeof imageData}, Array: ${Array.isArray(imageData)}`);
+function extractShoesImageFromJSONB(imageData: any, shoeName: string = 'Unknown'): string {
+  console.log(`🔍 [extractShoesImageFromJSONB] ===== PROCESSING SHOES: "${shoeName}" =====`);
+  console.log(`🔍 [extractShoesImageFromJSONB] Raw imageData:`, imageData);
+  console.log(`🔍 [extractShoesImageFromJSONB] Type: ${typeof imageData}, Array: ${Array.isArray(imageData)}`);
   
   if (!imageData) {
-    console.log(`❌ [extractShoesImageUrl] No image data for ${shoeName}`);
+    console.log(`❌ [extractShoesImageFromJSONB] No image data for ${shoeName}`);
     return '';
   }
   
   // Handle direct URL string
   if (typeof imageData === 'string') {
     const trimmed = imageData.trim();
-    console.log(`🔍 [extractShoesImageUrl] String data: "${trimmed}"`);
+    console.log(`🔍 [extractShoesImageFromJSONB] String data: "${trimmed}"`);
     
     if (trimmed.includes('http') && (trimmed.includes('.jpg') || trimmed.includes('.jpeg') || trimmed.includes('.png') || trimmed.includes('.webp'))) {
-      console.log(`✅ [extractShoesImageUrl] Direct URL string for ${shoeName}: ${trimmed}`);
+      console.log(`✅ [extractShoesImageFromJSONB] Direct URL string for ${shoeName}: ${trimmed}`);
       return trimmed;
     }
     
-    // Try parsing as JSON
-    try {
-      const parsed = JSON.parse(imageData);
-      console.log(`🔄 [extractShoesImageUrl] Parsed JSON for ${shoeName}:`, parsed);
-      return extractShoesImageUrl(parsed, shoeName);
-    } catch (e) {
-      console.log(`❌ [extractShoesImageUrl] Failed to parse JSON for ${shoeName}:`, e);
-      return '';
-    }
+    return '';
   }
   
   // Handle array of URLs
   if (Array.isArray(imageData)) {
-    console.log(`🔍 [extractShoesImageUrl] Array data for ${shoeName} (length: ${imageData.length}):`, imageData);
+    console.log(`🔍 [extractShoesImageFromJSONB] Array data for ${shoeName} (length: ${imageData.length}):`, imageData);
     for (let i = 0; i < imageData.length; i++) {
       const item = imageData[i];
       console.log(`   🔍 Array item ${i}:`, item, typeof item);
       
       if (typeof item === 'string' && item.includes('http') && 
           (item.includes('.jpg') || item.includes('.jpeg') || item.includes('.png') || item.includes('.webp'))) {
-        console.log(`✅ [extractShoesImageUrl] Found URL in array for ${shoeName}: ${item}`);
+        console.log(`✅ [extractShoesImageFromJSONB] Found URL in array for ${shoeName}: ${item}`);
         return item;
       }
     }
-    console.log(`❌ [extractShoesImageUrl] No valid URLs in array for ${shoeName}`);
+    console.log(`❌ [extractShoesImageFromJSONB] No valid URLs in array for ${shoeName}`);
     return '';
   }
   
   // Handle object with nested properties
   if (typeof imageData === 'object' && imageData !== null) {
     const keys = Object.keys(imageData);
-    console.log(`🔍 [extractShoesImageUrl] Object data for ${shoeName} with keys:`, keys);
+    console.log(`🔍 [extractShoesImageFromJSONB] Object data for ${shoeName} with keys:`, keys);
     
-    // Log all properties for debugging
-    keys.forEach(key => {
-      console.log(`   🔍 Property "${key}":`, imageData[key], typeof imageData[key]);
-    });
+    // Check for url property
+    if (imageData.url && typeof imageData.url === 'string' && 
+        imageData.url.includes('http') && 
+        (imageData.url.includes('.jpg') || imageData.url.includes('.jpeg') || 
+         imageData.url.includes('.png') || imageData.url.includes('.webp'))) {
+      console.log(`✅ [extractShoesImageFromJSONB] Found URL in url property for ${shoeName}: ${imageData.url}`);
+      return imageData.url;
+    }
     
-    // Check common URL fields
-    const urlFields = ['url', 'image', 'src', 'href', 'link'];
-    for (const field of urlFields) {
-      if (imageData[field] && typeof imageData[field] === 'string' && 
-          imageData[field].includes('http') && 
-          (imageData[field].includes('.jpg') || imageData[field].includes('.jpeg') || 
-           imageData[field].includes('.png') || imageData[field].includes('.webp'))) {
-        console.log(`✅ [extractShoesImageUrl] Found URL in ${field} for ${shoeName}: ${imageData[field]}`);
-        return imageData[field];
-      }
+    // Check for image property
+    if (imageData.image && typeof imageData.image === 'string' && 
+        imageData.image.includes('http') && 
+        (imageData.image.includes('.jpg') || imageData.image.includes('.jpeg') || 
+         imageData.image.includes('.png') || imageData.image.includes('.webp'))) {
+      console.log(`✅ [extractShoesImageFromJSONB] Found URL in image property for ${shoeName}: ${imageData.image}`);
+      return imageData.image;
     }
     
     // Check for nested arrays
     for (const [key, value] of Object.entries(imageData)) {
       if (Array.isArray(value)) {
-        console.log(`🔄 [extractShoesImageUrl] Checking nested array ${key} for ${shoeName}:`, value);
-        const url = extractShoesImageUrl(value, shoeName);
+        console.log(`🔄 [extractShoesImageFromJSONB] Checking nested array ${key} for ${shoeName}:`, value);
+        const url = extractShoesImageFromJSONB(value, shoeName);
         if (url) return url;
       }
     }
   }
   
-  console.log(`❌ [extractShoesImageUrl] No valid URL found for ${shoeName}`);
+  console.log(`❌ [extractShoesImageFromJSONB] No valid URL found for ${shoeName}`);
   return '';
 }
 
@@ -334,20 +326,20 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
       break;
   }
 
-  console.log(`👠 [selectOutfitByOccasion] ===== ADDING MATCHING SHOES TO ${occasion.toUpperCase()} OUTFIT =====`);
+  console.log(`👠 [selectOutfitByOccasion] ===== ADDING SHOES FROM DATABASE TO ${occasion.toUpperCase()} OUTFIT =====`);
   console.log(`👠 [selectOutfitByOccasion] Current outfit has ${selectedItems.length} items before shoes`);
   console.log(`👠 [selectOutfitByOccasion] Used colors:`, usedColors);
   
-  // Add matching shoes for the occasion
+  // Add shoes from database for the occasion
   const shoesItem = await getMatchingShoesForOccasion(occasion, usedColors);
   if (shoesItem) {
     selectedItems.push(shoesItem);
-    console.log(`✅ [selectOutfitByOccasion] MATCHING SHOES SUCCESSFULLY ADDED: ${shoesItem.name} with ID: ${shoesItem.id}`);
+    console.log(`✅ [selectOutfitByOccasion] DATABASE SHOES SUCCESSFULLY ADDED: ${shoesItem.name} with ID: ${shoesItem.id}`);
     console.log(`✅ [selectOutfitByOccasion] Shoes image URL: ${shoesItem.image}`);
   } else {
-    console.log(`❌ [selectOutfitByOccasion] FAILED TO GET MATCHING SHOES FROM DATABASE`);
+    console.log(`❌ [selectOutfitByOccasion] FAILED TO GET SHOES FROM DATABASE`);
     
-    // Add fallback shoes
+    // Add fallback shoes only if database fails
     const fallbackShoes = getRandomFallbackShoes();
     selectedItems.push(fallbackShoes);
     console.log(`🆘 [selectOutfitByOccasion] FALLBACK SHOES ADDED: ${fallbackShoes.name}`);
@@ -367,19 +359,19 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
 }
 
 /**
- * Get matching shoes for specific occasion and colors - ENHANCED WITH PROPER VARIETY
+ * Get matching shoes for specific occasion from the shoes table
  */
 async function getMatchingShoesForOccasion(occasion: string, usedColors: string[]): Promise<DashboardItem | null> {
   try {
-    console.log(`🔥 [getMatchingShoesForOccasion] ===== GETTING SHOES FOR ${occasion.toUpperCase()} =====`);
+    console.log(`🔥 [getMatchingShoesForOccasion] ===== GETTING SHOES FROM DATABASE FOR ${occasion.toUpperCase()} =====`);
     console.log(`🔥 [getMatchingShoesForOccasion] Used colors:`, usedColors);
     console.log(`🔥 [getMatchingShoesForOccasion] Previously used shoes IDs:`, Array.from(globalUsedShoesIds));
     
-    // Get all shoes from database, excluding previously used ones
+    // Get random shoes from database, excluding previously used ones
     const { data: shoesData, error } = await supabase
       .from('shoes')
       .select('*')
-      .limit(50); // Increased limit for better variety
+      .limit(100); // Get more shoes for better variety
 
     if (error) {
       console.error('❌ [getMatchingShoesForOccasion] Database error:', error);
@@ -393,14 +385,13 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
 
     console.log(`✅ [getMatchingShoesForOccasion] Found ${shoesData.length} total shoes in database`);
     
-    // Filter out previously used shoes and shoes without valid images
+    // Filter out previously used shoes
     const availableShoes = shoesData.filter(shoe => {
-      // Use name as unique identifier since shoes table doesn't have a standard id field
-      const shoeId = shoe.name || `shoe-${Math.random()}`;
+      const shoeId = shoe.id;
       const alreadyUsed = globalUsedShoesIds.has(shoeId);
-      const hasValidImage = hasValidShoesImage(shoe);
+      const hasValidImage = hasValidShoesImageFromDB(shoe);
       
-      console.log(`🔍 [getMatchingShoesForOccasion] Checking "${shoe.name}": used=${alreadyUsed}, validImage=${hasValidImage}`);
+      console.log(`🔍 [getMatchingShoesForOccasion] Checking "${shoe.name}" (ID: ${shoeId}): used=${alreadyUsed}, validImage=${hasValidImage}`);
       
       return !alreadyUsed && hasValidImage;
     });
@@ -411,81 +402,30 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
       console.log(`⚠️ [getMatchingShoesForOccasion] No unused shoes with valid images, resetting used shoes and trying again`);
       globalUsedShoesIds.clear();
       
-      // Try again with all shoes
-      const validShoes = shoesData.filter(shoe => hasValidShoesImage(shoe));
+      // Try again with all shoes that have valid images
+      const validShoes = shoesData.filter(shoe => hasValidShoesImageFromDB(shoe));
       if (validShoes.length === 0) {
+        console.error('❌ [getMatchingShoesForOccasion] No shoes with valid images found');
         return getRandomFallbackShoes();
       }
       
-      // Use the first valid shoe
-      const selectedShoe = validShoes[0];
-      globalUsedShoesIds.add(selectedShoe.name || `shoe-${Date.now()}`);
-      return createShoesItem(selectedShoe, occasion);
+      // Randomly select from valid shoes
+      const randomIndex = Math.floor(Math.random() * validShoes.length);
+      const selectedShoe = validShoes[randomIndex];
+      globalUsedShoesIds.add(selectedShoe.id);
+      return createShoesItemFromDB(selectedShoe, occasion);
     }
 
-    // Define shoe keywords for different occasions
-    const occasionShoeKeywords = {
-      work: ['formal', 'dress', 'oxford', 'heel', 'pump', 'boot', 'formal', 'עקב', 'פורמלי', 'עבודה'],
-      evening: ['heel', 'pump', 'stiletto', 'dress', 'elegant', 'party', 'עקב', 'אלגנטי', 'ערב', 'חגיגי'],
-      casual: ['sneaker', 'casual', 'flat', 'comfortable', 'sport', 'סניקרס', 'נוח', 'יומיומי', 'ספורט'],
-      weekend: ['sneaker', 'casual', 'comfortable', 'walking', 'sport', 'flat', 'סניקרס', 'נוח', 'הליכה', 'ספורט']
-    };
-
-    const preferredKeywords = occasionShoeKeywords[occasion.toLowerCase()] || occasionShoeKeywords.casual;
-    console.log(`🔍 [getMatchingShoesForOccasion] Looking for shoes with keywords:`, preferredKeywords);
-
-    // Score shoes based on occasion appropriateness
-    const scoredShoes = availableShoes.map(shoe => {
-      let score = Math.random() * 2; // Add randomness base score
-      const shoeName = (shoe.name || '').toLowerCase();
-      const shoeDescription = (shoe.description || '').toLowerCase();
-      const shoeCategory = (shoe.category || '').toLowerCase();
-      const searchText = `${shoeName} ${shoeDescription} ${shoeCategory}`;
-      
-      // Score based on occasion keywords
-      preferredKeywords.forEach(keyword => {
-        if (searchText.includes(keyword.toLowerCase())) {
-          score += 3;
-        }
-      });
-
-      // Score based on color matching
-      usedColors.forEach(color => {
-        if (color && searchText.includes(color)) {
-          score += 2;
-        }
-      });
-
-      // Neutral colors get bonus points
-      const neutralColors = ['black', 'white', 'brown', 'beige', 'grey', 'שחור', 'לבן', 'חום', 'בז', 'אפור'];
-      neutralColors.forEach(neutralColor => {
-        if (searchText.includes(neutralColor)) {
-          score += 1;
-        }
-      });
-
-      console.log(`🔍 [getMatchingShoesForOccasion] "${shoe.name}" score: ${score.toFixed(2)}`);
-      
-      return { shoe, score };
-    });
-
-    // Sort by score and take one of the top 3 for variety (reduced from 5 to 3)
-    scoredShoes.sort((a, b) => b.score - a.score);
-    const topShoes = scoredShoes.slice(0, Math.min(3, scoredShoes.length));
-    const randomIndex = Math.floor(Math.random() * topShoes.length);
-    const selectedShoe = topShoes[randomIndex].shoe;
+    // Randomly select from available shoes for variety
+    const randomIndex = Math.floor(Math.random() * availableShoes.length);
+    const selectedShoe = availableShoes[randomIndex];
     
-    console.log(`🏆 [getMatchingShoesForOccasion] Top 3 scored shoes:`);
-    topShoes.forEach((item, index) => {
-      console.log(`   ${index + 1}. "${item.shoe.name}" (score: ${item.score.toFixed(2)})`);
-    });
-    
-    console.log(`🎯 [getMatchingShoesForOccasion] Selected: "${selectedShoe.name}" (random index: ${randomIndex})`);
+    console.log(`🎯 [getMatchingShoesForOccasion] Randomly selected: "${selectedShoe.name}" (ID: ${selectedShoe.id})`);
     
     // Mark this shoe as used
-    globalUsedShoesIds.add(selectedShoe.name || `shoe-${Date.now()}`);
+    globalUsedShoesIds.add(selectedShoe.id);
     
-    return createShoesItem(selectedShoe, occasion);
+    return createShoesItemFromDB(selectedShoe, occasion);
     
   } catch (error) {
     console.error('❌ [getMatchingShoesForOccasion] Unexpected error:', error);
@@ -494,39 +434,38 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
 }
 
 /**
- * Check if a shoe has valid image data
+ * Check if a shoe from the database has valid image data
  */
-function hasValidShoesImage(shoe: any): boolean {
-  const imageUrl = extractShoesImageUrl(shoe.image, shoe.name);
-  const urlField = shoe.url;
-  
+function hasValidShoesImageFromDB(shoe: ShoesData): boolean {
+  const imageUrl = extractShoesImageFromJSONB(shoe.image, shoe.name);
   const hasValidImage = !!(imageUrl && imageUrl.includes('http'));
-  const hasValidUrl = !!(urlField && typeof urlField === 'string' && urlField.includes('http'));
   
-  return hasValidImage || hasValidUrl;
+  console.log(`🔍 [hasValidShoesImageFromDB] "${shoe.name}" has valid image: ${hasValidImage}`);
+  
+  return hasValidImage;
 }
 
 /**
  * Create a DashboardItem from a shoes database record
  */
-function createShoesItem(shoe: any, occasion: string): DashboardItem {
-  let finalImageUrl = extractShoesImageUrl(shoe.image, shoe.name);
-  if (!finalImageUrl && shoe.url && typeof shoe.url === 'string' && shoe.url.includes('http')) {
-    finalImageUrl = shoe.url;
-  }
+function createShoesItemFromDB(shoe: ShoesData, occasion: string): DashboardItem {
+  const finalImageUrl = extractShoesImageFromJSONB(shoe.image, shoe.name);
   
-  if (!finalImageUrl) {
-    finalImageUrl = 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop';
-  }
+  console.log(`✅ [createShoesItemFromDB] Creating item for "${shoe.name}"`);
+  console.log(`   - ID: ${shoe.id}`);
+  console.log(`   - Brand: ${shoe.brand}`);
+  console.log(`   - Price: ${shoe.price}`);
+  console.log(`   - Image URL: ${finalImageUrl}`);
+  console.log(`   - Product URL: ${shoe.url}`);
 
   return {
-    id: `shoes-${occasion}-${shoe.name?.replace(/\s+/g, '-').toLowerCase() || 'shoe'}-${Date.now()}`,
-    name: shoe.name || 'נעליים',
-    image: finalImageUrl,
+    id: `shoes-db-${shoe.id}-${occasion}`,
+    name: shoe.name,
+    image: finalImageUrl || 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop',
     type: 'shoes' as const,
     price: shoe.price ? `₪${shoe.price}` : '₪299',
-    description: shoe.description || `נעליים ל${occasion}`,
-    color: 'black'
+    description: shoe.description || `נעליים מבית ${shoe.brand || 'מותג איכותי'}`,
+    color: 'black' // Default color, could be extracted from shoe data if available
   };
 }
 
