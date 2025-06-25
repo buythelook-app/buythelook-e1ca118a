@@ -367,10 +367,10 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
     console.log(`🔥 [getMatchingShoesForOccasion] Used colors:`, usedColors);
     console.log(`🔥 [getMatchingShoesForOccasion] Previously used shoes IDs:`, Array.from(globalUsedShoesIds));
     
-    // Get shoes data with explicit field selection
+    // Get shoes data with ALL required fields to match ShoesData type
     const { data: shoesData, error } = await supabase
       .from('shoes')
-      .select('name, brand, description, price, image, url, product_id')
+      .select('product_id, name, brand, description, price, image, url, discount, category, availability')
       .limit(100);
 
     if (error) {
