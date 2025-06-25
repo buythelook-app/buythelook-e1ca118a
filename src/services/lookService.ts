@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -394,7 +395,8 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
     
     // Filter out previously used shoes and shoes without valid images
     const availableShoes = shoesData.filter(shoe => {
-      const shoeId = shoe.id || shoe.name;
+      // Use name as unique identifier since shoes table doesn't have a standard id field
+      const shoeId = shoe.name || `shoe-${Math.random()}`;
       const alreadyUsed = globalUsedShoesIds.has(shoeId);
       const hasValidImage = hasValidShoesImage(shoe);
       
@@ -417,7 +419,7 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
       
       // Use the first valid shoe
       const selectedShoe = validShoes[0];
-      globalUsedShoesIds.add(selectedShoe.id || selectedShoe.name);
+      globalUsedShoesIds.add(selectedShoe.name || `shoe-${Date.now()}`);
       return createShoesItem(selectedShoe, occasion);
     }
 
@@ -467,13 +469,13 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
       return { shoe, score };
     });
 
-    // Sort by score and take one of the top 5 for variety
+    // Sort by score and take one of the top 3 for variety (reduced from 5 to 3)
     scoredShoes.sort((a, b) => b.score - a.score);
-    const topShoes = scoredShoes.slice(0, Math.min(5, scoredShoes.length));
+    const topShoes = scoredShoes.slice(0, Math.min(3, scoredShoes.length));
     const randomIndex = Math.floor(Math.random() * topShoes.length);
     const selectedShoe = topShoes[randomIndex].shoe;
     
-    console.log(`🏆 [getMatchingShoesForOccasion] Top 5 scored shoes:`);
+    console.log(`🏆 [getMatchingShoesForOccasion] Top 3 scored shoes:`);
     topShoes.forEach((item, index) => {
       console.log(`   ${index + 1}. "${item.shoe.name}" (score: ${item.score.toFixed(2)})`);
     });
@@ -481,7 +483,7 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
     console.log(`🎯 [getMatchingShoesForOccasion] Selected: "${selectedShoe.name}" (random index: ${randomIndex})`);
     
     // Mark this shoe as used
-    globalUsedShoesIds.add(selectedShoe.id || selectedShoe.name);
+    globalUsedShoesIds.add(selectedShoe.name || `shoe-${Date.now()}`);
     
     return createShoesItem(selectedShoe, occasion);
     
