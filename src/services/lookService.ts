@@ -333,7 +333,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
   console.log(`👠 [selectOutfitByOccasion] Current outfit has ${selectedItems.length} items before shoes`);
   console.log(`👠 [selectOutfitByOccasion] Used colors:`, usedColors);
   
-  // 🔥 CRITICAL: Add matching shoes for the occasion
+  // 🔥 CRITICAL: Add matching shoes for the occasion with detailed debugging
   const shoesItem = await getMatchingShoesForOccasion(occasion, usedColors);
   if (shoesItem) {
     selectedItems.push(shoesItem);
@@ -370,12 +370,73 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
 }
 
 /**
- * Get matching shoes for specific occasion and colors - NEW SMART FUNCTION
+ * DEBUG FUNCTION - Check shoes database status and content
+ */
+async function debugShoesDatabase(): Promise<void> {
+  console.log(`🔥 [debugShoesDatabase] ===== DEBUGGING SHOES DATABASE =====`);
+  
+  try {
+    // Check if shoes table exists and get count
+    const { count: shoesCount, error: countError } = await supabase
+      .from('shoes')
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) {
+      console.error('❌ [debugShoesDatabase] Error counting shoes:', countError);
+      return;
+    }
+
+    console.log(`📊 [debugShoesDatabase] Total shoes in database: ${shoesCount}`);
+
+    if (!shoesCount || shoesCount === 0) {
+      console.error('❌ [debugShoesDatabase] SHOES TABLE IS EMPTY!');
+      return;
+    }
+
+    // Get sample shoes data
+    const { data: sampleShoes, error: sampleError } = await supabase
+      .from('shoes')
+      .select('*')
+      .limit(5);
+
+    if (sampleError) {
+      console.error('❌ [debugShoesDatabase] Error fetching sample shoes:', sampleError);
+      return;
+    }
+
+    console.log(`🔍 [debugShoesDatabase] Sample shoes data:`, sampleShoes);
+
+    // Check which shoes have valid images
+    let validImageCount = 0;
+    sampleShoes?.forEach((shoe, index) => {
+      const imageUrl = extractShoesImageUrl(shoe.image, shoe.name);
+      const hasValidImage = !!(imageUrl && imageUrl.includes('http'));
+      
+      console.log(`🔍 [debugShoesDatabase] Shoe ${index + 1}: "${shoe.name}"`);
+      console.log(`   - Image data:`, shoe.image);
+      console.log(`   - Extracted URL: ${imageUrl}`);
+      console.log(`   - Valid image: ${hasValidImage}`);
+      
+      if (hasValidImage) validImageCount++;
+    });
+
+    console.log(`📊 [debugShoesDatabase] Shoes with valid images: ${validImageCount} out of ${sampleShoes?.length || 0} sampled`);
+
+  } catch (error) {
+    console.error('❌ [debugShoesDatabase] Unexpected error:', error);
+  }
+}
+
+/**
+ * Get matching shoes for specific occasion and colors - ENHANCED WITH DEBUGGING
  */
 async function getMatchingShoesForOccasion(occasion: string, usedColors: string[]): Promise<DashboardItem | null> {
   try {
     console.log(`🔥 [getMatchingShoesForOccasion] ===== GETTING SHOES FOR ${occasion.toUpperCase()} =====`);
     console.log(`🔥 [getMatchingShoesForOccasion] Used colors:`, usedColors);
+    
+    // First, debug the shoes database
+    await debugShoesDatabase();
     
     // Get all shoes from database
     const { data: shoesData, error } = await supabase
@@ -394,6 +455,9 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
     }
 
     console.log(`✅ [getMatchingShoesForOccasion] Found ${shoesData.length} total shoes in database`);
+    
+    // Debug: Show first few shoes
+    console.log(`🔍 [getMatchingShoesForOccasion] First 3 shoes data:`, shoesData.slice(0, 3));
     
     // Define shoe keywords for different occasions
     const occasionShoeKeywords = {
@@ -414,13 +478,15 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
       const hasValidImage = !!(imageUrl && imageUrl.includes('http'));
       const hasValidUrl = !!(urlField && typeof urlField === 'string' && urlField.includes('http'));
       
+      console.log(`🔍 [getMatchingShoesForOccasion] Checking "${shoe.name}": validImage=${hasValidImage}, validUrl=${hasValidUrl}`);
+      
       return hasValidImage || hasValidUrl;
     });
     
     console.log(`🔍 [getMatchingShoesForOccasion] Valid shoes with images: ${validShoes.length}`);
 
     if (validShoes.length === 0) {
-      console.log(`❌ [getMatchingShoesForOccasion] NO VALID SHOES FOUND`);
+      console.log(`❌ [getMatchingShoesForOccasion] NO VALID SHOES FOUND - REASON: No shoes with valid images`);
       return null;
     }
 
@@ -467,8 +533,12 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
       console.log(`   ${index + 1}. "${item.shoe.name}" (score: ${item.score})`);
     });
 
-    const selectedShoe = scoredShoes[0].shoe;
-    console.log(`🎯 [getMatchingShoesForOccasion] Selected best match: "${selectedShoe.name}" with score: ${scoredShoes[0].score}`);
+    // Instead of always taking the first, add randomization to top-scored shoes
+    const topShoes = scoredShoes.filter(item => item.score >= Math.max(1, scoredShoes[0].score - 1));
+    const randomIndex = Math.floor(Math.random() * Math.min(3, topShoes.length));
+    const selectedShoe = topShoes[randomIndex].shoe;
+    
+    console.log(`🎯 [getMatchingShoesForOccasion] Selected: "${selectedShoe.name}" from ${topShoes.length} top candidates (random index: ${randomIndex})`);
     
     // Extract proper image URL
     let finalImageUrl = extractShoesImageUrl(selectedShoe.image, selectedShoe.name);
@@ -497,7 +567,7 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
     console.log(`🔥 [getMatchingShoesForOccasion] Name: ${shoesResult.name}`);
     console.log(`🔥 [getMatchingShoesForOccasion] Image: ${shoesResult.image}`);
     console.log(`🔥 [getMatchingShoesForOccasion] Occasion: ${occasion}`);
-    console.log(`🔥 [getMatchingShoesForOccasion] Score: ${scoredShoes[0].score}`);
+    console.log(`🔥 [getMatchingShoesForOccasion] Score: ${topShoes[randomIndex].score}`);
     
     return shoesResult;
   } catch (error) {
