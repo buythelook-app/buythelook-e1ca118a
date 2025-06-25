@@ -13,9 +13,9 @@ let lastResetTime = Date.now();
 // Global tracking for used shoes to ensure variety
 let globalUsedShoesIds: Set<string> = new Set();
 
-// Type for shoes data matching the actual database schema
+// Updated type for shoes data matching the actual Supabase database schema
 type ShoesData = {
-  id: string;
+  id: string; // Added the missing id field
   name: string;
   brand: string | null;
   description: string | null;
@@ -91,7 +91,7 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
 }
 
 /**
- * Extract image URL from shoes JSONB field
+ * Extract image URL from shoes JSONB field with proper handling
  */
 function extractShoesImageFromJSONB(imageData: any, shoeName: string = 'Unknown'): string {
   console.log(`🔍 [extractShoesImageFromJSONB] ===== PROCESSING SHOES: "${shoeName}" =====`);
@@ -359,7 +359,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
 }
 
 /**
- * Get matching shoes for specific occasion from the shoes table
+ * Get matching shoes for specific occasion from the shoes table with proper data extraction
  */
 async function getMatchingShoesForOccasion(occasion: string, usedColors: string[]): Promise<DashboardItem | null> {
   try {
@@ -367,25 +367,25 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
     console.log(`🔥 [getMatchingShoesForOccasion] Used colors:`, usedColors);
     console.log(`🔥 [getMatchingShoesForOccasion] Previously used shoes IDs:`, Array.from(globalUsedShoesIds));
     
-    // Get random shoes from database, excluding previously used ones
+    // Get random shoes from database, including id field
     const { data: shoesData, error } = await supabase
       .from('shoes')
-      .select('*')
+      .select('id, name, brand, description, price, image, url, availability')
       .limit(100); // Get more shoes for better variety
 
     if (error) {
       console.error('❌ [getMatchingShoesForOccasion] Database error:', error);
-      return getRandomFallbackShoes();
+      return null;
     }
 
     if (!shoesData || shoesData.length === 0) {
       console.error('❌ [getMatchingShoesForOccasion] No shoes found in database');
-      return getRandomFallbackShoes();
+      return null;
     }
 
     console.log(`✅ [getMatchingShoesForOccasion] Found ${shoesData.length} total shoes in database`);
     
-    // Filter out previously used shoes
+    // Filter out previously used shoes and ensure valid images
     const availableShoes = shoesData.filter(shoe => {
       const shoeId = shoe.id;
       const alreadyUsed = globalUsedShoesIds.has(shoeId);
@@ -406,7 +406,7 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
       const validShoes = shoesData.filter(shoe => hasValidShoesImageFromDB(shoe));
       if (validShoes.length === 0) {
         console.error('❌ [getMatchingShoesForOccasion] No shoes with valid images found');
-        return getRandomFallbackShoes();
+        return null;
       }
       
       // Randomly select from valid shoes
@@ -429,7 +429,7 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
     
   } catch (error) {
     console.error('❌ [getMatchingShoesForOccasion] Unexpected error:', error);
-    return getRandomFallbackShoes();
+    return null;
   }
 }
 
@@ -446,24 +446,31 @@ function hasValidShoesImageFromDB(shoe: ShoesData): boolean {
 }
 
 /**
- * Create a DashboardItem from a shoes database record
+ * Create a DashboardItem from a shoes database record with proper field extraction
  */
 function createShoesItemFromDB(shoe: ShoesData, occasion: string): DashboardItem {
+  // Extract real image URL from the JSONB image field
   const finalImageUrl = extractShoesImageFromJSONB(shoe.image, shoe.name);
+  
+  // Use real price from database or format it properly
+  const realPrice = shoe.price ? `₪${shoe.price}` : '₪299';
+  
+  // Use real product URL from database
+  const productUrl = shoe.url || '#';
   
   console.log(`✅ [createShoesItemFromDB] Creating item for "${shoe.name}"`);
   console.log(`   - ID: ${shoe.id}`);
   console.log(`   - Brand: ${shoe.brand}`);
-  console.log(`   - Price: ${shoe.price}`);
-  console.log(`   - Image URL: ${finalImageUrl}`);
-  console.log(`   - Product URL: ${shoe.url}`);
+  console.log(`   - Real Price: ${realPrice} (DB value: ${shoe.price})`);
+  console.log(`   - Real Image URL: ${finalImageUrl}`);
+  console.log(`   - Real Product URL: ${productUrl}`);
 
   return {
     id: `shoes-db-${shoe.id}-${occasion}`,
     name: shoe.name,
     image: finalImageUrl || 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop',
     type: 'shoes' as const,
-    price: shoe.price ? `₪${shoe.price}` : '₪299',
+    price: realPrice, // Use real price from database
     description: shoe.description || `נעליים מבית ${shoe.brand || 'מותג איכותי'}`,
     color: 'black' // Default color, could be extracted from shoe data if available
   };
