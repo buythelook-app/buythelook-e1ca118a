@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -368,10 +367,10 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
     console.log(`🔥 [getMatchingShoesForOccasion] Used colors:`, usedColors);
     console.log(`🔥 [getMatchingShoesForOccasion] Previously used shoes IDs:`, Array.from(globalUsedShoesIds));
     
-    // Get shoes from database using select all (*) to ensure we get the id field
+    // Explicitly select id field along with other necessary fields
     const { data: shoesData, error } = await supabase
       .from('shoes')
-      .select('*') // Select all fields to ensure we get the id
+      .select('id, name, brand, description, price, image, url, availability, category, discount')
       .limit(100); // Get more shoes for better variety
 
     if (error) {
