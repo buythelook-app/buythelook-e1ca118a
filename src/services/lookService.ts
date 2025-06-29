@@ -56,7 +56,8 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
         type: item.type,
         name: item.name,
         hasImage: !!item.image,
-        id: item.id
+        id: item.id,
+        isFromShoesTable: item.id.includes('shoes-db-')
       })));
       
       const shoesItems = occasionOutfit.filter(item => item.type === 'shoes');
@@ -66,7 +67,8 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
           id: shoe.id,
           name: shoe.name,
           image: shoe.image,
-          type: shoe.type
+          type: shoe.type,
+          isFromShoesTable: shoe.id.includes('shoes-db-') ? 'YES - FROM SHOES TABLE' : 'NO - NOT FROM SHOES TABLE'
         });
       });
     }
@@ -181,6 +183,8 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
     globalUsedItemIds[occasion] = new Set();
   }
   
+  console.log(`🚨 [createAdvancedOutfit] CRITICAL DEBUG - FETCHING CLOTHING FROM ZARA_CLOTH TABLE (NO SHOES)`);
+  
   // קבלת פריטי לבוש מהמאגר zara_cloth (ללא נעליים!)
   const { data: allClothingItems, error: clothingError } = await supabase
     .from('zara_cloth')
@@ -233,7 +237,8 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
       name: item.name,
       id: item.id,
       hasImage: !!item.image,
-      isShoes: item.type === 'shoes'
+      isShoes: item.type === 'shoes',
+      isFromShoesTable: item.id.includes('shoes-db-') ? 'YES' : 'NO'
     }))
   );
   
@@ -330,6 +335,8 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
   console.log(`👠 [selectOutfitByOccasion] Current outfit has ${selectedItems.length} items before shoes`);
   console.log(`👠 [selectOutfitByOccasion] Used colors:`, usedColors);
   
+  console.log(`🚨 [selectOutfitByOccasion] CRITICAL DEBUG - CALLING getMatchingShoesForOccasion`);
+  
   // Add shoes ONLY from shoes table
   const shoesItem = await getMatchingShoesForOccasion(occasion, usedColors);
   if (shoesItem) {
@@ -337,6 +344,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
     console.log(`✅ [selectOutfitByOccasion] SHOES FROM SHOES TABLE SUCCESSFULLY ADDED: ${shoesItem.name} with ID: ${shoesItem.id}`);
     console.log(`✅ [selectOutfitByOccasion] Shoes image URL: ${shoesItem.image}`);
     console.log(`✅ [selectOutfitByOccasion] Shoes type: ${shoesItem.type}`);
+    console.log(`✅ [selectOutfitByOccasion] CONFIRMED FROM SHOES TABLE: ${shoesItem.id.includes('shoes-db-') ? 'YES' : 'NO'}`);
   } else {
     console.log(`❌ [selectOutfitByOccasion] FAILED TO GET SHOES FROM SHOES TABLE - USING FALLBACK`);
     
@@ -353,6 +361,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
     if (item.type === 'shoes') {
       console.log(`      👠 SHOES IMAGE: ${item.image?.substring(0, 100)}...`);
       console.log(`      👠 SHOES VALID: ${item.image?.includes('http')}`);
+      console.log(`      👠 FROM SHOES TABLE: ${item.id.includes('shoes-db-') ? 'YES' : 'NO'}`);
     }
   });
   
@@ -367,6 +376,8 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
     console.log(`🔥 [getMatchingShoesForOccasion] ===== GETTING SHOES FROM SHOES TABLE ONLY FOR ${occasion.toUpperCase()} =====`);
     console.log(`🔥 [getMatchingShoesForOccasion] Used colors:`, usedColors);
     console.log(`🔥 [getMatchingShoesForOccasion] Previously used shoes IDs:`, Array.from(globalUsedShoesIds));
+    
+    console.log(`🚨 [getMatchingShoesForOccasion] CRITICAL DEBUG - QUERYING SHOES TABLE`);
     
     // Get shoes ONLY from shoes table
     console.log(`🔍 [getMatchingShoesForOccasion] Fetching from SHOES table only...`);
@@ -399,6 +410,15 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
 
     console.log(`✅ [getMatchingShoesForOccasion] Found ${shoesData.length} total shoes in SHOES table ONLY`);
     
+    console.log(`🚨 [getMatchingShoesForOccasion] CRITICAL DEBUG - RAW SHOES DATA FROM SHOES TABLE:`, 
+      shoesData.slice(0, 3).map(shoe => ({
+        name: shoe.name,
+        image: shoe.image,
+        url: shoe.url,
+        product_id: shoe.product_id
+      }))
+    );
+    
     // Filter out previously used shoes and ensure valid images
     const availableShoes = shoesData.filter(shoe => {
       const shoeId = shoe.product_id?.toString() || shoe.name || JSON.stringify(shoe);
@@ -430,7 +450,9 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
       globalUsedShoesIds.add(String(shoeId));
       
       console.log(`🎯 [getMatchingShoesForOccasion] Selected from SHOES table after reset: "${selectedShoe.name}" (Index: ${randomIndex})`);
-      return createShoesItemFromDB(selectedShoe, occasion);
+      const createdItem = createShoesItemFromDB(selectedShoe, occasion);
+      console.log(`🚨 [getMatchingShoesForOccasion] CRITICAL DEBUG - CREATED SHOES ITEM:`, createdItem);
+      return createdItem;
     }
 
     // Randomly select from available shoes for variety
@@ -445,6 +467,7 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
     
     const createdItem = createShoesItemFromDB(selectedShoe, occasion);
     console.log(`✅ [getMatchingShoesForOccasion] Created shoes item from SHOES table:`, createdItem);
+    console.log(`🚨 [getMatchingShoesForOccasion] CRITICAL DEBUG - FINAL CREATED ITEM:`, createdItem);
     
     return createdItem;
     
@@ -506,6 +529,7 @@ function createShoesItemFromDB(shoe: ShoesData, occasion: string): DashboardItem
   };
   
   console.log(`✅ [createShoesItemFromDB] Created DashboardItem:`, createdItem);
+  console.log(`🚨 [createShoesItemFromDB] CRITICAL DEBUG - ITEM ID CONTAINS shoes-db-: ${createdItem.id.includes('shoes-db-')}`);
   
   return createdItem;
 }
