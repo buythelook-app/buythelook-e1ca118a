@@ -5,6 +5,7 @@ import { findCasualItems } from "./casualOutfitService";
 import { ColorCoordinationService } from "./colorCoordinationService";
 import { extractZaraImageUrl, ZaraImageData } from "@/utils/imageUtils";
 import logger from "@/lib/logger";
+import { testSupabaseConnection } from "@/lib/supabaseHealthCheck";
 
 // Global tracking to ensure variety across occasions - separate for each occasion
 let globalUsedItemIds: { [occasion: string]: Set<string> } = {};
@@ -37,6 +38,24 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
     logger.info("מחזיר הצעת תלבושת ראשונה", {
       context: "lookService",
       data: { forceRefresh }
+    });
+
+    // Test Supabase connection first
+    console.log("🔍 [fetchFirstOutfitSuggestion] Testing Supabase connection...");
+    const connectionTest = await testSupabaseConnection();
+    
+    if (!connectionTest.success) {
+      console.error("❌ [fetchFirstOutfitSuggestion] Supabase connection failed:", connectionTest.error);
+      logger.error("Supabase connection failed", {
+        context: "lookService",
+        data: connectionTest
+      });
+      return getFallbackOutfit();
+    }
+    
+    console.log("✅ [fetchFirstOutfitSuggestion] Supabase connection successful:", {
+      shoesCount: connectionTest.shoesCount,
+      zaraCount: connectionTest.zaraCount
     });
 
     // Reset global tracking if needed
@@ -178,78 +197,89 @@ function extractShoesImageFromJSONB(imageData: any, shoeName: string = 'Unknown'
 async function createAdvancedOutfit(styleProfile: string, eventType: string, colorPreferences: string[], occasion: string): Promise<DashboardItem[]> {
   console.log(`🎨 [createAdvancedOutfit] ===== CREATING OUTFIT FOR ${occasion.toUpperCase()} (SHOES FROM SHOES TABLE ONLY) =====`);
   
-  // Initialize occasion tracking if not exists
-  if (!globalUsedItemIds[occasion]) {
-    globalUsedItemIds[occasion] = new Set();
-  }
-  
-  console.log(`🚨 [createAdvancedOutfit] CRITICAL DEBUG - FETCHING CLOTHING FROM ZARA_CLOTH TABLE (NO SHOES)`);
-  
-  // קבלת פריטי לבוש מהמאגר zara_cloth (ללא נעליים!)
-  const { data: allClothingItems, error: clothingError } = await supabase
-    .from('zara_cloth')
-    .select('*')
-    .not('image', 'is', null)
-    .neq('availability', false)
-    .order('price', { ascending: true })
-    .limit(1000);
-
-  if (clothingError || !allClothingItems || allClothingItems.length === 0) {
-    console.error('❌ [createAdvancedOutfit] Database error for clothing:', clothingError);
-    return [];
-  }
-
-  console.log(`🔍 [createAdvancedOutfit] Found ${allClothingItems.length} clothing items (NO SHOES) from zara_cloth`);
-
-  // סינון פריטי לבוש בלבד (ללא נעליים)
-  let filteredClothingItems = allClothingItems.filter(item => {
-    const hasValid = hasValidImageData(item.image);
-    const notUsed = !globalUsedItemIds[occasion].has(item.id);
-    const isClothing = isActualClothingItem(item);
-    
-    return hasValid && notUsed && isClothing && item.availability !== false;
-  });
-  
-  console.log(`🔍 [createAdvancedOutfit] ${filteredClothingItems.length} valid clothing items after filtering for ${occasion}`);
-  
-  if (filteredClothingItems.length === 0) {
-    console.error(`❌ [createAdvancedOutfit] No valid clothing items found for ${occasion}`);
-    return [];
-  }
-  
-  // ערבוב הפריטים לקבלת מגוון
-  filteredClothingItems = shuffleArray(filteredClothingItems);
-  
-  // חלוקת פריטים לקטגוריות (ללא נעליים)
-  const categorizedItems = categorizeItemsAdvanced(filteredClothingItems, eventType);
-  
-  console.log(`📋 [createAdvancedOutfit] קטגוריות לבוש:`, Object.keys(categorizedItems).map(key => ({
-    category: key,
-    count: categorizedItems[key].length
-  })));
-
-  // יצירת תלבושת לפי כללים מותאמים לאירוע (ללא נעליים)
-  const outfitItems = await selectOutfitByOccasion(categorizedItems, occasion);
-  
-  console.log(`🔥 [createAdvancedOutfit] FINAL OUTFIT ITEMS (${outfitItems.length}):`, 
-    outfitItems.map(item => ({
-      type: item.type,
-      name: item.name,
-      id: item.id,
-      hasImage: !!item.image,
-      isShoes: item.type === 'shoes',
-      isFromShoesTable: item.id.includes('shoes-db-') ? 'YES' : 'NO'
-    }))
-  );
-  
-  // Mark selected clothing items as used for this occasion
-  outfitItems.forEach(item => {
-    if (item.id && !item.id.includes('shoes-db-')) {
-      globalUsedItemIds[occasion].add(item.id.split('-')[0]); // Remove occasion suffix
+  try {
+    // Initialize occasion tracking if not exists
+    if (!globalUsedItemIds[occasion]) {
+      globalUsedItemIds[occasion] = new Set();
     }
-  });
-  
-  return outfitItems;
+    
+    console.log(`🚨 [createAdvancedOutfit] CRITICAL DEBUG - FETCHING CLOTHING FROM ZARA_CLOTH TABLE (NO SHOES)`);
+    
+    // קבלת פריטי לבוש מהמאגר zara_cloth (ללא נעליים!)
+    const { data: allClothingItems, error: clothingError } = await supabase
+      .from('zara_cloth')
+      .select('*')
+      .not('image', 'is', null)
+      .neq('availability', false)
+      .order('price', { ascending: true })
+      .limit(1000);
+
+    if (clothingError) {
+      console.error('❌ [createAdvancedOutfit] Database error for clothing:', clothingError);
+      throw new Error(`Failed to fetch clothing: ${clothingError.message}`);
+    }
+
+    if (!allClothingItems || allClothingItems.length === 0) {
+      console.error('❌ [createAdvancedOutfit] No clothing items found in zara_cloth table');
+      throw new Error('No clothing items available');
+    }
+
+    console.log(`🔍 [createAdvancedOutfit] Found ${allClothingItems.length} clothing items (NO SHOES) from zara_cloth`);
+
+    // סינון פריטי לבוש בלבד (ללא נעליים)
+    let filteredClothingItems = allClothingItems.filter(item => {
+      const hasValid = hasValidImageData(item.image);
+      const notUsed = !globalUsedItemIds[occasion].has(item.id);
+      const isClothing = isActualClothingItem(item);
+      
+      return hasValid && notUsed && isClothing && item.availability !== false;
+    });
+    
+    console.log(`🔍 [createAdvancedOutfit] ${filteredClothingItems.length} valid clothing items after filtering for ${occasion}`);
+    
+    if (filteredClothingItems.length === 0) {
+      console.error(`❌ [createAdvancedOutfit] No valid clothing items found for ${occasion}`);
+      throw new Error(`No valid clothing items for ${occasion}`);
+    }
+    
+    // ערבוב הפריטים לקבלת מגוון
+    filteredClothingItems = shuffleArray(filteredClothingItems);
+    
+    // חלוקת פריטים לקטגוריות (ללא נעליים)
+    const categorizedItems = categorizeItemsAdvanced(filteredClothingItems, eventType);
+    
+    console.log(`📋 [createAdvancedOutfit] קטגוריות לבוש:`, Object.keys(categorizedItems).map(key => ({
+      category: key,
+      count: categorizedItems[key].length
+    })));
+
+    // יצירת תלבושת לפי כללים מותאמים לאירוע (ללא נעליים)
+    const outfitItems = await selectOutfitByOccasion(categorizedItems, occasion);
+    
+    console.log(`🔥 [createAdvancedOutfit] FINAL OUTFIT ITEMS (${outfitItems.length}):`, 
+      outfitItems.map(item => ({
+        type: item.type,
+        name: item.name,
+        id: item.id,
+        hasImage: !!item.image,
+        isShoes: item.type === 'shoes',
+        isFromShoesTable: item.id.includes('shoes-db-') ? 'YES' : 'NO'
+      }))
+    );
+    
+    // Mark selected clothing items as used for this occasion
+    outfitItems.forEach(item => {
+      if (item.id && !item.id.includes('shoes-db-')) {
+        globalUsedItemIds[occasion].add(item.id.split('-')[0]); // Remove occasion suffix
+      }
+    });
+    
+    return outfitItems;
+    
+  } catch (error) {
+    console.error(`❌ [createAdvancedOutfit] Error creating outfit for ${occasion}:`, error);
+    throw error; // Re-throw to be handled by caller
+  }
 }
 
 /**
@@ -379,18 +409,23 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
     
     console.log(`🚨 [getMatchingShoesForOccasion] CRITICAL DEBUG - QUERYING SHOES TABLE`);
     
-    // Get shoes ONLY from shoes table
-    console.log(`🔍 [getMatchingShoesForOccasion] Fetching from SHOES table only...`);
+    // Test shoes table access first
+    console.log(`🔍 [getMatchingShoesForOccasion] Testing shoes table access...`);
     const { count, error: countError } = await supabase
       .from('shoes')
       .select('*', { count: 'exact', head: true });
       
     if (countError) {
       console.error('❌ [getMatchingShoesForOccasion] Count query error:', countError);
-      return null;
+      throw new Error(`Shoes table access failed: ${countError.message}`);
     }
     
     console.log(`📊 [getMatchingShoesForOccasion] Total shoes in SHOES table: ${count}`);
+    
+    if (!count || count === 0) {
+      console.warn('⚠️ [getMatchingShoesForOccasion] No shoes found in shoes table');
+      return null;
+    }
     
     // Get shoes data ONLY from shoes table
     const { data: shoesData, error } = await supabase
@@ -400,7 +435,7 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
 
     if (error) {
       console.error('❌ [getMatchingShoesForOccasion] Database error:', error);
-      return null;
+      throw new Error(`Failed to fetch shoes: ${error.message}`);
     }
 
     if (!shoesData || shoesData.length === 0) {
@@ -732,6 +767,15 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
   try {
     console.log('🔥 [fetchDashboardItems] ===== STARTING DASHBOARD ITEMS FETCH (SHOES FROM SHOES TABLE ONLY) =====');
     
+    // Test connection first
+    const connectionTest = await testSupabaseConnection();
+    if (!connectionTest.success) {
+      console.error('❌ [fetchDashboardItems] Supabase connection failed:', connectionTest.error);
+      throw new Error(`Supabase connection failed: ${connectionTest.error}`);
+    }
+    
+    console.log('✅ [fetchDashboardItems] Supabase connection verified');
+    
     // Reset global tracking for fresh selection but keep separate tracking per occasion
     globalUsedItemIds = {};
     globalUsedShoesIds.clear();
@@ -741,24 +785,30 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
     
     // יצירת תלבושת שונה לכל הזדמנות (נעליים רק מטבלת shoes)
     for (const occasion of occasions) {
-      console.log(`🔍 [fetchDashboardItems] ===== PROCESSING ${occasion.toUpperCase()} (SHOES FROM SHOES TABLE) =====`);
-      
-      const occasionOutfit = await createAdvancedOutfit('casual', occasion.toLowerCase(), [], occasion);
-      
-      if (occasionOutfit && occasionOutfit.length > 0) {
-        data[occasion] = occasionOutfit.map(item => ({
-          ...item,
-          id: `${item.id}-${occasion.toLowerCase()}` // מזהה ייחודי לכל הזדמנות
-        }));
+      try {
+        console.log(`🔍 [fetchDashboardItems] ===== PROCESSING ${occasion.toUpperCase()} (SHOES FROM SHOES TABLE) =====`);
         
-        console.log(`✅ [fetchDashboardItems] Created ${occasion} outfit with ${data[occasion].length} items from SHOES table:`);
-        data[occasion].forEach((item, index) => {
-          console.log(`   ${index + 1}. ${item.type}: ${item.name} (ID: ${item.id})`);
-          if (item.type === 'shoes') {
-            console.log(`      👠 SHOES from SHOES table in ${occasion}: ${item.name} with image: ${item.image}`);
-          }
-        });
-      } else {
+        const occasionOutfit = await createAdvancedOutfit('casual', occasion.toLowerCase(), [], occasion);
+        
+        if (occasionOutfit && occasionOutfit.length > 0) {
+          data[occasion] = occasionOutfit.map(item => ({
+            ...item,
+            id: `${item.id}-${occasion.toLowerCase()}` // מזהה ייחודי לכל הזדמנות
+          }));
+          
+          console.log(`✅ [fetchDashboardItems] Created ${occasion} outfit with ${data[occasion].length} items from SHOES table:`);
+          data[occasion].forEach((item, index) => {
+            console.log(`   ${index + 1}. ${item.type}: ${item.name} (ID: ${item.id})`);
+            if (item.type === 'shoes') {
+              console.log(`      👠 SHOES from SHOES table in ${occasion}: ${item.name} with image: ${item.image}`);
+            }
+          });
+        } else {
+          throw new Error(`No outfit created for ${occasion}`);
+        }
+      } catch (occasionError) {
+        console.error(`❌ [fetchDashboardItems] Error creating ${occasion} outfit:`, occasionError);
+        
         // fallback אם לא נמצא תלבושת
         data[occasion] = getFallbackOutfit().map(item => ({
           ...item,

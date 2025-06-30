@@ -1,82 +1,85 @@
 
 import { supabase } from "@/lib/supabaseClient";
 import logger from "./logger";
-import { Database } from "@/types/supabase";
 
 /**
- * Utility to check Supabase health and accessibility
- * Provides methods to verify connection and table access
+ * Tests the Supabase connection and logs the results
+ * Used for debugging connection issues
  */
-export const supabaseHealth = {
-  /**
-   * Check if a specific table exists and is accessible
-   */
-  checkTableAccess: async (tableName: string): Promise<boolean> => {
-    try {
-      logger.debug(`Checking access to ${tableName} table`, { context: "supabaseHealth" });
-      
-      // Cast the dynamic table name to any to avoid type issues with Supabase client
-      const { error } = await supabase
-        .from(tableName as any)
-        .select('*', { count: 'exact', head: true });
-        
-      if (error) {
-        logger.error(`Cannot access ${tableName} table:`, { 
-          context: "supabaseHealth", 
-          data: error 
-        });
-        return false;
-      }
-      
-      return true;
-    } catch (error) {
-      logger.error(`Error checking ${String(tableName)} table:`, { 
-        context: "supabaseHealth", 
-        data: error 
-      });
-      return false;
-    }
-  },
+export const testSupabaseConnection = async () => {
+  logger.info("Testing Supabase connection...", { context: "supabaseTest" });
   
-  /**
-   * Log Supabase client information for debugging
-   */
-  logClientInfo: () => {
-    logger.debug("Supabase client information:", {
-      context: "supabaseHealth",
+  try {
+    // Log the Supabase client information without accessing protected properties
+    logger.debug("Supabase client info:", {
+      context: "supabaseTest", 
       data: {
-        // Use hardcoded URL instead of protected property
-        url: "https://mwsblnposuyhrgzrtoyo.supabase.co",
-        authEnabled: !!supabase.auth,
-        fromEnabled: !!supabase.from
+        url: "https://aqkeprwxxsryropnhfvm.supabase.co",
+        auth: !!supabase.auth,
+        from: !!supabase.from
       }
     });
-  },
-  
-  /**
-   * Check data retrieval from a table
-   */
-  checkDataRetrieval: async (tableName: string, limit = 1): Promise<{ success: boolean, count?: number, error?: any }> => {
-    try {
-      // Cast the dynamic table name to any to work around type issues
-      const { data, error, count } = await supabase
-        .from(tableName as any)
-        .select('*', { count: 'exact' })
-        .limit(limit);
-        
-      if (error) {
-        return { success: false, error };
-      }
+    
+    // Try to access the shoes table to check if it exists and is accessible
+    const { error: shoesTableError, count: shoesCount } = await supabase
+      .from('shoes')
+      .select('*', { count: 'exact', head: true });
       
-      return { 
-        success: true, 
-        count: count ?? data?.length ?? 0
-      };
-    } catch (error) {
-      return { 
-        success: false, 
-        error 
+    if (shoesTableError) {
+      logger.error("Failed to access shoes table:", {
+        context: "supabaseTest",
+        data: shoesTableError
+      });
+      
+      return {
+        success: false,
+        error: shoesTableError.message,
+        table: 'shoes'
       };
     }
+    
+    // Try to access the zara_cloth table to check if it exists and is accessible
+    const { error: zaraTableError, count: zaraCount } = await supabase
+      .from('zara_cloth')
+      .select('*', { count: 'exact', head: true });
+      
+    if (zaraTableError) {
+      logger.error("Failed to access zara_cloth table:", {
+        context: "supabaseTest",
+        data: zaraTableError
+      });
+      
+      return {
+        success: false,
+        error: zaraTableError.message,
+        table: 'zara_cloth'
+      };
+    }
+    
+    logger.info("Successfully connected to Supabase and both tables:", {
+      context: "supabaseTest",
+      data: { 
+        shoesCount,
+        zaraCount,
+        totalItems: (shoesCount || 0) + (zaraCount || 0)
+      }
+    });
+    
+    return {
+      success: true,
+      shoesCount,
+      zaraCount
+    };
+    
+  } catch (error) {
+    logger.error("Error testing Supabase connection:", {
+      context: "supabaseTest",
+      data: error
+    });
+    
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
   }
 };
