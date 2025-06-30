@@ -143,27 +143,27 @@ export const GenerateOutfitTool = {
           data: [
             {
               top: {
-                color: selectedTop.colour || "#2C3E50",
-                product_name: selectedTop.product_name,
-                description: selectedTop.description || "Stylish top piece",
-                price: selectedTop.price?.toString() || "49.99",
-                image: this.extractImageUrl(selectedTop.image)
+                color: selectedTop?.colour || "#2C3E50",
+                product_name: selectedTop?.product_name || "Stylish top",
+                description: selectedTop?.description || "Stylish top piece",
+                price: selectedTop?.price?.toString() || "49.99",
+                image: this.extractImageUrl(selectedTop?.image)
               },
               bottom: {
-                color: selectedBottom.colour || "#BDC3C7",
-                product_name: selectedBottom.product_name,
-                description: selectedBottom.description || "Comfortable bottom piece", 
-                price: selectedBottom.price?.toString() || "59.99",
-                image: this.extractImageUrl(selectedBottom.image)
+                color: selectedBottom?.colour || "#BDC3C7",
+                product_name: selectedBottom?.product_name || "Comfortable bottom",
+                description: selectedBottom?.description || "Comfortable bottom piece", 
+                price: selectedBottom?.price?.toString() || "59.99",
+                image: this.extractImageUrl(selectedBottom?.image)
               },
               shoes: {
-                color: selectedShoes.colour || "#7F8C8D",
-                product_name: selectedShoes.product_name,
-                description: selectedShoes.description || "Stylish footwear",
-                price: selectedShoes.price?.toString() || "69.99",
-                image: this.extractImageUrl(selectedShoes.image)
+                color: selectedShoes?.colour || "#7F8C8D",
+                product_name: selectedShoes?.product_name || "Stylish shoes",
+                description: selectedShoes?.description || "Stylish footwear",
+                price: selectedShoes?.price?.toString() || "69.99",
+                image: this.extractImageUrl(selectedShoes?.image)
               },
-              description: `${bodyRecommendations?.description || 'A stylish outfit'} - ${selectedTop.product_name} with ${selectedBottom.product_name}`,
+              description: `${bodyRecommendations?.description || 'A stylish outfit'} - ${selectedTop?.product_name || 'top'} with ${selectedBottom?.product_name || 'bottom'}`,
               recommendations: bodyRecommendations?.recommendations || [
                 "This outfit is tailored for your body structure",
                 "The proportions complement your natural silhouette"
