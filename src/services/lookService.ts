@@ -92,6 +92,25 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
           isFromZaraShoes: shoe.id.includes('zara-shoes-') ? 'YES - FROM ZARA_CLOTH TABLE' : 'NO - NOT FROM ZARA_CLOTH TABLE'
         });
       });
+
+      // 🚨 CRITICAL DEBUG: Check if shoes are missing and why
+      if (shoesItems.length === 0) {
+        console.error("❌ [fetchFirstOutfitSuggestion] CRITICAL ERROR - NO SHOES IN OUTFIT!");
+        console.error("❌ This is a bug - every outfit must have shoes!");
+        
+        // Try to get shoes manually
+        console.log("🆘 [fetchFirstOutfitSuggestion] Attempting manual shoes addition...");
+        const manualShoes = await getMatchingShoesFromZara('general', []);
+        if (manualShoes) {
+          occasionOutfit.push(manualShoes);
+          console.log("✅ [fetchFirstOutfitSuggestion] Manually added shoes:", manualShoes.name);
+        } else {
+          console.error("❌ [fetchFirstOutfitSuggestion] Failed to get shoes manually - using fallback");
+          const fallbackShoes = getRandomFallbackShoes();
+          occasionOutfit.push(fallbackShoes);
+          console.log("🆘 [fetchFirstOutfitSuggestion] Added fallback shoes:", fallbackShoes.name);
+        }
+      }
     }
     
     if (occasionOutfit && occasionOutfit.length >= 2) {
@@ -204,7 +223,7 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
     // יצירת תלבושת לפי כללים מותאמים לאירוע (ללא נעליים)
     const outfitItems = await selectOutfitByOccasion(categorizedItems, occasion);
     
-    console.log(`🔥 [createAdvancedOutfit] FINAL OUTFIT ITEMS (${outfitItems.length}):`, 
+    console.log(`🔥 [createAdvancedOutfit] OUTFIT ITEMS AFTER selectOutfitByOccasion (${outfitItems.length}):`, 
       outfitItems.map(item => ({
         type: item.type,
         name: item.name,
@@ -214,6 +233,20 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
         isFromZaraShoes: item.id.includes('zara-shoes-') ? 'YES' : 'NO'
       }))
     );
+
+    // 🚨 CRITICAL DEBUG: Verify shoes are included
+    const shoesInOutfit = outfitItems.filter(item => item.type === 'shoes');
+    console.log(`👠 [createAdvancedOutfit] SHOES COUNT IN FINAL OUTFIT: ${shoesInOutfit.length}`);
+    
+    if (shoesInOutfit.length === 0) {
+      console.error(`❌ [createAdvancedOutfit] CRITICAL BUG - NO SHOES IN OUTFIT FOR ${occasion}!`);
+      console.error(`❌ This should never happen - selectOutfitByOccasion must always add shoes`);
+    } else {
+      console.log(`✅ [createAdvancedOutfit] SHOES SUCCESSFULLY INCLUDED IN ${occasion} OUTFIT`);
+      shoesInOutfit.forEach((shoe, index) => {
+        console.log(`   👠 Shoe ${index + 1}: ${shoe.name} (ID: ${shoe.id})`);
+      });
+    }
     
     // Mark selected clothing items as used for this occasion
     outfitItems.forEach(item => {
@@ -344,6 +377,11 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
       break;
   }
 
+  console.log(`🔍 [selectOutfitByOccasion] BEFORE SHOES ADDITION - ${occasion.toUpperCase()} has ${selectedItems.length} items`);
+  selectedItems.forEach((item, index) => {
+    console.log(`   ${index + 1}. ${item.type}: ${item.name}`);
+  });
+
   // 🚨 CRITICAL: תמיד מוסיף נעליים - חובה לכל סוג תלבושת
   console.log(`👠 [selectOutfitByOccasion] ===== MANDATORY SHOES ADDITION FOR ${occasion.toUpperCase()} =====`);
   console.log(`👠 [selectOutfitByOccasion] Current outfit has ${selectedItems.length} items before adding shoes`);
@@ -352,7 +390,9 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
   // DEBUG: Let's check what shoes are available in the database
   await debugShoesInDatabase(occasion);
   
+  console.log(`🔍 [selectOutfitByOccasion] CALLING getMatchingShoesFromZara for ${occasion.toUpperCase()}...`);
   const shoesItem = await getMatchingShoesFromZara(occasion, usedColors);
+  
   if (shoesItem) {
     selectedItems.push(shoesItem);
     console.log(`✅ [selectOutfitByOccasion] SHOES SUCCESSFULLY ADDED TO ${occasion.toUpperCase()}: ${shoesItem.name} with ID: ${shoesItem.id}`);
@@ -367,7 +407,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
       console.log(`👕👖👠 [selectOutfitByOccasion] FINAL COMBINATION: TOP + BOTTOM + SHOES for ${occasion.toUpperCase()}`);
     }
   } else {
-    console.log(`❌ [selectOutfitByOccasion] FAILED TO GET SHOES FROM ZARA_CLOTH - ADDING FALLBACK SHOES FOR ${occasion.toUpperCase()}`);
+    console.error(`❌ [selectOutfitByOccasion] FAILED TO GET SHOES FROM ZARA_CLOTH - ADDING FALLBACK SHOES FOR ${occasion.toUpperCase()}`);
     
     // Add fallback shoes - MANDATORY, never return without shoes
     const fallbackShoes = getRandomFallbackShoes();
@@ -391,6 +431,17 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
       console.log(`      👠 FROM ZARA_CLOTH: ${item.id.includes('zara-shoes-') ? 'YES' : 'NO'}`);
     }
   });
+
+  // 🚨 FINAL VERIFICATION: Ensure shoes are included
+  const finalShoesCount = selectedItems.filter(item => item.type === 'shoes').length;
+  if (finalShoesCount === 0) {
+    console.error(`❌ [selectOutfitByOccasion] CRITICAL BUG - RETURNING OUTFIT WITHOUT SHOES FOR ${occasion.toUpperCase()}!`);
+    console.error(`❌ This should NEVER happen. Adding emergency fallback shoes...`);
+    
+    const emergencyShoes = getRandomFallbackShoes();
+    selectedItems.push(emergencyShoes);
+    console.log(`🚨 [selectOutfitByOccasion] EMERGENCY SHOES ADDED: ${emergencyShoes.name}`);
+  }
   
   return selectedItems;
 }
@@ -512,9 +563,6 @@ async function getMatchingShoesFromZara(occasion: string, usedColors: string[]):
     // 🚨 CRITICAL: Filter based on occasion to get appropriate shoe types
     if (occasion.toLowerCase() === 'casual' || occasion.toLowerCase() === 'general' || occasion.toLowerCase() === 'weekend') {
       console.log(`👟 [getMatchingShoesFromZara] CASUAL SHOES FILTER (prioritizing sneakers, flats, sports shoes - EXCLUDING HEELS)`);
-      
-      // For casual occasions, let's try to prioritize casual shoes but not exclude all heels completely
-      // Instead, we'll get all shoes and then sort them by preference
     } else if (occasion.toLowerCase() === 'work') {
       console.log(`👠 [getMatchingShoesFromZara] WORK SHOES (formal, low heels acceptable)`);
     } else if (occasion.toLowerCase() === 'evening') {
@@ -535,11 +583,24 @@ async function getMatchingShoesFromZara(occasion: string, usedColors: string[]):
 
     console.log(`✅ [getMatchingShoesFromZara] Found ${shoesData.length} total shoes in ZARA_CLOTH table for ${occasion.toUpperCase()}`);
     
+    // Log sample of found shoes
+    console.log(`🔍 [getMatchingShoesFromZara] Sample of found shoes:`);
+    shoesData.slice(0, 5).forEach((shoe, index) => {
+      console.log(`   ${index + 1}. "${shoe.product_name}" (Family: ${shoe.product_family}, Subfamily: ${shoe.product_subfamily})`);
+    });
+    
     // Filter out previously used shoes and ensure valid images
     const availableShoes = shoesData.filter(shoe => {
       const shoeId = shoe.id || shoe.product_id?.toString() || shoe.product_name;
       const alreadyUsed = globalUsedShoesIds.has(String(shoeId));
       const hasValidImage = hasValidZaraShoesImageFromDB(shoe);
+      
+      if (!hasValidImage) {
+        console.log(`⚠️ [getMatchingShoesFromZara] Filtering out "${shoe.product_name}" - invalid image`);
+      }
+      if (alreadyUsed) {
+        console.log(`⚠️ [getMatchingShoesFromZara] Filtering out "${shoe.product_name}" - already used`);
+      }
       
       return !alreadyUsed && hasValidImage;
     });
@@ -571,19 +632,28 @@ async function getMatchingShoesFromZara(occasion: string, usedColors: string[]):
           const isCasualShoe = searchText.includes('sneaker') || 
                              searchText.includes('sport') ||
                              searchText.includes('trainer') ||
+                             searchText.includes('athletic') ||
+                             searchText.includes('running') ||
                              searchText.includes('flat') ||
                              searchText.includes('ballet') ||
                              searchText.includes('loafer') ||
                              searchText.includes('slip-on') ||
-                             searchText.includes('sandal'); // Include sandals for casual
+                             searchText.includes('sandal') ||
+                             name.includes('נעלי ספורט'); // Hebrew for sports shoes
           
-          // Exclude obvious formal/heel shoes
+          // Exclude obvious formal/heel shoes for casual
           const isFormalShoe = searchText.includes('heel') ||
                                searchText.includes('pump') ||
                                searchText.includes('stiletto') ||
-                               name.includes('עקב');
+                               name.includes('עקב'); // Hebrew for heel
           
-          return isCasualShoe && !isFormalShoe;
+          const isGoodForCasual = isCasualShoe && !isFormalShoe;
+          
+          if (isGoodForCasual) {
+            console.log(`✅ [getMatchingShoesFromZara] GOOD CASUAL SHOE: "${shoe.product_name}" (Family: ${shoe.product_family})`);
+          }
+          
+          return isGoodForCasual;
         });
         
         console.log(`👟 [getMatchingShoesFromZara] Found ${casualShoes.length} CASUAL shoes for ${occasion.toUpperCase()}`);
@@ -593,10 +663,33 @@ async function getMatchingShoesFromZara(occasion: string, usedColors: string[]):
           selectedShoe = casualShoes[randomIndex];
           console.log(`✅ [getMatchingShoesFromZara] Selected CASUAL shoe: "${selectedShoe.product_name}"`);
         } else {
-          // Fallback to any available shoe if no casual shoes found
-          const randomIndex = Math.floor(Math.random() * validShoes.length);
-          selectedShoe = validShoes[randomIndex];
-          console.log(`⚠️ [getMatchingShoesFromZara] No casual shoes found, using fallback: "${selectedShoe.product_name}"`);
+          // If no specific casual shoes, try to avoid heels at least
+          const nonHeelShoes = validShoes.filter(shoe => {
+            const name = (shoe.product_name || '').toLowerCase();
+            const family = (shoe.product_family || '').toLowerCase();
+            const subfamily = (shoe.product_subfamily || '').toLowerCase();
+            const searchText = `${name} ${family} ${subfamily}`;
+            
+            const isHeel = searchText.includes('heel') ||
+                          searchText.includes('pump') ||
+                          searchText.includes('stiletto') ||
+                          name.includes('עקב');
+            
+            return !isHeel;
+          });
+          
+          console.log(`👟 [getMatchingShoesFromZara] Found ${nonHeelShoes.length} NON-HEEL shoes for casual ${occasion.toUpperCase()}`);
+          
+          if (nonHeelShoes.length > 0) {
+            const randomIndex = Math.floor(Math.random() * nonHeelShoes.length);
+            selectedShoe = nonHeelShoes[randomIndex];
+            console.log(`⚠️ [getMatchingShoesFromZara] Selected NON-HEEL shoe for casual: "${selectedShoe.product_name}"`);
+          } else {
+            // Last resort - any shoe
+            const randomIndex = Math.floor(Math.random() * validShoes.length);
+            selectedShoe = validShoes[randomIndex];
+            console.log(`⚠️ [getMatchingShoesFromZara] No casual/non-heel shoes found, using any shoe: "${selectedShoe.product_name}"`);
+          }
         }
       } else {
         // For other occasions, select randomly
@@ -626,17 +719,20 @@ async function getMatchingShoesFromZara(occasion: string, usedColors: string[]):
         const isCasualShoe = searchText.includes('sneaker') || 
                            searchText.includes('sport') ||
                            searchText.includes('trainer') ||
+                           searchText.includes('athletic') ||
+                           searchText.includes('running') ||
                            searchText.includes('flat') ||
                            searchText.includes('ballet') ||
                            searchText.includes('loafer') ||
                            searchText.includes('slip-on') ||
-                           searchText.includes('sandal'); // Include sandals for casual
+                           searchText.includes('sandal') ||
+                           name.includes('נעלי ספורט'); // Hebrew for sports shoes
         
         // Exclude obvious formal/heel shoes
         const isFormalShoe = searchText.includes('heel') ||
                              searchText.includes('pump') ||
                              searchText.includes('stiletto') ||
-                             name.includes('עקב');
+                             name.includes('עקב'); // Hebrew for heel
         
         return isCasualShoe && !isFormalShoe;
       });
@@ -648,10 +744,31 @@ async function getMatchingShoesFromZara(occasion: string, usedColors: string[]):
         selectedShoe = casualShoes[randomIndex];
         console.log(`✅ [getMatchingShoesFromZara] Selected CASUAL shoe: "${selectedShoe.product_name}"`);
       } else {
-        // Fallback to any available shoe
-        const randomIndex = Math.floor(Math.random() * availableShoes.length);
-        selectedShoe = availableShoes[randomIndex];
-        console.log(`⚠️ [getMatchingShoesFromZara] No casual shoes available, using fallback: "${selectedShoe.product_name}"`);
+        // Try non-heel shoes if no specific casual shoes
+        const nonHeelShoes = availableShoes.filter(shoe => {
+          const name = (shoe.product_name || '').toLowerCase();
+          const family = (shoe.product_family || '').toLowerCase();
+          const subfamily = (shoe.product_subfamily || '').toLowerCase();
+          const searchText = `${name} ${family} ${subfamily}`;
+          
+          const isHeel = searchText.includes('heel') ||
+                        searchText.includes('pump') ||
+                        searchText.includes('stiletto') ||
+                        name.includes('עקב');
+          
+          return !isHeel;
+        });
+        
+        if (nonHeelShoes.length > 0) {
+          const randomIndex = Math.floor(Math.random() * nonHeelShoes.length);
+          selectedShoe = nonHeelShoes[randomIndex];
+          console.log(`⚠️ [getMatchingShoesFromZara] No casual shoes available, using non-heel: "${selectedShoe.product_name}"`);
+        } else {
+          // Fallback to any available shoe
+          const randomIndex = Math.floor(Math.random() * availableShoes.length);
+          selectedShoe = availableShoes[randomIndex];
+          console.log(`⚠️ [getMatchingShoesFromZara] No casual/non-heel shoes available, using fallback: "${selectedShoe.product_name}"`);
+        }
       }
     } else {
       // For other occasions, select randomly from available
