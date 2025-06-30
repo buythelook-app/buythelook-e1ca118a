@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabaseClient";
 import type { LookItem } from "@/hooks/usePersonalizedLooks";
 import { DashboardItem } from "@/types/lookTypes";
@@ -18,23 +17,20 @@ type ZaraShoesData = {
   description?: string;
 }
 
-// Global tracking to prevent duplicates across all occasions
-const globalUsedItems = new Set<string>();
-let outfitCache: { [key: string]: DashboardItem[] } = {};
+// Simple session-based tracking (clears on each fetchDashboardItems call)
+let sessionUsedItems = new Set<string>();
 
 export const clearOutfitCache = () => {
-  outfitCache = {};
-  globalUsedItems.clear();
-  console.log('🧹 [clearOutfitCache] Cleared all caches and global tracking');
+  sessionUsedItems.clear();
+  console.log('🧹 [clearOutfitCache] Cleared session item tracking');
 };
 
-// Add the missing export for clearGlobalItemTrackers
 export const clearGlobalItemTrackers = () => {
-  globalUsedItems.clear();
-  console.log('🧹 [clearGlobalItemTrackers] Cleared global item tracking');
+  sessionUsedItems.clear();
+  console.log('🧹 [clearGlobalItemTrackers] Cleared session item tracking');
 };
 
-const getRandomItems = (items: any[], count: number, occasion: string, preferUnique: boolean = true): any[] => {
+const getRandomItems = (items: any[], count: number, occasion: string): any[] => {
   console.log(`🎲 [getRandomItems] Getting ${count} items for ${occasion} from ${items.length} available items`);
   
   if (items.length === 0) {
@@ -42,16 +38,13 @@ const getRandomItems = (items: any[], count: number, occasion: string, preferUni
     return [];
   }
   
-  // First try to get unique items if preferred
-  let availableItems = items;
-  if (preferUnique) {
-    availableItems = items.filter(item => !globalUsedItems.has(item.id));
-    console.log(`🔍 [getRandomItems] ${availableItems.length} unique items available for ${occasion}`);
-  }
+  // First try to get items that haven't been used in this session
+  let availableItems = items.filter(item => !sessionUsedItems.has(item.id));
+  console.log(`🔍 [getRandomItems] ${availableItems.length} unused items available for ${occasion}`);
   
-  // If no unique items available, use all items
+  // If no unused items available, use all items (allow reuse)
   if (availableItems.length === 0) {
-    console.log(`⚠️ [getRandomItems] No unique items for ${occasion}, using all available items`);
+    console.log(`⚠️ [getRandomItems] No unused items for ${occasion}, using all available items`);
     availableItems = items;
   }
   
@@ -59,24 +52,22 @@ const getRandomItems = (items: any[], count: number, occasion: string, preferUni
   const shuffled = [...availableItems].sort(() => Math.random() - 0.5);
   const selected = shuffled.slice(0, Math.min(count, shuffled.length));
   
-  // Track selected items globally only if we prefer unique items
-  if (preferUnique) {
-    selected.forEach(item => {
-      globalUsedItems.add(item.id);
-      console.log(`📝 [getRandomItems] Tracking item ${item.id} (${item.product_name}) as used for ${occasion}`);
-    });
-  }
+  // Track selected items for this session only
+  selected.forEach(item => {
+    sessionUsedItems.add(item.id);
+    console.log(`📝 [getRandomItems] Marking item ${item.id} (${item.product_name}) as used for ${occasion}`);
+  });
   
   console.log(`✅ [getRandomItems] Selected ${selected.length} items for ${occasion}`);
   return selected;
 };
 
 export const fetchDashboardItems = async (): Promise<{ [key: string]: DashboardItem[] }> => {
-  console.log('🚀 [fetchDashboardItems] Starting fetch with smart item distribution...');
+  console.log('🚀 [fetchDashboardItems] Starting fresh session with item tracking...');
   
   try {
-    // Clear previous tracking for fresh start
-    globalUsedItems.clear();
+    // Clear session tracking for new fetch
+    sessionUsedItems.clear();
     
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     
@@ -126,19 +117,16 @@ export const fetchDashboardItems = async (): Promise<{ [key: string]: DashboardI
 
     const result: { [key: string]: DashboardItem[] } = {};
 
-    // Distribute items to each occasion with smart logic
+    // Distribute items to each occasion sequentially
     occasions.forEach((occasion, index) => {
       console.log(`\n🎯 [fetchDashboardItems] Processing occasion: ${occasion} (${index + 1}/${occasions.length})`);
       
       const outfitItems: DashboardItem[] = [];
       
-      // Try to get unique items first, but fall back if needed
-      const preferUnique = index < 2; // Only first 2 occasions get strict uniqueness
-      
-      // Get one item from each category
-      const selectedTop = getRandomItems(tops, 1, `${occasion}-top`, preferUnique);
-      const selectedBottom = getRandomItems(bottoms, 1, `${occasion}-bottom`, preferUnique);
-      const selectedShoes = getRandomItems(shoes, 1, `${occasion}-shoes`, preferUnique);
+      // Get one item from each category (will automatically avoid duplicates within session)
+      const selectedTop = getRandomItems(tops, 1, `${occasion}-top`);
+      const selectedBottom = getRandomItems(bottoms, 1, `${occasion}-bottom`);
+      const selectedShoes = getRandomItems(shoes, 1, `${occasion}-shoes`);
       
       // Add selected items to outfit
       [...selectedTop, ...selectedBottom, ...selectedShoes].forEach(item => {
@@ -162,10 +150,8 @@ export const fetchDashboardItems = async (): Promise<{ [key: string]: DashboardI
 
     // Log final distribution
     const totalSelectedItems = Object.values(result).reduce((sum, items) => sum + items.length, 0);
-    console.log(`🎉 [fetchDashboardItems] Distribution completed: ${totalSelectedItems} total items across ${occasions.length} occasions`);
-
-    // Cache the result
-    outfitCache = result;
+    const uniqueItems = new Set(Object.values(result).flat().map(item => item.id)).size;
+    console.log(`🎉 [fetchDashboardItems] Distribution completed: ${totalSelectedItems} total items (${uniqueItems} unique) across ${occasions.length} occasions`);
     
     return result;
 
