@@ -31,7 +31,7 @@ type ZaraShoesData = {
 };
 
 /**
- * מחזיר הצעת תלבושת ראשונה על בסיס ניתוח הסטייל
+ * מחזיר הצעת תלבושת ראשונה על בסיס ניתוח הסтайיל
  */
 export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false): Promise<DashboardItem[]> {
   try {
@@ -393,7 +393,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
 }
 
 /**
- * Get matching shoes from the zara_cloth table (shoes only)
+ * Get matching shoes from the zara_cloth table (shoes only) - with occasion-specific filtering
  */
 async function getMatchingShoesFromZara(occasion: string, usedColors: string[]): Promise<DashboardItem | null> {
   try {
@@ -403,14 +403,33 @@ async function getMatchingShoesFromZara(occasion: string, usedColors: string[]):
     
     console.log(`🚨 [getMatchingShoesFromZara] CRITICAL DEBUG - QUERYING ZARA_CLOTH TABLE FOR SHOES`);
     
-    // Get shoes data from zara_cloth table (shoes only)
-    const { data: shoesData, error } = await supabase
+    // Define shoe type preferences based on occasion
+    let shoeQuery = supabase
       .from('zara_cloth')
       .select('*')
       .or('product_family.ilike.%shoe%,product_family.ilike.%sandal%,product_family.ilike.%boot%,product_subfamily.ilike.%shoe%,product_subfamily.ilike.%sandal%,product_subfamily.ilike.%boot%')
       .not('image', 'is', null)
-      .neq('availability', false)
-      .limit(100);
+      .neq('availability', false);
+    
+    // Filter based on occasion to get appropriate shoe types
+    if (occasion.toLowerCase() === 'casual' || occasion.toLowerCase() === 'general' || occasion.toLowerCase() === 'weekend') {
+      console.log(`👟 [getMatchingShoesFromZara] Filtering for CASUAL shoes (sneakers, flats, sports shoes)`);
+      // For casual occasions, prefer flat shoes, sneakers, sports shoes - exclude high heels
+      shoeQuery = shoeQuery
+        .not('product_name', 'ilike', '%heel%')
+        .not('product_name', 'ilike', '%עקב%')
+        .not('product_subfamily', 'ilike', '%heel%');
+    } else if (occasion.toLowerCase() === 'work') {
+      console.log(`👠 [getMatchingShoesFromZara] Filtering for WORK shoes (formal, low heels acceptable)`);
+      // For work, allow both flats and low heels, but not too high
+      // No specific exclusions for work - allow variety
+    } else if (occasion.toLowerCase() === 'evening') {
+      console.log(`👠 [getMatchingShoesFromZara] Filtering for EVENING shoes (heels, elegant)`);
+      // For evening, prefer heels and elegant shoes
+      // No exclusions - allow all types including heels
+    }
+    
+    const { data: shoesData, error } = await shoeQuery.limit(100);
 
     if (error) {
       console.error('❌ [getMatchingShoesFromZara] Database error:', error);
@@ -422,7 +441,7 @@ async function getMatchingShoesFromZara(occasion: string, usedColors: string[]):
       return null;
     }
 
-    console.log(`✅ [getMatchingShoesFromZara] Found ${shoesData.length} total shoes in ZARA_CLOTH table`);
+    console.log(`✅ [getMatchingShoesFromZara] Found ${shoesData.length} total shoes in ZARA_CLOTH table for ${occasion.toUpperCase()}`);
     
     console.log(`🚨 [getMatchingShoesFromZara] CRITICAL DEBUG - RAW SHOES DATA FROM ZARA_CLOTH TABLE:`, 
       shoesData.slice(0, 3).map(shoe => ({
@@ -430,7 +449,8 @@ async function getMatchingShoesFromZara(occasion: string, usedColors: string[]):
         image: shoe.image,
         url: shoe.url,
         product_id: shoe.product_id,
-        product_family: shoe.product_family
+        product_family: shoe.product_family,
+        product_subfamily: shoe.product_subfamily
       }))
     );
     
@@ -440,22 +460,22 @@ async function getMatchingShoesFromZara(occasion: string, usedColors: string[]):
       const alreadyUsed = globalUsedShoesIds.has(String(shoeId));
       const hasValidImage = hasValidZaraShoesImageFromDB(shoe);
       
-      console.log(`🔍 [getMatchingShoesFromZara] Checking "${shoe.product_name}" from ZARA_CLOTH table (ID: ${shoeId}): used=${alreadyUsed}, validImage=${hasValidImage}`);
+      console.log(`🔍 [getMatchingShoesFromZara] Checking "${shoe.product_name}" from ZARA_CLOTH table for ${occasion.toUpperCase()} (ID: ${shoeId}): used=${alreadyUsed}, validImage=${hasValidImage}`);
       
       return !alreadyUsed && hasValidImage;
     });
 
-    console.log(`🔍 [getMatchingShoesFromZara] Available unused shoes from ZARA_CLOTH table: ${availableShoes.length}`);
+    console.log(`🔍 [getMatchingShoesFromZara] Available unused shoes from ZARA_CLOTH table for ${occasion.toUpperCase()}: ${availableShoes.length}`);
 
     if (availableShoes.length === 0) {
-      console.log(`⚠️ [getMatchingShoesFromZara] No unused shoes with valid images from ZARA_CLOTH table, resetting and trying again`);
+      console.log(`⚠️ [getMatchingShoesFromZara] No unused shoes with valid images from ZARA_CLOTH table for ${occasion.toUpperCase()}, resetting and trying again`);
       globalUsedShoesIds.clear();
       
       const validShoes = shoesData.filter(shoe => hasValidZaraShoesImageFromDB(shoe));
-      console.log(`🔍 [getMatchingShoesFromZara] Valid shoes from ZARA_CLOTH table after reset: ${validShoes.length}`);
+      console.log(`🔍 [getMatchingShoesFromZara] Valid shoes from ZARA_CLOTH table for ${occasion.toUpperCase()} after reset: ${validShoes.length}`);
       
       if (validShoes.length === 0) {
-        console.error('❌ [getMatchingShoesFromZara] No shoes with valid images found in ZARA_CLOTH table');
+        console.error(`❌ [getMatchingShoesFromZara] No shoes with valid images found in ZARA_CLOTH table for ${occasion.toUpperCase()}`);
         return null;
       }
       
@@ -464,9 +484,9 @@ async function getMatchingShoesFromZara(occasion: string, usedColors: string[]):
       const shoeId = selectedShoe.id || selectedShoe.product_id?.toString() || selectedShoe.product_name;
       globalUsedShoesIds.add(String(shoeId));
       
-      console.log(`🎯 [getMatchingShoesFromZara] Selected from ZARA_CLOTH table after reset: "${selectedShoe.product_name}" (Index: ${randomIndex})`);
+      console.log(`🎯 [getMatchingShoesFromZara] Selected from ZARA_CLOTH table for ${occasion.toUpperCase()} after reset: "${selectedShoe.product_name}" (Index: ${randomIndex})`);
       const createdItem = createZaraShoesItemFromDB(selectedShoe, occasion);
-      console.log(`🚨 [getMatchingShoesFromZara] CRITICAL DEBUG - CREATED ZARA SHOES ITEM:`, createdItem);
+      console.log(`🚨 [getMatchingShoesFromZara] CRITICAL DEBUG - CREATED ZARA SHOES ITEM for ${occasion.toUpperCase()}:`, createdItem);
       return createdItem;
     }
 
@@ -474,20 +494,20 @@ async function getMatchingShoesFromZara(occasion: string, usedColors: string[]):
     const randomIndex = Math.floor(Math.random() * availableShoes.length);
     const selectedShoe = availableShoes[randomIndex];
     
-    console.log(`🎯 [getMatchingShoesFromZara] Randomly selected from ZARA_CLOTH table: "${selectedShoe.product_name}" (Index: ${randomIndex} of ${availableShoes.length})`);
+    console.log(`🎯 [getMatchingShoesFromZara] Randomly selected from ZARA_CLOTH table for ${occasion.toUpperCase()}: "${selectedShoe.product_name}" (Index: ${randomIndex} of ${availableShoes.length})`);
     
     // Mark this shoe as used
     const shoeId = selectedShoe.id || selectedShoe.product_id?.toString() || selectedShoe.product_name;
     globalUsedShoesIds.add(String(shoeId));
     
     const createdItem = createZaraShoesItemFromDB(selectedShoe, occasion);
-    console.log(`✅ [getMatchingShoesFromZara] Created shoes item from ZARA_CLOTH table:`, createdItem);
-    console.log(`🚨 [getMatchingShoesFromZara] CRITICAL DEBUG - FINAL CREATED ITEM:`, createdItem);
+    console.log(`✅ [getMatchingShoesFromZara] Created shoes item from ZARA_CLOTH table for ${occasion.toUpperCase()}:`, createdItem);
+    console.log(`🚨 [getMatchingShoesFromZara] CRITICAL DEBUG - FINAL CREATED ITEM for ${occasion.toUpperCase()}:`, createdItem);
     
     return createdItem;
     
   } catch (error) {
-    console.error('❌ [getMatchingShoesFromZara] Unexpected error:', error);
+    console.error(`❌ [getMatchingShoesFromZara] Unexpected error for ${occasion}:`, error);
     return null;
   }
 }
