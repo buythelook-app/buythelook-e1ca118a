@@ -1,8 +1,21 @@
 import { supabase } from "@/lib/supabaseClient";
-import type { ZaraItem } from "@/types/supabase";
 import type { LookItem } from "@/hooks/usePersonalizedLooks";
-import { mapProductToType } from "@/utils/utils";
 import { DashboardItem } from "@/types/lookTypes";
+import { mapProductToType, extractImageUrl } from "@/utils/utils";
+
+// Define the correct ZaraShoesData type
+type ZaraShoesData = {
+  id: string;
+  product_name: string;
+  product_family: string;
+  product_subfamily: string;
+  colour: string;
+  price: number;
+  image: string;
+  availability: boolean;
+  url?: string;
+  description?: string;
+}
 
 // Global tracking to prevent duplicates across all occasions
 const globalUsedItems = new Set<string>();
@@ -14,20 +27,10 @@ export const clearOutfitCache = () => {
   console.log('🧹 [clearOutfitCache] Cleared all caches and global tracking');
 };
 
-export type ZaraShoesData = Pick<ZaraItem,
-  "id" |
-  "product_name" |
-  "price" |
-  "image" |
-  "product_family" |
-  "product_subfamily" |
-  "colour" |
-  "availability">
-
-const extractImageUrl = (image: string): string => {
-  const parts = image.split(';');
-  const urlPart = parts.find(part => part.startsWith('url:'));
-  return urlPart ? urlPart.substring(4) : image;
+// Add the missing export for clearGlobalItemTrackers
+export const clearGlobalItemTrackers = () => {
+  globalUsedItems.clear();
+  console.log('🧹 [clearGlobalItemTrackers] Cleared global item tracking');
 };
 
 const getRandomItems = (items: any[], count: number, occasion: string, usedItemIds?: Set<string>): any[] => {
