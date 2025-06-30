@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -327,7 +328,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
   
   console.log(`🚨 [selectOutfitByOccasion] CRITICAL DEBUG - CALLING getMatchingShoesFromZara`);
   
-  // Add shoes from zara_cloth table - ALWAYS FOR ALL OCCASIONS, even when there's a dress
+  // Add shoes from zara_cloth table - ALWAYS FOR ALL OCCASIONS AND ALL OUTFIT TYPES
   const shoesItem = await getMatchingShoesFromZara(occasion, usedColors);
   if (shoesItem) {
     selectedItems.push(shoesItem);
