@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -20,10 +21,10 @@ type ZaraShoesData = {
   product_id?: number | null;
   product_name: string;
   image: any; // JSONB field
-  url: string | null;
+  url?: string | null; // 👈 Optional field
   price: number;
   colour: string;
-  description: string | null;
+  description?: string | null; // 👈 Optional field
   product_family: string | null;
   product_subfamily: string | null;
   availability: boolean | null;
