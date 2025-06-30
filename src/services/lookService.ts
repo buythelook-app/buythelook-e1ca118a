@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -264,6 +263,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
           selectedItems.push(createDashboardItem(formalBottom, 'bottom'));
           usedColors.push(formalTop.colour?.toLowerCase() || '');
           usedColors.push(formalBottom.colour?.toLowerCase() || '');
+          console.log(`👔 [selectOutfitByOccasion] Selected WORK outfit: ${formalTop.product_name} + ${formalBottom.product_name}`);
         }
       }
       break;
@@ -274,7 +274,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
         const dress = categories.dresses[0];
         selectedItems.push(createDashboardItem(dress, 'dress'));
         usedColors.push(dress.colour?.toLowerCase() || '');
-        console.log(`👗 [selectOutfitByOccasion] Selected dress for evening: ${dress.product_name}`);
+        console.log(`👗 [selectOutfitByOccasion] Selected EVENING dress: ${dress.product_name}`);
       } else if (categories.tops.length > 0 && categories.bottoms.length > 0) {
         const elegantTop = categories.tops[0];
         const elegantBottom = categories.bottoms[0];
@@ -282,17 +282,22 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
         selectedItems.push(createDashboardItem(elegantBottom, 'bottom'));
         usedColors.push(elegantTop.colour?.toLowerCase() || '');
         usedColors.push(elegantBottom.colour?.toLowerCase() || '');
+        console.log(`👗 [selectOutfitByOccasion] Selected EVENING outfit: ${elegantTop.product_name} + ${elegantBottom.product_name}`);
       }
       break;
       
     case 'casual':
+    case 'general':
       // מזדמן - חולצה + מכנס/חצאית או שמלה נוחה
+      console.log(`👕 [selectOutfitByOccasion] Processing CASUAL/GENERAL outfit selection`);
+      console.log(`👕 [selectOutfitByOccasion] Available dresses: ${categories.dresses.length}, tops: ${categories.tops.length}, bottoms: ${categories.bottoms.length}`);
+      
       if (categories.dresses.length > 0 && Math.random() > 0.5) {
         // לפעמים בוחרים שמלה גם לאירוע מזדמן
         const casualDress = categories.dresses[0];
         selectedItems.push(createDashboardItem(casualDress, 'dress'));
         usedColors.push(casualDress.colour?.toLowerCase() || '');
-        console.log(`👗 [selectOutfitByOccasion] Selected dress for casual: ${casualDress.product_name}`);
+        console.log(`👗 [selectOutfitByOccasion] Selected CASUAL dress: ${casualDress.product_name}`);
       } else if (categories.tops.length > 0 && categories.bottoms.length > 0) {
         const casualTop = categories.tops[0];
         const casualBottom = categories.bottoms[0];
@@ -300,6 +305,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
         selectedItems.push(createDashboardItem(casualBottom, 'bottom'));
         usedColors.push(casualTop.colour?.toLowerCase() || '');
         usedColors.push(casualBottom.colour?.toLowerCase() || '');
+        console.log(`👕 [selectOutfitByOccasion] Selected CASUAL outfit: ${casualTop.product_name} + ${casualBottom.product_name}`);
       }
       break;
       
@@ -310,7 +316,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
         const weekendDress = categories.dresses[0];
         selectedItems.push(createDashboardItem(weekendDress, 'dress'));
         usedColors.push(weekendDress.colour?.toLowerCase() || '');
-        console.log(`👗 [selectOutfitByOccasion] Selected dress for weekend: ${weekendDress.product_name}`);
+        console.log(`👗 [selectOutfitByOccasion] Selected WEEKEND dress: ${weekendDress.product_name}`);
       } else if (categories.tops.length > 0 && categories.bottoms.length > 0) {
         const comfortableTop = categories.tops[0];
         const comfortableBottom = categories.bottoms[0];
@@ -318,6 +324,20 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
         selectedItems.push(createDashboardItem(comfortableBottom, 'bottom'));
         usedColors.push(comfortableTop.colour?.toLowerCase() || '');
         usedColors.push(comfortableBottom.colour?.toLowerCase() || '');
+        console.log(`👕 [selectOutfitByOccasion] Selected WEEKEND outfit: ${comfortableTop.product_name} + ${comfortableBottom.product_name}`);
+      }
+      break;
+      
+    default:
+      console.log(`❓ [selectOutfitByOccasion] Unknown occasion: ${occasion}, using casual logic`);
+      if (categories.tops.length > 0 && categories.bottoms.length > 0) {
+        const defaultTop = categories.tops[0];
+        const defaultBottom = categories.bottoms[0];
+        selectedItems.push(createDashboardItem(defaultTop, 'top'));
+        selectedItems.push(createDashboardItem(defaultBottom, 'bottom'));
+        usedColors.push(defaultTop.colour?.toLowerCase() || '');
+        usedColors.push(defaultBottom.colour?.toLowerCase() || '');
+        console.log(`👕 [selectOutfitByOccasion] Selected DEFAULT outfit: ${defaultTop.product_name} + ${defaultBottom.product_name}`);
       }
       break;
   }
@@ -326,31 +346,37 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
   console.log(`👠 [selectOutfitByOccasion] Current outfit has ${selectedItems.length} items before shoes`);
   console.log(`👠 [selectOutfitByOccasion] Used colors:`, usedColors);
   
-  console.log(`🚨 [selectOutfitByOccasion] CRITICAL DEBUG - CALLING getMatchingShoesFromZara`);
+  // CRITICAL: Always add shoes regardless of outfit selection success
+  console.log(`🚨 [selectOutfitByOccasion] CRITICAL: Adding shoes for ${occasion.toUpperCase()} - MANDATORY FOR ALL OCCASIONS`);
   
-  // Add shoes from zara_cloth table - ALWAYS FOR ALL OCCASIONS AND ALL OUTFIT TYPES
   const shoesItem = await getMatchingShoesFromZara(occasion, usedColors);
   if (shoesItem) {
     selectedItems.push(shoesItem);
-    console.log(`✅ [selectOutfitByOccasion] SHOES FROM ZARA_CLOTH TABLE SUCCESSFULLY ADDED TO ${occasion.toUpperCase()}: ${shoesItem.name} with ID: ${shoesItem.id}`);
+    console.log(`✅ [selectOutfitByOccasion] SHOES SUCCESSFULLY ADDED TO ${occasion.toUpperCase()}: ${shoesItem.name} with ID: ${shoesItem.id}`);
     console.log(`✅ [selectOutfitByOccasion] Shoes image URL: ${shoesItem.image}`);
-    console.log(`✅ [selectOutfitByOccasion] Shoes type: ${shoesItem.type}`);
-    console.log(`✅ [selectOutfitByOccasion] CONFIRMED FROM ZARA_CLOTH TABLE: ${shoesItem.id.includes('zara-shoes-') ? 'YES' : 'NO'}`);
+    console.log(`✅ [selectOutfitByOccasion] FROM ZARA_CLOTH TABLE: ${shoesItem.id.includes('zara-shoes-') ? 'YES' : 'NO'}`);
     
     // Check if we have a dress in the outfit
     const hasDress = selectedItems.some(item => item.type === 'dress');
     if (hasDress) {
-      console.log(`👗👠 [selectOutfitByOccasion] DRESS + SHOES COMBINATION CREATED SUCCESSFULLY for ${occasion.toUpperCase()}`);
+      console.log(`👗👠 [selectOutfitByOccasion] DRESS + SHOES COMBINATION for ${occasion.toUpperCase()}`);
     } else {
-      console.log(`👕👖👠 [selectOutfitByOccasion] TOP + BOTTOM + SHOES COMBINATION CREATED SUCCESSFULLY for ${occasion.toUpperCase()}`);
+      console.log(`👕👖👠 [selectOutfitByOccasion] TOP + BOTTOM + SHOES COMBINATION for ${occasion.toUpperCase()}`);
     }
   } else {
-    console.log(`❌ [selectOutfitByOccasion] FAILED TO GET SHOES FROM ZARA_CLOTH TABLE FOR ${occasion.toUpperCase()} - USING FALLBACK`);
+    console.log(`❌ [selectOutfitByOccasion] FAILED TO GET SHOES FROM ZARA_CLOTH - ADDING FALLBACK SHOES FOR ${occasion.toUpperCase()}`);
     
-    // Add fallback shoes only if database fails
+    // Add fallback shoes - MANDATORY, never return without shoes
     const fallbackShoes = getRandomFallbackShoes();
     selectedItems.push(fallbackShoes);
     console.log(`🆘 [selectOutfitByOccasion] FALLBACK SHOES ADDED TO ${occasion.toUpperCase()}: ${fallbackShoes.name}`);
+  }
+
+  // If we still don't have enough items, add fallback clothing
+  if (selectedItems.length < 2) {
+    console.log(`⚠️ [selectOutfitByOccasion] Not enough items for ${occasion.toUpperCase()}, adding fallback clothing`);
+    const fallbackItems = getFallbackClothing();
+    selectedItems.push(...fallbackItems);
   }
 
   console.log(`🔥 [selectOutfitByOccasion] ===== FINAL OUTFIT FOR ${occasion.toUpperCase()} =====`);
@@ -359,11 +385,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
     console.log(`   ${index + 1}. ${item.type.toUpperCase()}: ${item.name} (ID: ${item.id})`);
     if (item.type === 'shoes') {
       console.log(`      👠 SHOES IMAGE: ${item.image?.substring(0, 100)}...`);
-      console.log(`      👠 SHOES VALID: ${item.image?.includes('http')}`);
-      console.log(`      👠 FROM ZARA_CLOTH TABLE: ${item.id.includes('zara-shoes-') ? 'YES' : 'NO'}`);
-    }
-    if (item.type === 'dress') {
-      console.log(`      👗 DRESS WITH SHOES: This ${occasion.toUpperCase()} outfit includes both dress and shoes recommendation`);
+      console.log(`      👠 FROM ZARA_CLOTH: ${item.id.includes('zara-shoes-') ? 'YES' : 'NO'}`);
     }
   });
   
@@ -570,6 +592,32 @@ function getRandomFallbackShoes(): DashboardItem {
     description: randomShoe.description,
     color: 'black'
   };
+}
+
+/**
+ * Get fallback clothing items when database selection fails
+ */
+function getFallbackClothing(): DashboardItem[] {
+  return [
+    {
+      id: 'fallback-top-' + Date.now(),
+      name: 'חולצה בסיסית',
+      image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=400&fit=crop',
+      type: 'top',
+      price: '₪89',
+      description: 'חולצה בסיסית נוחה',
+      color: 'white'
+    },
+    {
+      id: 'fallback-bottom-' + Date.now(),
+      name: 'מכנסיים בסיסיים',
+      image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop',
+      type: 'bottom',
+      price: '₪129',
+      description: 'מכנסיים בסיסיים נוחים',
+      color: 'blue'
+    }
+  ];
 }
 
 /**
