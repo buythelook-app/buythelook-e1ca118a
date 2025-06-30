@@ -68,7 +68,7 @@ export const PersonalizedLooksGrid = memo(({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       {occasions.map((occasion) => {
         const occasionItems = occasionOutfits[occasion] || [];
-        console.log(`🔍 [PersonalizedLooksGrid] ${occasion} unique items:`, occasionItems.map(item => ({
+        console.log(`🔍 [PersonalizedLooksGrid] ${occasion} items:`, occasionItems.map(item => ({
           id: item.id,
           type: item.type,
           name: item.name,
@@ -84,13 +84,13 @@ export const PersonalizedLooksGrid = memo(({
                 <h3 className="text-xl font-semibold text-netflix-accent">{occasion}</h3>
               </div>
               <div className="bg-netflix-card rounded-lg p-6 min-h-[400px] flex items-center justify-center">
-                <p className="text-netflix-text">No unique items available for this occasion</p>
+                <p className="text-netflix-text">No items available for this occasion</p>
               </div>
             </div>
           );
         }
 
-        // Convert DashboardItems to canvas items format with unique verification
+        // Convert DashboardItems to canvas items format
         const canvasItems = occasionItems.map(item => ({
           id: item.id,
           image: item.image || '/placeholder.svg',
@@ -98,7 +98,7 @@ export const PersonalizedLooksGrid = memo(({
           name: item.name
         }));
 
-        console.log(`🎯 [PersonalizedLooksGrid] ${occasion} unique canvas items:`, canvasItems);
+        console.log(`🔍 [PersonalizedLooksGrid] ${occasion} canvas items:`, canvasItems);
 
         return (
           <div key={occasion} className="space-y-4">
