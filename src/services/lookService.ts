@@ -14,18 +14,19 @@ let lastResetTime = Date.now();
 // Global tracking for used shoes to ensure variety
 let globalUsedShoesIds: Set<string> = new Set();
 
-// Updated type for shoes data matching the actual Supabase database schema
-type ShoesData = {
+// Updated type for shoes data matching the zara_cloth database schema
+type ZaraShoesData = {
+  id: string;
   product_id?: number | null;
-  name: string;
-  brand: string | null;
-  description: string | null;
-  price: number | null;
+  product_name: string;
   image: any; // JSONB field
   url: string | null;
-  discount: string | null;
-  category: string | null;
-  availability: string | null;
+  price: number;
+  colour: string;
+  description: string | null;
+  product_family: string | null;
+  product_subfamily: string | null;
+  availability: boolean | null;
   [key: string]: any;
 };
 
@@ -76,7 +77,7 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
         name: item.name,
         hasImage: !!item.image,
         id: item.id,
-        isFromShoesTable: item.id.includes('shoes-db-')
+        isFromZaraShoes: item.id.includes('zara-shoes-')
       })));
       
       const shoesItems = occasionOutfit.filter(item => item.type === 'shoes');
@@ -87,7 +88,7 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
           name: shoe.name,
           image: shoe.image,
           type: shoe.type,
-          isFromShoesTable: shoe.id.includes('shoes-db-') ? 'YES - FROM SHOES TABLE' : 'NO - NOT FROM SHOES TABLE'
+          isFromZaraShoes: shoe.id.includes('zara-shoes-') ? 'YES - FROM ZARA_CLOTH TABLE' : 'NO - NOT FROM ZARA_CLOTH TABLE'
         });
       });
     }
@@ -112,90 +113,30 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
 }
 
 /**
- * Extract image URL from shoes JSONB field with enhanced debugging
+ * Extract image URL from zara_cloth JSONB field with enhanced debugging
  */
-function extractShoesImageFromJSONB(imageData: any, shoeName: string = 'Unknown'): string {
-  console.log(`🔍 [extractShoesImageFromJSONB] ===== PROCESSING SHOES: "${shoeName}" =====`);
-  console.log(`🔍 [extractShoesImageFromJSONB] Raw imageData:`, imageData);
-  console.log(`🔍 [extractShoesImageFromJSONB] Type: ${typeof imageData}, Array: ${Array.isArray(imageData)}`);
+function extractZaraShoesImageFromJSONB(imageData: any, shoeName: string = 'Unknown'): string {
+  console.log(`🔍 [extractZaraShoesImageFromJSONB] ===== PROCESSING ZARA SHOES: "${shoeName}" =====`);
+  console.log(`🔍 [extractZaraShoesImageFromJSONB] Raw imageData:`, imageData);
+  console.log(`🔍 [extractZaraShoesImageFromJSONB] Type: ${typeof imageData}, Array: ${Array.isArray(imageData)}`);
   
   if (!imageData) {
-    console.log(`❌ [extractShoesImageFromJSONB] No image data for ${shoeName}`);
+    console.log(`❌ [extractZaraShoesImageFromJSONB] No image data for ${shoeName}`);
     return '';
   }
   
-  // Handle direct URL string
-  if (typeof imageData === 'string') {
-    const trimmed = imageData.trim();
-    console.log(`🔍 [extractShoesImageFromJSONB] String data: "${trimmed}"`);
-    
-    if (trimmed.includes('http') && (trimmed.includes('.jpg') || trimmed.includes('.jpeg') || trimmed.includes('.png') || trimmed.includes('.webp'))) {
-      console.log(`✅ [extractShoesImageFromJSONB] Direct URL string for ${shoeName}: ${trimmed}`);
-      return trimmed;
-    }
-    
-    return '';
-  }
+  // Use the existing extractZaraImageUrl function
+  const imageUrl = extractZaraImageUrl(imageData as ZaraImageData);
+  console.log(`✅ [extractZaraShoesImageFromJSONB] Extracted URL for ${shoeName}: ${imageUrl}`);
   
-  // Handle array of URLs
-  if (Array.isArray(imageData)) {
-    console.log(`🔍 [extractShoesImageFromJSONB] Array data for ${shoeName} (length: ${imageData.length}):`, imageData);
-    for (let i = 0; i < imageData.length; i++) {
-      const item = imageData[i];
-      console.log(`   🔍 Array item ${i}:`, item, typeof item);
-      
-      if (typeof item === 'string' && item.includes('http') && 
-          (item.includes('.jpg') || item.includes('.jpeg') || item.includes('.png') || item.includes('.webp'))) {
-        console.log(`✅ [extractShoesImageFromJSONB] Found URL in array for ${shoeName}: ${item}`);
-        return item;
-      }
-    }
-    console.log(`❌ [extractShoesImageFromJSONB] No valid URLs in array for ${shoeName}`);
-    return '';
-  }
-  
-  // Handle object with nested properties
-  if (typeof imageData === 'object' && imageData !== null) {
-    const keys = Object.keys(imageData);
-    console.log(`🔍 [extractShoesImageFromJSONB] Object data for ${shoeName} with keys:`, keys);
-    
-    // Check for url property
-    if (imageData.url && typeof imageData.url === 'string' && 
-        imageData.url.includes('http') && 
-        (imageData.url.includes('.jpg') || imageData.url.includes('.jpeg') || 
-         imageData.url.includes('.png') || imageData.url.includes('.webp'))) {
-      console.log(`✅ [extractShoesImageFromJSONB] Found URL in url property for ${shoeName}: ${imageData.url}`);
-      return imageData.url;
-    }
-    
-    // Check for image property
-    if (imageData.image && typeof imageData.image === 'string' && 
-        imageData.image.includes('http') && 
-        (imageData.image.includes('.jpg') || imageData.image.includes('.jpeg') || 
-         imageData.image.includes('.png') || imageData.image.includes('.webp'))) {
-      console.log(`✅ [extractShoesImageFromJSONB] Found URL in image property for ${shoeName}: ${imageData.image}`);
-      return imageData.image;
-    }
-    
-    // Check for nested arrays
-    for (const [key, value] of Object.entries(imageData)) {
-      if (Array.isArray(value)) {
-        console.log(`🔄 [extractShoesImageFromJSONB] Checking nested array ${key} for ${shoeName}:`, value);
-        const url = extractShoesImageFromJSONB(value, shoeName);
-        if (url) return url;
-      }
-    }
-  }
-  
-  console.log(`❌ [extractShoesImageFromJSONB] No valid URL found for ${shoeName}`);
-  return '';
+  return imageUrl;
 }
 
 /**
- * יצירת תלבושת מתקדמת עם כללי התאמה לפי אירוע - נעליים רק מטבלת shoes
+ * יצירת תלבושת מתקדמת עם כללי התאמה לפי אירוע - נעליים מטבלת zara_cloth
  */
 async function createAdvancedOutfit(styleProfile: string, eventType: string, colorPreferences: string[], occasion: string): Promise<DashboardItem[]> {
-  console.log(`🎨 [createAdvancedOutfit] ===== CREATING OUTFIT FOR ${occasion.toUpperCase()} (SHOES FROM SHOES TABLE ONLY) =====`);
+  console.log(`🎨 [createAdvancedOutfit] ===== CREATING OUTFIT FOR ${occasion.toUpperCase()} (SHOES FROM ZARA_CLOTH TABLE) =====`);
   
   try {
     // Initialize occasion tracking if not exists
@@ -203,14 +144,20 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
       globalUsedItemIds[occasion] = new Set();
     }
     
-    console.log(`🚨 [createAdvancedOutfit] CRITICAL DEBUG - FETCHING CLOTHING FROM ZARA_CLOTH TABLE (NO SHOES)`);
+    console.log(`🚨 [createAdvancedOutfit] CRITICAL DEBUG - FETCHING CLOTHING FROM ZARA_CLOTH TABLE (NO SHOES IN THIS QUERY)`);
     
-    // קבלת פריטי לבוש מהמאגר zara_cloth (ללא נעליים!)
+    // קבלת פריטי לבוש מהמאגר zara_cloth (ללא נעליים - נטפל בהן בנפרד)
     const { data: allClothingItems, error: clothingError } = await supabase
       .from('zara_cloth')
       .select('*')
       .not('image', 'is', null)
       .neq('availability', false)
+      .not('product_family', 'ilike', '%shoe%')
+      .not('product_family', 'ilike', '%sandal%')
+      .not('product_family', 'ilike', '%boot%')
+      .not('product_subfamily', 'ilike', '%shoe%')
+      .not('product_subfamily', 'ilike', '%sandal%')
+      .not('product_subfamily', 'ilike', '%boot%')
       .order('price', { ascending: true })
       .limit(1000);
 
@@ -263,13 +210,13 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
         id: item.id,
         hasImage: !!item.image,
         isShoes: item.type === 'shoes',
-        isFromShoesTable: item.id.includes('shoes-db-') ? 'YES' : 'NO'
+        isFromZaraShoes: item.id.includes('zara-shoes-') ? 'YES' : 'NO'
       }))
     );
     
     // Mark selected clothing items as used for this occasion
     outfitItems.forEach(item => {
-      if (item.id && !item.id.includes('shoes-db-')) {
+      if (item.id && !item.id.includes('zara-shoes-')) {
         globalUsedItemIds[occasion].add(item.id.split('-')[0]); // Remove occasion suffix
       }
     });
@@ -295,10 +242,10 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 /**
- * בחירת תלבושת לפי סוג אירוע - עם נעליים רק מטבלת shoes
+ * בחירת תלבושת לפי סוג אירוע - עם נעליים מטבלת zara_cloth
  */
 async function selectOutfitByOccasion(categories: any, occasion: string): Promise<DashboardItem[]> {
-  console.log(`🎯 [selectOutfitByOccasion] ===== SELECTING OUTFIT FOR ${occasion.toUpperCase()} (SHOES FROM SHOES TABLE) =====`);
+  console.log(`🎯 [selectOutfitByOccasion] ===== SELECTING OUTFIT FOR ${occasion.toUpperCase()} (SHOES FROM ZARA_CLOTH TABLE) =====`);
   
   const selectedItems: DashboardItem[] = [];
   let usedColors: string[] = [];
@@ -361,22 +308,22 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
       break;
   }
 
-  console.log(`👠 [selectOutfitByOccasion] ===== ADDING SHOES FROM SHOES TABLE ONLY TO ${occasion.toUpperCase()} OUTFIT =====`);
+  console.log(`👠 [selectOutfitByOccasion] ===== ADDING SHOES FROM ZARA_CLOTH TABLE TO ${occasion.toUpperCase()} OUTFIT =====`);
   console.log(`👠 [selectOutfitByOccasion] Current outfit has ${selectedItems.length} items before shoes`);
   console.log(`👠 [selectOutfitByOccasion] Used colors:`, usedColors);
   
-  console.log(`🚨 [selectOutfitByOccasion] CRITICAL DEBUG - CALLING getMatchingShoesForOccasion`);
+  console.log(`🚨 [selectOutfitByOccasion] CRITICAL DEBUG - CALLING getMatchingShoesFromZara`);
   
-  // Add shoes ONLY from shoes table
-  const shoesItem = await getMatchingShoesForOccasion(occasion, usedColors);
+  // Add shoes from zara_cloth table
+  const shoesItem = await getMatchingShoesFromZara(occasion, usedColors);
   if (shoesItem) {
     selectedItems.push(shoesItem);
-    console.log(`✅ [selectOutfitByOccasion] SHOES FROM SHOES TABLE SUCCESSFULLY ADDED: ${shoesItem.name} with ID: ${shoesItem.id}`);
+    console.log(`✅ [selectOutfitByOccasion] SHOES FROM ZARA_CLOTH TABLE SUCCESSFULLY ADDED: ${shoesItem.name} with ID: ${shoesItem.id}`);
     console.log(`✅ [selectOutfitByOccasion] Shoes image URL: ${shoesItem.image}`);
     console.log(`✅ [selectOutfitByOccasion] Shoes type: ${shoesItem.type}`);
-    console.log(`✅ [selectOutfitByOccasion] CONFIRMED FROM SHOES TABLE: ${shoesItem.id.includes('shoes-db-') ? 'YES' : 'NO'}`);
+    console.log(`✅ [selectOutfitByOccasion] CONFIRMED FROM ZARA_CLOTH TABLE: ${shoesItem.id.includes('zara-shoes-') ? 'YES' : 'NO'}`);
   } else {
-    console.log(`❌ [selectOutfitByOccasion] FAILED TO GET SHOES FROM SHOES TABLE - USING FALLBACK`);
+    console.log(`❌ [selectOutfitByOccasion] FAILED TO GET SHOES FROM ZARA_CLOTH TABLE - USING FALLBACK`);
     
     // Add fallback shoes only if database fails
     const fallbackShoes = getRandomFallbackShoes();
@@ -391,7 +338,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
     if (item.type === 'shoes') {
       console.log(`      👠 SHOES IMAGE: ${item.image?.substring(0, 100)}...`);
       console.log(`      👠 SHOES VALID: ${item.image?.includes('http')}`);
-      console.log(`      👠 FROM SHOES TABLE: ${item.id.includes('shoes-db-') ? 'YES' : 'NO'}`);
+      console.log(`      👠 FROM ZARA_CLOTH TABLE: ${item.id.includes('zara-shoes-') ? 'YES' : 'NO'}`);
     }
   });
   
@@ -399,94 +346,80 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
 }
 
 /**
- * Get matching shoes ONLY from the dedicated shoes table
+ * Get matching shoes from the zara_cloth table (shoes only)
  */
-async function getMatchingShoesForOccasion(occasion: string, usedColors: string[]): Promise<DashboardItem | null> {
+async function getMatchingShoesFromZara(occasion: string, usedColors: string[]): Promise<DashboardItem | null> {
   try {
-    console.log(`🔥 [getMatchingShoesForOccasion] ===== GETTING SHOES FROM SHOES TABLE ONLY FOR ${occasion.toUpperCase()} =====`);
-    console.log(`🔥 [getMatchingShoesForOccasion] Used colors:`, usedColors);
-    console.log(`🔥 [getMatchingShoesForOccasion] Previously used shoes IDs:`, Array.from(globalUsedShoesIds));
+    console.log(`🔥 [getMatchingShoesFromZara] ===== GETTING SHOES FROM ZARA_CLOTH TABLE FOR ${occasion.toUpperCase()} =====`);
+    console.log(`🔥 [getMatchingShoesFromZara] Used colors:`, usedColors);
+    console.log(`🔥 [getMatchingShoesFromZara] Previously used shoes IDs:`, Array.from(globalUsedShoesIds));
     
-    console.log(`🚨 [getMatchingShoesForOccasion] CRITICAL DEBUG - QUERYING SHOES TABLE`);
+    console.log(`🚨 [getMatchingShoesFromZara] CRITICAL DEBUG - QUERYING ZARA_CLOTH TABLE FOR SHOES`);
     
-    // Test shoes table access first
-    console.log(`🔍 [getMatchingShoesForOccasion] Testing shoes table access...`);
-    const { count, error: countError } = await supabase
-      .from('shoes')
-      .select('*', { count: 'exact', head: true });
-      
-    if (countError) {
-      console.error('❌ [getMatchingShoesForOccasion] Count query error:', countError);
-      throw new Error(`Shoes table access failed: ${countError.message}`);
-    }
-    
-    console.log(`📊 [getMatchingShoesForOccasion] Total shoes in SHOES table: ${count}`);
-    
-    if (!count || count === 0) {
-      console.warn('⚠️ [getMatchingShoesForOccasion] No shoes found in shoes table');
-      return null;
-    }
-    
-    // Get shoes data ONLY from shoes table
+    // Get shoes data from zara_cloth table (shoes only)
     const { data: shoesData, error } = await supabase
-      .from('shoes')
-      .select('product_id, name, brand, description, price, image, url, discount, category, availability')
+      .from('zara_cloth')
+      .select('*')
+      .or('product_family.ilike.%shoe%,product_family.ilike.%sandal%,product_family.ilike.%boot%,product_subfamily.ilike.%shoe%,product_subfamily.ilike.%sandal%,product_subfamily.ilike.%boot%')
+      .not('image', 'is', null)
+      .neq('availability', false)
       .limit(100);
 
     if (error) {
-      console.error('❌ [getMatchingShoesForOccasion] Database error:', error);
-      throw new Error(`Failed to fetch shoes: ${error.message}`);
+      console.error('❌ [getMatchingShoesFromZara] Database error:', error);
+      throw new Error(`Failed to fetch shoes from zara_cloth: ${error.message}`);
     }
 
     if (!shoesData || shoesData.length === 0) {
-      console.error('❌ [getMatchingShoesForOccasion] No shoes found in SHOES table');
+      console.error('❌ [getMatchingShoesFromZara] No shoes found in ZARA_CLOTH table');
       return null;
     }
 
-    console.log(`✅ [getMatchingShoesForOccasion] Found ${shoesData.length} total shoes in SHOES table ONLY`);
+    console.log(`✅ [getMatchingShoesFromZara] Found ${shoesData.length} total shoes in ZARA_CLOTH table`);
     
-    console.log(`🚨 [getMatchingShoesForOccasion] CRITICAL DEBUG - RAW SHOES DATA FROM SHOES TABLE:`, 
+    console.log(`🚨 [getMatchingShoesFromZara] CRITICAL DEBUG - RAW SHOES DATA FROM ZARA_CLOTH TABLE:`, 
       shoesData.slice(0, 3).map(shoe => ({
-        name: shoe.name,
+        product_name: shoe.product_name,
         image: shoe.image,
         url: shoe.url,
-        product_id: shoe.product_id
+        product_id: shoe.product_id,
+        product_family: shoe.product_family
       }))
     );
     
     // Filter out previously used shoes and ensure valid images
     const availableShoes = shoesData.filter(shoe => {
-      const shoeId = shoe.product_id?.toString() || shoe.name || JSON.stringify(shoe);
+      const shoeId = shoe.id || shoe.product_id?.toString() || shoe.product_name;
       const alreadyUsed = globalUsedShoesIds.has(String(shoeId));
-      const hasValidImage = hasValidShoesImageFromDB(shoe);
+      const hasValidImage = hasValidZaraShoesImageFromDB(shoe);
       
-      console.log(`🔍 [getMatchingShoesForOccasion] Checking "${shoe.name}" from SHOES table (ID: ${shoeId}): used=${alreadyUsed}, validImage=${hasValidImage}`);
+      console.log(`🔍 [getMatchingShoesFromZara] Checking "${shoe.product_name}" from ZARA_CLOTH table (ID: ${shoeId}): used=${alreadyUsed}, validImage=${hasValidImage}`);
       
       return !alreadyUsed && hasValidImage;
     });
 
-    console.log(`🔍 [getMatchingShoesForOccasion] Available unused shoes from SHOES table: ${availableShoes.length}`);
+    console.log(`🔍 [getMatchingShoesFromZara] Available unused shoes from ZARA_CLOTH table: ${availableShoes.length}`);
 
     if (availableShoes.length === 0) {
-      console.log(`⚠️ [getMatchingShoesForOccasion] No unused shoes with valid images from SHOES table, resetting and trying again`);
+      console.log(`⚠️ [getMatchingShoesFromZara] No unused shoes with valid images from ZARA_CLOTH table, resetting and trying again`);
       globalUsedShoesIds.clear();
       
-      const validShoes = shoesData.filter(shoe => hasValidShoesImageFromDB(shoe));
-      console.log(`🔍 [getMatchingShoesForOccasion] Valid shoes from SHOES table after reset: ${validShoes.length}`);
+      const validShoes = shoesData.filter(shoe => hasValidZaraShoesImageFromDB(shoe));
+      console.log(`🔍 [getMatchingShoesFromZara] Valid shoes from ZARA_CLOTH table after reset: ${validShoes.length}`);
       
       if (validShoes.length === 0) {
-        console.error('❌ [getMatchingShoesForOccasion] No shoes with valid images found in SHOES table');
+        console.error('❌ [getMatchingShoesFromZara] No shoes with valid images found in ZARA_CLOTH table');
         return null;
       }
       
       const randomIndex = Math.floor(Math.random() * validShoes.length);
       const selectedShoe = validShoes[randomIndex];
-      const shoeId = selectedShoe.product_id?.toString() || selectedShoe.name || JSON.stringify(selectedShoe);
+      const shoeId = selectedShoe.id || selectedShoe.product_id?.toString() || selectedShoe.product_name;
       globalUsedShoesIds.add(String(shoeId));
       
-      console.log(`🎯 [getMatchingShoesForOccasion] Selected from SHOES table after reset: "${selectedShoe.name}" (Index: ${randomIndex})`);
-      const createdItem = createShoesItemFromDB(selectedShoe, occasion);
-      console.log(`🚨 [getMatchingShoesForOccasion] CRITICAL DEBUG - CREATED SHOES ITEM:`, createdItem);
+      console.log(`🎯 [getMatchingShoesFromZara] Selected from ZARA_CLOTH table after reset: "${selectedShoe.product_name}" (Index: ${randomIndex})`);
+      const createdItem = createZaraShoesItemFromDB(selectedShoe, occasion);
+      console.log(`🚨 [getMatchingShoesFromZara] CRITICAL DEBUG - CREATED ZARA SHOES ITEM:`, createdItem);
       return createdItem;
     }
 
@@ -494,47 +427,47 @@ async function getMatchingShoesForOccasion(occasion: string, usedColors: string[
     const randomIndex = Math.floor(Math.random() * availableShoes.length);
     const selectedShoe = availableShoes[randomIndex];
     
-    console.log(`🎯 [getMatchingShoesForOccasion] Randomly selected from SHOES table: "${selectedShoe.name}" (Index: ${randomIndex} of ${availableShoes.length})`);
+    console.log(`🎯 [getMatchingShoesFromZara] Randomly selected from ZARA_CLOTH table: "${selectedShoe.product_name}" (Index: ${randomIndex} of ${availableShoes.length})`);
     
     // Mark this shoe as used
-    const shoeId = selectedShoe.product_id?.toString() || selectedShoe.name || JSON.stringify(selectedShoe);
+    const shoeId = selectedShoe.id || selectedShoe.product_id?.toString() || selectedShoe.product_name;
     globalUsedShoesIds.add(String(shoeId));
     
-    const createdItem = createShoesItemFromDB(selectedShoe, occasion);
-    console.log(`✅ [getMatchingShoesForOccasion] Created shoes item from SHOES table:`, createdItem);
-    console.log(`🚨 [getMatchingShoesForOccasion] CRITICAL DEBUG - FINAL CREATED ITEM:`, createdItem);
+    const createdItem = createZaraShoesItemFromDB(selectedShoe, occasion);
+    console.log(`✅ [getMatchingShoesFromZara] Created shoes item from ZARA_CLOTH table:`, createdItem);
+    console.log(`🚨 [getMatchingShoesFromZara] CRITICAL DEBUG - FINAL CREATED ITEM:`, createdItem);
     
     return createdItem;
     
   } catch (error) {
-    console.error('❌ [getMatchingShoesForOccasion] Unexpected error:', error);
+    console.error('❌ [getMatchingShoesFromZara] Unexpected error:', error);
     return null;
   }
 }
 
 /**
- * Check if a shoe from the database has valid image data with enhanced debugging
+ * Check if a shoe from zara_cloth database has valid image data
  */
-function hasValidShoesImageFromDB(shoe: ShoesData): boolean {
-  console.log(`🔍 [hasValidShoesImageFromDB] Checking "${shoe.name}"...`);
+function hasValidZaraShoesImageFromDB(shoe: ZaraShoesData): boolean {
+  console.log(`🔍 [hasValidZaraShoesImageFromDB] Checking "${shoe.product_name}"...`);
   
-  const imageUrl = extractShoesImageFromJSONB(shoe.image, shoe.name);
+  const imageUrl = extractZaraShoesImageFromJSONB(shoe.image, shoe.product_name);
   const hasValidImage = !!(imageUrl && imageUrl.includes('http'));
   
-  console.log(`🔍 [hasValidShoesImageFromDB] "${shoe.name}" -> Valid: ${hasValidImage}, URL: ${imageUrl?.substring(0, 50)}...`);
+  console.log(`🔍 [hasValidZaraShoesImageFromDB] "${shoe.product_name}" -> Valid: ${hasValidImage}, URL: ${imageUrl?.substring(0, 50)}...`);
   
   return hasValidImage;
 }
 
 /**
- * Create a DashboardItem from a shoes database record with enhanced debugging
+ * Create a DashboardItem from a zara_cloth shoes record
  */
-function createShoesItemFromDB(shoe: ShoesData, occasion: string): DashboardItem {
-  console.log(`✅ [createShoesItemFromDB] Creating item for "${shoe.name}"`);
-  console.log(`   - Original shoe data:`, shoe);
+function createZaraShoesItemFromDB(shoe: ZaraShoesData, occasion: string): DashboardItem {
+  console.log(`✅ [createZaraShoesItemFromDB] Creating item for "${shoe.product_name}"`);
+  console.log(`   - Original zara shoe data:`, shoe);
   
   // Extract real image URL from the JSONB image field
-  const finalImageUrl = extractShoesImageFromJSONB(shoe.image, shoe.name);
+  const finalImageUrl = extractZaraShoesImageFromJSONB(shoe.image, shoe.product_name);
   console.log(`   - Extracted image URL: ${finalImageUrl}`);
   
   // Use real price from database or format it properly
@@ -543,28 +476,28 @@ function createShoesItemFromDB(shoe: ShoesData, occasion: string): DashboardItem
   // Use real product URL from database
   const productUrl = shoe.url || '#';
   
-  // Use product_id or generate a unique ID
-  const actualId = shoe.product_id?.toString() || `shoe-${Date.now()}`;
+  // Use id or generate a unique ID
+  const actualId = shoe.id || `zara-shoe-${Date.now()}`;
   
-  console.log(`✅ [createShoesItemFromDB] Final shoe item details:`);
+  console.log(`✅ [createZaraShoesItemFromDB] Final zara shoe item details:`);
   console.log(`   - ID: ${actualId}`);
-  console.log(`   - Brand: ${shoe.brand}`);
+  console.log(`   - Product Family: ${shoe.product_family}`);
   console.log(`   - Real Price: ${realPrice} (DB value: ${shoe.price})`);
   console.log(`   - Real Image URL: ${finalImageUrl}`);
   console.log(`   - Real Product URL: ${productUrl}`);
 
   const createdItem = {
-    id: `shoes-db-${actualId}-${occasion}`,
-    name: shoe.name,
+    id: `zara-shoes-${actualId}-${occasion}`,
+    name: shoe.product_name,
     image: finalImageUrl || 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop',
     type: 'shoes' as const,
     price: realPrice, // Use real price from database
-    description: shoe.description || `נעליים מבית ${shoe.brand || 'מותג איכותי'}`,
-    color: 'black' // Default color, could be extracted from shoe data if available
+    description: shoe.description || `נעליים מבית זארה - ${shoe.product_family || 'נעליים איכותיות'}`,
+    color: shoe.colour || 'unknown'
   };
   
-  console.log(`✅ [createShoesItemFromDB] Created DashboardItem:`, createdItem);
-  console.log(`🚨 [createShoesItemFromDB] CRITICAL DEBUG - ITEM ID CONTAINS shoes-db-: ${createdItem.id.includes('shoes-db-')}`);
+  console.log(`✅ [createZaraShoesItemFromDB] Created DashboardItem:`, createdItem);
+  console.log(`🚨 [createZaraShoesItemFromDB] CRITICAL DEBUG - ITEM ID CONTAINS zara-shoes-: ${createdItem.id.includes('zara-shoes-')}`);
   
   return createdItem;
 }
@@ -761,11 +694,11 @@ function categorizeItemsAdvanced(items: any[], eventType: string) {
 }
 
 /**
- * מחזיר נתונים לכל ההזדמנויות - עם פריטים שונים לכל אירוע (נעליים רק מטבלת shoes)
+ * מחזיר נתונים לכל ההזדמנויות - עם פריטים שונים לכל אירוע (נעליים מטבלת zara_cloth)
  */
 export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardItem[] }> {
   try {
-    console.log('🔥 [fetchDashboardItems] ===== STARTING DASHBOARD ITEMS FETCH (SHOES FROM SHOES TABLE ONLY) =====');
+    console.log('🔥 [fetchDashboardItems] ===== STARTING DASHBOARD ITEMS FETCH (SHOES FROM ZARA_CLOTH TABLE) =====');
     
     // Test connection first
     const connectionTest = await testSupabaseConnection();
@@ -783,10 +716,10 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     const data: { [key: string]: DashboardItem[] } = {};
     
-    // יצירת תלבושת שונה לכל הזדמנות (נעליים רק מטבלת shoes)
+    // יצירת תלבושת שונה לכל הזדמנות (נעליים מטבלת zara_cloth)
     for (const occasion of occasions) {
       try {
-        console.log(`🔍 [fetchDashboardItems] ===== PROCESSING ${occasion.toUpperCase()} (SHOES FROM SHOES TABLE) =====`);
+        console.log(`🔍 [fetchDashboardItems] ===== PROCESSING ${occasion.toUpperCase()} (SHOES FROM ZARA_CLOTH TABLE) =====`);
         
         const occasionOutfit = await createAdvancedOutfit('casual', occasion.toLowerCase(), [], occasion);
         
@@ -796,11 +729,11 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
             id: `${item.id}-${occasion.toLowerCase()}` // מזהה ייחודי לכל הזדמנות
           }));
           
-          console.log(`✅ [fetchDashboardItems] Created ${occasion} outfit with ${data[occasion].length} items from SHOES table:`);
+          console.log(`✅ [fetchDashboardItems] Created ${occasion} outfit with ${data[occasion].length} items from ZARA_CLOTH table:`);
           data[occasion].forEach((item, index) => {
             console.log(`   ${index + 1}. ${item.type}: ${item.name} (ID: ${item.id})`);
             if (item.type === 'shoes') {
-              console.log(`      👠 SHOES from SHOES table in ${occasion}: ${item.name} with image: ${item.image}`);
+              console.log(`      👠 SHOES from ZARA_CLOTH table in ${occasion}: ${item.name} with image: ${item.image}`);
             }
           });
         } else {
@@ -819,10 +752,10 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
       }
     }
     
-    console.log('🔥 [fetchDashboardItems] ===== FINAL DASHBOARD DATA (SHOES FROM SHOES TABLE) =====');
+    console.log('🔥 [fetchDashboardItems] ===== FINAL DASHBOARD DATA (SHOES FROM ZARA_CLOTH TABLE) =====');
     Object.entries(data).forEach(([occasion, items]) => {
       const shoesCount = items.filter(item => item.type === 'shoes').length;
-      console.log(`${occasion}: ${items.length} items (${shoesCount} shoes from SHOES table)`);
+      console.log(`${occasion}: ${items.length} items (${shoesCount} shoes from ZARA_CLOTH table)`);
     });
     
     return data;
