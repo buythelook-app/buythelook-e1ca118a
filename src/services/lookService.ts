@@ -273,6 +273,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
         const dress = categories.dresses[0];
         selectedItems.push(createDashboardItem(dress, 'dress'));
         usedColors.push(dress.colour?.toLowerCase() || '');
+        console.log(`👗 [selectOutfitByOccasion] Selected dress for evening: ${dress.product_name}`);
       } else if (categories.tops.length > 0 && categories.bottoms.length > 0) {
         const elegantTop = categories.tops[0];
         const elegantBottom = categories.bottoms[0];
@@ -314,7 +315,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
   
   console.log(`🚨 [selectOutfitByOccasion] CRITICAL DEBUG - CALLING getMatchingShoesFromZara`);
   
-  // Add shoes from zara_cloth table
+  // Add shoes from zara_cloth table - ALWAYS, even when there's a dress
   const shoesItem = await getMatchingShoesFromZara(occasion, usedColors);
   if (shoesItem) {
     selectedItems.push(shoesItem);
@@ -322,6 +323,12 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
     console.log(`✅ [selectOutfitByOccasion] Shoes image URL: ${shoesItem.image}`);
     console.log(`✅ [selectOutfitByOccasion] Shoes type: ${shoesItem.type}`);
     console.log(`✅ [selectOutfitByOccasion] CONFIRMED FROM ZARA_CLOTH TABLE: ${shoesItem.id.includes('zara-shoes-') ? 'YES' : 'NO'}`);
+    
+    // Check if we have a dress in the outfit
+    const hasDress = selectedItems.some(item => item.type === 'dress');
+    if (hasDress) {
+      console.log(`👗👠 [selectOutfitByOccasion] DRESS + SHOES COMBINATION CREATED SUCCESSFULLY for ${occasion.toUpperCase()}`);
+    }
   } else {
     console.log(`❌ [selectOutfitByOccasion] FAILED TO GET SHOES FROM ZARA_CLOTH TABLE - USING FALLBACK`);
     
@@ -339,6 +346,9 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
       console.log(`      👠 SHOES IMAGE: ${item.image?.substring(0, 100)}...`);
       console.log(`      👠 SHOES VALID: ${item.image?.includes('http')}`);
       console.log(`      👠 FROM ZARA_CLOTH TABLE: ${item.id.includes('zara-shoes-') ? 'YES' : 'NO'}`);
+    }
+    if (item.type === 'dress') {
+      console.log(`      👗 DRESS WITH SHOES: This outfit includes both dress and shoes recommendation`);
     }
   });
   
