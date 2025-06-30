@@ -1,18 +1,51 @@
-
 import { supabase } from "@/lib/supabaseClient";
 import { Agent, AgentResult } from "./index";
 import { createCasualOutfit, getCasualStyleRecommendations } from "../services/casualOutfitService";
 import logger from "@/lib/logger";
 
+// Body shape recommendations mapping
+const BODY_SHAPE_RECOMMENDATIONS = {
+  hourglass: {
+    tops: ['חולצה', 'טופ', 'בלוזה'],
+    bottoms: ['מכנסיים צרים', 'חצאית עיפרון', 'ג\'ינס צמוד'],
+    styles: ['מותאם לגוף', 'מדגיש מותן'],
+    avoid: ['חולצות רחבות', 'שמלות ישרות']
+  },
+  pear: {
+    tops: ['חולצות עם פרטים בחלק העליון', 'בלוזות עם שרוולים'],
+    bottoms: ['מכנסיים ישרים', 'חצאיות A', 'ג\'ינס ישר'],
+    styles: ['מדגיש כתפיים', 'מוסיף נפח לחלק העליון'],
+    avoid: ['חצאיות צמודות', 'מכנסיים צרים']
+  },
+  rectangle: {
+    tops: ['חולצות עם קווים אופקיים', 'בלוזות עם פרטים'],
+    bottoms: ['מכנסיים עם פרטים', 'חצאיות עם נפח'],
+    styles: ['יוצר קווי גוף', 'מוסיף עומק ומימד'],
+    avoid: ['בגדים ישרים מדי', 'חולצות פשוטות']
+  },
+  triangle: {
+    tops: ['חולצות רחבות', 'בלוזות עם נפח בכתפיים'],
+    bottoms: ['מכנסיים צרים', 'חצאיות ישרות'],
+    styles: ['מאזן כתפיים רחבות', 'מדגיש חלק תחתון'],
+    avoid: ['חולצות צמודות', 'פרטים בכתפיים']
+  },
+  oval: {
+    tops: ['חולצות V', 'בלוזות עם קו מחשוף', 'טונקיות'],
+    bottoms: ['מכנסיים ישרים', 'חצאיות A'],
+    styles: ['מאריך צוואר', 'יוצר קו ישר'],
+    avoid: ['חולצות צמודות בבטן', 'חגורות רחבות']
+  }
+};
+
 export class PersonalizationAgent implements Agent {
   role = "Personal Stylist Agent";
-  goal = "Create personalized outfit recommendations based on user preferences";
+  goal = "Create personalized outfit recommendations based on user preferences and body shape";
   backstory = "An experienced personal stylist with deep knowledge of fashion trends and body types";
   tools: any[] = [];
 
   async run(userId: string): Promise<AgentResult> {
     try {
-      console.log(`🎯 [PersonalizationAgent] מתחיל ניתוח התאמה אישית עבור: ${userId}`);
+      console.log(`🎯 [PersonalizationAgent] מתחיל ניתוח התאמה אישית עם מבנה גוף עבור: ${userId}`);
       
       // חילוץ העדפות מה-localStorage
       const styleAnalysis = localStorage.getItem('styleAnalysis');
@@ -27,7 +60,7 @@ export class PersonalizationAgent implements Agent {
 
       const parsedStyleAnalysis = JSON.parse(styleAnalysis);
       const styleProfile = parsedStyleAnalysis?.analysis?.styleProfile?.toLowerCase();
-      const bodyShape = parsedStyleAnalysis?.analysis?.bodyShape;
+      const bodyShape = parsedStyleAnalysis?.analysis?.bodyShape?.toLowerCase();
       const colorPreferences = parsedStyleAnalysis?.analysis?.colorPreferences || [];
 
       console.log(`📊 [PersonalizationAgent] פרופיל סטייל: ${styleProfile}, מבנה גוף: ${bodyShape}`);
@@ -37,15 +70,15 @@ export class PersonalizationAgent implements Agent {
 
       // לוגיקה מיוחדת לסגנון קזואל
       if (styleProfile === 'casual' || currentMood === 'casual') {
-        console.log(`👕 [PersonalizationAgent] יוצר תלבושת קזואלית מותאמת`);
+        console.log(`👕 [PersonalizationAgent] יוצר תלבושת קזואלית מותאמת למבנה גוף ${bodyShape}`);
         
-        // שימוש בשירות הקזואל החדש
-        const casualOutfit = await createCasualOutfit();
+        // שימוש בשירות הקזואל החדש עם התחשבות במבנה גוף
+        const casualOutfit = await this.createBodyShapeAwareCasualOutfit(bodyShape);
         
         if (!casualOutfit.top || !casualOutfit.bottom || !casualOutfit.shoes) {
           return {
             success: false,
-            error: "לא הצלחנו למצוא מספיק פריטים קזואליים"
+            error: "לא הצלחנו למצוא מספיק פריטים קזואליים מתאימים למבנה הגוף"
           };
         }
 
@@ -55,22 +88,22 @@ export class PersonalizationAgent implements Agent {
             items: [casualOutfit.top, casualOutfit.bottom, casualOutfit.shoes],
             style: 'casual',
             occasion: 'casual',
-            description: `מראה קזואל נוח ומעוצב - ${casualOutfit.top.name}, ${casualOutfit.bottom.name} ו${casualOutfit.shoes.name}`,
+            description: `מראה קזואל מותאם למבנה גוף ${bodyShape} - ${casualOutfit.top.name}, ${casualOutfit.bottom.name} ו${casualOutfit.shoes.name}`,
             enhanced: true
           }],
-          reasoning: "תלבושת קזואלית שנבחרה במיוחד עם בגדים נוחים ומתאימים ליום-יום"
+          reasoning: `תלבושת קזואלית שנבחרה במיוחד עם בגדים מתאימים למבנה גוף ${bodyShape}`
         };
 
-        recommendations = getCasualStyleRecommendations();
+        recommendations = this.getBodyShapeRecommendations(bodyShape, 'casual');
 
       } else {
-        // לוגיקה רגילה לסגנונות אחרים
+        // לוגיקה רגילה לסגנונות אחרים עם התחשבות במבנה גוף
         
-        // קבלת פריטים מהמאגר
+        // קבלת פריטים מהמאגר עם סינון לפי מבנה גוף
         const { data: allItems, error } = await supabase
           .from('zara_cloth')
           .select('*')
-          .limit(50);
+          .limit(100); // הגדלת המגבלה לבחירה טובה יותר
 
         if (error || !allItems) {
           return {
@@ -79,17 +112,8 @@ export class PersonalizationAgent implements Agent {
           };
         }
 
-        // סינון ראשוני של פריטים
-        const filteredItems = allItems.filter(item => {
-          const itemName = item.product_name?.toLowerCase() || '';
-          const itemColor = item.colour?.toLowerCase() || '';
-          
-          // התאמה לצבעים מועדפים
-          const colorMatch = colorPreferences.length === 0 || 
-            colorPreferences.some((pref: string) => itemColor.includes(pref.toLowerCase()));
-
-          return colorMatch;
-        });
+        // סינון פריטים לפי מבנה גוף וצבעים מועדפים
+        const filteredItems = this.filterItemsByBodyShape(allItems, bodyShape, colorPreferences);
 
         // זיהוי שמלות וטוניקות (פריטים שלא צריכים חלק תחתון)
         const dressesAndTunics = filteredItems.filter(item => 
@@ -98,22 +122,18 @@ export class PersonalizationAgent implements Agent {
 
         // חלוקת פריטים לקטגוריות (ללא שמלות וטוניקות)
         const tops = filteredItems.filter(item => 
-          !this.isDressOrTunic(item) && (
-            item.product_name?.toLowerCase().includes('חולצ') || 
-            item.product_name?.toLowerCase().includes('טופ')
-          )
-        ).slice(0, 3);
+          !this.isDressOrTunic(item) && this.isTop(item)
+        ).slice(0, 5);
 
         const bottoms = filteredItems.filter(item => 
-          item.product_name?.toLowerCase().includes('מכנס') || 
-          item.product_name?.toLowerCase().includes('חצאית')
-        ).slice(0, 3);
+          this.isBottom(item)
+        ).slice(0, 5);
 
         const shoes = filteredItems.filter(item => 
-          item.product_name?.toLowerCase().includes('נעל')
-        ).slice(0, 3);
+          this.isShoes(item)
+        ).slice(0, 5);
 
-        // אם יש שמלה או טוניקה, יצירת לוק עם 2 פריטים בלבד
+        // אם יש שמלה או טוניקה מתאימה למבנה הגוף
         if (dressesAndTunics.length > 0 && shoes.length > 0) {
           const dressOrTunic = dressesAndTunics[0];
           const selectedShoes = shoes[0];
@@ -138,16 +158,16 @@ export class PersonalizationAgent implements Agent {
             ],
             style: styleProfile,
             occasion: 'general',
-            description: `${this.isDress(dressOrTunic) ? 'שמלה' : 'טוניקה'} ${dressOrTunic.product_name} עם ${selectedShoes.product_name}`
+            description: `${this.isDress(dressOrTunic) ? 'שמלה' : 'טוניקה'} ${dressOrTunic.product_name} מותאמת למבנה גוף ${bodyShape} עם ${selectedShoes.product_name}`
           };
 
           outfitData = {
             looks: [dressLook],
-            reasoning: `נבחר ${this.isDress(dressOrTunic) ? 'שמלה' : 'טוניקה'} על בסיס הפרופיל ${styleProfile} - אין צורך בחלק תחתון`
+            reasoning: `נבחר ${this.isDress(dressOrTunic) ? 'שמלה' : 'טוניקה'} על בסיס הפרופיל ${styleProfile} ומבנה גוף ${bodyShape}`
           };
 
         } else if (tops.length > 0 && bottoms.length > 0 && shoes.length > 0) {
-          // לוק רגיל עם 3 פריטים
+          // לוק רגיל עם 3 פריטים מותאם למבנה גוף
           const firstLook = {
             id: `look-${Date.now()}`,
             items: [
@@ -175,31 +195,27 @@ export class PersonalizationAgent implements Agent {
             ],
             style: styleProfile,
             occasion: 'general',
-            description: `מראה ${styleProfile} מותאם לפרופיל הסטייל שלך`
+            description: `מראה ${styleProfile} מותאם למבנה גוף ${bodyShape} - מדגיש את החזקות שלך`
           };
 
           outfitData = {
             looks: [firstLook],
-            reasoning: `נבחר על בסיס הפרופיל ${styleProfile} וההעדפות שלך`
+            reasoning: `נבחר על בסיס הפרופיל ${styleProfile} ומבנה גוף ${bodyShape} לייעוץ מקצועי`
           };
         } else {
           return {
             success: false,
-            error: "לא נמצאו מספיק פריטים מתאימים ליצירת תלבושת שלמה"
+            error: "לא נמצאו מספיק פריטים מתאימים למבנה הגוף ליצירת תלבושת שלמה"
           };
         }
 
-        recommendations = [
-          'התאם אביזרים מתאימים כדי להשלים את המראה',
-          'שקול להוסיף שכבות נוספות בהתאם למזג האוויר',
-          'וודא שהצבעים מתאימים זה לזה'
-        ];
+        recommendations = this.getBodyShapeRecommendations(bodyShape, styleProfile);
       }
 
       // שמירת התוצאה
-      await this.saveResult(userId, outfitData, 85);
+      await this.saveResult(userId, outfitData, 90);
 
-      console.log(`✅ [PersonalizationAgent] הושלם בהצלחה עבור ${userId}`);
+      console.log(`✅ [PersonalizationAgent] הושלם בהצלחה עבור ${userId} עם התחשבות במבנה גוף ${bodyShape}`);
 
       return {
         success: true,
@@ -214,6 +230,139 @@ export class PersonalizationAgent implements Agent {
         error: error instanceof Error ? error.message : "שגיאה לא ידועה"
       };
     }
+  }
+
+  private async createBodyShapeAwareCasualOutfit(bodyShape: string): Promise<any> {
+    try {
+      const { data: casualItems, error } = await supabase
+        .from('zara_cloth')
+        .select('*')
+        .or('product_name.ilike.%קזואל%,product_name.ilike.%ג\'ינס%,product_name.ilike.%טי שירט%')
+        .limit(30);
+
+      if (error || !casualItems) {
+        return createCasualOutfit(); // fallback to original service
+      }
+
+      const filteredItems = this.filterItemsByBodyShape(casualItems, bodyShape, []);
+      
+      const casualTops = filteredItems.filter(item => this.isTop(item));
+      const casualBottoms = filteredItems.filter(item => this.isBottom(item));
+      const casualShoes = filteredItems.filter(item => this.isShoes(item));
+
+      if (casualTops.length === 0 || casualBottoms.length === 0 || casualShoes.length === 0) {
+        return createCasualOutfit(); // fallback
+      }
+
+      return {
+        top: {
+          id: casualTops[0].id,
+          name: casualTops[0].product_name,
+          type: 'top',
+          price: `₪${casualTops[0].price}`,
+          image: this.extractImageUrl(casualTops[0].image)
+        },
+        bottom: {
+          id: casualBottoms[0].id,
+          name: casualBottoms[0].product_name,
+          type: 'bottom',
+          price: `₪${casualBottoms[0].price}`,
+          image: this.extractImageUrl(casualBottoms[0].image)
+        },
+        shoes: {
+          id: casualShoes[0].id,
+          name: casualShoes[0].product_name,
+          type: 'shoes',
+          price: `₪${casualShoes[0].price}`,
+          image: this.extractImageUrl(casualShoes[0].image)
+        }
+      };
+    } catch (error) {
+      console.error('Error creating body shape aware casual outfit:', error);
+      return createCasualOutfit(); // fallback
+    }
+  }
+
+  private filterItemsByBodyShape(items: any[], bodyShape: string, colorPreferences: string[]): any[] {
+    const shapeRecommendations = BODY_SHAPE_RECOMMENDATIONS[bodyShape as keyof typeof BODY_SHAPE_RECOMMENDATIONS];
+    
+    if (!shapeRecommendations) {
+      // אם אין המלצות למבנה גוף זה, מחזיר סינון בסיסי לפי צבע בלבד
+      return items.filter(item => {
+        const itemColor = item.colour?.toLowerCase() || '';
+        const colorMatch = colorPreferences.length === 0 || 
+          colorPreferences.some((pref: string) => itemColor.includes(pref.toLowerCase()));
+        return colorMatch;
+      });
+    }
+
+    return items.filter(item => {
+      const itemName = item.product_name?.toLowerCase() || '';
+      const itemColor = item.colour?.toLowerCase() || '';
+      
+      // בדיקת התאמת צבע
+      const colorMatch = colorPreferences.length === 0 || 
+        colorPreferences.some((pref: string) => itemColor.includes(pref.toLowerCase()));
+
+      // בדיקת התאמה למבנה גוף
+      const isRecommendedTop = this.isTop(item) && 
+        shapeRecommendations.tops.some(recTop => itemName.includes(recTop.toLowerCase()));
+      
+      const isRecommendedBottom = this.isBottom(item) && 
+        shapeRecommendations.bottoms.some(recBottom => itemName.includes(recBottom.toLowerCase()));
+
+      const isShoes = this.isShoes(item);
+      const isDressOrTunic = this.isDressOrTunic(item);
+
+      // בדיקת פריטים שצריך להימנע מהם
+      const shouldAvoid = shapeRecommendations.avoid.some(avoidItem => 
+        itemName.includes(avoidItem.toLowerCase()));
+
+      return colorMatch && !shouldAvoid && (isRecommendedTop || isRecommendedBottom || isShoes || isDressOrTunic);
+    });
+  }
+
+  private getBodyShapeRecommendations(bodyShape: string, style: string): string[] {
+    const shapeRecommendations = BODY_SHAPE_RECOMMENDATIONS[bodyShape as keyof typeof BODY_SHAPE_RECOMMENDATIONS];
+    
+    if (!shapeRecommendations) {
+      return [
+        'התאם אביזרים מתאימים כדי להשלים את המראה',
+        'שקול להוסיף שכבות נוספות בהתאם למזג האוויר',
+        'וודא שהצבעים מתאימים זה לזה'
+      ];
+    }
+
+    return [
+      `עבור מבנה גוף ${bodyShape}: ${shapeRecommendations.styles.join(', ')}`,
+      `מומלץ לבחור: ${shapeRecommendations.tops.slice(0, 2).join(', ')}`,
+      `הימנע מ: ${shapeRecommendations.avoid.slice(0, 2).join(', ')}`,
+      'התאם אביזרים שמדגישים את החזקות הטבעיות שלך'
+    ];
+  }
+
+  private isTop(item: any): boolean {
+    const name = (item.product_name || '').toLowerCase();
+    const subfamily = (item.product_subfamily || '').toLowerCase();
+    
+    return name.includes('חולצ') || name.includes('טופ') || name.includes('בלוז') ||
+           subfamily.includes('top') || subfamily.includes('shirt') || subfamily.includes('blouse');
+  }
+
+  private isBottom(item: any): boolean {
+    const name = (item.product_name || '').toLowerCase();
+    const subfamily = (item.product_subfamily || '').toLowerCase();
+    
+    return name.includes('מכנס') || name.includes('חצאית') || name.includes('ג\'ינס') ||
+           subfamily.includes('trouser') || subfamily.includes('skirt') || subfamily.includes('jean');
+  }
+
+  private isShoes(item: any): boolean {
+    const name = (item.product_name || '').toLowerCase();
+    const subfamily = (item.product_subfamily || '').toLowerCase();
+    
+    return name.includes('נעל') || name.includes('סנדל') || name.includes('נעלי') ||
+           subfamily.includes('shoe') || subfamily.includes('sandal') || subfamily.includes('boot');
   }
 
   private isDressOrTunic(item: any): boolean {

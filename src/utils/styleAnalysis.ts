@@ -1,3 +1,4 @@
+
 import { QuizFormData } from "@/components/quiz/types";
 
 interface StyleAnalysis {
@@ -6,8 +7,18 @@ interface StyleAnalysis {
     bodyShape: string;
     preferences: string[];
     colorPreference?: string;
+    bodyStructure?: string; // Add API-compatible body structure
   };
 }
+
+// Mapping from quiz body shapes to API body structure codes
+const BODY_SHAPE_TO_STRUCTURE = {
+  "hourglass": "X",
+  "pear": "A", 
+  "rectangle": "H",
+  "triangle": "V",
+  "oval": "O"
+};
 
 export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
   // Simple analysis based on quiz data
@@ -19,6 +30,10 @@ export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
     // Consolidate the minimalist and modern styles as they're similar
     styleProfile = "Minimalist";
   }
+  
+  // Get body shape and map to API structure
+  const bodyShape = quizData.bodyShape || "hourglass";
+  const bodyStructure = BODY_SHAPE_TO_STRUCTURE[bodyShape as keyof typeof BODY_SHAPE_TO_STRUCTURE] || "X";
   
   // Determine color preference based on style and user color choices
   let colorPreference = "neutral";
@@ -38,10 +53,13 @@ export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
     }
   }
   
+  console.log(`Style Analysis: Body shape ${bodyShape} mapped to structure ${bodyStructure}`);
+  
   return {
     analysis: {
       styleProfile: styleProfile,
-      bodyShape: quizData.bodyShape || "hourglass",
+      bodyShape: bodyShape,
+      bodyStructure: bodyStructure, // Add for API compatibility
       preferences: quizData.stylePreferences || [],
       colorPreference: colorPreference
     }
