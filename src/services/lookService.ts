@@ -285,8 +285,14 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
       break;
       
     case 'casual':
-      // מזדמן - חולצה + מכנס/חצאית
-      if (categories.tops.length > 0 && categories.bottoms.length > 0) {
+      // מזדמן - חולצה + מכנס/חצאית או שמלה נוחה
+      if (categories.dresses.length > 0 && Math.random() > 0.5) {
+        // לפעמים בוחרים שמלה גם לאירוע מזדמן
+        const casualDress = categories.dresses[0];
+        selectedItems.push(createDashboardItem(casualDress, 'dress'));
+        usedColors.push(casualDress.colour?.toLowerCase() || '');
+        console.log(`👗 [selectOutfitByOccasion] Selected dress for casual: ${casualDress.product_name}`);
+      } else if (categories.tops.length > 0 && categories.bottoms.length > 0) {
         const casualTop = categories.tops[0];
         const casualBottom = categories.bottoms[0];
         selectedItems.push(createDashboardItem(casualTop, 'top'));
@@ -297,8 +303,14 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
       break;
       
     case 'weekend':
-      // סוף שבוע - נוח ורגוע
-      if (categories.tops.length > 0 && categories.bottoms.length > 0) {
+      // סוף שבוע - נוח ורגוע, גם שמלות נוחות אפשריות
+      if (categories.dresses.length > 0 && Math.random() > 0.6) {
+        // לפעמים בוחרים שמלה גם לסוף השבוע
+        const weekendDress = categories.dresses[0];
+        selectedItems.push(createDashboardItem(weekendDress, 'dress'));
+        usedColors.push(weekendDress.colour?.toLowerCase() || '');
+        console.log(`👗 [selectOutfitByOccasion] Selected dress for weekend: ${weekendDress.product_name}`);
+      } else if (categories.tops.length > 0 && categories.bottoms.length > 0) {
         const comfortableTop = categories.tops[0];
         const comfortableBottom = categories.bottoms[0];
         selectedItems.push(createDashboardItem(comfortableTop, 'top'));
@@ -315,11 +327,11 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
   
   console.log(`🚨 [selectOutfitByOccasion] CRITICAL DEBUG - CALLING getMatchingShoesFromZara`);
   
-  // Add shoes from zara_cloth table - ALWAYS, even when there's a dress
+  // Add shoes from zara_cloth table - ALWAYS FOR ALL OCCASIONS, even when there's a dress
   const shoesItem = await getMatchingShoesFromZara(occasion, usedColors);
   if (shoesItem) {
     selectedItems.push(shoesItem);
-    console.log(`✅ [selectOutfitByOccasion] SHOES FROM ZARA_CLOTH TABLE SUCCESSFULLY ADDED: ${shoesItem.name} with ID: ${shoesItem.id}`);
+    console.log(`✅ [selectOutfitByOccasion] SHOES FROM ZARA_CLOTH TABLE SUCCESSFULLY ADDED TO ${occasion.toUpperCase()}: ${shoesItem.name} with ID: ${shoesItem.id}`);
     console.log(`✅ [selectOutfitByOccasion] Shoes image URL: ${shoesItem.image}`);
     console.log(`✅ [selectOutfitByOccasion] Shoes type: ${shoesItem.type}`);
     console.log(`✅ [selectOutfitByOccasion] CONFIRMED FROM ZARA_CLOTH TABLE: ${shoesItem.id.includes('zara-shoes-') ? 'YES' : 'NO'}`);
@@ -328,14 +340,16 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
     const hasDress = selectedItems.some(item => item.type === 'dress');
     if (hasDress) {
       console.log(`👗👠 [selectOutfitByOccasion] DRESS + SHOES COMBINATION CREATED SUCCESSFULLY for ${occasion.toUpperCase()}`);
+    } else {
+      console.log(`👕👖👠 [selectOutfitByOccasion] TOP + BOTTOM + SHOES COMBINATION CREATED SUCCESSFULLY for ${occasion.toUpperCase()}`);
     }
   } else {
-    console.log(`❌ [selectOutfitByOccasion] FAILED TO GET SHOES FROM ZARA_CLOTH TABLE - USING FALLBACK`);
+    console.log(`❌ [selectOutfitByOccasion] FAILED TO GET SHOES FROM ZARA_CLOTH TABLE FOR ${occasion.toUpperCase()} - USING FALLBACK`);
     
     // Add fallback shoes only if database fails
     const fallbackShoes = getRandomFallbackShoes();
     selectedItems.push(fallbackShoes);
-    console.log(`🆘 [selectOutfitByOccasion] FALLBACK SHOES ADDED: ${fallbackShoes.name}`);
+    console.log(`🆘 [selectOutfitByOccasion] FALLBACK SHOES ADDED TO ${occasion.toUpperCase()}: ${fallbackShoes.name}`);
   }
 
   console.log(`🔥 [selectOutfitByOccasion] ===== FINAL OUTFIT FOR ${occasion.toUpperCase()} =====`);
@@ -348,7 +362,7 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
       console.log(`      👠 FROM ZARA_CLOTH TABLE: ${item.id.includes('zara-shoes-') ? 'YES' : 'NO'}`);
     }
     if (item.type === 'dress') {
-      console.log(`      👗 DRESS WITH SHOES: This outfit includes both dress and shoes recommendation`);
+      console.log(`      👗 DRESS WITH SHOES: This ${occasion.toUpperCase()} outfit includes both dress and shoes recommendation`);
     }
   });
   
