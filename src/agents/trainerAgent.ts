@@ -1,4 +1,3 @@
-
 import { personalizationAgent, stylingAgent, validatorAgent, recommendationAgent, Agent } from "./index";
 import { ProfileFetcherTool } from "../tools/profileFetcherTool";
 import { GenerateOutfitTool } from "../tools/generateOutfitTool";
@@ -8,7 +7,15 @@ import { OutfitResponse } from "../types/outfitTypes";
 import logger from "../lib/logger";
 
 // Type guard to check if outfit has structured item objects
-function hasStructuredItems(outfit: any): boolean {
+function hasStructuredItems(outfit: any): outfit is {
+  top: { color: string; product_name: string; description: string; price: string; image: string; };
+  bottom: { color: string; product_name: string; description: string; price: string; image: string; };
+  shoes: { color: string; product_name: string; description: string; price: string; image: string; };
+  coat?: { color: string; product_name: string; description: string; price: string; image: string; };
+  description: string;
+  recommendations?: string[];
+  occasion?: string;
+} {
   return outfit.top && 
          typeof outfit.top === 'object' && 
          outfit.top.color !== undefined &&

@@ -134,9 +134,9 @@ export const GenerateOutfitTool = {
       );
 
       if (tops.length > 0 && bottoms.length > 0 && shoes.length > 0) {
-        const selectedTop = tops[0] || null;
-        const selectedBottom = bottoms[0] || null;
-        const selectedShoes = shoes[0] || null;
+        const selectedTop = tops[0];
+        const selectedBottom = bottoms[0];
+        const selectedShoes = shoes[0];
         
         return {
           success: true,
