@@ -7,6 +7,19 @@ import { GenerateRecommendationsTool } from "../tools/generateRecommendationsToo
 import { OutfitResponse } from "../types/outfitTypes";
 import logger from "../lib/logger";
 
+// Type guard to check if outfit has structured item objects
+function hasStructuredItems(outfit: any): boolean {
+  return outfit.top && 
+         typeof outfit.top === 'object' && 
+         outfit.top.color !== undefined &&
+         outfit.bottom && 
+         typeof outfit.bottom === 'object' && 
+         outfit.bottom.color !== undefined &&
+         outfit.shoes && 
+         typeof outfit.shoes === 'object' && 
+         outfit.shoes.color !== undefined;
+}
+
 /**
  * Tool for validating the agent pipeline
  * Runs automated validation cycles to ensure consistency and quality of agent outputs
@@ -101,8 +114,8 @@ export const RunValidationCycleTool = {
         
         userScore.score += stylingScore;
         
-        // Step 3: Test validator agent (25 points) - only if outfit has full item objects
-        if (typeof generatedOutfit.top === 'object' && generatedOutfit.top.color) {
+        // Step 3: Test validator agent (25 points) - only if outfit has structured item objects
+        if (hasStructuredItems(generatedOutfit)) {
           const compatibilityResult = await CompatibilityCheckerTool.execute(generatedOutfit);
           if (!compatibilityResult.success) {
             results.push({
@@ -128,8 +141,8 @@ export const RunValidationCycleTool = {
           userScore.comments.push("Skipped compatibility check for simplified outfit format");
         }
         
-        // Step 4: Test recommendation agent (25 points) - only if outfit has full structure
-        if (typeof generatedOutfit.top === 'object' && generatedOutfit.top.color) {
+        // Step 4: Test recommendation agent (25 points) - only if outfit has structured objects
+        if (hasStructuredItems(generatedOutfit)) {
           const recommendationsResult = await GenerateRecommendationsTool.execute(generatedOutfit);
           if (!recommendationsResult.success) {
             results.push({
