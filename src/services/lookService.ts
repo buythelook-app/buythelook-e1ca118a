@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabaseClient";
 import type { LookItem } from "@/hooks/usePersonalizedLooks";
 import { DashboardItem } from "@/types/lookTypes";
@@ -33,36 +34,45 @@ export const clearGlobalItemTrackers = () => {
   console.log('🧹 [clearGlobalItemTrackers] Cleared global item tracking');
 };
 
-const getRandomItems = (items: any[], count: number, occasion: string, usedItemIds?: Set<string>): any[] => {
+const getRandomItems = (items: any[], count: number, occasion: string, preferUnique: boolean = true): any[] => {
   console.log(`🎲 [getRandomItems] Getting ${count} items for ${occasion} from ${items.length} available items`);
   
-  const effectiveUsedItems = usedItemIds || globalUsedItems;
-  
-  // Filter out already used items
-  const availableItems = items.filter(item => !effectiveUsedItems.has(item.id));
-  console.log(`🔍 [getRandomItems] ${availableItems.length} items available after filtering used items`);
-  
-  if (availableItems.length === 0) {
-    console.warn(`⚠️ [getRandomItems] No available items for ${occasion} after filtering`);
+  if (items.length === 0) {
+    console.warn(`⚠️ [getRandomItems] No items available for ${occasion}`);
     return [];
+  }
+  
+  // First try to get unique items if preferred
+  let availableItems = items;
+  if (preferUnique) {
+    availableItems = items.filter(item => !globalUsedItems.has(item.id));
+    console.log(`🔍 [getRandomItems] ${availableItems.length} unique items available for ${occasion}`);
+  }
+  
+  // If no unique items available, use all items
+  if (availableItems.length === 0) {
+    console.log(`⚠️ [getRandomItems] No unique items for ${occasion}, using all available items`);
+    availableItems = items;
   }
   
   // Shuffle and select
   const shuffled = [...availableItems].sort(() => Math.random() - 0.5);
   const selected = shuffled.slice(0, Math.min(count, shuffled.length));
   
-  // Track selected items globally
-  selected.forEach(item => {
-    globalUsedItems.add(item.id);
-    console.log(`📝 [getRandomItems] Tracking item ${item.id} (${item.product_name}) as used for ${occasion}`);
-  });
+  // Track selected items globally only if we prefer unique items
+  if (preferUnique) {
+    selected.forEach(item => {
+      globalUsedItems.add(item.id);
+      console.log(`📝 [getRandomItems] Tracking item ${item.id} (${item.product_name}) as used for ${occasion}`);
+    });
+  }
   
-  console.log(`✅ [getRandomItems] Selected ${selected.length} unique items for ${occasion}`);
+  console.log(`✅ [getRandomItems] Selected ${selected.length} items for ${occasion}`);
   return selected;
 };
 
 export const fetchDashboardItems = async (): Promise<{ [key: string]: DashboardItem[] }> => {
-  console.log('🚀 [fetchDashboardItems] Starting fetch with unique item distribution...');
+  console.log('🚀 [fetchDashboardItems] Starting fetch with smart item distribution...');
   
   try {
     // Clear previous tracking for fresh start
@@ -114,83 +124,49 @@ export const fetchDashboardItems = async (): Promise<{ [key: string]: DashboardI
 
     console.log(`👕 Tops: ${tops.length}, 👖 Bottoms: ${bottoms.length}, 👠 Shoes: ${shoes.length}`);
 
-    // Ensure we have enough items for all occasions
-    const minItemsNeeded = occasions.length; // At least 1 of each type per occasion
-    if (tops.length < minItemsNeeded || bottoms.length < minItemsNeeded || shoes.length < minItemsNeeded) {
-      console.warn('⚠️ [fetchDashboardItems] Not enough items for unique distribution');
-    }
-
     const result: { [key: string]: DashboardItem[] } = {};
 
-    // Distribute unique items to each occasion
+    // Distribute items to each occasion with smart logic
     occasions.forEach((occasion, index) => {
       console.log(`\n🎯 [fetchDashboardItems] Processing occasion: ${occasion} (${index + 1}/${occasions.length})`);
       
       const outfitItems: DashboardItem[] = [];
       
-      // Get one unique item from each category
-      const selectedTop = getRandomItems(tops, 1, `${occasion}-top`);
-      const selectedBottom = getRandomItems(bottoms, 1, `${occasion}-bottom`);
-      const selectedShoes = getRandomItems(shoes, 1, `${occasion}-shoes`);
+      // Try to get unique items first, but fall back if needed
+      const preferUnique = index < 2; // Only first 2 occasions get strict uniqueness
+      
+      // Get one item from each category
+      const selectedTop = getRandomItems(tops, 1, `${occasion}-top`, preferUnique);
+      const selectedBottom = getRandomItems(bottoms, 1, `${occasion}-bottom`, preferUnique);
+      const selectedShoes = getRandomItems(shoes, 1, `${occasion}-shoes`, preferUnique);
       
       // Add selected items to outfit
-      outfitItems.push(...selectedTop.map(item => ({
-        id: item.id,
-        name: item.product_name,
-        image: item.image,
-        type: item.type,
-        price: `$${item.price}`,
-        description: item.description || `${item.product_family} from Zara`
-      })));
-      
-      outfitItems.push(...selectedBottom.map(item => ({
-        id: item.id,
-        name: item.product_name,
-        image: item.image,
-        type: item.type,
-        price: `$${item.price}`,
-        description: item.description || `${item.product_family} from Zara`
-      })));
-      
-      outfitItems.push(...selectedShoes.map(item => ({
-        id: item.id,
-        name: item.product_name,
-        image: item.image,
-        type: item.type,
-        price: `$${item.price}`,
-        description: item.description || `${item.product_family} from Zara`
-      })));
+      [...selectedTop, ...selectedBottom, ...selectedShoes].forEach(item => {
+        outfitItems.push({
+          id: item.id,
+          name: item.product_name,
+          image: item.image,
+          type: item.type,
+          price: `$${item.price}`,
+          description: item.description || `${item.product_family} from Zara`
+        });
+      });
       
       result[occasion] = outfitItems;
       
-      console.log(`✅ [fetchDashboardItems] ${occasion} outfit completed with ${outfitItems.length} unique items:`);
+      console.log(`✅ [fetchDashboardItems] ${occasion} outfit completed with ${outfitItems.length} items:`);
       outfitItems.forEach(item => {
         console.log(`   - ${item.type}: ${item.name} (ID: ${item.id})`);
       });
     });
 
-    // Verify no duplicates across occasions
-    const allSelectedIds = new Set<string>();
-    let duplicatesFound = false;
-    
-    Object.entries(result).forEach(([occasion, items]) => {
-      items.forEach(item => {
-        if (allSelectedIds.has(item.id)) {
-          console.error(`❌ [fetchDashboardItems] DUPLICATE FOUND: Item ${item.id} appears in multiple occasions`);
-          duplicatesFound = true;
-        }
-        allSelectedIds.add(item.id);
-      });
-    });
-    
-    if (!duplicatesFound) {
-      console.log(`✅ [fetchDashboardItems] SUCCESS: All ${allSelectedIds.size} items are unique across occasions`);
-    }
+    // Log final distribution
+    const totalSelectedItems = Object.values(result).reduce((sum, items) => sum + items.length, 0);
+    console.log(`🎉 [fetchDashboardItems] Distribution completed: ${totalSelectedItems} total items across ${occasions.length} occasions`);
 
     // Cache the result
     outfitCache = result;
     
-    console.log('🎉 [fetchDashboardItems] Unique distribution completed successfully');
     return result;
 
   } catch (error) {
