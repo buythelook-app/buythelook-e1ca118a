@@ -234,7 +234,7 @@ export const GenerateOutfitTool = {
               },
               description: `${bodyRecommendations?.description || 'A stylish outfit'} - ${selectedTop?.product_name || 'top'} with ${selectedBottom?.product_name || 'bottom'} specifically chosen for ${bodyStructure} body type`,
               recommendations: [
-                ...bodyRecommendations?.recommendations || [],
+                ...(bodyRecommendations?.recommendations || []),
                 `This ${selectedTop?.product_name || 'top'} complements your ${bodyStructure} body structure`,
                 `The ${selectedBottom?.product_name || 'bottom'} creates the ideal silhouette for your body type`
               ],
