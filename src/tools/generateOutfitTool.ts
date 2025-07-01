@@ -216,21 +216,21 @@ export const GenerateOutfitTool = {
                 product_name: selectedTop?.product_name || "Stylish top",
                 description: selectedTop?.description || "Stylish top piece",
                 price: selectedTop?.price?.toString() || "49.99",
-                image: this.extractImageUrl(selectedTop?.image)
+                image: GenerateOutfitTool.extractImageUrl(selectedTop?.image)
               },
               bottom: {
                 color: selectedBottom?.colour || "#BDC3C7",
                 product_name: selectedBottom?.product_name || "Comfortable bottom",
                 description: selectedBottom?.description || "Comfortable bottom piece", 
                 price: selectedBottom?.price?.toString() || "59.99",
-                image: this.extractImageUrl(selectedBottom?.image)
+                image: GenerateOutfitTool.extractImageUrl(selectedBottom?.image)
               },
               shoes: {
                 color: selectedShoes?.colour || "#7F8C8D",
                 product_name: selectedShoes?.product_name || "Stylish shoes",
                 description: selectedShoes?.description || "Stylish footwear",
                 price: selectedShoes?.price?.toString() || "69.99",
-                image: this.extractImageUrl(selectedShoes?.image)
+                image: GenerateOutfitTool.extractImageUrl(selectedShoes?.image)
               },
               description: `${bodyRecommendations?.description || 'A stylish outfit'} - ${selectedTop?.product_name || 'top'} with ${selectedBottom?.product_name || 'bottom'} specifically chosen for ${bodyStructure} body type`,
               recommendations: [
