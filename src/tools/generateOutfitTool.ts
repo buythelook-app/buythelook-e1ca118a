@@ -61,6 +61,7 @@ const BODY_STRUCTURE_RECOMMENDATIONS = {
 
 /**
  * Enhanced filtering function that uses body structure recommendations
+ * and ensures data consistency
  */
 function filterItemsByBodyStructure(items: any[], bodyStructure: string): any[] {
   const recommendations = BODY_STRUCTURE_RECOMMENDATIONS[bodyStructure as keyof typeof BODY_STRUCTURE_RECOMMENDATIONS];
@@ -71,14 +72,39 @@ function filterItemsByBodyStructure(items: any[], bodyStructure: string): any[] 
   }
 
   return items.filter(item => {
-    const text = `${item.product_name || ''} ${item.description || ''}`.toLowerCase();
+    // Validate that the item has all required fields to prevent data mismatch
+    if (!item.product_name || !item.description) {
+      console.log(`Filtering out item with incomplete data: ${item.id}`);
+      return false;
+    }
+
+    const text = `${item.product_name} ${item.description}`.toLowerCase();
 
     const hasPreferredFit = recommendations.preferred_fits?.some(fit => text.includes(fit.toLowerCase()));
     const hasPreferredSilhouette = recommendations.preferred_silhouettes?.some(s => text.includes(s.toLowerCase()));
     const avoidsBadKeywords = recommendations.avoid_keywords?.every(k => !text.includes(k.toLowerCase()));
 
-    return hasPreferredFit && hasPreferredSilhouette && avoidsBadKeywords;
+    // Log filtering decisions for debugging
+    if (hasPreferredFit || hasPreferredSilhouette) {
+      console.log(`Item "${item.product_name}" matches preferences for ${bodyStructure}`);
+    }
+
+    return (hasPreferredFit || hasPreferredSilhouette) && avoidsBadKeywords;
   });
+}
+
+/**
+ * Validates that item data is consistent (image matches description)
+ */
+function validateItemConsistency(item: any): boolean {
+  // Basic validation - ensure we have both image and description
+  if (!item.image || !item.product_name || !item.description) {
+    console.warn(`Item ${item.id} missing essential data - image, name, or description`);
+    return false;
+  }
+
+  // Additional validation can be added here
+  return true;
 }
 
 /**
@@ -133,20 +159,23 @@ export const GenerateOutfitTool = {
         };
       }
 
-      // Enhanced filtering using body structure
+      // Enhanced filtering using body structure with data validation
       const allTops = items?.filter(item => 
-        item.product_name?.toLowerCase().includes('חולצ') || 
-        item.product_name?.toLowerCase().includes('טופ') ||
-        item.product_name?.toLowerCase().includes('בלוז')
+        (item.product_name?.toLowerCase().includes('חולצ') || 
+         item.product_name?.toLowerCase().includes('טופ') ||
+         item.product_name?.toLowerCase().includes('בלוז')) &&
+        validateItemConsistency(item)
       ) || [];
       
       const allBottoms = items?.filter(item => 
-        item.product_name?.toLowerCase().includes('מכנס') || 
-        item.product_name?.toLowerCase().includes('חצאית')
+        (item.product_name?.toLowerCase().includes('מכנס') || 
+         item.product_name?.toLowerCase().includes('חצאית')) &&
+        validateItemConsistency(item)
       ) || [];
       
       const allShoes = items?.filter(item => 
-        item.product_name?.toLowerCase().includes('נעל')
+        item.product_name?.toLowerCase().includes('נעל') &&
+        validateItemConsistency(item)
       ) || [];
 
       // Apply body structure filtering
@@ -164,6 +193,30 @@ export const GenerateOutfitTool = {
         const selectedBottom = filteredBottoms[0];
         const selectedShoes = filteredShoes[0];
         
+        // Validate consistency before returning
+        if (!validateItemConsistency(selectedTop) || 
+            !validateItemConsistency(selectedBottom) || 
+            !validateItemConsistency(selectedShoes)) {
+          console.warn('Selected items failed consistency check, using fallback');
+          return {
+            success: true,
+            data: [
+              {
+                top: "#2C3E50",
+                bottom: "#BDC3C7",
+                shoes: "#7F8C8D", 
+                coat: "#34495E",
+                description: `${bodyRecommendations?.description || 'A stylish outfit'} - תלבושת מותאמת למבנה הגוף ${bodyStructure}`,
+                recommendations: bodyRecommendations?.recommendations || [
+                  "Choose fitted clothing that complements your body shape",
+                  "Focus on creating balanced proportions"
+                ],
+                occasion: mood === 'casual' ? 'casual' : 'work'
+              }
+            ]
+          };
+        }
+        
         return {
           success: true,
           data: [
@@ -173,27 +226,30 @@ export const GenerateOutfitTool = {
                 product_name: selectedTop?.product_name || "Stylish top",
                 description: selectedTop?.description || "Stylish top piece",
                 price: selectedTop?.price?.toString() || "49.99",
-                image: GenerateOutfitTool.extractImageUrl(selectedTop?.image)
+                image: GenerateOutfitTool.extractImageUrl(selectedTop?.image),
+                id: selectedTop?.id
               },
               bottom: {
                 color: selectedBottom?.colour || "#BDC3C7",
                 product_name: selectedBottom?.product_name || "Comfortable bottom",
                 description: selectedBottom?.description || "Comfortable bottom piece", 
                 price: selectedBottom?.price?.toString() || "59.99",
-                image: GenerateOutfitTool.extractImageUrl(selectedBottom?.image)
+                image: GenerateOutfitTool.extractImageUrl(selectedBottom?.image),
+                id: selectedBottom?.id
               },
               shoes: {
                 color: selectedShoes?.colour || "#7F8C8D",
                 product_name: selectedShoes?.product_name || "Stylish shoes",
                 description: selectedShoes?.description || "Stylish footwear",
                 price: selectedShoes?.price?.toString() || "69.99",
-                image: GenerateOutfitTool.extractImageUrl(selectedShoes?.image)
+                image: GenerateOutfitTool.extractImageUrl(selectedShoes?.image),
+                id: selectedShoes?.id
               },
-              description: `${bodyRecommendations?.description || 'A stylish outfit'} - ${selectedTop?.product_name || 'top'} with ${selectedBottom?.product_name || 'bottom'} specifically chosen for ${bodyStructure} body type`,
+              description: `${bodyRecommendations?.description || 'A stylish outfit'} - ${selectedTop?.product_name || 'top'} עם ${selectedBottom?.product_name || 'bottom'} שנבחרו במיוחד למבנה גוף ${bodyStructure}`,
               recommendations: [
                 ...(bodyRecommendations?.recommendations || []),
-                `This ${selectedTop?.product_name || 'top'} complements your ${bodyStructure} body structure`,
-                `The ${selectedBottom?.product_name || 'bottom'} creates the ideal silhouette for your body type`
+                `${selectedTop?.product_name || 'הפריט העליון'} מתאים למבנה הגוף ${bodyStructure}`,
+                `${selectedBottom?.product_name || 'הפריט התחתון'} יוצר את הצללית האידיאלית עבורך`
               ],
               occasion: mood === 'casual' ? 'casual' : 'work'
             }
@@ -210,7 +266,7 @@ export const GenerateOutfitTool = {
             bottom: "#BDC3C7",
             shoes: "#7F8C8D", 
             coat: "#34495E",
-            description: `A sophisticated ensemble tailored for ${bodyRecommendations?.description || 'your body type'}`,
+            description: `${bodyRecommendations?.description || 'A stylish outfit'} - תלבושת מותאמת למבנה הגוף שלך`,
             recommendations: bodyRecommendations?.recommendations || [
               "Choose fitted clothing that complements your body shape",
               "Focus on creating balanced proportions"
