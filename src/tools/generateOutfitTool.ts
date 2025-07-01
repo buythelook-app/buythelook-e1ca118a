@@ -62,65 +62,22 @@ const BODY_STRUCTURE_RECOMMENDATIONS = {
 /**
  * Enhanced filtering function that uses body structure recommendations
  */
-function filterItemsByBodyStructure(items: any[], bodyStructure: string, itemType: 'top' | 'bottom' | 'shoes'): any[] {
+function filterItemsByBodyStructure(items: any[], bodyStructure: string): any[] {
   const recommendations = BODY_STRUCTURE_RECOMMENDATIONS[bodyStructure as keyof typeof BODY_STRUCTURE_RECOMMENDATIONS];
-  
+
   if (!recommendations) {
     console.log(`No recommendations found for body structure: ${bodyStructure}`);
     return items;
   }
 
   return items.filter(item => {
-    const itemName = (item.product_name || '').toLowerCase();
-    const itemDescription = (item.description || '').toLowerCase();
-    const itemFamily = (item.product_family || '').toLowerCase();
-    const itemSubfamily = (item.product_subfamily || '').toLowerCase();
-    const searchableText = `${itemName} ${itemDescription} ${itemFamily} ${itemSubfamily}`;
+    const text = `${item.product_name || ''} ${item.description || ''}`.toLowerCase();
 
-    // Check if item should be avoided
-    const shouldAvoid = recommendations.avoid_keywords.some(keyword => 
-      searchableText.includes(keyword.toLowerCase())
-    );
-    
-    if (shouldAvoid) {
-      console.log(`Filtering out item "${item.product_name}" - contains avoid keyword for ${bodyStructure}`);
-      return false;
-    }
+    const hasPreferredFit = recommendations.preferred_fits?.some(fit => text.includes(fit.toLowerCase()));
+    const hasPreferredSilhouette = recommendations.preferred_silhouettes?.some(s => text.includes(s.toLowerCase()));
+    const avoidsBadKeywords = recommendations.avoid_keywords?.every(k => !text.includes(k.toLowerCase()));
 
-    // For shoes, we don't need body-specific filtering
-    if (itemType === 'shoes') {
-      return true;
-    }
-
-    // Check for preferred fits and silhouettes
-    const hasPreferredFit = recommendations.preferred_fits.some(fit => 
-      searchableText.includes(fit.toLowerCase())
-    );
-    
-    const hasPreferredSilhouette = recommendations.preferred_silhouettes.some(silhouette => 
-      searchableText.includes(silhouette.toLowerCase())
-    );
-
-    // Type-specific preferences
-    let hasTypePreference = false;
-    if (itemType === 'top') {
-      hasTypePreference = recommendations.top_preferences.some(pref => 
-        searchableText.includes(pref.toLowerCase())
-      );
-    } else if (itemType === 'bottom') {
-      hasTypePreference = recommendations.bottom_preferences.some(pref => 
-        searchableText.includes(pref.toLowerCase())
-      );
-    }
-
-    // Item is preferred if it matches any of the criteria
-    const isPreferred = hasPreferredFit || hasPreferredSilhouette || hasTypePreference;
-    
-    if (isPreferred) {
-      console.log(`Item "${item.product_name}" preferred for ${bodyStructure} body type`);
-    }
-
-    return isPreferred;
+    return hasPreferredFit && hasPreferredSilhouette && avoidsBadKeywords;
   });
 }
 
@@ -193,9 +150,9 @@ export const GenerateOutfitTool = {
       ) || [];
 
       // Apply body structure filtering
-      const filteredTops = filterItemsByBodyStructure(allTops, bodyStructure, 'top');
-      const filteredBottoms = filterItemsByBodyStructure(allBottoms, bodyStructure, 'bottom');
-      const filteredShoes = filterItemsByBodyStructure(allShoes, bodyStructure, 'shoes');
+      const filteredTops = filterItemsByBodyStructure(allTops, bodyStructure);
+      const filteredBottoms = filterItemsByBodyStructure(allBottoms, bodyStructure);
+      const filteredShoes = filterItemsByBodyStructure(allShoes, bodyStructure);
 
       console.log(`Body structure filtering results for ${bodyStructure}:`);
       console.log(`- Tops: ${allTops.length} → ${filteredTops.length} items`);
