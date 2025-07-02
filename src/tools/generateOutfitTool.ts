@@ -201,11 +201,13 @@ function filterByOccasion(items: any[], occasion: string): any[] {
           colour: item.colour
         });
         
-        // For shoes - only formal/business shoes for work
+        // For shoes - formal/business shoes for work
         if (itemType === 'shoes') {
-          const workShoeKeywords = ['עסקי', 'פורמלי', 'עור', 'קלאסי', 'מגף', 'עקב נמוך'];
+          const workShoeKeywords = ['עסקי', 'פורמלי', 'עור', 'קלאסי', 'מגף', 'עקב נמוך', 'heel', 'formal', 'business', 'leather'];
           const avoidCasualShoes = !text.includes('סניקרס') && !text.includes('ספורט') && !text.includes('ריצה');
-          return workShoeKeywords.some(keyword => text.includes(keyword)) && avoidCasualShoes;
+          const isWorkShoe = workShoeKeywords.some(keyword => text.includes(keyword)) && avoidCasualShoes;
+          console.log(`  - Work shoe decision: ${isWorkShoe}`);
+          return isWorkShoe;
         }
         
         // Item is suitable for work if it has include keywords and doesn't have exclude keywords
@@ -219,36 +221,31 @@ function filterByOccasion(items: any[], occasion: string): any[] {
         const hasWeekendKeywords = weekendKeywords.some(keyword => text.includes(keyword)) || 
                                   text.includes('ג\'ינס') || text.includes('טי שירט');
         
-        // Add detailed debugging for casual shoes
+        // For casual shoes - ONLY sneakers, sports, flats - NO formal shoes
         if (itemType === 'shoes') {
           console.log(`👟 CASUAL SHOES DEBUG for "${item.product_name}":`);
           console.log(`  - Text: "${text}"`);
-          console.log(`  - Item data:`, {
-            id: item.id,
-            product_name: item.product_name,
-            description: item.description,
-            product_family: item.product_family,
-            colour: item.colour
-          });
           
           // STRICT filtering for casual shoes - ONLY sneakers, sports, flats
           const casualShoeKeywords = ['סניקרס', 'ספורט', 'ריצה', 'התעמלות', 'שטוח', 'נוח', 'קז\'ואל', 'sneakers', 'sport', 'flat'];
           const hasCasualKeywords = casualShoeKeywords.some(keyword => text.includes(keyword));
           
-          // STRICTLY avoid heels, formal, business shoes
-          const avoidFormalShoes = !text.includes('עקב') && 
-                                  !text.includes('פורמלי') && 
-                                  !text.includes('עסקי') && 
-                                  !text.includes('heel') && 
-                                  !text.includes('formal') && 
-                                  !text.includes('business') &&
-                                  !text.includes('עור קלאסי') &&
-                                  !text.includes('דרס');
+          // STRICTLY avoid ALL formal shoes - heels, business, formal, leather dress shoes
+          const avoidAllFormalShoes = !text.includes('עקב') && 
+                                     !text.includes('פורמלי') && 
+                                     !text.includes('עסקי') && 
+                                     !text.includes('heel') && 
+                                     !text.includes('formal') && 
+                                     !text.includes('business') &&
+                                     !text.includes('עור קלאסי') &&
+                                     !text.includes('דרס') &&
+                                     !text.includes('leather') &&
+                                     !text.includes('קלאסי');
           
           console.log(`  - Has casual keywords: ${hasCasualKeywords}`);
-          console.log(`  - Avoids formal shoes: ${avoidFormalShoes}`);
+          console.log(`  - Avoids ALL formal shoes: ${avoidAllFormalShoes}`);
           
-          const isCasualShoesSuitable = hasCasualKeywords && avoidFormalShoes;
+          const isCasualShoesSuitable = hasCasualKeywords && avoidAllFormalShoes;
           console.log(`  - Final casual shoes decision: ${isCasualShoesSuitable}`);
           return isCasualShoesSuitable;
         }
@@ -260,10 +257,12 @@ function filterByOccasion(items: any[], occasion: string): any[] {
         const eveningKeywords = ['ערב', 'אלגנטי', 'חגיגי', 'פורמלי', 'מיוחד'];
         const hasEveningKeywords = eveningKeywords.some(keyword => text.includes(keyword));
         
-        // For shoes - elegant/formal shoes including heels
+        // For evening shoes - elegant/formal shoes including heels ARE ALLOWED
         if (itemType === 'shoes') {
-          const eveningShoeKeywords = ['עקב', 'אלגנטי', 'ערב', 'פורמלי', 'חגיגי', 'עור'];
-          return eveningShoeKeywords.some(keyword => text.includes(keyword));
+          const eveningShoeKeywords = ['עקב', 'אלגנטי', 'ערב', 'פורמלי', 'חגיגי', 'עור', 'heel', 'formal', 'elegant', 'dress'];
+          const isEveningShoe = eveningShoeKeywords.some(keyword => text.includes(keyword));
+          console.log(`✨ EVENING SHOES DEBUG for "${item.product_name}": ${isEveningShoe}`);
+          return isEveningShoe;
         }
         
         return hasEveningKeywords;
