@@ -58,6 +58,21 @@ const BODY_STRUCTURE_RECOMMENDATIONS = {
   }
 };
 
+// Event-specific clothing recommendations
+const EVENT_RECOMMENDATIONS = {
+  workwear: {
+    description: "Clothing suitable for a professional office or work environment",
+    include_keywords: [
+      "blazer", "shirt", "button-down", "trousers", "slacks", "blouse", "midi skirt",
+      "high-waist", "wide-leg", "tailored", "wrap dress", "structured", "knit", "v-neck"
+    ],
+    exclude_keywords: [
+      "crop", "sleeveless", "mini skirt", "denim", "ripped", "transparent", "cut-out",
+      "sports", "casual", "t-shirt", "hoodie"
+    ]
+  }
+};
+
 // Global tracker for used items across all outfits in the same generation
 let usedItemIds = new Set<string>();
 
@@ -155,7 +170,7 @@ function validateItemConsistency(item: any): boolean {
 }
 
 /**
- * Enhanced occasion-specific filtering
+ * Enhanced occasion-specific filtering with precise definitions
  */
 function filterByOccasion(items: any[], occasion: string): any[] {
   return items.filter(item => {
@@ -164,10 +179,13 @@ function filterByOccasion(items: any[], occasion: string): any[] {
     
     switch (occasion) {
       case 'work':
-        // Work appropriate items - professional, conservative
-        const workKeywords = ['פורמלי', 'עסקי', 'מכופתר', 'בלייזר', 'חליפה', 'קלאסי'];
-        const hasWorkKeywords = workKeywords.some(keyword => text.includes(keyword));
-        const avoidCasual = !text.includes('ג\'ינס') && !text.includes('ספורט') && !text.includes('טי שירט');
+        const workRecommendations = EVENT_RECOMMENDATIONS.workwear;
+        
+        // Check if item contains any include keywords
+        const hasIncludeKeywords = workRecommendations.include_keywords.some(keyword => text.includes(keyword.toLowerCase()));
+        
+        // Check if item contains any exclude keywords
+        const hasExcludeKeywords = workRecommendations.exclude_keywords.some(keyword => text.includes(keyword.toLowerCase()));
         
         // For shoes - only formal/business shoes for work
         if (itemType === 'shoes') {
@@ -176,7 +194,8 @@ function filterByOccasion(items: any[], occasion: string): any[] {
           return workShoeKeywords.some(keyword => text.includes(keyword)) && avoidCasualShoes;
         }
         
-        return hasWorkKeywords || avoidCasual;
+        // Item is suitable for work if it has include keywords and doesn't have exclude keywords
+        return hasIncludeKeywords && !hasExcludeKeywords;
         
       case 'weekend':
         // Weekend casual items - comfortable, relaxed
