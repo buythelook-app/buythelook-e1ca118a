@@ -160,6 +160,7 @@ function validateItemConsistency(item: any): boolean {
 function filterByOccasion(items: any[], occasion: string): any[] {
   return items.filter(item => {
     const text = `${item.product_name} ${item.description}`.toLowerCase();
+    const itemType = detectItemType(item);
     
     switch (occasion) {
       case 'work':
@@ -167,18 +168,43 @@ function filterByOccasion(items: any[], occasion: string): any[] {
         const workKeywords = ['פורמלי', 'עסקי', 'מכופתר', 'בלייזר', 'חליפה', 'קלאסי'];
         const hasWorkKeywords = workKeywords.some(keyword => text.includes(keyword));
         const avoidCasual = !text.includes('ג\'ינס') && !text.includes('ספורט') && !text.includes('טי שירט');
+        
+        // For shoes - only formal/business shoes for work
+        if (itemType === 'shoes') {
+          const workShoeKeywords = ['עסקי', 'פורמלי', 'עור', 'קלאסי', 'מגף', 'עקב נמוך'];
+          const avoidCasualShoes = !text.includes('סניקרס') && !text.includes('ספורט') && !text.includes('ריצה');
+          return workShoeKeywords.some(keyword => text.includes(keyword)) && avoidCasualShoes;
+        }
+        
         return hasWorkKeywords || avoidCasual;
         
       case 'weekend':
         // Weekend casual items - comfortable, relaxed
         const weekendKeywords = ['נוח', 'יומיומי', 'רגיל', 'קז\'ואל', 'רלקס'];
-        return weekendKeywords.some(keyword => text.includes(keyword)) || 
-               text.includes('ג\'ינס') || text.includes('טי שירט');
+        const hasWeekendKeywords = weekendKeywords.some(keyword => text.includes(keyword)) || 
+                                  text.includes('ג\'ינס') || text.includes('טי שירט');
+        
+        // For shoes - ONLY flat casual shoes (sports/sneakers/flat)
+        if (itemType === 'shoes') {
+          const casualShoeKeywords = ['סניקרס', 'ספורט', 'ריצה', 'התעמלות', 'שטוח', 'נוח', 'קז\'ואל'];
+          const avoidHeels = !text.includes('עקב') && !text.includes('פורמלי') && !text.includes('עסקי');
+          return casualShoeKeywords.some(keyword => text.includes(keyword)) && avoidHeels;
+        }
+        
+        return hasWeekendKeywords;
         
       case 'evening':
         // Evening formal items - elegant, dressy
         const eveningKeywords = ['ערב', 'אלגנטי', 'חגיגי', 'פורמלי', 'מיוחד'];
-        return eveningKeywords.some(keyword => text.includes(keyword));
+        const hasEveningKeywords = eveningKeywords.some(keyword => text.includes(keyword));
+        
+        // For shoes - elegant/formal shoes including heels
+        if (itemType === 'shoes') {
+          const eveningShoeKeywords = ['עקב', 'אלגנטי', 'ערב', 'פורמלי', 'חגיגי', 'עור'];
+          return eveningShoeKeywords.some(keyword => text.includes(keyword));
+        }
+        
+        return hasEveningKeywords;
         
       default:
         return true;
