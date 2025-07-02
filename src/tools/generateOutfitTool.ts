@@ -1,3 +1,4 @@
+
 import { supabase } from '../lib/supabaseClient';
 
 // Body structure to Hebrew mapping
@@ -221,32 +222,34 @@ function filterByOccasion(items: any[], occasion: string): any[] {
         const hasWeekendKeywords = weekendKeywords.some(keyword => text.includes(keyword)) || 
                                   text.includes('ג\'ינס') || text.includes('טי שירט');
         
-        // For casual shoes - ONLY sneakers, sports, flats - NO formal shoes
+        // For casual shoes - SUPER STRICT FILTERING - ABSOLUTELY NO HEELS OR FORMAL SHOES
         if (itemType === 'shoes') {
-          console.log(`👟 CASUAL SHOES DEBUG for "${item.product_name}":`);
+          console.log(`👟 SUPER STRICT CASUAL SHOES DEBUG for "${item.product_name}":`);
           console.log(`  - Text: "${text}"`);
+          console.log(`  - Colour: "${item.colour}"`);
           
-          // STRICT filtering for casual shoes - ONLY sneakers, sports, flats
-          const casualShoeKeywords = ['סניקרס', 'ספורט', 'ריצה', 'התעמלות', 'שטוח', 'נוח', 'קז\'ואל', 'sneakers', 'sport', 'flat'];
-          const hasCasualKeywords = casualShoeKeywords.some(keyword => text.includes(keyword));
+          // MANDATORY casual shoe keywords - item MUST have at least one
+          const mustHaveCasualKeywords = ['סניקרס', 'ספורט', 'ריצה', 'התעמלות', 'שטוח', 'נוח', 'קז\'ואל', 'sneakers', 'sport', 'flat', 'running'];
+          const hasMandatoryCasualKeywords = mustHaveCasualKeywords.some(keyword => text.includes(keyword));
           
-          // STRICTLY avoid ALL formal shoes - heels, business, formal, leather dress shoes
-          const avoidAllFormalShoes = !text.includes('עקב') && 
-                                     !text.includes('פורמלי') && 
-                                     !text.includes('עסקי') && 
-                                     !text.includes('heel') && 
-                                     !text.includes('formal') && 
-                                     !text.includes('business') &&
-                                     !text.includes('עור קלאסי') &&
-                                     !text.includes('דרס') &&
-                                     !text.includes('leather') &&
-                                     !text.includes('קלאסי');
+          // FORBIDDEN keywords for casual - if ANY of these appear, reject immediately
+          const forbiddenFormalKeywords = [
+            'עקב', 'heel', 'heels', 'פורמלי', 'עסקי', 'formal', 'business', 
+            'קלאסי', 'elegant', 'אלגנטי', 'dress', 'דרס', 'leather', 'עור קלאסי',
+            'high heel', 'stiletto', 'pump', 'oxford', 'loafer'
+          ];
+          const hasForbiddenKeywords = forbiddenFormalKeywords.some(keyword => text.includes(keyword));
           
-          console.log(`  - Has casual keywords: ${hasCasualKeywords}`);
-          console.log(`  - Avoids ALL formal shoes: ${avoidAllFormalShoes}`);
+          console.log(`  - Has mandatory casual keywords: ${hasMandatoryCasualKeywords}`);
+          console.log(`  - Has forbidden formal keywords: ${hasForbiddenKeywords}`);
           
-          const isCasualShoesSuitable = hasCasualKeywords && avoidAllFormalShoes;
-          console.log(`  - Final casual shoes decision: ${isCasualShoesSuitable}`);
+          // TRIPLE CHECK: Also check if description suggests formality
+          const descriptionSuggestsFormal = text.includes('חגיגי') || text.includes('מיוחד') || text.includes('ערב');
+          console.log(`  - Description suggests formal: ${descriptionSuggestsFormal}`);
+          
+          // FINAL DECISION: Must have casual keywords AND must not have ANY formal indicators
+          const isCasualShoesSuitable = hasMandatoryCasualKeywords && !hasForbiddenKeywords && !descriptionSuggestsFormal;
+          console.log(`  - Final STRICT casual shoes decision: ${isCasualShoesSuitable}`);
           return isCasualShoesSuitable;
         }
         
