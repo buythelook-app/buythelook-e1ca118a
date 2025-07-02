@@ -219,11 +219,38 @@ function filterByOccasion(items: any[], occasion: string): any[] {
         const hasWeekendKeywords = weekendKeywords.some(keyword => text.includes(keyword)) || 
                                   text.includes('ג\'ינס') || text.includes('טי שירט');
         
-        // For shoes - ONLY flat casual shoes (sports/sneakers/flat)
+        // Add detailed debugging for casual shoes
         if (itemType === 'shoes') {
-          const casualShoeKeywords = ['סניקרס', 'ספורט', 'ריצה', 'התעמלות', 'שטוח', 'נוח', 'קז\'ואל'];
-          const avoidHeels = !text.includes('עקב') && !text.includes('פורמלי') && !text.includes('עסקי');
-          return casualShoeKeywords.some(keyword => text.includes(keyword)) && avoidHeels;
+          console.log(`👟 CASUAL SHOES DEBUG for "${item.product_name}":`);
+          console.log(`  - Text: "${text}"`);
+          console.log(`  - Item data:`, {
+            id: item.id,
+            product_name: item.product_name,
+            description: item.description,
+            product_family: item.product_family,
+            colour: item.colour
+          });
+          
+          // STRICT filtering for casual shoes - ONLY sneakers, sports, flats
+          const casualShoeKeywords = ['סניקרס', 'ספורט', 'ריצה', 'התעמלות', 'שטוח', 'נוח', 'קז\'ואל', 'sneakers', 'sport', 'flat'];
+          const hasCasualKeywords = casualShoeKeywords.some(keyword => text.includes(keyword));
+          
+          // STRICTLY avoid heels, formal, business shoes
+          const avoidFormalShoes = !text.includes('עקב') && 
+                                  !text.includes('פורמלי') && 
+                                  !text.includes('עסקי') && 
+                                  !text.includes('heel') && 
+                                  !text.includes('formal') && 
+                                  !text.includes('business') &&
+                                  !text.includes('עור קלאסי') &&
+                                  !text.includes('דרס');
+          
+          console.log(`  - Has casual keywords: ${hasCasualKeywords}`);
+          console.log(`  - Avoids formal shoes: ${avoidFormalShoes}`);
+          
+          const isCasualShoesSuitable = hasCasualKeywords && avoidFormalShoes;
+          console.log(`  - Final casual shoes decision: ${isCasualShoesSuitable}`);
+          return isCasualShoesSuitable;
         }
         
         return hasWeekendKeywords;
