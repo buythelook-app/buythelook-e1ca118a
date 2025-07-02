@@ -1,4 +1,3 @@
-
 import { supabase } from '../lib/supabaseClient';
 
 // Body structure to Hebrew mapping
@@ -59,6 +58,9 @@ const BODY_STRUCTURE_RECOMMENDATIONS = {
   }
 };
 
+// Global tracker for used items across all outfits in the same generation
+let usedItemIds = new Set<string>();
+
 /**
  * Enhanced filtering function that uses body structure recommendations
  * and ensures data consistency
@@ -78,6 +80,12 @@ function filterItemsByBodyStructure(items: any[], bodyStructure: string): any[] 
       return false;
     }
 
+    // Check if item was already used in this generation
+    if (usedItemIds.has(item.id)) {
+      console.log(`Filtering out already used item: ${item.id}`);
+      return false;
+    }
+
     const text = `${item.product_name} ${item.description}`.toLowerCase();
 
     const hasPreferredFit = recommendations.preferred_fits?.some(fit => text.includes(fit.toLowerCase()));
@@ -91,6 +99,45 @@ function filterItemsByBodyStructure(items: any[], bodyStructure: string): any[] 
 
     return (hasPreferredFit || hasPreferredSilhouette) && avoidsBadKeywords;
   });
+}
+
+/**
+ * Improved item type detection based on product name and family
+ */
+function detectItemType(item: any): 'top' | 'bottom' | 'shoes' | 'dress' | 'outerwear' {
+  const productName = (item.product_name || '').toLowerCase();
+  const productFamily = (item.product_family || '').toLowerCase();
+  const description = (item.description || '').toLowerCase();
+  
+  // More accurate detection logic
+  if (productName.includes('חולצ') || productName.includes('טופ') || productName.includes('בלוז') ||
+      productFamily.includes('shirt') || productFamily.includes('top') || productFamily.includes('blouse')) {
+    return 'top';
+  }
+  
+  if (productName.includes('מכנס') || productFamily.includes('trouser') || productFamily.includes('pant') ||
+      description.includes('מכנס')) {
+    return 'bottom';
+  }
+  
+  if (productName.includes('חצאית') || productFamily.includes('skirt')) {
+    return 'bottom';
+  }
+  
+  if (productName.includes('שמלה') || productFamily.includes('dress')) {
+    return 'dress';
+  }
+  
+  if (productName.includes('נעל') || productFamily.includes('shoe') || productFamily.includes('boot')) {
+    return 'shoes';
+  }
+  
+  if (productName.includes('מעיל') || productName.includes('ז\'קט') || productFamily.includes('jacket') || productFamily.includes('coat')) {
+    return 'outerwear';
+  }
+  
+  // Default fallback based on common patterns
+  return 'top';
 }
 
 /**
@@ -108,6 +155,38 @@ function validateItemConsistency(item: any): boolean {
 }
 
 /**
+ * Enhanced occasion-specific filtering
+ */
+function filterByOccasion(items: any[], occasion: string): any[] {
+  return items.filter(item => {
+    const text = `${item.product_name} ${item.description}`.toLowerCase();
+    
+    switch (occasion) {
+      case 'work':
+        // Work appropriate items - professional, conservative
+        const workKeywords = ['פורמלי', 'עסקי', 'מכופתר', 'בלייזר', 'חליפה', 'קלאסי'];
+        const hasWorkKeywords = workKeywords.some(keyword => text.includes(keyword));
+        const avoidCasual = !text.includes('ג\'ינס') && !text.includes('ספורט') && !text.includes('טי שירט');
+        return hasWorkKeywords || avoidCasual;
+        
+      case 'weekend':
+        // Weekend casual items - comfortable, relaxed
+        const weekendKeywords = ['נוח', 'יומיומי', 'רגיל', 'קז\'ואל', 'רלקס'];
+        return weekendKeywords.some(keyword => text.includes(keyword)) || 
+               text.includes('ג\'ינס') || text.includes('טי שירט');
+        
+      case 'evening':
+        // Evening formal items - elegant, dressy
+        const eveningKeywords = ['ערב', 'אלגנטי', 'חגיגי', 'פורמלי', 'מיוחד'];
+        return eveningKeywords.some(keyword => text.includes(keyword));
+        
+      default:
+        return true;
+    }
+  });
+}
+
+/**
  * Tool for generating outfit suggestions
  * Creates combinations of clothing items based on user parameters including body structure
  */
@@ -120,6 +199,9 @@ export const GenerateOutfitTool = {
     style: string
   }) => {
     console.log(`Generating outfit for: ${JSON.stringify(params)}`);
+    
+    // Reset used items tracker for new generation
+    usedItemIds.clear();
     
     try {
       const { bodyStructure, mood, style } = params;
@@ -135,7 +217,7 @@ export const GenerateOutfitTool = {
       const { data: items, error } = await supabase
         .from('zara_cloth')
         .select('*')
-        .limit(100);
+        .limit(200); // Increased limit for better variety
       
       if (error) {
         console.error('Error fetching items:', error);
@@ -159,39 +241,46 @@ export const GenerateOutfitTool = {
         };
       }
 
-      // Enhanced filtering using body structure with data validation
-      const allTops = items?.filter(item => 
-        (item.product_name?.toLowerCase().includes('חולצ') || 
-         item.product_name?.toLowerCase().includes('טופ') ||
-         item.product_name?.toLowerCase().includes('בלוז')) &&
-        validateItemConsistency(item)
-      ) || [];
-      
-      const allBottoms = items?.filter(item => 
-        (item.product_name?.toLowerCase().includes('מכנס') || 
-         item.product_name?.toLowerCase().includes('חצאית')) &&
-        validateItemConsistency(item)
-      ) || [];
-      
-      const allShoes = items?.filter(item => 
-        item.product_name?.toLowerCase().includes('נעל') &&
-        validateItemConsistency(item)
-      ) || [];
+      // Improved categorization with better type detection
+      const categorizedItems = {
+        tops: items?.filter(item => {
+          const type = detectItemType(item);
+          return type === 'top' && validateItemConsistency(item);
+        }) || [],
+        bottoms: items?.filter(item => {
+          const type = detectItemType(item);
+          return (type === 'bottom' || type === 'dress') && validateItemConsistency(item);
+        }) || [],
+        shoes: items?.filter(item => {
+          const type = detectItemType(item);
+          return type === 'shoes' && validateItemConsistency(item);
+        }) || []
+      };
 
-      // Apply body structure filtering
-      const filteredTops = filterItemsByBodyStructure(allTops, bodyStructure);
-      const filteredBottoms = filterItemsByBodyStructure(allBottoms, bodyStructure);
-      const filteredShoes = filterItemsByBodyStructure(allShoes, bodyStructure);
+      console.log(`Categorized items: ${categorizedItems.tops.length} tops, ${categorizedItems.bottoms.length} bottoms, ${categorizedItems.shoes.length} shoes`);
 
-      console.log(`Body structure filtering results for ${bodyStructure}:`);
-      console.log(`- Tops: ${allTops.length} → ${filteredTops.length} items`);
-      console.log(`- Bottoms: ${allBottoms.length} → ${filteredBottoms.length} items`);
-      console.log(`- Shoes: ${allShoes.length} → ${filteredShoes.length} items`);
+      // Apply body structure and occasion filtering
+      const occasion = mood === 'casual' ? 'weekend' : mood === 'elegant' ? 'evening' : 'work';
+      
+      const filteredTops = filterByOccasion(filterItemsByBodyStructure(categorizedItems.tops, bodyStructure), occasion);
+      const filteredBottoms = filterByOccasion(filterItemsByBodyStructure(categorizedItems.bottoms, bodyStructure), occasion);
+      const filteredShoes = filterByOccasion(filterItemsByBodyStructure(categorizedItems.shoes, bodyStructure), occasion);
+
+      console.log(`After filtering for ${bodyStructure} and ${occasion}:`);
+      console.log(`- Tops: ${categorizedItems.tops.length} → ${filteredTops.length} items`);
+      console.log(`- Bottoms: ${categorizedItems.bottoms.length} → ${filteredBottoms.length} items`);
+      console.log(`- Shoes: ${categorizedItems.shoes.length} → ${filteredShoes.length} items`);
 
       if (filteredTops.length > 0 && filteredBottoms.length > 0 && filteredShoes.length > 0) {
+        // Select items and mark them as used
         const selectedTop = filteredTops[0];
         const selectedBottom = filteredBottoms[0];
         const selectedShoes = filteredShoes[0];
+        
+        // Add to used items tracker
+        usedItemIds.add(selectedTop.id);
+        usedItemIds.add(selectedBottom.id);
+        usedItemIds.add(selectedShoes.id);
         
         // Validate consistency before returning
         if (!validateItemConsistency(selectedTop) || 
@@ -211,7 +300,7 @@ export const GenerateOutfitTool = {
                   "Choose fitted clothing that complements your body shape",
                   "Focus on creating balanced proportions"
                 ],
-                occasion: mood === 'casual' ? 'casual' : 'work'
+                occasion: occasion
               }
             ]
           };
@@ -245,13 +334,14 @@ export const GenerateOutfitTool = {
                 image: GenerateOutfitTool.extractImageUrl(selectedShoes?.image),
                 id: selectedShoes?.id
               },
-              description: `${bodyRecommendations?.description || 'A stylish outfit'} - ${selectedTop?.product_name || 'top'} עם ${selectedBottom?.product_name || 'bottom'} שנבחרו במיוחד למבנה גוף ${bodyStructure}`,
+              description: `${bodyRecommendations?.description || 'A stylish outfit'} - ${selectedTop?.product_name || 'top'} עם ${selectedBottom?.product_name || 'bottom'} שנבחרו במיוחד למבנה גוף ${bodyStructure} ל${occasion}`,
               recommendations: [
                 ...(bodyRecommendations?.recommendations || []),
                 `${selectedTop?.product_name || 'הפריט העליון'} מתאים למבנה הגוף ${bodyStructure}`,
-                `${selectedBottom?.product_name || 'הפריט התחתון'} יוצר את הצללית האידיאלית עבורך`
+                `${selectedBottom?.product_name || 'הפריט התחתון'} יוצר את הצללית האידיאלית עבורך`,
+                `מתאים לאירוע: ${occasion}`
               ],
-              occasion: mood === 'casual' ? 'casual' : 'work'
+              occasion: occasion
             }
           ]
         };
@@ -266,12 +356,12 @@ export const GenerateOutfitTool = {
             bottom: "#BDC3C7",
             shoes: "#7F8C8D", 
             coat: "#34495E",
-            description: `${bodyRecommendations?.description || 'A stylish outfit'} - תלבושת מותאמת למבנה הגוף שלך`,
+            description: `${bodyRecommendations?.description || 'A stylish outfit'} - תלבושת מותאמת למבנה הגוף שלך ל${occasion}`,
             recommendations: bodyRecommendations?.recommendations || [
               "Choose fitted clothing that complements your body shape",
               "Focus on creating balanced proportions"
             ],
-            occasion: mood === 'casual' ? 'casual' : 'work'
+            occasion: occasion
           }
         ]
       };
