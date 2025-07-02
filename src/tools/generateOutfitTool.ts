@@ -187,6 +187,20 @@ function filterByOccasion(items: any[], occasion: string): any[] {
         // Check if item contains any exclude keywords
         const hasExcludeKeywords = workRecommendations.exclude_keywords.some(keyword => text.includes(keyword.toLowerCase()));
         
+        // Log detailed work filtering info
+        console.log(`🔍 WORK FILTER DEBUG for "${item.product_name}":`);
+        console.log(`  - Text: "${text}"`);
+        console.log(`  - Has include keywords: ${hasIncludeKeywords}`);
+        console.log(`  - Has exclude keywords: ${hasExcludeKeywords}`);
+        console.log(`  - Item type: ${itemType}`);
+        console.log(`  - Full item data:`, {
+          id: item.id,
+          product_name: item.product_name,
+          description: item.description,
+          product_family: item.product_family,
+          colour: item.colour
+        });
+        
         // For shoes - only formal/business shoes for work
         if (itemType === 'shoes') {
           const workShoeKeywords = ['עסקי', 'פורמלי', 'עור', 'קלאסי', 'מגף', 'עקב נמוך'];
@@ -195,7 +209,9 @@ function filterByOccasion(items: any[], occasion: string): any[] {
         }
         
         // Item is suitable for work if it has include keywords and doesn't have exclude keywords
-        return hasIncludeKeywords && !hasExcludeKeywords;
+        const isWorkSuitable = hasIncludeKeywords && !hasExcludeKeywords;
+        console.log(`  - Final work suitable decision: ${isWorkSuitable}`);
+        return isWorkSuitable;
         
       case 'weekend':
         // Weekend casual items - comfortable, relaxed
@@ -307,6 +323,8 @@ export const GenerateOutfitTool = {
       // Apply body structure and occasion filtering
       const occasion = mood === 'casual' ? 'weekend' : mood === 'elegant' ? 'evening' : 'work';
       
+      console.log(`🎯 FILTERING FOR OCCASION: ${occasion}`);
+      
       const filteredTops = filterByOccasion(filterItemsByBodyStructure(categorizedItems.tops, bodyStructure), occasion);
       const filteredBottoms = filterByOccasion(filterItemsByBodyStructure(categorizedItems.bottoms, bodyStructure), occasion);
       const filteredShoes = filterByOccasion(filterItemsByBodyStructure(categorizedItems.shoes, bodyStructure), occasion);
@@ -321,6 +339,11 @@ export const GenerateOutfitTool = {
         const selectedTop = filteredTops[0];
         const selectedBottom = filteredBottoms[0];
         const selectedShoes = filteredShoes[0];
+        
+        console.log(`🎯 SELECTED ITEMS FOR ${occasion.toUpperCase()}:`);
+        console.log(`  TOP: "${selectedTop.product_name}" - ${selectedTop.description}`);
+        console.log(`  BOTTOM: "${selectedBottom.product_name}" - ${selectedBottom.description}`);
+        console.log(`  SHOES: "${selectedShoes.product_name}" - ${selectedShoes.description}`);
         
         // Add to used items tracker
         usedItemIds.add(selectedTop.id);
