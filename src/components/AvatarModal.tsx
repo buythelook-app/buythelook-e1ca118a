@@ -1,6 +1,6 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Avatar } from "./Avatar";
+import { ReadyPlayerMeAvatar } from "./ReadyPlayerMeAvatar";
 
 interface OutfitItem {
   id: string;
@@ -25,7 +25,7 @@ export const AvatarModal = ({ isOpen, onClose, items, bodyShape }: AvatarModalPr
           <DialogTitle className="text-center">המראה שלך עם התלבושת</DialogTitle>
         </DialogHeader>
         <div className="flex justify-center p-4">
-          <Avatar 
+          <ReadyPlayerMeAvatar 
             items={items}
             bodyShape={bodyShape}
             width={350}
@@ -33,7 +33,10 @@ export const AvatarModal = ({ isOpen, onClose, items, bodyShape }: AvatarModalPr
           />
         </div>
         <div className="text-center text-sm text-gray-600 mt-4">
-          <p>כך התלבושת תיראה על מבנה הגוף שלך</p>
+          <p>כך התלבושת תיראה על האווטאר שלך</p>
+          <p className="text-xs text-gray-500 mt-1">
+            לחץ על "ערוך אווטאר" כדי ליצור אווטאר אישי
+          </p>
         </div>
       </DialogContent>
     </Dialog>
