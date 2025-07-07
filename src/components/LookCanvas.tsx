@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { TryMeButton } from "./TryMeButton";
 
@@ -309,8 +308,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     id: item.id,
     image: item.image,
     type: item.type as 'top' | 'bottom' | 'dress' | 'shoes' | 'outerwear' | 'accessory' | 'sunglasses',
-    name: item.name,
-    color: item.color
+    name: item.name
   }));
 
   return (
