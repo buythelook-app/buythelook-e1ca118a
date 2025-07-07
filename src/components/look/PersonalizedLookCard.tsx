@@ -2,6 +2,7 @@
 import { memo } from "react";
 import { Shuffle, ShoppingCart } from "lucide-react";
 import { LookCanvas } from "@/components/LookCanvas";
+import { TryMeButton } from "@/components/TryMeButton";
 import { useNavigate } from "react-router-dom";
 import { Look } from "@/hooks/usePersonalizedLooks";
 
@@ -16,6 +17,12 @@ interface LookCardProps {
 // Use memo to prevent unnecessary re-renders
 export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userStyleProfile, customCanvas }: LookCardProps) => {
   const navigate = useNavigate();
+  
+  // Filter items for TryMe button
+  const avatarItems = look.items.filter(item => 
+    item.type !== 'cart' && 
+    ['top', 'bottom', 'dress', 'shoes', 'outerwear', 'accessory', 'sunglasses'].includes(item.type)
+  );
   
   return (
     <div 
@@ -40,6 +47,7 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
       <div className="flex justify-between items-center">
         <p className="text-netflix-accent font-semibold">{look.price}</p>
         <div className="flex space-x-2">
+          <TryMeButton items={avatarItems} />
           <button
             onClick={() => onAddToCart(look)}
             className="bg-netflix-accent text-white p-2 rounded-lg hover:bg-netflix-accent/90 transition-colors"

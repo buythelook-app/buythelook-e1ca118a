@@ -1,5 +1,5 @@
-
 import { useEffect, useRef, useState } from "react";
+import { TryMeButton } from "./TryMeButton";
 
 interface OutfitItem {
   id: string;
@@ -300,6 +300,12 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     loadImages();
   }, [items, width, height]);
 
+  // Filter out items that shouldn't be sent to Avatar (like 'cart' type)
+  const avatarItems = items.filter(item => 
+    item.type !== 'cart' && 
+    ['top', 'bottom', 'dress', 'shoes', 'outerwear', 'accessory', 'sunglasses'].includes(item.type)
+  );
+
   return (
     <div className="relative bg-white rounded-lg shadow-lg overflow-hidden">
       <canvas
@@ -328,6 +334,11 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
           </div>
         </div>
       )}
+      
+      {/* Try Me Button at the bottom */}
+      <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 z-10">
+        <TryMeButton items={avatarItems} />
+      </div>
     </div>
   );
 };
