@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import { TryMeButton } from "./TryMeButton";
 
@@ -300,11 +301,17 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     loadImages();
   }, [items, width, height]);
 
-  // Filter out items that shouldn't be sent to Avatar (like 'cart' type)
+  // Filter out cart items and only include valid avatar item types for TryMe button
   const avatarItems = items.filter(item => 
     item.type !== 'cart' && 
     ['top', 'bottom', 'dress', 'shoes', 'outerwear', 'accessory', 'sunglasses'].includes(item.type)
-  );
+  ).map(item => ({
+    id: item.id,
+    image: item.image,
+    type: item.type as 'top' | 'bottom' | 'dress' | 'shoes' | 'outerwear' | 'accessory' | 'sunglasses',
+    name: item.name,
+    color: item.color
+  }));
 
   return (
     <div className="relative bg-white rounded-lg shadow-lg overflow-hidden">

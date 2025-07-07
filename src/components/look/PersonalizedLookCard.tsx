@@ -18,11 +18,17 @@ interface LookCardProps {
 export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userStyleProfile, customCanvas }: LookCardProps) => {
   const navigate = useNavigate();
   
-  // Filter items for TryMe button
+  // Filter items for TryMe button - exclude cart items and only include valid avatar types
   const avatarItems = look.items.filter(item => 
     item.type !== 'cart' && 
     ['top', 'bottom', 'dress', 'shoes', 'outerwear', 'accessory', 'sunglasses'].includes(item.type)
-  );
+  ).map(item => ({
+    id: item.id,
+    image: item.image,
+    type: item.type as 'top' | 'bottom' | 'dress' | 'shoes' | 'outerwear' | 'accessory' | 'sunglasses',
+    name: item.name,
+    color: item.color
+  }));
   
   return (
     <div 
