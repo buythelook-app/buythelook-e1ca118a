@@ -16,38 +16,139 @@ interface AvatarProps {
   height?: number;
 }
 
-const BODY_SHAPE_PATHS = {
-  'X': {
-    // Hourglass - wider at shoulders and hips, narrow waist
-    path: "M150 80 C 180 80, 200 100, 200 130 L 190 180 C 190 200, 180 220, 170 240 L 180 280 C 180 320, 170 360, 150 400 L 250 400 C 230 360, 220 320, 220 280 L 230 240 C 220 220, 210 200, 210 180 L 200 130 C 200 100, 220 80, 250 80 Z",
-    description: "שעון חול"
-  },
-  'V': {
-    // Inverted triangle - broad shoulders, narrow hips
-    path: "M120 80 C 160 80, 200 90, 240 100 L 230 140 C 220 180, 210 220, 200 260 L 190 300 C 185 340, 180 380, 175 400 L 225 400 C 220 380, 215 340, 210 300 L 200 260 C 190 220, 180 180, 170 140 L 160 100 C 200 90, 240 80, 280 80 Z",
-    description: "משולש הפוך"
-  },
-  'H': {
-    // Rectangle - straight up and down
-    path: "M170 80 L 230 80 L 230 140 L 230 200 L 230 260 L 230 320 L 230 380 L 230 400 L 170 400 L 170 380 L 170 320 L 170 260 L 170 200 L 170 140 L 170 80 Z",
-    description: "מלבן"
-  },
-  'O': {
-    // Oval/Apple - wider in the middle
-    path: "M150 80 C 190 80, 220 90, 240 120 L 250 160 C 260 200, 260 240, 250 280 L 240 320 C 220 350, 190 380, 150 400 L 250 400 C 210 380, 180 350, 160 320 L 150 280 C 140 240, 140 200, 150 160 L 160 120 C 180 90, 210 80, 250 80 Z",
-    description: "אובלי"
-  },
-  'A': {
-    // Pear - narrow shoulders, wider hips
-    path: "M180 80 L 220 80 L 220 120 L 210 160 C 205 200, 200 240, 190 280 L 170 320 C 150 360, 130 380, 110 400 L 290 400 C 270 380, 250 360, 230 320 L 210 280 C 200 240, 195 200, 190 160 L 180 120 L 180 80 Z",
-    description: "אגס"
-  }
-};
-
 export const Avatar = ({ items, bodyShape, width = 400, height = 600 }: AvatarProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   
+  const drawBodyShape = (ctx: CanvasRenderingContext2D, centerX: number, startY: number) => {
+    const bodyWidth = 80;
+    const bodyHeight = 200;
+    
+    // Body color
+    ctx.fillStyle = '#f4c2a1'; // Skin tone
+    ctx.strokeStyle = '#d4a574';
+    ctx.lineWidth = 2;
+
+    switch (bodyShape) {
+      case 'X': // Hourglass - wider at shoulders and hips, narrow waist
+        ctx.beginPath();
+        // Shoulders
+        ctx.moveTo(centerX - bodyWidth/2, startY);
+        ctx.lineTo(centerX + bodyWidth/2, startY);
+        // Right side down to waist
+        ctx.quadraticCurveTo(centerX + bodyWidth/2, startY + bodyHeight/4, centerX + bodyWidth/3, startY + bodyHeight/2);
+        // Right side from waist to hips
+        ctx.quadraticCurveTo(centerX + bodyWidth/3, startY + bodyHeight*0.75, centerX + bodyWidth/2, startY + bodyHeight);
+        // Bottom
+        ctx.lineTo(centerX - bodyWidth/2, startY + bodyHeight);
+        // Left side from hips to waist
+        ctx.quadraticCurveTo(centerX - bodyWidth/3, startY + bodyHeight*0.75, centerX - bodyWidth/3, startY + bodyHeight/2);
+        // Left side from waist to shoulders
+        ctx.quadraticCurveTo(centerX - bodyWidth/2, startY + bodyHeight/4, centerX - bodyWidth/2, startY);
+        ctx.fill();
+        ctx.stroke();
+        break;
+        
+      case 'V': // Inverted triangle - broad shoulders, narrow hips
+        ctx.beginPath();
+        ctx.moveTo(centerX - bodyWidth/2, startY);
+        ctx.lineTo(centerX + bodyWidth/2, startY);
+        ctx.lineTo(centerX + bodyWidth/3, startY + bodyHeight);
+        ctx.lineTo(centerX - bodyWidth/3, startY + bodyHeight);
+        ctx.fill();
+        ctx.stroke();
+        break;
+        
+      case 'A': // Pear - narrow shoulders, wider hips
+        ctx.beginPath();
+        ctx.moveTo(centerX - bodyWidth/3, startY);
+        ctx.lineTo(centerX + bodyWidth/3, startY);
+        ctx.lineTo(centerX + bodyWidth/2, startY + bodyHeight);
+        ctx.lineTo(centerX - bodyWidth/2, startY + bodyHeight);
+        ctx.fill();
+        ctx.stroke();
+        break;
+        
+      case 'O': // Oval - wider in the middle
+        ctx.beginPath();
+        ctx.ellipse(centerX, startY + bodyHeight/2, bodyWidth/2.2, bodyHeight/2, 0, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.stroke();
+        break;
+        
+      default: // 'H' Rectangle - straight up and down
+        ctx.fillRect(centerX - bodyWidth/2, startY, bodyWidth, bodyHeight);
+        ctx.strokeRect(centerX - bodyWidth/2, startY, bodyWidth, bodyHeight);
+        break;
+    }
+  };
+
+  const drawHead = (ctx: CanvasRenderingContext2D, centerX: number, headY: number) => {
+    // Head
+    ctx.fillStyle = '#f4c2a1';
+    ctx.strokeStyle = '#d4a574';
+    ctx.beginPath();
+    ctx.arc(centerX, headY, 35, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+
+    // Simple facial features
+    // Eyes
+    ctx.fillStyle = '#333';
+    ctx.beginPath();
+    ctx.arc(centerX - 12, headY - 8, 3, 0, 2 * Math.PI);
+    ctx.arc(centerX + 12, headY - 8, 3, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Nose
+    ctx.strokeStyle = '#d4a574';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(centerX, headY - 2);
+    ctx.lineTo(centerX - 2, headY + 3);
+    ctx.stroke();
+
+    // Mouth
+    ctx.beginPath();
+    ctx.arc(centerX, headY + 8, 8, 0, Math.PI);
+    ctx.stroke();
+
+    // Hair
+    ctx.fillStyle = '#8B4513';
+    ctx.beginPath();
+    ctx.arc(centerX, headY - 15, 38, Math.PI, 2 * Math.PI);
+    ctx.fill();
+  };
+
+  const drawArmsAndLegs = (ctx: CanvasRenderingContext2D, centerX: number, startY: number) => {
+    const bodyHeight = 200;
+    
+    ctx.fillStyle = '#f4c2a1';
+    ctx.strokeStyle = '#d4a574';
+    ctx.lineWidth = 2;
+
+    // Arms
+    const armWidth = 15;
+    const armLength = 80;
+    // Left arm
+    ctx.fillRect(centerX - 55, startY + 20, armWidth, armLength);
+    ctx.strokeRect(centerX - 55, startY + 20, armWidth, armLength);
+    // Right arm
+    ctx.fillRect(centerX + 40, startY + 20, armWidth, armLength);
+    ctx.strokeRect(centerX + 40, startY + 20, armWidth, armLength);
+
+    // Legs
+    const legWidth = 20;
+    const legLength = 100;
+    const legStartY = startY + bodyHeight;
+    // Left leg
+    ctx.fillRect(centerX - 30, legStartY, legWidth, legLength);
+    ctx.strokeRect(centerX - 30, legStartY, legWidth, legLength);
+    // Right leg
+    ctx.fillRect(centerX + 10, legStartY, legWidth, legLength);
+    ctx.strokeRect(centerX + 10, legStartY, legWidth, legLength);
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -68,71 +169,20 @@ export const Avatar = ({ items, bodyShape, width = 400, height = 600 }: AvatarPr
       ctx.clearRect(0, 0, width, height);
       
       // Draw background
-      ctx.fillStyle = '#f8f9fa';
+      const gradient = ctx.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, '#e3f2fd');
+      gradient.addColorStop(1, '#f8f9fa');
+      ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
 
-      // Draw body shape
-      const bodyShapeInfo = BODY_SHAPE_PATHS[bodyShape];
-      ctx.fillStyle = '#e9ecef';
-      ctx.strokeStyle = '#6c757d';
-      ctx.lineWidth = 2;
-      
-      // Create SVG-like path for body shape (simplified rectangle for now)
       const centerX = width / 2;
-      const bodyWidth = 120;
-      const bodyHeight = 300;
-      const startY = 120;
+      const headY = 80;
+      const bodyStartY = 140;
 
-      // Different body shapes
-      switch (bodyShape) {
-        case 'X': // Hourglass
-          ctx.beginPath();
-          ctx.moveTo(centerX - bodyWidth/2, startY);
-          ctx.lineTo(centerX + bodyWidth/2, startY);
-          ctx.lineTo(centerX + bodyWidth/3, startY + bodyHeight/3);
-          ctx.lineTo(centerX + bodyWidth/2, startY + bodyHeight);
-          ctx.lineTo(centerX - bodyWidth/2, startY + bodyHeight);
-          ctx.lineTo(centerX - bodyWidth/3, startY + bodyHeight/3);
-          ctx.closePath();
-          break;
-          
-        case 'V': // Inverted triangle
-          ctx.beginPath();
-          ctx.moveTo(centerX - bodyWidth/2, startY);
-          ctx.lineTo(centerX + bodyWidth/2, startY);
-          ctx.lineTo(centerX + bodyWidth/4, startY + bodyHeight);
-          ctx.lineTo(centerX - bodyWidth/4, startY + bodyHeight);
-          ctx.closePath();
-          break;
-          
-        case 'A': // Pear
-          ctx.beginPath();
-          ctx.moveTo(centerX - bodyWidth/4, startY);
-          ctx.lineTo(centerX + bodyWidth/4, startY);
-          ctx.lineTo(centerX + bodyWidth/2, startY + bodyHeight);
-          ctx.lineTo(centerX - bodyWidth/2, startY + bodyHeight);
-          ctx.closePath();
-          break;
-          
-        case 'O': // Oval
-          ctx.beginPath();
-          ctx.ellipse(centerX, startY + bodyHeight/2, bodyWidth/2, bodyHeight/2, 0, 0, 2 * Math.PI);
-          break;
-          
-        default: // 'H' Rectangle
-          ctx.fillRect(centerX - bodyWidth/2, startY, bodyWidth, bodyHeight);
-          break;
-      }
-      
-      ctx.fill();
-      ctx.stroke();
-
-      // Draw head
-      ctx.beginPath();
-      ctx.arc(centerX, startY - 40, 30, 0, 2 * Math.PI);
-      ctx.fillStyle = '#e9ecef';
-      ctx.fill();
-      ctx.stroke();
+      // Draw avatar base
+      drawHead(ctx, centerX, headY);
+      drawArmsAndLegs(ctx, centerX, bodyStartY);
+      drawBodyShape(ctx, centerX, bodyStartY);
 
       // Draw clothing items
       for (const item of items) {
@@ -148,41 +198,67 @@ export const Avatar = ({ items, bodyShape, width = 400, height = 600 }: AvatarPr
             img.src = item.image;
           });
 
-          // Position items based on type
+          // Position items based on type and body shape
           let x, y, itemWidth, itemHeight;
           
           switch (item.type) {
             case 'top':
-              x = centerX - 50;
-              y = startY + 20;
-              itemWidth = 100;
-              itemHeight = 80;
+              x = centerX - 45;
+              y = bodyStartY + 10;
+              itemWidth = 90;
+              itemHeight = 70;
               break;
             case 'bottom':
-              x = centerX - 45;
-              y = startY + 120;
-              itemWidth = 90;
-              itemHeight = 100;
+              x = centerX - 40;
+              y = bodyStartY + 90;
+              itemWidth = 80;
+              itemHeight = 80;
               break;
             case 'shoes':
-              x = centerX - 30;
-              y = startY + 260;
-              itemWidth = 60;
-              itemHeight = 40;
+              x = centerX - 35;
+              y = bodyStartY + 200 + 80; // At feet level
+              itemWidth = 70;
+              itemHeight = 25;
               break;
             case 'dress':
+              x = centerX - 45;
+              y = bodyStartY + 10;
+              itemWidth = 90;
+              itemHeight = 140;
+              break;
+            case 'outerwear':
               x = centerX - 50;
-              y = startY + 20;
+              y = bodyStartY + 5;
               itemWidth = 100;
-              itemHeight = 180;
+              itemHeight = 90;
+              break;
+            case 'accessory':
+              x = centerX - 15;
+              y = bodyStartY - 20;
+              itemWidth = 30;
+              itemHeight = 30;
+              break;
+            case 'sunglasses':
+              x = centerX - 20;
+              y = headY - 15;
+              itemWidth = 40;
+              itemHeight = 15;
               break;
             default:
               continue;
           }
 
-          // Draw item with some transparency
-          ctx.globalAlpha = 0.9;
+          // Apply transparency for clothing overlay effect
+          ctx.globalAlpha = 0.85;
+          
+          // Draw with rounded corners for better integration
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(x, y, itemWidth, itemHeight, 5);
+          ctx.clip();
           ctx.drawImage(img, x, y, itemWidth, itemHeight);
+          ctx.restore();
+          
           ctx.globalAlpha = 1.0;
 
         } catch (error) {
@@ -195,6 +271,14 @@ export const Avatar = ({ items, bodyShape, width = 400, height = 600 }: AvatarPr
 
     renderAvatar();
   }, [items, bodyShape, width, height]);
+
+  const BODY_SHAPE_DESCRIPTIONS = {
+    'X': 'שעון חול',
+    'V': 'משולש הפוך', 
+    'H': 'מלבן',
+    'O': 'אובלי',
+    'A': 'אגס'
+  };
 
   return (
     <div className="relative bg-white rounded-lg shadow-lg overflow-hidden">
@@ -216,7 +300,7 @@ export const Avatar = ({ items, bodyShape, width = 400, height = 600 }: AvatarPr
         </div>
       )}
       <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
-        מבנה גוף: {BODY_SHAPE_PATHS[bodyShape].description}
+        מבנה גוף: {BODY_SHAPE_DESCRIPTIONS[bodyShape]}
       </div>
     </div>
   );
