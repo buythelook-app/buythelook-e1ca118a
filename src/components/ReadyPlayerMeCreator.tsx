@@ -37,7 +37,9 @@ export const ReadyPlayerMeCreator = ({ isOpen, onClose, onAvatarCreated }: Ready
         console.log('ReadyPlayerMe frame ready - hiding loading');
         setIsLoading(false);
         setLoadingTimeout(false);
-        clearTimeout(timeoutId);
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
       }
     };
 
@@ -47,9 +49,7 @@ export const ReadyPlayerMeCreator = ({ isOpen, onClose, onAvatarCreated }: Ready
       
       // Set a timeout to show alternative options if loading takes too long
       timeoutId = setTimeout(() => {
-        if (isLoading) {
-          setLoadingTimeout(true);
-        }
+        setLoadingTimeout(true);
       }, 10000); // 10 seconds timeout
 
       window.addEventListener('message', handleMessage);
@@ -61,7 +61,7 @@ export const ReadyPlayerMeCreator = ({ isOpen, onClose, onAvatarCreated }: Ready
         clearTimeout(timeoutId);
       }
     };
-  }, [isOpen, onAvatarCreated, onClose, isLoading]);
+  }, [isOpen, onAvatarCreated, onClose]);
 
   const handleClose = () => {
     setIsLoading(true);
