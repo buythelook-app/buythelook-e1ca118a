@@ -22,15 +22,19 @@ export const ReadyPlayerMeCreator = ({ isOpen, onClose, onAvatarCreated }: Ready
       // Only accept messages from ReadyPlayerMe
       if (!event.origin.includes('readyplayer.me')) return;
 
-      const { type, data } = event.data;
+      const { type, data, eventName } = event.data;
       
       console.log('ReadyPlayerMe message:', event.data);
 
-      if (type === 'v1.avatar.exported') {
-        console.log('Avatar created successfully:', data.url);
-        onAvatarCreated(data.url);
+      // Handle both old and new message formats
+      const messageType = type || eventName;
+
+      if (messageType === 'v1.avatar.exported') {
+        console.log('Avatar created successfully:', data?.url);
+        onAvatarCreated(data?.url);
         onClose();
-      } else if (type === 'v1.frame.ready') {
+      } else if (messageType === 'v1.frame.ready') {
+        console.log('ReadyPlayerMe frame ready - hiding loading');
         setIsLoading(false);
         setLoadingTimeout(false);
         clearTimeout(timeoutId);
@@ -75,7 +79,7 @@ export const ReadyPlayerMeCreator = ({ isOpen, onClose, onAvatarCreated }: Ready
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0" aria-describedby="avatar-creator-description">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
@@ -94,6 +98,10 @@ export const ReadyPlayerMeCreator = ({ isOpen, onClose, onAvatarCreated }: Ready
             </div>
           </DialogTitle>
         </DialogHeader>
+        
+        <div id="avatar-creator-description" className="sr-only">
+          Create and customize your 3D avatar using ReadyPlayerMe
+        </div>
         
         <div className="relative w-full h-[600px] p-6 pt-0">
           {(isLoading || loadingTimeout) && (

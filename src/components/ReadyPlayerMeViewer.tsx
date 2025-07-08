@@ -47,9 +47,10 @@ export const ReadyPlayerMeViewer = ({
     const handleMessage = (event: MessageEvent) => {
       if (!event.origin.includes('models.readyplayer.me')) return;
 
-      const { type } = event.data;
+      const { type, eventName } = event.data;
+      const messageType = type || eventName;
       
-      if (type === 'v1.frame.ready') {
+      if (messageType === 'v1.frame.ready') {
         setIsLoading(false);
         setError(false);
         setLoadingTimeout(false);
