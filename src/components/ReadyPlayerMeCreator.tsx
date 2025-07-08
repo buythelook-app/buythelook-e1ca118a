@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User, X } from "lucide-react";
+import { User, X, RefreshCw } from "lucide-react";
 
 interface ReadyPlayerMeCreatorProps {
   isOpen: boolean;
@@ -13,11 +13,14 @@ interface ReadyPlayerMeCreatorProps {
 export const ReadyPlayerMeCreator = ({ isOpen, onClose, onAvatarCreated }: ReadyPlayerMeCreatorProps) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     const handleMessage = (event: MessageEvent) => {
       // Only accept messages from ReadyPlayerMe
-      if (event.origin !== 'https://readyplayer.me') return;
+      if (!event.origin.includes('readyplayer.me')) return;
 
       const { type, data } = event.data;
       
@@ -29,21 +32,45 @@ export const ReadyPlayerMeCreator = ({ isOpen, onClose, onAvatarCreated }: Ready
         onClose();
       } else if (type === 'v1.frame.ready') {
         setIsLoading(false);
+        setLoadingTimeout(false);
+        clearTimeout(timeoutId);
       }
     };
 
     if (isOpen) {
+      setIsLoading(true);
+      setLoadingTimeout(false);
+      
+      // Set a timeout to show alternative options if loading takes too long
+      timeoutId = setTimeout(() => {
+        if (isLoading) {
+          setLoadingTimeout(true);
+        }
+      }, 10000); // 10 seconds timeout
+
       window.addEventListener('message', handleMessage);
     }
 
     return () => {
       window.removeEventListener('message', handleMessage);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     };
-  }, [isOpen, onAvatarCreated, onClose]);
+  }, [isOpen, onAvatarCreated, onClose, isLoading]);
 
   const handleClose = () => {
     setIsLoading(true);
+    setLoadingTimeout(false);
     onClose();
+  };
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setLoadingTimeout(false);
+    if (iframeRef.current) {
+      iframeRef.current.src = iframeRef.current.src;
+    }
   };
 
   return (
@@ -55,28 +82,74 @@ export const ReadyPlayerMeCreator = ({ isOpen, onClose, onAvatarCreated }: Ready
               <User className="w-5 h-5" />
               Create Your Avatar
             </span>
-            <Button variant="ghost" size="sm" onClick={handleClose}>
-              <X className="w-4 h-4" />
-            </Button>
+            <div className="flex gap-2">
+              {loadingTimeout && (
+                <Button variant="ghost" size="sm" onClick={handleRefresh}>
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={handleClose}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
           </DialogTitle>
         </DialogHeader>
         
         <div className="relative w-full h-[600px] p-6 pt-0">
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                <p className="text-gray-600">Loading avatar creator...</p>
+          {(isLoading || loadingTimeout) && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 rounded-lg z-10">
+              <div className="text-center max-w-md">
+                {!loadingTimeout ? (
+                  <>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mx-auto mb-4"></div>
+                    <h3 className="text-lg font-semibold mb-2">Loading Avatar Creator</h3>
+                    <p className="text-gray-600 mb-4">This may take a few moments...</p>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-red-500 mb-4">
+                      <X className="w-16 h-16 mx-auto mb-2" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">Loading Taking Longer Than Expected</h3>
+                    <p className="text-gray-600 mb-4">
+                      The avatar creator is taking longer to load. This might be due to internet connection or server load.
+                    </p>
+                    <div className="flex gap-2 justify-center">
+                      <Button onClick={handleRefresh} variant="outline" size="sm">
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Try Again
+                      </Button>
+                      <Button onClick={handleClose} variant="outline" size="sm">
+                        Close
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
           
           <iframe
             ref={iframeRef}
-            src="https://readyplayer.me/avatar"
+            src="https://readyplayer.me/avatar?frameApi"
             className="w-full h-full border-0 rounded-lg"
-            allow="camera *; microphone *"
-            style={{ display: isLoading ? 'none' : 'block' }}
+            allow="camera *; microphone *; clipboard-write"
+            loading="eager"
+            style={{ 
+              display: isLoading ? 'none' : 'block',
+              visibility: loadingTimeout ? 'hidden' : 'visible'
+            }}
+            onLoad={() => {
+              // Fallback for iframe load event
+              setTimeout(() => {
+                if (isLoading) {
+                  setIsLoading(false);
+                }
+              }, 2000);
+            }}
           />
         </div>
       </DialogContent>
