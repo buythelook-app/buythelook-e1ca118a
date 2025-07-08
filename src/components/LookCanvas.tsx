@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { TryMeButton } from "./TryMeButton";
 
 interface OutfitItem {
   id: string;
@@ -300,17 +299,6 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     loadImages();
   }, [items, width, height]);
 
-  // Filter out cart items and only include valid avatar item types for TryMe button
-  const avatarItems = items.filter(item => 
-    item.type !== 'cart' && 
-    ['top', 'bottom', 'dress', 'shoes', 'outerwear', 'accessory', 'sunglasses'].includes(item.type)
-  ).map(item => ({
-    id: item.id,
-    image: item.image,
-    type: item.type as 'top' | 'bottom' | 'dress' | 'shoes' | 'outerwear' | 'accessory' | 'sunglasses',
-    name: item.name
-  }));
-
   return (
     <div className="relative bg-white rounded-lg shadow-lg overflow-hidden">
       <canvas
@@ -339,11 +327,6 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
           </div>
         </div>
       )}
-      
-      {/* Try Me Button at the bottom */}
-      <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 z-10">
-        <TryMeButton items={avatarItems} />
-      </div>
     </div>
   );
 };
