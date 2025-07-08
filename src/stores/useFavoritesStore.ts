@@ -13,6 +13,8 @@ interface FavoritesStore {
   favorites: FavoriteLook[];
   addFavorite: (look: FavoriteLook) => Promise<void>;
   removeFavorite: (id: string) => Promise<void>;
+  addToFavorites: (look: FavoriteLook) => void;
+  removeFromFavorites: (id: string) => void;
   isFavorite: (id: string) => boolean;
   loadFavorites: () => Promise<void>;
 }
@@ -29,6 +31,18 @@ export const useFavoritesStore = create<FavoritesStore>((set, get) => ({
     console.log('Favorite added to memory');
   },
   removeFavorite: async (id) => {
+    set(state => ({
+      favorites: state.favorites.filter(look => look.id !== id)
+    }));
+    console.log('Favorite removed from memory');
+  },
+  addToFavorites: (look) => {
+    set(state => ({
+      favorites: [...state.favorites, look]
+    }));
+    console.log('Favorite added to memory');
+  },
+  removeFromFavorites: (id) => {
     set(state => ({
       favorites: state.favorites.filter(look => look.id !== id)
     }));
