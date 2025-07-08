@@ -4,6 +4,7 @@ import { Mode } from "./StyleFilterButton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { type Mood } from "./MoodFilter";
 import { useToast } from "@/hooks/use-toast";
+import { filterWorkAppropriateItems } from "./WorkAppropriateFilter";
 
 const MOODS_TO_MODES: Record<Mood, Mode> = {
   mystery: "Casual",
@@ -21,15 +22,15 @@ const MOODS_TO_MODES: Record<Mood, Mode> = {
   powerful: "Work"
 };
 
-const MODES: Array<{ id: number; name: Mode; icon: string }> = [
-  { id: 1, name: "Relaxing", icon: "🌅" },
-  { id: 2, name: "Party", icon: "🎉" },
-  { id: 3, name: "Work", icon: "💼" },
-  { id: 4, name: "Date", icon: "💖" },
-  { id: 5, name: "Travel", icon: "✈️" },
-  { id: 6, name: "Shopping", icon: "🛍️" },
-  { id: 7, name: "Sport", icon: "⚽" },
-  { id: 8, name: "Casual", icon: "👕" },
+const MODES: Array<{ id: number; name: Mode; icon: string; workAppropriate: boolean }> = [
+  { id: 1, name: "Relaxing", icon: "🌅", workAppropriate: true },
+  { id: 2, name: "Party", icon: "🎉", workAppropriate: false },
+  { id: 3, name: "Work", icon: "💼", workAppropriate: true },
+  { id: 4, name: "Date", icon: "💖", workAppropriate: false },
+  { id: 5, name: "Travel", icon: "✈️", workAppropriate: true },
+  { id: 6, name: "Shopping", icon: "🛍️", workAppropriate: true },
+  { id: 7, name: "Sport", icon: "⚽", workAppropriate: false },
+  { id: 8, name: "Casual", icon: "👕", workAppropriate: true },
 ];
 
 interface ModeFilterProps {
@@ -47,6 +48,18 @@ export const ModeFilter = ({ selectedMode, setSelectedMode }: ModeFilterProps) =
       title: "Mode Updated",
       description: `Based on your mood, we suggest ${suggestedMode} style`,
     });
+  };
+
+  const handleModeSelect = (mode: Mode) => {
+    setSelectedMode(mode);
+    
+    // Show toast for work mode to inform about appropriate clothing
+    if (mode === "Work") {
+      toast({
+        title: "Work Mode Selected",
+        description: "Filtering for professional, modest clothing appropriate for the workplace",
+      });
+    }
   };
 
   return (
@@ -99,7 +112,7 @@ export const ModeFilter = ({ selectedMode, setSelectedMode }: ModeFilterProps) =
             key="all"
             variant={selectedMode === "All" ? "default" : "outline"}
             size="sm"
-            onClick={() => setSelectedMode("All")}
+            onClick={() => handleModeSelect("All")}
             className="w-full"
           >
             All
@@ -109,11 +122,16 @@ export const ModeFilter = ({ selectedMode, setSelectedMode }: ModeFilterProps) =
               key={mode.id}
               variant={selectedMode === mode.name ? "default" : "outline"}
               size="sm"
-              onClick={() => setSelectedMode(mode.name)}
-              className="w-full flex items-center gap-2"
+              onClick={() => handleModeSelect(mode.name)}
+              className={`w-full flex items-center gap-2 ${
+                mode.name === "Work" ? "border-blue-500 bg-blue-50 hover:bg-blue-100" : ""
+              }`}
             >
               <span>{mode.icon}</span>
               <span>{mode.name}</span>
+              {mode.workAppropriate && mode.name === "Work" && (
+                <span className="text-xs text-blue-600">👔</span>
+              )}
             </Button>
           ))}
         </div>

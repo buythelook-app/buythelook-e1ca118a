@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
@@ -6,6 +5,7 @@ import { agentCrew } from "@/agents/crew";
 import { DashboardItem } from "@/types/lookTypes";
 import { supabase } from "@/lib/supabaseClient";
 import logger from "@/lib/logger";
+import { filterWorkAppropriateItems } from "@/components/filters/WorkAppropriateFilter";
 
 // Track user preferences for color combinations and styles
 const userPreferences = {
@@ -87,37 +87,47 @@ export function useOutfitGeneration() {
     }
   };
   
-  const generateOutfit = async (forceRefresh: boolean = true) => {
+  const generateOutfit = async (forceRefresh: boolean = true, selectedMode?: string) => {
     setIsGenerating(true);
     
     try {
       logger.info("🚀 Starting COORDINATED outfit generation", { 
         context: "useOutfitGeneration",
-        data: { forceRefresh, attempt: previousCombinations.size + 1 }
+        data: { forceRefresh, attempt: previousCombinations.size + 1, selectedMode }
       });
       
       // Get current user ID (or use anonymous ID)
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id || 'anonymous-user';
       
+      // Add work-appropriate filtering context
+      const workModeContext = selectedMode === 'Work' ? {
+        workAppropriate: true,
+        requiredModesty: true,
+        forbiddenItems: ['crop_tops', 'tank_tops', 'mini_skirts', 'short_shorts', 'revealing_dresses'],
+        preferredItems: ['blazers', 'blouses', 'formal_trousers', 'midi_skirts', 'professional_dresses']
+      } : {};
+      
       // Add randomization parameters to ensure different results
       const randomSeed = Math.random();
       const timestamp = Date.now();
       const previousCount = previousCombinations.size;
       
-      // Create context with randomization and exclusions
+      // Create context with randomization, exclusions, and work-appropriate filtering
       const generationContext = {
         userId,
         forceRefresh,
         randomSeed,
         timestamp,
+        selectedMode,
         excludeCombinations: Array.from(previousCombinations),
         excludeItems: Array.from(userPreferences.dislikedItems),
         preferredItems: Array.from(userPreferences.likedItems),
-        attempt: previousCount + 1
+        attempt: previousCount + 1,
+        ...workModeContext
       };
       
-      logger.info("🎲 Generation context with randomization", {
+      logger.info("🎲 Generation context with work-appropriate filtering", {
         context: "useOutfitGeneration",
         data: generationContext
       });
@@ -150,7 +160,9 @@ export function useOutfitGeneration() {
         
         toast({
           title: "No Outfits Generated",
-          description: "The styling agents couldn't create suitable outfits with available items.",
+          description: selectedMode === 'Work' 
+            ? "The styling agents couldn't create suitable work-appropriate outfits with available items."
+            : "The styling agents couldn't create suitable outfits with available items.",
           variant: "destructive",
         });
         
@@ -162,13 +174,32 @@ export function useOutfitGeneration() {
       
       // Convert the first look to DashboardItem format
       const firstLook = looks[0];
-      const items: DashboardItem[] = firstLook.items.map(item => ({
+      let items: DashboardItem[] = firstLook.items.map((item: any) => ({
         id: item.id,
         name: item.title,
         image: item.image,
         type: item.type as any,
         price: item.price
       }));
+      
+      // Apply work-appropriate filtering if in work mode
+      if (selectedMode === 'Work') {
+        items = filterWorkAppropriateItems(items);
+        
+        // Validate that we have appropriate work items
+        if (items.length === 0) {
+          toast({
+            title: "No Work-Appropriate Items Found",
+            description: "Please add more professional clothing items to your wardrobe.",
+            variant: "destructive",
+          });
+          
+          return {
+            success: false,
+            items: []
+          };
+        }
+      }
       
       // Track this combination to avoid future duplicates
       const topItem = items.find(item => item.type === 'top');
@@ -197,11 +228,16 @@ export function useOutfitGeneration() {
           itemCount: items.length,
           lookId: firstLook.id,
           hasRecommendations: result.data?.recommendations?.length > 0,
-          attempt: previousCount + 1
+          attempt: previousCount + 1,
+          workMode: selectedMode === 'Work'
         }
       });
       
-      sonnerToast.success("נוצרה תלבושת חדשה באמצעות אייגנטים מתואמים!", {
+      const successMessage = selectedMode === 'Work' 
+        ? "נוצרה תלבושת עסקית מתאימה לעבודה!"
+        : "נוצרה תלבושת חדשה באמצעות אייגנטים מתואמים!";
+      
+      sonnerToast.success(successMessage, {
         duration: 3000
       });
       

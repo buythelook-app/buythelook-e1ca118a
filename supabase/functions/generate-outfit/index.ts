@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
@@ -40,6 +39,109 @@ function getColorPaletteForStyle(style: StylePreference): string[] {
   };
 
   return colorPalettes[style] || colorPalettes.classic;
+}
+
+// Helper function to check if item is work-appropriate
+function isWorkAppropriate(bodyStructure: BodyStructure, style: StylePreference, mood: string): boolean {
+  // Work-appropriate styles should focus on professional, modest clothing
+  const workAppropriateStyles: StylePreference[] = ['classic', 'minimalist'];
+  
+  // Check if the style is suitable for work
+  if (!workAppropriateStyles.includes(style)) {
+    return false;
+  }
+  
+  // Check if mood indicates work context
+  const workMoods = ['elegant', 'professional', 'formal', 'business', 'עבודה', 'פורמלי', 'אלגנטי'];
+  const isWorkMood = workMoods.some(workMood => mood.toLowerCase().includes(workMood.toLowerCase()));
+  
+  return isWorkMood;
+}
+
+// Generate work-appropriate outfit recommendations
+function generateWorkAppropriateOutfit(bodyStructure: BodyStructure, style: StylePreference, mood: string): OutfitSuggestion[] {
+  const results: OutfitSuggestion[] = [];
+  
+  // Work-appropriate color palette - more conservative colors
+  const workPalette = ['#2C3E50', '#34495E', '#7F8C8D', '#BDC3C7', '#ECF0F1', '#1A1A1A', '#FFFFFF'];
+  
+  // Create 3 work-appropriate outfit suggestions
+  for (let i = 0; i < 3; i++) {
+    const shuffledPalette = [...workPalette].sort(() => Math.random() - 0.5);
+    
+    let outfit: OutfitSuggestion = {
+      top: shuffledPalette[0],
+      bottom: shuffledPalette[1],
+      shoes: shuffledPalette[2],
+      description: "",
+      recommendations: [],
+      occasion: 'work'
+    };
+    
+    // Add blazer/jacket for professional look
+    if (Math.random() < 0.7) {
+      outfit.coat = shuffledPalette[3];
+    }
+    
+    // Customize based on body structure for work wear
+    switch(bodyStructure) {
+      case 'X': // Hourglass
+        outfit.description = `לוק עסקי מחמיא לגזרת שעון החול - ${getColorName(outfit.top)} עליון צנוע עם ${getColorName(outfit.bottom)} תחתון פורמלי`;
+        outfit.recommendations = [
+          "בחרי בחולצה עם צווארון גבוה או בלייזר לכיסוי הולם",
+          "חצאית עפרון או מכנסיים רחבים יחמיאו למבנה הגוף",
+          "הימנעי מבגדים צמודים מדי או חשופים בסביבת העבודה"
+        ];
+        break;
+        
+      case 'V': // Inverted triangle
+        outfit.description = `לוק עסקי מאוזן לגזרת משולש הפוך - ${getColorName(outfit.top)} עליון פשוט עם ${getColorName(outfit.bottom)} תחתון במבנה A`;
+        outfit.recommendations = [
+          "בחרי בחולצות פשוטות ללא כתפיות מודגשות",
+          "מכנסיים רחבים או חצאית A יאזנו את הפרופורציות",
+          "הוסיפי אביזרים עדינים כמו שרשרת דקה"
+        ];
+        break;
+        
+      case 'H': // Rectangle
+        outfit.description = `לוק עסקי מובנה לגזרה ישרה - ${getColorName(outfit.top)} עליון עם פרטי עיצוב ו${getColorName(outfit.bottom)} תחתון`;
+        outfit.recommendations = [
+          "בלייזר מובנה ייצור אשליית עקומות",
+          "חצאית עפרון או מכנסיים בגזרה גבוהה יחמיאו",
+          "שכבות בגדים יוסיפו עניין ונפח"
+        ];
+        break;
+        
+      case 'O': // Apple/Round
+        outfit.description = `לוק עסקי מחמיא לגזרה עגלגלה - ${getColorName(outfit.top)} עליון נופל בחופשיות עם ${getColorName(outfit.bottom)} תחתון`;
+        outfit.recommendations = [
+          "בחרי בחולצות שנופלות מתחת לירכיים",
+          "מכנסיים או חצאית בגזרה גבוהה יחמיאו",
+          "הדגישי את הצוואר באמצעות קולייר או צעיף"
+        ];
+        break;
+        
+      case 'A': // Pear/Triangle
+        outfit.description = `לוק עסקי מאוזן לגזרת אגס - ${getColorName(outfit.top)} עליון בהיר עם ${getColorName(outfit.bottom)} תחתון כהה`;
+        outfit.recommendations = [
+          "בחרי בחולצות או בלייזרים בצבעים בהירים",
+          "מכנסיים או חצאיות בצבעים כהים יאזנו",
+          "הוסיפי אביזרים באזור הצוואר כמו עניבת נשים"
+        ];
+        break;
+    }
+    
+    // Add work-specific recommendations
+    outfit.recommendations.push(
+      "וודאי שהבגדים מכסים כראוי - לא חשופים מדי",
+      "בחרי בנעלים סגורות ופורמליות",
+      "שמרי על צבעים נייטרליים ומקצועיים"
+    );
+    
+    results.push(outfit);
+  }
+  
+  return results;
 }
 
 // Generate specific outfit recommendations based on body structure
@@ -129,7 +231,7 @@ function generateOutfitForBodyStructure(bodyStructure: BodyStructure, style: Sty
     } else if (mood.includes('casual') || mood.includes('יום יום')) {
       outfit.recommendations.push("שלבי נעלי סניקרס לנוחות יומיומית");
       outfit.occasion = 'casual';
-    } else if (mood.includes('energized') || mood.includes('אנרגטי')) {
+    } else if (mood.includes('energized') || mood.includes('/animations')) {
       outfit.recommendations.push("הוסיפי פריט אחד בצבע חי שמושך תשומת לב");
       outfit.occasion = 'weekend';
     }
@@ -231,12 +333,26 @@ serve(async (req) => {
       );
     }
 
-    // Generate outfit suggestions based on the input
-    const outfitSuggestions = generateOutfitForBodyStructure(
-      input.bodyStructure, 
-      input.style,
-      input.mood
-    );
+    // Check if this is a work-appropriate request
+    const isWorkRequest = isWorkAppropriate(input.bodyStructure, input.style, input.mood);
+    
+    let outfitSuggestions: OutfitSuggestion[];
+    
+    if (isWorkRequest) {
+      // Generate work-appropriate outfits
+      outfitSuggestions = generateWorkAppropriateOutfit(
+        input.bodyStructure, 
+        input.style,
+        input.mood
+      );
+    } else {
+      // Generate regular outfit suggestions
+      outfitSuggestions = generateOutfitForBodyStructure(
+        input.bodyStructure, 
+        input.style,
+        input.mood
+      );
+    }
 
     // Return outfit suggestions
     const response: OutfitResponse = {
