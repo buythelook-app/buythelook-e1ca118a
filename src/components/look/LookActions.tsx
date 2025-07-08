@@ -1,10 +1,8 @@
 
-import { Heart, ShoppingCart } from "lucide-react";
-import { Button } from "../ui/button";
-import { toast } from "sonner";
+import { Heart, Share2, ShoppingCart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TryMeButton } from "@/components/TryMeButton";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
-import { useCartStore } from "../Cart";
-import { clearGlobalItemTrackers } from "@/services/lookService";
 
 interface LookActionsProps {
   id: string;
@@ -12,83 +10,75 @@ interface LookActionsProps {
   title: string;
   price: string;
   category: string;
-  items?: Array<{ 
-    id: string; 
+  items?: Array<{
+    id: string;
     image: string;
-    title?: string;
-    price?: string;
-    type?: string;
   }>;
 }
 
 export const LookActions = ({ id, image, title, price, category, items = [] }: LookActionsProps) => {
-  const { addFavorite, removeFavorite, isFavorite } = useFavoritesStore();
-  const { addLook, looks } = useCartStore();
-  const isInCart = looks.some(look => look.id === id);
+  const { favorites, addToFavorites, removeFromFavorites } = useFavoritesStore();
+  const isFavorite = favorites.some(fav => fav.id === id);
 
-  const handleFavoriteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const look = { id, image, title, price, category };
-    
-    if (isFavorite(id)) {
-      removeFavorite(id);
-      toast.success('Removed from My List');
+  const handleToggleFavorite = () => {
+    if (isFavorite) {
+      removeFromFavorites(id);
     } else {
-      addFavorite(look);
-      toast.success('Added to My List');
+      addToFavorites({ id, image, title, price, category });
     }
   };
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    // Make sure all items have the necessary properties
-    const lookItems = items.map(item => ({
-      id: item.id,
-      image: item.image,
-      title: item.title || `Item from ${title}`,
-      price: item.price || (parseFloat(price) / items.length).toFixed(2),
-      size: "M", // Default size
-      type: item.type || 'unknown'
-    }));
-    
-    addLook({
-      id,
-      title,
-      items: lookItems,
-      totalPrice: price
-    });
-    
-    // Reset global item trackers when adding to cart to allow fresh suggestions
-    clearGlobalItemTrackers();
-    
-    toast.success('Look added to cart');
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: title,
+        text: `Check out this look: ${title}`,
+        url: window.location.href
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+    }
   };
 
+  // Convert items to the format expected by TryMeButton
+  const tryMeItems = items.map(item => ({
+    id: item.id,
+    image: item.image,
+    type: 'top' as const, // Default type, will be overridden by actual item data
+    name: title
+  }));
+
   return (
-    <div className="flex gap-2">
-      <Button
-        variant="ghost"
-        size="icon"
-        className={`hover:text-purple-600 transition-colors ${isInCart ? 'text-purple-600' : ''}`}
-        onClick={handleAddToCart}
-      >
-        <ShoppingCart 
-          className="h-5 w-5"
-          fill={isInCart ? "currentColor" : "none"}
-        />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon" 
-        className="hover:text-purple-600 transition-colors"
-        onClick={handleFavoriteClick}
-      >
-        <Heart 
-          className="h-5 w-5"
-          fill={isFavorite(id) ? "currentColor" : "none"}
-        />
-      </Button>
+    <div className="flex flex-col gap-2">
+      <TryMeButton items={tryMeItems} />
+      
+      <div className="flex gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleToggleFavorite}
+          className={`p-2 ${isFavorite ? 'text-red-500' : 'text-gray-500'}`}
+        >
+          <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleShare}
+          className="p-2 text-gray-500"
+        >
+          <Share2 className="w-4 h-4" />
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          className="p-2 text-gray-500"
+        >
+          <ShoppingCart className="w-4 h-4" />
+        </Button>
+      </div>
     </div>
   );
 };
