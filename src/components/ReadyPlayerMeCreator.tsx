@@ -1,8 +1,7 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User, X, RefreshCw } from "lucide-react";
+import { User, X, RefreshCw, Loader2 } from "lucide-react";
 
 interface ReadyPlayerMeCreatorProps {
   isOpen: boolean;
@@ -13,98 +12,95 @@ interface ReadyPlayerMeCreatorProps {
 export const ReadyPlayerMeCreator = ({ isOpen, onClose, onAvatarCreated }: ReadyPlayerMeCreatorProps) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
     const handleMessage = (event: MessageEvent) => {
-      console.log('Received message from:', event.origin, 'Data:', event.data);
-      
       // Only accept messages from ReadyPlayerMe domains
       if (!event.origin.includes('readyplayer.me') && !event.origin.includes('rpm.me')) {
-        console.log('Ignoring message from non-ReadyPlayerMe origin:', event.origin);
         return;
       }
 
-      const { type, data, eventName } = event.data;
-      console.log('ReadyPlayerMe message processed:', { type, eventName, data });
+      console.log('ReadyPlayerMe message received:', event.data);
 
-      // Handle both old and new message formats
-      const messageType = type || eventName;
+      const { eventName, type, data } = event.data;
+      const messageType = eventName || type;
 
-      if (messageType === 'v1.avatar.exported') {
-        console.log('Avatar created successfully:', data?.url);
-        onAvatarCreated(data?.url);
-        onClose();
-      } else if (messageType === 'v1.frame.ready') {
-        console.log('ReadyPlayerMe frame ready - hiding loading');
+      if (messageType === 'v1.frame.ready') {
+        console.log('ReadyPlayerMe frame is ready');
         setIsLoading(false);
-        setLoadingTimeout(false);
-        if (timeoutId) {
-          clearTimeout(timeoutId);
+        setHasError(false);
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+      } else if (messageType === 'v1.avatar.exported') {
+        console.log('Avatar exported:', data?.url);
+        if (data?.url) {
+          onAvatarCreated(data.url);
+          onClose();
         }
       }
-    };
-
-    const handleIframeLoad = () => {
-      console.log('Iframe onLoad event fired');
-      // Additional fallback - if frame doesn't send ready message
-      setTimeout(() => {
-        if (isLoading) {
-          console.log('Iframe loaded but no ready message received, assuming ready');
-          setIsLoading(false);
-          setLoadingTimeout(false);
-        }
-      }, 3000);
     };
 
     if (isOpen) {
       console.log('Opening ReadyPlayerMe creator');
       setIsLoading(true);
-      setLoadingTimeout(false);
+      setHasError(false);
       
-      // Set a timeout to show alternative options if loading takes too long
-      timeoutId = setTimeout(() => {
-        console.log('ReadyPlayerMe loading timeout reached');
-        setLoadingTimeout(true);
-      }, 15000); // Increased to 15 seconds
+      // Clear any existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
+      // Set timeout for loading error
+      timeoutRef.current = setTimeout(() => {
+        console.log('ReadyPlayerMe loading timeout');
+        setIsLoading(false);
+        setHasError(true);
+      }, 10000);
 
       window.addEventListener('message', handleMessage);
-      
-      // Add iframe load listener
-      const iframe = document.querySelector('iframe[src*="readyplayer.me"]') as HTMLIFrameElement;
-      if (iframe) {
-        iframe.addEventListener('load', handleIframeLoad);
-      }
     }
 
     return () => {
-      console.log('Cleaning up ReadyPlayerMe listeners');
       window.removeEventListener('message', handleMessage);
-      const iframe = document.querySelector('iframe[src*="readyplayer.me"]') as HTMLIFrameElement;
-      if (iframe) {
-        iframe.removeEventListener('load', handleIframeLoad);
-      }
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
     };
-  }, [isOpen, onAvatarCreated, onClose, isLoading]);
+  }, [isOpen, onAvatarCreated, onClose]);
 
   const handleClose = () => {
     setIsLoading(true);
-    setLoadingTimeout(false);
+    setHasError(false);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
     onClose();
   };
 
   const handleRefresh = () => {
+    console.log('Refreshing ReadyPlayerMe iframe');
     setIsLoading(true);
-    setLoadingTimeout(false);
+    setHasError(false);
+    
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    timeoutRef.current = setTimeout(() => {
+      setIsLoading(false);
+      setHasError(true);
+    }, 10000);
+    
     if (iframeRef.current) {
-      iframeRef.current.src = iframeRef.current.src;
+      iframeRef.current.src = iframeRef.current.src + '&t=' + Date.now();
     }
   };
+
+  const showLoadingSpinner = isLoading && !hasError;
+  const showErrorMessage = hasError || (isLoading && hasError);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -116,7 +112,7 @@ export const ReadyPlayerMeCreator = ({ isOpen, onClose, onAvatarCreated }: Ready
               Create Your Avatar
             </span>
             <div className="flex gap-2">
-              {loadingTimeout && (
+              {hasError && (
                 <Button variant="ghost" size="sm" onClick={handleRefresh}>
                   <RefreshCw className="w-4 h-4" />
                 </Button>
@@ -133,67 +129,69 @@ export const ReadyPlayerMeCreator = ({ isOpen, onClose, onAvatarCreated }: Ready
         </div>
         
         <div className="relative w-full h-[600px] p-6 pt-0">
-          {(isLoading || loadingTimeout) && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 rounded-lg z-10">
+          {/* Loading Overlay */}
+          {showLoadingSpinner && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm rounded-lg z-20">
               <div className="text-center max-w-md">
-                {!loadingTimeout ? (
-                  <>
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mx-auto mb-4"></div>
-                    <h3 className="text-lg font-semibold mb-2">Loading Avatar Creator</h3>
-                    <p className="text-gray-600 mb-4">This may take a few moments...</p>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="text-red-500 mb-4">
-                      <X className="w-16 h-16 mx-auto mb-2" />
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2">Loading Taking Longer Than Expected</h3>
-                    <p className="text-gray-600 mb-4">
-                      The avatar creator is taking longer to load. This might be due to internet connection or server load.
-                    </p>
-                    <div className="flex gap-2 justify-center">
-                      <Button onClick={handleRefresh} variant="outline" size="sm">
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Try Again
-                      </Button>
-                      <Button onClick={handleClose} variant="outline" size="sm">
-                        Close
-                      </Button>
-                    </div>
-                  </>
-                )}
+                <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Loading Avatar Creator</h3>
+                <p className="text-gray-600">Setting up your personalization experience...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Error Overlay */}
+          {showErrorMessage && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm rounded-lg z-20">
+              <div className="text-center max-w-md">
+                <div className="text-red-500 mb-4">
+                  <X className="w-16 h-16 mx-auto mb-2" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Unable to Load Avatar Creator</h3>
+                <p className="text-gray-600 mb-6">
+                  The avatar creator is having trouble loading. This could be due to connection issues or high server load.
+                </p>
+                <div className="flex gap-2 justify-center">
+                  <Button onClick={handleRefresh} variant="default" size="sm">
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Try Again
+                  </Button>
+                  <Button onClick={handleClose} variant="outline" size="sm">
+                    Close
+                  </Button>
+                </div>
               </div>
             </div>
           )}
           
+          {/* ReadyPlayerMe Iframe */}
           <iframe
             ref={iframeRef}
             src="https://readyplayer.me/avatar?frameApi&clearCache"
-            className="w-full h-full border-0 rounded-lg"
+            className="w-full h-full border-0 rounded-lg bg-gray-50"
             allow="camera *; microphone *; clipboard-write; fullscreen"
             loading="eager"
-            sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-storage-access-by-user-activation"
-            style={{ 
-              display: isLoading && !loadingTimeout ? 'none' : 'block',
-              visibility: 'visible'
-            }}
+            title="ReadyPlayerMe Avatar Creator"
             onLoad={() => {
-              console.log('Iframe onLoad triggered');
-              // Enhanced fallback for iframe load event
+              console.log('Iframe onLoad event fired');
+              // Backup timeout in case the message event doesn't fire
               setTimeout(() => {
-                if (isLoading) {
-                  console.log('Iframe loaded, setting loading to false via fallback');
+                if (isLoading && !hasError) {
+                  console.log('Iframe loaded - backup timeout triggered');
                   setIsLoading(false);
+                  if (timeoutRef.current) {
+                    clearTimeout(timeoutRef.current);
+                  }
                 }
               }, 3000);
             }}
-            onError={(e) => {
-              console.error('Iframe loading error:', e);
-              setLoadingTimeout(true);
+            onError={() => {
+              console.error('Iframe failed to load');
               setIsLoading(false);
+              setHasError(true);
+              if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+              }
             }}
           />
         </div>
