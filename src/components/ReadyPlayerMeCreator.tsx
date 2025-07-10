@@ -19,12 +19,16 @@ export const ReadyPlayerMeCreator = ({ isOpen, onClose, onAvatarCreated }: Ready
     let timeoutId: NodeJS.Timeout;
 
     const handleMessage = (event: MessageEvent) => {
-      // Only accept messages from ReadyPlayerMe
-      if (!event.origin.includes('readyplayer.me')) return;
+      console.log('Received message from:', event.origin, 'Data:', event.data);
+      
+      // Only accept messages from ReadyPlayerMe domains
+      if (!event.origin.includes('readyplayer.me') && !event.origin.includes('rpm.me')) {
+        console.log('Ignoring message from non-ReadyPlayerMe origin:', event.origin);
+        return;
+      }
 
       const { type, data, eventName } = event.data;
-      
-      console.log('ReadyPlayerMe message:', event.data);
+      console.log('ReadyPlayerMe message processed:', { type, eventName, data });
 
       // Handle both old and new message formats
       const messageType = type || eventName;
@@ -43,25 +47,50 @@ export const ReadyPlayerMeCreator = ({ isOpen, onClose, onAvatarCreated }: Ready
       }
     };
 
+    const handleIframeLoad = () => {
+      console.log('Iframe onLoad event fired');
+      // Additional fallback - if frame doesn't send ready message
+      setTimeout(() => {
+        if (isLoading) {
+          console.log('Iframe loaded but no ready message received, assuming ready');
+          setIsLoading(false);
+          setLoadingTimeout(false);
+        }
+      }, 3000);
+    };
+
     if (isOpen) {
+      console.log('Opening ReadyPlayerMe creator');
       setIsLoading(true);
       setLoadingTimeout(false);
       
       // Set a timeout to show alternative options if loading takes too long
       timeoutId = setTimeout(() => {
+        console.log('ReadyPlayerMe loading timeout reached');
         setLoadingTimeout(true);
-      }, 10000); // 10 seconds timeout
+      }, 15000); // Increased to 15 seconds
 
       window.addEventListener('message', handleMessage);
+      
+      // Add iframe load listener
+      const iframe = document.querySelector('iframe[src*="readyplayer.me"]') as HTMLIFrameElement;
+      if (iframe) {
+        iframe.addEventListener('load', handleIframeLoad);
+      }
     }
 
     return () => {
+      console.log('Cleaning up ReadyPlayerMe listeners');
       window.removeEventListener('message', handleMessage);
+      const iframe = document.querySelector('iframe[src*="readyplayer.me"]') as HTMLIFrameElement;
+      if (iframe) {
+        iframe.removeEventListener('load', handleIframeLoad);
+      }
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
     };
-  }, [isOpen, onAvatarCreated, onClose]);
+  }, [isOpen, onAvatarCreated, onClose, isLoading]);
 
   const handleClose = () => {
     setIsLoading(true);
@@ -142,21 +171,29 @@ export const ReadyPlayerMeCreator = ({ isOpen, onClose, onAvatarCreated }: Ready
           
           <iframe
             ref={iframeRef}
-            src="https://readyplayer.me/avatar?frameApi"
+            src="https://readyplayer.me/avatar?frameApi&clearCache"
             className="w-full h-full border-0 rounded-lg"
-            allow="camera *; microphone *; clipboard-write"
+            allow="camera *; microphone *; clipboard-write; fullscreen"
             loading="eager"
+            sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-storage-access-by-user-activation"
             style={{ 
-              display: isLoading ? 'none' : 'block',
-              visibility: loadingTimeout ? 'hidden' : 'visible'
+              display: isLoading && !loadingTimeout ? 'none' : 'block',
+              visibility: 'visible'
             }}
             onLoad={() => {
-              // Fallback for iframe load event
+              console.log('Iframe onLoad triggered');
+              // Enhanced fallback for iframe load event
               setTimeout(() => {
                 if (isLoading) {
+                  console.log('Iframe loaded, setting loading to false via fallback');
                   setIsLoading(false);
                 }
-              }, 2000);
+              }, 3000);
+            }}
+            onError={(e) => {
+              console.error('Iframe loading error:', e);
+              setLoadingTimeout(true);
+              setIsLoading(false);
             }}
           />
         </div>
