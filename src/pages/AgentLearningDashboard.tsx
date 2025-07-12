@@ -70,24 +70,19 @@ const AgentLearningDashboard = () => {
   };
 
   const fetchMetrics = async () => {
-    // Get user feedback data
-    const { data: feedback } = await supabase
-      .from('user_feedback')
-      .select('*');
-
-    // Get agent runs data
+    // Get agent runs data (using as feedback data)
     const { data: agentRuns } = await supabase
       .from('agent_runs')
       .select('*');
 
-    // Get unique users count from style quiz results
-    const { data: users } = await supabase
-      .from('style_quiz_results')
+    // Get outfit logs for users count
+    const { data: outfitLogs } = await supabase
+      .from('outfit_logs')
       .select('user_id');
 
-    const uniqueUsers = new Set((users as any)?.map((u: any) => u.user_id) || []).size;
-    const successfulOutfits = (feedback as any)?.filter((f: any) => f.feedback_type === 'positive').length || 0;
-    const learningDataPoints = ((feedback as any)?.length || 0) + ((agentRuns as any)?.length || 0);
+    const uniqueUsers = new Set((outfitLogs as any)?.map((u: any) => u.user_id) || []).size;
+    const successfulOutfits = (agentRuns as any)?.filter((f: any) => f.status === 'success').length || 0;
+    const learningDataPoints = (agentRuns as any)?.length || 0;
     
     // Calculate average engagement (simplified)
     const totalRuns = (agentRuns as any)?.length || 0;

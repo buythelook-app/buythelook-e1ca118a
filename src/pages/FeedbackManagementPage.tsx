@@ -10,14 +10,14 @@ import { Trash2, RefreshCw, Filter, TrendingUp, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface FeedbackItem {
-  id: number;
-  user_id: string;
-  feedback_type: string;
-  feedback_text: string;
-  outfit_id: string;
-  created_at: string;
-  used_for_training: boolean;
-  agent_notes: string;
+  id: string;
+  user_id: string | null;
+  agent_name: string;
+  result: any;
+  score: number;
+  status: string;
+  timestamp: string;
+  body_type: string | null;
 }
 
 interface AgentRun {
@@ -45,26 +45,27 @@ const FeedbackManagementPage = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch user feedback
+      // Fetch feedback data from agent_runs (using as feedback)
       const { data: feedback, error: feedbackError } = await supabase
-        .from('user_feedback')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (feedbackError) throw feedbackError;
-
-      // Fetch agent runs
-      const { data: runs, error: runsError } = await supabase
         .from('agent_runs')
         .select('*')
         .order('timestamp', { ascending: false })
         .limit(100);
 
+      if (feedbackError) throw feedbackError;
+
+      // Fetch additional agent runs
+      const { data: runs, error: runsError } = await supabase
+        .from('agent_runs')
+        .select('*')
+        .eq('status', 'success')
+        .order('timestamp', { ascending: false })
+        .limit(100);
+
       if (runsError) throw runsError;
 
-      setFeedbackData(feedback || []);
-      setAgentRuns(runs || []);
+      setFeedbackData((feedback || []) as FeedbackItem[]);
+      setAgentRuns((runs || []) as AgentRun[]);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -77,10 +78,10 @@ const FeedbackManagementPage = () => {
     }
   };
 
-  const deleteFeedback = async (id: number) => {
+  const deleteFeedback = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('user_feedback')
+        .from('agent_runs')
         .delete()
         .eq('id', id);
 
@@ -89,7 +90,7 @@ const FeedbackManagementPage = () => {
       setFeedbackData(prev => prev.filter(item => item.id !== id));
       toast({
         title: "הצלחה",
-        description: "הפידבק נמחק בהצלחה"
+        description: "הרשומה נמחקה בהצלחה"
       });
     } catch (error) {
       console.error('Error deleting feedback:', error);
@@ -103,21 +104,13 @@ const FeedbackManagementPage = () => {
 
   const resetAllData = async () => {
     try {
-      // Delete all feedback
+      // Delete all agent runs (used as feedback)
       const { error: feedbackError } = await supabase
-        .from('user_feedback')
-        .delete()
-        .neq('id', 0);
-
-      if (feedbackError) throw feedbackError;
-
-      // Delete all agent runs
-      const { error: runsError } = await supabase
         .from('agent_runs')
         .delete()
         .neq('id', '00000000-0000-0000-0000-000000000000');
 
-      if (runsError) throw runsError;
+      if (feedbackError) throw feedbackError;
 
       setFeedbackData([]);
       setAgentRuns([]);
@@ -136,11 +129,13 @@ const FeedbackManagementPage = () => {
     }
   };
 
-  const toggleTrainingUsage = async (id: number, currentValue: boolean) => {
+  const toggleTrainingUsage = async (id: string, currentScore: number) => {
     try {
+      const newScore = currentScore > 50 ? 30 : 80; // Toggle between high and low score
+      
       const { error } = await supabase
-        .from('user_feedback')
-        .update({ used_for_training: !currentValue })
+        .from('agent_runs')
+        .update({ score: newScore })
         .eq('id', id);
 
       if (error) throw error;
@@ -148,14 +143,14 @@ const FeedbackManagementPage = () => {
       setFeedbackData(prev => 
         prev.map(item => 
           item.id === id 
-            ? { ...item, used_for_training: !currentValue }
+            ? { ...item, score: newScore }
             : item
         )
       );
 
       toast({
         title: "הצלחה",
-        description: `הפידבק ${!currentValue ? 'נוסף לאימון' : 'הוסר מהאימון'}`
+        description: `הציון ${newScore > 50 ? 'הועלה' : 'הופחת'} לאימון`
       });
     } catch (error) {
       console.error('Error updating training usage:', error);
@@ -167,11 +162,11 @@ const FeedbackManagementPage = () => {
     }
   };
 
-  const getFeedbackTypeColor = (type: string) => {
-    switch (type) {
-      case 'positive': return 'bg-green-100 text-green-800';
-      case 'negative': return 'bg-red-100 text-red-800';
-      case 'suggestion': return 'bg-blue-100 text-blue-800';
+  const getFeedbackTypeColor = (status: string) => {
+    switch (status) {
+      case 'success': return 'bg-green-100 text-green-800';
+      case 'failed': return 'bg-red-100 text-red-800';
+      case 'learning_data': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -242,9 +237,9 @@ const FeedbackManagementPage = () => {
         <TabsContent value="feedback" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>פידבק משתמשים ({feedbackData.length})</CardTitle>
+              <CardTitle>רשומות סוכנים ({feedbackData.length})</CardTitle>
               <CardDescription>
-                כל הפידבק שנאסף ממשתמשים על תוצאות הסוכנים
+                כל הרשומות שנוצרו על ידי הסוכנים השונים
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -255,20 +250,21 @@ const FeedbackManagementPage = () => {
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <Badge className={getFeedbackTypeColor(feedback.feedback_type)}>
-                              {feedback.feedback_type}
+                            <Badge className={getFeedbackTypeColor(feedback.status)}>
+                              {feedback.status}
                             </Badge>
-                            <Badge variant={feedback.used_for_training ? "default" : "secondary"}>
-                              {feedback.used_for_training ? "בשימוש לאימון" : "לא בשימוש"}
+                            <Badge variant={feedback.score > 50 ? "default" : "secondary"}>
+                              ציון: {feedback.score}
                             </Badge>
+                            <Badge variant="outline">{feedback.agent_name}</Badge>
                             <span className="text-sm text-muted-foreground">
-                              {format(new Date(feedback.created_at), 'dd/MM/yyyy HH:mm')}
+                              {format(new Date(feedback.timestamp), 'dd/MM/yyyy HH:mm')}
                             </span>
                           </div>
-                          <p className="text-sm">{feedback.feedback_text}</p>
-                          {feedback.agent_notes && (
+                          <p className="text-sm">סוכן: {feedback.agent_name}</p>
+                          {feedback.body_type && (
                             <p className="text-xs text-muted-foreground mt-2">
-                              הערות: {feedback.agent_notes}
+                              סוג גוף: {feedback.body_type}
                             </p>
                           )}
                         </div>
@@ -276,9 +272,9 @@ const FeedbackManagementPage = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => toggleTrainingUsage(feedback.id, feedback.used_for_training)}
+                            onClick={() => toggleTrainingUsage(feedback.id, feedback.score)}
                           >
-                            {feedback.used_for_training ? 'הסר מאימון' : 'הוסף לאימון'}
+                            {feedback.score > 50 ? 'הפחת ציון' : 'העלה ציון'}
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -288,9 +284,9 @@ const FeedbackManagementPage = () => {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>מחק פידבק</AlertDialogTitle>
+                                <AlertDialogTitle>מחק רשומה</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  האם אתה בטוח שברצונך למחוק פידבק זה?
+                                  האם אתה בטוח שברצונך למחוק רשומה זו?
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -310,7 +306,7 @@ const FeedbackManagementPage = () => {
                 ))}
                 {feedbackData.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
-                    אין פידבק זמין
+                    אין רשומות זמינות
                   </div>
                 )}
               </div>
@@ -391,7 +387,7 @@ const FeedbackManagementPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {feedbackData.filter(f => f.used_for_training).length}
+                  {feedbackData.filter(f => f.score > 50).length}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   פריטים בשימוש לאימון
@@ -438,8 +434,8 @@ const FeedbackManagementPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {['positive', 'negative', 'suggestion'].map(type => {
-                    const count = feedbackData.filter(f => f.feedback_type === type).length;
+                  {['success', 'failed', 'learning_data'].map(type => {
+                    const count = feedbackData.filter(f => f.status === type).length;
                     const percentage = feedbackData.length > 0 ? (count / feedbackData.length * 100).toFixed(1) : '0';
                     return (
                       <div key={type} className="flex justify-between items-center">
