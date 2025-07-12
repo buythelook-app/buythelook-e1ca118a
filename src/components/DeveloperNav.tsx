@@ -18,6 +18,8 @@ export function DeveloperNav() {
         <Link to="/dev" className="hover:underline">DevTools</Link>
         <Link to="/test/recommendation" className="hover:underline">Test Rec</Link>
         <Link to="/agent-results" className="hover:underline">Agent Results</Link>
+        <Link to="/feedback-management" className="hover:underline">Feedback Mgmt</Link>
+        <Link to="/agent-learning-dashboard" className="hover:underline">Learning Dashboard</Link>
         <Link to="/agent-debug" className="hover:underline">Agent Debug</Link>
         <Link to="/outfit-generation" className="hover:underline">Outfit Generation</Link>
       </div>

@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/sonner";
 import { DeveloperNav } from "@/components/DeveloperNav";
 import AgentResultsPage from './pages/AgentResultsPage';
+import FeedbackManagementPage from './pages/FeedbackManagementPage';
+import AgentLearningDashboard from './pages/AgentLearningDashboard';
 import CronStatusPage from './pages/CronStatusPage';
 import AgentDebugPage from './pages/AgentDebugPage';
 import Index from './pages/Index';
@@ -71,6 +73,8 @@ function App() {
             {/* Developer and testing pages */}
             <Route path="/dev" element={<DeveloperTools />} />
             <Route path="/agent-results" element={<AgentResultsPage />} />
+            <Route path="/feedback-management" element={<FeedbackManagementPage />} />
+            <Route path="/agent-learning-dashboard" element={<AgentLearningDashboard />} />
             <Route path="/cron-status" element={<CronStatusPage />} />
             <Route path="/agent-debug" element={<AgentDebugPage />} />
             <Route path="/outfit-generation" element={<OutfitGenerationPage />} />

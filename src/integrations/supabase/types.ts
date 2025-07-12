@@ -17,6 +17,7 @@ export type Database = {
       agent_runs: {
         Row: {
           agent_name: string
+          body_type: string | null
           id: string
           result: Json
           score: number
@@ -26,6 +27,7 @@ export type Database = {
         }
         Insert: {
           agent_name: string
+          body_type?: string | null
           id?: string
           result: Json
           score: number
@@ -35,6 +37,7 @@ export type Database = {
         }
         Update: {
           agent_name?: string
+          body_type?: string | null
           id?: string
           result?: Json
           score?: number
