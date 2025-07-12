@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 interface OutfitItem {
   id: string;
-  image: string;
+  image: string | string[] | any; // Allow various image formats
   type: 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' | 'cart';
   name?: string;
   product_subfamily?: string;
@@ -19,8 +19,29 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
   const [loadingState, setLoadingState] = useState<'loading' | 'success' | 'error'>('loading');
   const [loadedCount, setLoadedCount] = useState(0);
 
+  // Helper function to extract image URL from various formats
+  const getImageUrl = (image: any): string => {
+    if (!image) return '';
+    
+    // If it's already a string, return it
+    if (typeof image === 'string') return image;
+    
+    // If it's an array, take the first item
+    if (Array.isArray(image) && image.length > 0) {
+      return typeof image[0] === 'string' ? image[0] : image[0]?.url || '';
+    }
+    
+    // If it's an object with url property
+    if (typeof image === 'object' && image.url) {
+      return image.url;
+    }
+    
+    return '';
+  };
+
   // Ultra simplified validation - just check for HTTP URLs
-  const isValidImageUrl = (imageUrl: string, itemType: string): boolean => {
+  const isValidImageUrl = (image: any, itemType: string): boolean => {
+    const imageUrl = getImageUrl(image);
     console.log(`🔍 [LookCanvas] Validating ${itemType} image: "${imageUrl}"`);
     
     if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '') {
@@ -71,7 +92,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       id: item.id,
       type: item.type,
       name: item.name || 'Unknown',
-      imageUrl: item.image,
+      imageRaw: item.image,
+      imageUrl: getImageUrl(item.image),
       isShoes: item.type === 'shoes',
       imageValid: isValidImageUrl(item.image, item.type)
     })));
@@ -100,10 +122,12 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     // FORCE INCLUDE SHOES - do not filter them out
     const validItems = items.filter(item => {
       if (item.type === 'shoes') {
+        const imageUrl = getImageUrl(item.image);
         console.log(`👠 [LookCanvas] SHOES ITEM PROCESSING: "${item.name}"`, {
           id: item.id,
-          imageUrl: item.image?.substring(0, 50) + '...',
-          hasImage: !!item.image,
+          imageRaw: item.image,
+          imageUrl: imageUrl?.substring(0, 50) + '...',
+          hasImage: !!imageUrl,
           imageType: typeof item.image
         });
         // Always include shoes even if image validation fails
@@ -113,7 +137,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       const hasValidImage = isValidImageUrl(item.image, item.type);
       
       if (!hasValidImage) {
-        console.log(`❌ [LookCanvas] Filtering out non-shoes item: ${item.id} (${item.type}) - image: "${item.image?.substring(0, 50)}..."`);
+        const imageUrl = getImageUrl(item.image);
+        console.log(`❌ [LookCanvas] Filtering out non-shoes item: ${item.id} (${item.type}) - image: "${imageUrl?.substring(0, 50)}..."`);
       } else {
         console.log(`✅ [LookCanvas] Valid non-shoes item accepted: ${item.id} (${item.type})`);
       }
@@ -127,7 +152,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     const shoesItems = validItems.filter(item => item.type === 'shoes');
     console.log(`👠 [LookCanvas] Found ${shoesItems.length} shoes items in validItems`);
     shoesItems.forEach((shoe, index) => {
-      console.log(`👠 [LookCanvas] Shoe ${index + 1}: "${shoe.name}" with image: ${shoe.image}`);
+      const imageUrl = getImageUrl(shoe.image);
+      console.log(`👠 [LookCanvas] Shoe ${index + 1}: "${shoe.name}" with image: ${imageUrl}`);
     });
 
     if (validItems.length === 0) {
@@ -172,13 +198,14 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
           console.log(`🔍 [LookCanvas] Processing item ${i + 1}: ${item.id} (${item.type}) - ${item.name}`);
           
           if (item.type === 'shoes') {
-            console.log(`👠 [LookCanvas] PROCESSING SHOES: "${item.name}" with image: ${item.image}`);
+            const imageUrl = getImageUrl(item.image);
+            console.log(`👠 [LookCanvas] PROCESSING SHOES: "${item.name}" with image: ${imageUrl}`);
           }
           
           try {
             // For shoes, try loading even if URL seems invalid
-            let imageToLoad = item.image;
-            if (item.type === 'shoes' && (!imageToLoad || !isValidImageUrl(imageToLoad, item.type))) {
+            let imageToLoad = getImageUrl(item.image);
+            if (item.type === 'shoes' && (!imageToLoad || !isValidImageUrl(item.image, item.type))) {
               console.log(`👠 [LookCanvas] Shoes has invalid image, using fallback`);
               imageToLoad = 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop';
             }
