@@ -54,23 +54,14 @@ export const TryMeButton = ({ items }: TryMeButtonProps) => {
   const bodyShape = getBodyShape();
 
   return (
-    <>
-      <Button
-        onClick={() => setIsModalOpen(true)}
-        variant="outline"
-        size="sm"
-        className="flex items-center gap-2 text-sm px-3 py-2 h-9 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none hover:from-purple-600 hover:to-pink-600 transition-all duration-300"
-      >
-        <User className="w-4 h-4" />
-        Try with Avatar
-      </Button>
-      
-      <AvatarModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        items={items}
-        bodyShape={bodyShape}
-      />
-    </>
+    <Button
+      onClick={() => alert("Coming Soon")}
+      variant="outline"
+      size="sm"
+      className="flex items-center gap-2 text-sm px-3 py-2 h-9 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none hover:from-purple-600 hover:to-pink-600 transition-all duration-300"
+    >
+      <User className="w-4 h-4" />
+      Coming Soon
+    </Button>
   );
 };

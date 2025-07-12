@@ -309,6 +309,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_feedback: {
+        Row: {
+          agent_notes: string | null
+          created_at: string
+          feedback_text: string | null
+          feedback_type: string | null
+          id: number
+          outfit_id: string | null
+          used_for_training: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          agent_notes?: string | null
+          created_at?: string
+          feedback_text?: string | null
+          feedback_type?: string | null
+          id?: number
+          outfit_id?: string | null
+          used_for_training?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          agent_notes?: string | null
+          created_at?: string
+          feedback_text?: string | null
+          feedback_type?: string | null
+          id?: number
+          outfit_id?: string | null
+          used_for_training?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       zara_cloth: {
         Row: {
           availability: boolean | null
