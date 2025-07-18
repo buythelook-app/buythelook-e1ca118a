@@ -50,9 +50,8 @@ export const BudgetFilter = ({
         </DialogHeader>
         <div className="space-y-6 p-4">
           <div className="relative p-6 bg-netflix-card rounded-lg">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-start items-center mb-6">
               <span className="font-medium bg-netflix-accent/90 text-white px-3 py-1 rounded-full text-sm">$100</span>
-              <span className="font-medium bg-netflix-accent/90 text-white px-3 py-1 rounded-full text-sm">$1000</span>
             </div>
             <Slider
               value={[budget]}
