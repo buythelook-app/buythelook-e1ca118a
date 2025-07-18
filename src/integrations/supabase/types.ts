@@ -79,6 +79,33 @@ export type Database = {
           },
         ]
       }
+      click_events: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          item_id: string
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          item_id: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
