@@ -42,6 +42,19 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       data: { forceRefresh }
     });
 
+    // Load user's style preference from localStorage
+    let userStyle = 'casual'; // Default fallback
+    try {
+      const styleAnalysis = localStorage.getItem('styleAnalysis');
+      if (styleAnalysis) {
+        const parsed = JSON.parse(styleAnalysis);
+        userStyle = parsed.analysis?.styleProfile || 'casual';
+        console.log("🎨 [fetchFirstOutfitSuggestion] User style from localStorage:", userStyle);
+      }
+    } catch (error) {
+      console.log("⚠️ [fetchFirstOutfitSuggestion] Could not load style from localStorage:", error);
+    }
+
     // Test Supabase connection first
     console.log("🔍 [fetchFirstOutfitSuggestion] Testing Supabase connection...");
     const connectionTest = await testSupabaseConnection();
@@ -57,7 +70,8 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
     
     console.log("✅ [fetchFirstOutfitSuggestion] Supabase connection successful:", {
       shoesCount: connectionTest.shoesCount,
-      zaraCount: connectionTest.zaraCount
+      zaraCount: connectionTest.zaraCount,
+      userStyle: userStyle
     });
 
     // Reset global tracking if needed
@@ -67,7 +81,7 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       lastResetTime = Date.now();
     }
 
-    const occasionOutfit = await createAdvancedOutfit('casual', 'general', [], 'general');
+    const occasionOutfit = await createAdvancedOutfit(userStyle, 'general', [], 'general');
     
     console.log("🔥 [fetchFirstOutfitSuggestion] Raw outfit result:", occasionOutfit);
     console.log("🔥 [fetchFirstOutfitSuggestion] Number of items:", occasionOutfit?.length || 0);
@@ -1080,6 +1094,19 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
   try {
     console.log('🔥 [fetchDashboardItems] ===== STARTING DASHBOARD ITEMS FETCH (MANDATORY SHOES FROM ZARA_CLOTH TABLE) =====');
     
+    // Load user's style preference from localStorage
+    let userStyle = 'casual'; // Default fallback
+    try {
+      const styleAnalysis = localStorage.getItem('styleAnalysis');
+      if (styleAnalysis) {
+        const parsed = JSON.parse(styleAnalysis);
+        userStyle = parsed.analysis?.styleProfile || 'casual';
+        console.log("🎨 [fetchDashboardItems] User style from localStorage:", userStyle);
+      }
+    } catch (error) {
+      console.log("⚠️ [fetchDashboardItems] Could not load style from localStorage:", error);
+    }
+    
     // Test connection first
     const connectionTest = await testSupabaseConnection();
     if (!connectionTest.success) {
@@ -1087,7 +1114,7 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
       throw new Error(`Supabase connection failed: ${connectionTest.error}`);
     }
     
-    console.log('✅ [fetchDashboardItems] Supabase connection verified');
+    console.log('✅ [fetchDashboardItems] Supabase connection verified with user style:', userStyle);
     
     // Reset global tracking for fresh selection but keep separate tracking per occasion
     globalUsedItemIds = {};
@@ -1099,9 +1126,9 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
     // יצירת תלבושת שונה לכל הזדמנות (נעליים מטבלת zara_cloth)
     for (const occasion of occasions) {
       try {
-        console.log(`🔍 [fetchDashboardItems] ===== PROCESSING ${occasion.toUpperCase()} (MANDATORY SHOES FROM ZARA_CLOTH TABLE) =====`);
+        console.log(`🔍 [fetchDashboardItems] ===== PROCESSING ${occasion.toUpperCase()} WITH STYLE: ${userStyle.toUpperCase()} =====`);
         
-        const occasionOutfit = await createAdvancedOutfit('casual', occasion.toLowerCase(), [], occasion);
+        const occasionOutfit = await createAdvancedOutfit(userStyle, occasion.toLowerCase(), [], occasion);
         
         if (occasionOutfit && occasionOutfit.length > 0) {
           data[occasion] = occasionOutfit.map(item => ({

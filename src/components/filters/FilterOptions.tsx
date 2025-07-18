@@ -81,9 +81,18 @@ export const FilterOptions = () => {
         const parsed = JSON.parse(styleAnalysis);
         parsed.analysis.styleProfile = style;
         localStorage.setItem('styleAnalysis', JSON.stringify(parsed));
+        console.log('🎨 [FilterOptions] Updated style preference to:', style);
+        
+        // Show user feedback
+        toast({
+          title: "Style Updated",
+          description: `Changed to ${style} style. Refreshing recommendations...`,
+        });
         
         // Trigger page refresh to update outfits
-        window.location.reload();
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       }
     } catch (error) {
       console.log('Could not save style preference:', error);
