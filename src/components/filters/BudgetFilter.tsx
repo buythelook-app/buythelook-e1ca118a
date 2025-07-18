@@ -28,12 +28,12 @@ export const BudgetFilter = ({
 
   const handleBudgetChange = (value: number[]) => {
     onBudgetChange(value);
-    setOpen(false); // Close the dialog after setting budget
+    // לא סוגר את החלון אוטומטית
   };
 
   const handleInputChange = (value: number) => {
     onInputChange(value);
-    setOpen(false); // Close the dialog after manual input
+    // לא סוגר את החלון אוטומטית
   };
 
   return (
@@ -89,6 +89,15 @@ export const BudgetFilter = ({
               placeholder={isUnlimited ? "Unlimited budget" : "Enter amount"}
               className="bg-netflix-card text-white"
             />
+          </div>
+          
+          <div className="flex justify-end">
+            <Button 
+              onClick={() => setOpen(false)}
+              className="bg-netflix-accent hover:bg-netflix-accent/90"
+            >
+              סגור
+            </Button>
           </div>
         </div>
       </DialogContent>
