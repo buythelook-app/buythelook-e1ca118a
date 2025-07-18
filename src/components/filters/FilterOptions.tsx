@@ -5,15 +5,17 @@ import { Button } from "../ui/button";
 import { useToast } from "../ui/use-toast";
 import { EventFilter } from "./EventFilter";
 import { BudgetFilter } from "./BudgetFilter";
+import { StyleFilterButton, Style } from "./StyleFilterButton";
 
 export const FilterOptions = () => {
   const navigate = useNavigate();
   const [budget, setBudget] = useState<number>(100);
   const [isUnlimited, setIsUnlimited] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
+  const [selectedStyle, setSelectedStyle] = useState<Style | "All">("All");
   const { toast } = useToast();
 
-  // 🆕 Load budget from localStorage on component mount
+  // 🆕 Load budget and style from localStorage on component mount
   useEffect(() => {
     try {
       const savedBudget = localStorage.getItem('outfit-budget');
@@ -22,8 +24,15 @@ export const FilterOptions = () => {
         setBudget(parsed.budget || 100);
         setIsUnlimited(parsed.isUnlimited || false);
       }
+      
+      // Load style from styleAnalysis
+      const styleAnalysis = localStorage.getItem('styleAnalysis');
+      if (styleAnalysis) {
+        const parsed = JSON.parse(styleAnalysis);
+        setSelectedStyle(parsed.analysis?.styleProfile || "All");
+      }
     } catch (error) {
-      console.log('Could not load saved budget:', error);
+      console.log('Could not load saved data:', error);
     }
   }, []);
 
@@ -62,6 +71,25 @@ export const FilterOptions = () => {
     console.log('💰 [BUDGET SAVED] Budget data saved to localStorage:', budgetData);
   };
 
+  const handleStyleChange = (style: Style | "All") => {
+    setSelectedStyle(style);
+    
+    // Update styleAnalysis in localStorage
+    try {
+      const styleAnalysis = localStorage.getItem('styleAnalysis');
+      if (styleAnalysis) {
+        const parsed = JSON.parse(styleAnalysis);
+        parsed.analysis.styleProfile = style;
+        localStorage.setItem('styleAnalysis', JSON.stringify(parsed));
+        
+        // Trigger page refresh to update outfits
+        window.location.reload();
+      }
+    } catch (error) {
+      console.log('Could not save style preference:', error);
+    }
+  };
+
   const handleSyncCalendar = () => {
     toast({
       title: "Calendar Sync",
@@ -71,7 +99,7 @@ export const FilterOptions = () => {
 
   return (
     <div className="space-y-6 mb-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <EventFilter
           date={date}
           onDateSelect={setDate}
@@ -84,6 +112,19 @@ export const FilterOptions = () => {
           onBudgetChange={handleBudgetChange}
           onInputChange={handleInputChange}
         />
+        
+        <div className="flex justify-end">
+          <StyleFilterButton
+            selectedStyle={selectedStyle}
+            setSelectedStyle={handleStyleChange}
+            selectedCategory="All"
+            setSelectedCategory={() => {}}
+            selectedMode="All"
+            setSelectedMode={() => {}}
+            selectedColor="All"
+            setSelectedColor={() => {}}
+          />
+        </div>
       </div>
 
       <Button 

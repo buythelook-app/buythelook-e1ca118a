@@ -23,13 +23,23 @@ const BODY_SHAPE_TO_STRUCTURE = {
 export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
   // Simple analysis based on quiz data
   // Map the style preferences from the quiz
-  let styleProfile = quizData.stylePreferences?.[0] || "Classic";
+  let styleProfile = quizData.stylePreferences?.[0] || "classic";
   
-  // Transform user's style choices to match our style naming conventions
-  if (styleProfile === "Minimalist" || styleProfile === "Modern") {
-    // Consolidate the minimalist and modern styles as they're similar
-    styleProfile = "Minimalist";
-  }
+  // Transform user's style choices to match our filter naming conventions
+  const styleMapping = {
+    "Minimalist": "minimalist",
+    "Modern": "minimalist", // Modern maps to minimalist
+    "Classy": "classic",
+    "Classic": "classic",
+    "Romantic": "romantic",
+    "Casual": "casual",
+    "Sporty": "sportive",
+    "Elegant": "elegant",
+    "Boo Hoo": "boohoo",
+    "Nordic": "nordic"
+  };
+  
+  styleProfile = styleMapping[styleProfile as keyof typeof styleMapping] || "classic";
   
   // Get body shape and map to API structure
   const bodyShape = quizData.bodyShape || "hourglass";
@@ -38,10 +48,10 @@ export const analyzeStyleWithAI = (quizData: QuizFormData): StyleAnalysis => {
   // Determine color preference based on style and user color choices
   let colorPreference = "neutral";
   
-  // If the user has selected Minimalist style, prioritize neutral colors
-  if (styleProfile === "Minimalist") {
+  // If the user has selected minimalist style, prioritize neutral colors
+  if (styleProfile === "minimalist") {
     colorPreference = "neutral";
-  } 
+  }
   // Otherwise use their color preferences if available
   else if (quizData.colorPreferences && quizData.colorPreferences.length > 0) {
     if (quizData.colorPreferences.includes("neutral")) {
