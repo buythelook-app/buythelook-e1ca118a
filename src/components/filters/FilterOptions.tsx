@@ -83,16 +83,14 @@ export const FilterOptions = () => {
         localStorage.setItem('styleAnalysis', JSON.stringify(parsed));
         console.log('🎨 [FilterOptions] Updated style preference to:', style);
         
+        // Dispatch custom event to notify other components
+        window.dispatchEvent(new CustomEvent('styleAnalysisChanged'));
+        
         // Show user feedback
         toast({
           title: "Style Updated",
-          description: `Changed to ${style} style. Refreshing recommendations...`,
+          description: `Changed to ${style} style. Your recommendations will update automatically.`,
         });
-        
-        // Trigger page refresh to update outfits
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
       }
     } catch (error) {
       console.log('Could not save style preference:', error);

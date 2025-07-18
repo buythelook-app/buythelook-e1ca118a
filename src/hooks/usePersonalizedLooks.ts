@@ -34,12 +34,32 @@ export function usePersonalizedLooks() {
   const [apiErrorShown, setApiErrorShown] = useState(false);
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
 
-  // Load style analysis from localStorage on component mount
+  // Load style analysis from localStorage on component mount and listen for changes
   useEffect(() => {
-    const styleAnalysis = localStorage.getItem('styleAnalysis');
-    if (styleAnalysis) {
-      setUserStyle(JSON.parse(styleAnalysis));
-    }
+    const loadStyleAnalysis = () => {
+      const styleAnalysis = localStorage.getItem('styleAnalysis');
+      if (styleAnalysis) {
+        const parsed = JSON.parse(styleAnalysis);
+        setUserStyle(parsed);
+        console.log('🎨 [usePersonalizedLooks] Loaded style:', parsed.analysis?.styleProfile);
+      }
+    };
+
+    // Load initially
+    loadStyleAnalysis();
+
+    // Create a custom event listener for style changes
+    const handleStyleChange = () => {
+      loadStyleAnalysis();
+      console.log('🎨 [usePersonalizedLooks] Style changed, reloading...');
+    };
+
+    // Listen for custom style change events
+    window.addEventListener('styleAnalysisChanged', handleStyleChange);
+    
+    return () => {
+      window.removeEventListener('styleAnalysisChanged', handleStyleChange);
+    };
   }, []);
 
   // Initialize mood from localStorage if available
@@ -89,7 +109,7 @@ export function usePersonalizedLooks() {
 
   // The useQuery hook - only database items
   const { data: occasionOutfits, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['dashboardItems', selectedMood, forceRefresh],
+    queryKey: ['dashboardItems', selectedMood, forceRefresh, userStyle?.analysis?.styleProfile],
     queryFn,
     enabled: !!userStyle,
     staleTime: 5000,
