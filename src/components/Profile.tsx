@@ -30,6 +30,7 @@ export const Profile = () => {
     lastName: "",
     phone: "",
   });
+  const [quizData, setQuizData] = useState<any>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -49,6 +50,17 @@ export const Profile = () => {
         lastName: user.user_metadata.lastName || "",
         phone: user.user_metadata.phone || "",
       });
+
+      // Load quiz data
+      const { data: quizResults } = await (supabase as any)
+        .from('style_quiz_results')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (quizResults) {
+        setQuizData(quizResults);
+      }
     };
 
     getUserData();
@@ -196,6 +208,54 @@ export const Profile = () => {
                         Save Changes
                       </Button>
                     </form>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Style Quiz Results</h3>
+                    {quizData ? (
+                      <Card className="bg-netflix-background">
+                        <CardContent className="p-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm text-gray-400">Body Shape</p>
+                              <p className="font-semibold">{quizData.body_shape}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-400">Gender</p>
+                              <p className="font-semibold">{quizData.gender}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-400">Height</p>
+                              <p className="font-semibold">{quizData.height} cm</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-400">Weight</p>
+                              <p className="font-semibold">{quizData.weight} kg</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-400">Color Preferences</p>
+                              <p className="font-semibold">{quizData.color_preferences?.join(', ')}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-400">Style Preferences</p>
+                              <p className="font-semibold">{quizData.style_preferences?.join(', ')}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <Card className="bg-netflix-background">
+                        <CardContent className="p-4">
+                          <p className="text-center text-gray-400">No quiz results yet</p>
+                          <Button 
+                            onClick={() => navigate('/quiz')}
+                            className="w-full mt-4 bg-netflix-accent hover:bg-netflix-accent/90"
+                          >
+                            Take Style Quiz
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
 
                   <div className="space-y-4">
