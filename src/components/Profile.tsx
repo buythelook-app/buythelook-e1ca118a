@@ -66,6 +66,36 @@ export const Profile = () => {
     getUserData();
   }, [navigate]);
 
+  // Refresh quiz data when component mounts or when coming back from quiz
+  useEffect(() => {
+    const refreshQuizData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: quizResults } = await (supabase as any)
+        .from('style_quiz_results')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (quizResults) {
+        setQuizData(quizResults);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshQuizData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
