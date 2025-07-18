@@ -45,31 +45,68 @@ export class PersonalizationAgent implements Agent {
 
   async run(userId: string): Promise<AgentResult> {
     try {
-      console.log(`🎯 [PersonalizationAgent] מתחיל ניתוח התאמה אישית עם מבנה גוף עבור: ${userId}`);
+      console.log(`🎯 [PersonalizationAgent] מתחיל ניתוח התאמה אישית עבור: ${userId}`);
       
-      // חילוץ העדפות מה-localStorage
-      const styleAnalysis = localStorage.getItem('styleAnalysis');
-      const currentMood = localStorage.getItem('current-mood');
-      
-      if (!styleAnalysis) {
-        return {
-          success: false,
-          error: "לא נמצא ניתוח סטייל עבור המשתמש"
-        };
+      // טעינת נתוני השאלון מבסיס הנתונים
+      const { data: quizData, error } = await (supabase as any)
+        .from('style_quiz_results')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('שגיאה בטעינת נתוני השאלון:', error);
       }
 
-      const parsedStyleAnalysis = JSON.parse(styleAnalysis);
-      const styleProfile = parsedStyleAnalysis?.analysis?.styleProfile?.toLowerCase();
-      const bodyShape = parsedStyleAnalysis?.analysis?.bodyShape?.toLowerCase();
-      const colorPreferences = parsedStyleAnalysis?.analysis?.colorPreferences || [];
+      let styleProfile, bodyShape, colorPreferences, moodPreferences;
 
-      console.log(`📊 [PersonalizationAgent] פרופיל סטייל: ${styleProfile}, מבנה גוף: ${bodyShape}`);
+      if (quizData) {
+        // שימוש בנתוני השאלון מבסיס הנתונים
+        console.log('🎯 [PersonalizationAgent] נמצאו נתוני שאלון במאגר:', quizData);
+        
+        styleProfile = quizData.style_preferences && quizData.style_preferences.length > 0 
+          ? quizData.style_preferences[quizData.style_preferences.length - 1].toLowerCase() 
+          : 'casual';
+        bodyShape = quizData.body_shape?.toLowerCase() || 'rectangle';
+        colorPreferences = quizData.color_preferences || [];
+        
+        // מציאת מצב רוח רגוע בהתאם לבחירות המשתמש
+        if (quizData.style_preferences && quizData.style_preferences.includes('Casual')) {
+          moodPreferences = 'casual';
+        } else if (quizData.style_preferences && quizData.style_preferences.includes('Minimalist')) {
+          moodPreferences = 'relaxed';
+        } else {
+          moodPreferences = 'general';
+        }
+        
+      } else {
+        // אם אין נתוני שאלון במאגר, מחפש ב-localStorage
+        console.log('🎯 [PersonalizationAgent] לא נמצאו נתוני שאלון במאגר, מחפש ב-localStorage');
+        
+        const styleAnalysis = localStorage.getItem('styleAnalysis');
+        const currentMood = localStorage.getItem('current-mood');
+        
+        if (!styleAnalysis) {
+          return {
+            success: false,
+            error: "נא להשלים את שאלון הסגנון כדי לקבל המלצות מותאמות אישית"
+          };
+        }
+
+        const parsedStyleAnalysis = JSON.parse(styleAnalysis);
+        styleProfile = parsedStyleAnalysis?.analysis?.styleProfile?.toLowerCase() || 'casual';
+        bodyShape = parsedStyleAnalysis?.analysis?.bodyShape?.toLowerCase() || 'rectangle';
+        colorPreferences = parsedStyleAnalysis?.analysis?.colorPreferences || [];
+        moodPreferences = currentMood || 'general';
+      }
+
+      console.log(`📊 [PersonalizationAgent] פרופיל סטייל: ${styleProfile}, מבנה גוף: ${bodyShape}, מצב רוח: ${moodPreferences}`);
 
       let outfitData;
       let recommendations;
 
-      // לוגיקה מיוחדת לסגנון קזואל
-      if (styleProfile === 'casual' || currentMood === 'casual') {
+      // בדיקה אם המשתמש בחר סגנון רגוע או קזואל
+      if (styleProfile === 'casual' || moodPreferences === 'casual' || moodPreferences === 'relaxed') {
         console.log(`👕 [PersonalizationAgent] יוצר תלבושת קזואלית מותאמת למבנה גוף ${bodyShape}`);
         
         // שימוש בשירות הקזואל החדש עם התחשבות במבנה גוף
@@ -203,10 +240,54 @@ export class PersonalizationAgent implements Agent {
             reasoning: `נבחר על בסיס הפרופיל ${styleProfile} ומבנה גוף ${bodyShape} לייעוץ מקצועי`
           };
         } else {
-          return {
-            success: false,
-            error: "לא נמצאו מספיק פריטים מתאימים למבנה הגוף ליצירת תלבושת שלמה"
-          };
+          // אם אין מספיק פריטים מסוננים, חזור לבחירה בסיסית כדי לכלול נעליים
+          console.log('🔄 [PersonalizationAgent] לא נמצאו מספיק פריטים מסוננים, מנסה בחירה בסיסית');
+          
+          const allTops = allItems.filter(item => this.isTop(item)).slice(0, 3);
+          const allBottoms = allItems.filter(item => this.isBottom(item)).slice(0, 3);
+          const allShoes = allItems.filter(item => this.isShoes(item)).slice(0, 3);
+          
+          if (allTops.length > 0 && allBottoms.length > 0 && allShoes.length > 0) {
+            const basicLook = {
+              id: `basic-look-${Date.now()}`,
+              items: [
+                {
+                  id: allTops[0].id,
+                  name: allTops[0].product_name,
+                  type: 'top',
+                  price: `₪${allTops[0].price}`,
+                  image: this.extractImageUrl(allTops[0].image)
+                },
+                {
+                  id: allBottoms[0].id,
+                  name: allBottoms[0].product_name,
+                  type: 'bottom',
+                  price: `₪${allBottoms[0].price}`,
+                  image: this.extractImageUrl(allBottoms[0].image)
+                },
+                {
+                  id: allShoes[0].id,
+                  name: allShoes[0].product_name,
+                  type: 'shoes',
+                  price: `₪${allShoes[0].price}`,
+                  image: this.extractImageUrl(allShoes[0].image)
+                }
+              ],
+              style: styleProfile,
+              occasion: 'general',
+              description: `מראה ${styleProfile} בסיסי עם נעליים מתאימות`
+            };
+
+            outfitData = {
+              looks: [basicLook],
+              reasoning: `נבחר מראה בסיסי הכולל נעליים עבור ${styleProfile}`
+            };
+          } else {
+            return {
+              success: false,
+              error: "לא נמצאו מספיק פריטים ליצירת תלבושת שלמה הכוללת נעליים"
+            };
+          }
         }
 
         recommendations = this.getBodyShapeRecommendations(bodyShape, styleProfile);
