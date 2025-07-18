@@ -13,13 +13,19 @@ export class AgentResultsGenerator {
     
     console.log(`✅ [DEBUG] Generating results for ${AGENT_NAMES.length} agents using ${validItems.length} valid items`);
     
+    // Categorize items by type
+    const categorizedItems = this.categorizeItems(validItems);
+    console.log(`✅ [DEBUG] Categorized items:`, {
+      tops: categorizedItems.tops.length,
+      bottoms: categorizedItems.bottoms.length,
+      shoes: categorizedItems.shoes.length
+    });
+    
     for (const agent of AGENT_NAMES) {
-      // Shuffle items for each agent to get different combinations
-      const shuffledItems = [...validItems].sort(() => Math.random() - 0.5);
-      
-      const randomTop = shuffledItems[0];
-      const randomBottom = shuffledItems[1] || shuffledItems[0]; // Fallback if not enough items
-      const randomShoe = shuffledItems[2] || shuffledItems[0]; // Fallback if not enough items
+      // Select random items from each category
+      const randomTop = this.getRandomItem(categorizedItems.tops);
+      const randomBottom = this.getRandomItem(categorizedItems.bottoms);
+      const randomShoe = this.getRandomItem(categorizedItems.shoes);
       
       const score = Math.floor(Math.random() * 30) + 70;
       
@@ -57,5 +63,51 @@ export class AgentResultsGenerator {
     
     console.log(`✅ [DEBUG] Generated ${results.length} outfits with filtered database items`);
     return results;
+  }
+
+  /**
+   * Categorize items by clothing type based on product_family and product_subfamily
+   */
+  private categorizeItems(items: any[]): { tops: any[], bottoms: any[], shoes: any[] } {
+    const tops: any[] = [];
+    const bottoms: any[] = [];
+    const shoes: any[] = [];
+
+    for (const item of items) {
+      const family = item.product_family?.toLowerCase() || '';
+      const subfamily = item.product_subfamily?.toLowerCase() || '';
+
+      console.log(`🔍 [DEBUG] Categorizing item ${item.id}: family="${family}", subfamily="${subfamily}"`);
+
+      // Check if it's shoes
+      if (family.includes('sandal') || family.includes('shoe') || family.includes('boot') ||
+          subfamily.includes('sandal') || subfamily.includes('shoe') || subfamily.includes('boot')) {
+        shoes.push(item);
+        console.log(`👠 [DEBUG] Categorized as SHOES: ${item.product_name}`);
+      }
+      // Check if it's bottom wear
+      else if (family.includes('pant') || family.includes('jean') || family.includes('trouser') ||
+               family.includes('skirt') || family.includes('short') || family.includes('bermuda') ||
+               subfamily.includes('pant') || subfamily.includes('jean') || subfamily.includes('trouser') ||
+               subfamily.includes('skirt') || subfamily.includes('short') || subfamily.includes('bermuda')) {
+        bottoms.push(item);
+        console.log(`👖 [DEBUG] Categorized as BOTTOM: ${item.product_name}`);
+      }
+      // Everything else is considered a top
+      else {
+        tops.push(item);
+        console.log(`👕 [DEBUG] Categorized as TOP: ${item.product_name}`);
+      }
+    }
+
+    return { tops, bottoms, shoes };
+  }
+
+  /**
+   * Get random item from array
+   */
+  private getRandomItem(items: any[]): any {
+    if (items.length === 0) return null;
+    return items[Math.floor(Math.random() * items.length)];
   }
 }

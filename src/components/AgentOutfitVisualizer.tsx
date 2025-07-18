@@ -71,7 +71,8 @@ export function AgentOutfitVisualizer() {
         image: extractZaraImageUrl(agentOutput.top.image),
         type: 'top' as const,
         name: agentOutput.top.product_name || 'Top Item',
-        price: agentOutput.top.price ? `$${agentOutput.top.price}` : '$49.99'
+        price: agentOutput.top.price ? `$${agentOutput.top.price}` : '$49.99',
+        url: agentOutput.top.url || `https://www.zara.com/il/en/search?searchTerm=${encodeURIComponent(agentOutput.top.product_name || 'top')}`
       };
       lookItems.push(topItem);
       console.log(`✅ [DEBUG] Added top: ${agentOutput.top.id} with image: ${topItem.image}`);
@@ -83,7 +84,8 @@ export function AgentOutfitVisualizer() {
         image: extractZaraImageUrl(agentOutput.bottom.image),
         type: 'bottom' as const,
         name: agentOutput.bottom.product_name || 'Bottom Item',
-        price: agentOutput.bottom.price ? `$${agentOutput.bottom.price}` : '$59.99'
+        price: agentOutput.bottom.price ? `$${agentOutput.bottom.price}` : '$59.99',
+        url: agentOutput.bottom.url || `https://www.zara.com/il/en/search?searchTerm=${encodeURIComponent(agentOutput.bottom.product_name || 'bottom')}`
       };
       lookItems.push(bottomItem);
       console.log(`✅ [DEBUG] Added bottom: ${agentOutput.bottom.id} with image: ${bottomItem.image}`);
@@ -98,7 +100,8 @@ export function AgentOutfitVisualizer() {
         image: agentOutput.shoes.url || agentOutput.shoes.image || '/placeholder.svg', // Use url field from shoes table
         type: 'shoes' as const,
         name: agentOutput.shoes.name || 'Shoes Item',
-        price: agentOutput.shoes.price ? `$${agentOutput.shoes.price}` : '$89.99'
+        price: agentOutput.shoes.price ? `$${agentOutput.shoes.price}` : '$89.99',
+        url: agentOutput.shoes.url || `https://www.zara.com/il/en/search?searchTerm=${encodeURIComponent(agentOutput.shoes.name || 'shoes')}`
       };
       lookItems.push(shoesItem);
       console.log(`✅ [SHOES TABLE] Added shoes: ${agentOutput.shoes.name} with image: ${shoesItem.image} (from "shoes" table)`);
@@ -110,7 +113,8 @@ export function AgentOutfitVisualizer() {
         image: extractZaraImageUrl(agentOutput.coat.image),
         type: 'outerwear' as const,
         name: agentOutput.coat.product_name || 'Coat Item',
-        price: agentOutput.coat.price ? `$${agentOutput.coat.price}` : '$129.99'
+        price: agentOutput.coat.price ? `$${agentOutput.coat.price}` : '$129.99',
+        url: agentOutput.coat.url || `https://www.zara.com/il/en/search?searchTerm=${encodeURIComponent(agentOutput.coat.product_name || 'coat')}`
       };
       lookItems.push(coatItem);
       console.log(`✅ [DEBUG] Added coat: ${agentOutput.coat.id} with image: ${coatItem.image}`);

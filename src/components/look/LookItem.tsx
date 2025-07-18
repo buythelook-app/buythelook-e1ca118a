@@ -48,9 +48,10 @@ export const LookItem = ({ item }: LookItemProps) => {
     if (item.url) {
       window.open(item.url, '_blank');
     } else {
-      // Fallback - try to construct a generic search URL
+      // Create a better fallback URL using Zara search
       const searchQuery = encodeURIComponent(item.title);
-      window.open(`https://www.google.com/search?q=${searchQuery}`, '_blank');
+      const zaraSearchUrl = `https://www.zara.com/il/en/search?searchTerm=${searchQuery}`;
+      window.open(zaraSearchUrl, '_blank');
     }
   };
 
