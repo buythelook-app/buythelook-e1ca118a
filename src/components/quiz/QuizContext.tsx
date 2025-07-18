@@ -78,8 +78,15 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
         description: "We've created your personalized style profile.",
       });
       
-      // Store analysis in session storage temporarily for the suggestions page
-      sessionStorage.setItem('styleAnalysis', JSON.stringify(styleAnalysis));
+      // Store analysis in localStorage with original style preserved
+      localStorage.setItem('styleAnalysis', JSON.stringify(styleAnalysis));
+      
+      // Store the ORIGINAL style from quiz separately for the header
+      localStorage.setItem('originalQuizStyle', JSON.stringify({
+        styleProfile: styleAnalysis.analysis.styleProfile,
+        timestamp: new Date().toISOString()
+      }));
+      
       navigate('/suggestions');
     } catch (error) {
       console.error('Style analysis error:', error);

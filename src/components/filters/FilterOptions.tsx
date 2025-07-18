@@ -74,22 +74,24 @@ export const FilterOptions = () => {
   const handleStyleChange = (style: Style | "All") => {
     setSelectedStyle(style);
     
-    // Update styleAnalysis in localStorage
+    // Update styleAnalysis in localStorage (for recommendations only)
     try {
       const styleAnalysis = localStorage.getItem('styleAnalysis');
       if (styleAnalysis) {
         const parsed = JSON.parse(styleAnalysis);
         parsed.analysis.styleProfile = style;
         localStorage.setItem('styleAnalysis', JSON.stringify(parsed));
-        console.log('🎨 [FilterOptions] Updated style preference to:', style);
+        console.log('🎨 [FilterOptions] Updated current style preference to:', style);
+        
+        // DO NOT update originalQuizStyle - that stays the same for the header
         
         // Dispatch custom event to notify other components
         window.dispatchEvent(new CustomEvent('styleAnalysisChanged'));
         
         // Show user feedback
         toast({
-          title: "Style Updated",
-          description: `Changed to ${style} style. Your recommendations will update automatically.`,
+          title: "Style Filter Applied",
+          description: `Showing ${style} style recommendations. Your original quiz style is preserved.`,
         });
       }
     } catch (error) {
