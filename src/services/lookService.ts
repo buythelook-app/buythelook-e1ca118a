@@ -42,17 +42,35 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       data: { forceRefresh }
     });
 
-    // Load user's style preference from localStorage
-    let userStyle = 'casual'; // Default fallback
+    // Load user's style preference from localStorage (both original and filter)
+    let baseStyle = 'casual'; // Default fallback
+    let currentStyle = 'casual'; // Current filter style
+    let finalStyle = 'casual'; // Final style to use
+    
     try {
+      // Get original style from quiz
+      const originalQuizStyle = localStorage.getItem('originalQuizStyle');
+      if (originalQuizStyle) {
+        const originalParsed = JSON.parse(originalQuizStyle);
+        baseStyle = originalParsed.styleProfile || 'casual';
+        console.log("🎨 [fetchFirstOutfitSuggestion] Base style from quiz:", baseStyle);
+      }
+      
+      // Get current style from filters
       const styleAnalysis = localStorage.getItem('styleAnalysis');
       if (styleAnalysis) {
         const parsed = JSON.parse(styleAnalysis);
-        userStyle = parsed.analysis?.styleProfile || 'casual';
-        console.log("🎨 [fetchFirstOutfitSuggestion] User style from localStorage:", userStyle);
+        currentStyle = parsed.analysis?.styleProfile || baseStyle;
+        console.log("🎨 [fetchFirstOutfitSuggestion] Current filter style:", currentStyle);
       }
+      
+      // Use current style for recommendations (combines quiz + filters)
+      finalStyle = currentStyle;
+      console.log("🎨 [fetchFirstOutfitSuggestion] Final style for recommendations:", finalStyle);
+      
     } catch (error) {
       console.log("⚠️ [fetchFirstOutfitSuggestion] Could not load style from localStorage:", error);
+      finalStyle = 'casual'; // Fallback
     }
 
     // Test Supabase connection first
@@ -71,7 +89,9 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
     console.log("✅ [fetchFirstOutfitSuggestion] Supabase connection successful:", {
       shoesCount: connectionTest.shoesCount,
       zaraCount: connectionTest.zaraCount,
-      userStyle: userStyle
+      baseStyle: baseStyle,
+      currentStyle: currentStyle,
+      finalStyle: finalStyle
     });
 
     // Reset global tracking if needed
@@ -81,7 +101,7 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       lastResetTime = Date.now();
     }
 
-    const occasionOutfit = await createAdvancedOutfit(userStyle, 'general', [], 'general');
+    const occasionOutfit = await createAdvancedOutfit(finalStyle, 'general', [], 'general');
     
     console.log("🔥 [fetchFirstOutfitSuggestion] Raw outfit result:", occasionOutfit);
     console.log("🔥 [fetchFirstOutfitSuggestion] Number of items:", occasionOutfit?.length || 0);
@@ -1094,17 +1114,35 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
   try {
     console.log('🔥 [fetchDashboardItems] ===== STARTING DASHBOARD ITEMS FETCH (MANDATORY SHOES FROM ZARA_CLOTH TABLE) =====');
     
-    // Load user's style preference from localStorage
-    let userStyle = 'casual'; // Default fallback
+    // Load user's style preference from localStorage (both original and filter)
+    let baseStyle = 'casual'; // Default fallback
+    let currentStyle = 'casual'; // Current filter style
+    let finalStyle = 'casual'; // Final style to use
+    
     try {
+      // Get original style from quiz
+      const originalQuizStyle = localStorage.getItem('originalQuizStyle');
+      if (originalQuizStyle) {
+        const originalParsed = JSON.parse(originalQuizStyle);
+        baseStyle = originalParsed.styleProfile || 'casual';
+        console.log("🎨 [fetchDashboardItems] Base style from quiz:", baseStyle);
+      }
+      
+      // Get current style from filters
       const styleAnalysis = localStorage.getItem('styleAnalysis');
       if (styleAnalysis) {
         const parsed = JSON.parse(styleAnalysis);
-        userStyle = parsed.analysis?.styleProfile || 'casual';
-        console.log("🎨 [fetchDashboardItems] User style from localStorage:", userStyle);
+        currentStyle = parsed.analysis?.styleProfile || baseStyle;
+        console.log("🎨 [fetchDashboardItems] Current filter style:", currentStyle);
       }
+      
+      // Use current style for recommendations (combines quiz + filters)
+      finalStyle = currentStyle;
+      console.log("🎨 [fetchDashboardItems] Final style for recommendations:", finalStyle);
+      
     } catch (error) {
       console.log("⚠️ [fetchDashboardItems] Could not load style from localStorage:", error);
+      finalStyle = 'casual'; // Fallback
     }
     
     // Test connection first
@@ -1114,7 +1152,7 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
       throw new Error(`Supabase connection failed: ${connectionTest.error}`);
     }
     
-    console.log('✅ [fetchDashboardItems] Supabase connection verified with user style:', userStyle);
+    console.log('✅ [fetchDashboardItems] Supabase connection verified with styles:', { baseStyle, currentStyle, finalStyle });
     
     // Reset global tracking for fresh selection but keep separate tracking per occasion
     globalUsedItemIds = {};
@@ -1126,9 +1164,9 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
     // יצירת תלבושת שונה לכל הזדמנות (נעליים מטבלת zara_cloth)
     for (const occasion of occasions) {
       try {
-        console.log(`🔍 [fetchDashboardItems] ===== PROCESSING ${occasion.toUpperCase()} WITH STYLE: ${userStyle.toUpperCase()} =====`);
+        console.log(`🔍 [fetchDashboardItems] ===== PROCESSING ${occasion.toUpperCase()} WITH COMBINED STYLE: ${finalStyle.toUpperCase()} =====`);
         
-        const occasionOutfit = await createAdvancedOutfit(userStyle, occasion.toLowerCase(), [], occasion);
+        const occasionOutfit = await createAdvancedOutfit(finalStyle, occasion.toLowerCase(), [], occasion);
         
         if (occasionOutfit && occasionOutfit.length > 0) {
           data[occasion] = occasionOutfit.map(item => ({
