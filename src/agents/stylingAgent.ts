@@ -530,7 +530,7 @@ class StylingAgentClass implements Agent {
   }
 
   /**
-   * 🆕 Create coordinated dress outfits with color matching
+   * 🆕 Create enhanced coordinated dress outfits with better styling
    */
   private async createCoordinatedDressOutfits(
     dresses: ZaraClothItem[], 
@@ -544,77 +544,92 @@ class StylingAgentClass implements Agent {
     budget: number,
     isUnlimited: boolean
   ) {
-    console.log(`👗 [COORDINATED DRESS] Creating dress outfits with shoes from "shoes" table`);
+    console.log(`👗 [ENHANCED DRESS] Creating high-quality dress outfits with advanced coordination`);
     
     const availableDresses = dresses.filter(dress => !usedItemIds.has(dress.id));
     const availableShoes = shoes.filter(shoe => !usedShoeIds.has(shoe.name));
     
     if (availableDresses.length === 0 || availableShoes.length === 0) {
+      console.log(`⚠️ [DRESS] Insufficient items - dresses: ${availableDresses.length}, shoes: ${availableShoes.length}`);
       return;
     }
     
-    for (const dress of availableDresses.slice(0, 2)) {
-      if (!isUnlimited && dress.price > budget * 0.8) {
+    // Score and sort dresses by quality and appropriateness
+    const scoredDresses = availableDresses.map(dress => ({
+      dress,
+      score: this.scoreDressForEvent(dress, eventType, mood, budget, isUnlimited)
+    })).sort((a, b) => b.score - a.score);
+    
+    const maxDressLooks = Math.min(2, Math.max(1, 4 - looks.length));
+    let addedLooks = 0;
+    
+    for (const { dress, score } of scoredDresses) {
+      if (addedLooks >= maxDressLooks) break;
+      if (score < 60) break; // Don't use low-scoring dresses
+      
+      // Find the best matching shoes
+      const shoeMatches = availableShoes
+        .map(shoe => ({
+          shoe,
+          compatibility: this.calculateDressShoeCompatibility(dress, shoe, eventType, mood, budget, isUnlimited)
+        }))
+        .filter(match => match.compatibility > 70)
+        .sort((a, b) => b.compatibility - a.compatibility);
+      
+      if (shoeMatches.length === 0) {
+        console.log(`⚠️ [DRESS] No compatible shoes found for ${dress.product_name}`);
         continue;
       }
       
-      const coordinatingShoes = availableShoes.find(shoe => {
-        const totalCost = dress.price + (shoe.price || 0);
-        if (!isUnlimited && totalCost > budget) {
-          return false;
-        }
-        
-        return ColorCoordinationService.areColorsCompatible(
-          dress.colour || 'unknown', 
-          shoe.colour || shoe.color || 'unknown'
-        );
-      });
+      const bestShoeMatch = shoeMatches[0];
       
-      if (!coordinatingShoes) {
+      if (usedShoeIds.has(bestShoeMatch.shoe.name)) {
+        console.log(`⚠️ [DRESS] Best shoe already used: ${bestShoeMatch.shoe.name}`);
         continue;
       }
       
-      console.log(`✅ [DRESS + SHOES TABLE] ${dress.product_name} + ${coordinatingShoes.name} (from shoes table)`);
-      debugInfo.outfit_logic.outfit_rules_applied.push('COORDINATED_DRESS_SHOES_TABLE');
+      console.log(`✅ [HIGH-QUALITY DRESS] Score: ${score}/100, Shoe Match: ${bestShoeMatch.compatibility}/100 - ${dress.product_name} + ${bestShoeMatch.shoe.name}`);
+      debugInfo.outfit_logic.outfit_rules_applied.push(`ENHANCED_DRESS_SCORE_${score}_SHOE_${bestShoeMatch.compatibility}`);
       
       const lookItems = [
         {
           id: dress.id,
           title: dress.product_name,
-          description: dress.description || '',
+          description: this.enhanceItemDescription(dress, 'dress', mood),
           image: this.normalizeImageField(dress.image, 'clothing'),
           price: dress.price ? `$${dress.price}` : '0',
           type: 'dress'
         },
         {
-          id: coordinatingShoes.name,
-          title: coordinatingShoes.name,
-          description: coordinatingShoes.description || '',
-          image: coordinatingShoes.image,
-          price: coordinatingShoes.price ? `$${coordinatingShoes.price}` : '0',
+          id: bestShoeMatch.shoe.name,
+          title: bestShoeMatch.shoe.name,
+          description: this.enhanceItemDescription(bestShoeMatch.shoe, 'shoes', mood),
+          image: bestShoeMatch.shoe.image,
+          price: bestShoeMatch.shoe.price ? `$${bestShoeMatch.shoe.price}` : '0',
           type: 'shoes'
         }
       ];
       
       const look: Look = {
-        id: `coordinated-dress-look-${looks.length}`,
+        id: `enhanced-dress-look-${looks.length + addedLooks}`,
         items: lookItems,
-        description: `${dress.product_name} עם ${coordinatingShoes.name} מטבלת הנעליים`,
+        description: this.generateEnhancedDressDescription(dress, bestShoeMatch.shoe, eventType, mood),
         occasion: eventType as any,
-        style: 'elegant',
+        style: this.determineDressStyle(dress),
         mood: mood as any
       };
       
       looks.push(look);
       usedItemIds.add(dress.id);
-      usedShoeIds.add(coordinatingShoes.name);
-      
-      break;
+      usedShoeIds.add(bestShoeMatch.shoe.name);
+      addedLooks++;
     }
+    
+    console.log(`🎉 [ENHANCED DRESS] Successfully created ${addedLooks} high-quality dress outfits`);
   }
 
   /**
-   * 🆕 Create coordinated casual outfits with color and fabric matching
+   * 🆕 Create coordinated casual outfits with enhanced color and style matching
    */
   private async createCoordinatedCasualOutfits(
     categorizedItems: any, 
@@ -627,106 +642,86 @@ class StylingAgentClass implements Agent {
     budget: number,
     isUnlimited: boolean
   ) {
-    console.log(`👕 [COORDINATED CASUAL] Creating casual outfits with shoes from "shoes" table`);
+    console.log(`👕 [ENHANCED CASUAL] Creating high-quality casual outfits with advanced coordination`);
     
     const availableTops = categorizedItems.tops.filter((item: ZaraClothItem) => !usedItemIds.has(item.id));
     const availableBottoms = categorizedItems.bottoms.filter((item: ZaraClothItem) => !usedItemIds.has(item.id));
     const availableShoes = shoes.filter(shoe => !usedShoeIds.has(shoe.name));
     
     if (availableTops.length === 0 || availableBottoms.length === 0 || availableShoes.length === 0) {
+      console.log(`⚠️ [CASUAL] Insufficient items - tops: ${availableTops.length}, bottoms: ${availableBottoms.length}, shoes: ${availableShoes.length}`);
       return;
     }
     
-    const maxCasualLooks = Math.min(2, 3 - looks.length);
+    // Enhanced: Try multiple combinations to find the best ones
+    const combinations = this.generateOutfitCombinations(availableTops, availableBottoms, availableShoes, mood, budget, isUnlimited);
+    const sortedCombinations = combinations
+      .map(combo => ({
+        ...combo,
+        score: this.scoreOutfitCombination(combo, mood)
+      }))
+      .sort((a, b) => b.score - a.score);
     
-    for (let i = 0; i < maxCasualLooks && i < availableTops.length; i++) {
-      const top = availableTops[i];
+    console.log(`🎯 [ENHANCED CASUAL] Generated ${sortedCombinations.length} combinations, selecting top ones`);
+    
+    const maxCasualLooks = Math.min(3, Math.max(1, 4 - looks.length));
+    let addedLooks = 0;
+    
+    for (const combo of sortedCombinations) {
+      if (addedLooks >= maxCasualLooks) break;
       
-      const coordinatingBottom = availableBottoms.find(bottom => {
-        if (usedItemIds.has(bottom.id)) return false;
-        
-        if (!isUnlimited && (top.price + bottom.price) > budget * 0.7) {
-          return false;
-        }
-        
-        return ColorCoordinationService.areColorsCompatible(
-          top.colour || 'unknown', 
-          bottom.colour || 'unknown'
-        );
-      });
-      
-      if (!coordinatingBottom) {
+      // Check if items are still available
+      if (usedItemIds.has(combo.top.id) || usedItemIds.has(combo.bottom.id) || usedShoeIds.has(combo.shoes.name)) {
         continue;
       }
       
-      const coordinatingShoes = availableShoes.find(shoe => {
-        if (usedShoeIds.has(shoe.name)) return false;
-        
-        const totalCost = top.price + coordinatingBottom.price + (shoe.price || 0);
-        if (!isUnlimited && totalCost > budget) {
-          return false;
-        }
-        
-        return (
-          ColorCoordinationService.areColorsCompatible(
-            top.colour || 'unknown', 
-            shoe.colour || shoe.color || 'unknown'
-          ) ||
-          ColorCoordinationService.areColorsCompatible(
-            coordinatingBottom.colour || 'unknown', 
-            shoe.colour || shoe.color || 'unknown'
-          )
-        );
-      });
-      
-      if (!coordinatingShoes) {
-        continue;
-      }
-      
-      console.log(`✅ [CASUAL + SHOES TABLE] ${top.product_name} + ${coordinatingBottom.product_name} + ${coordinatingShoes.name} (from shoes table)`);
-      debugInfo.outfit_logic.outfit_rules_applied.push('COORDINATED_CASUAL_SHOES_TABLE');
+      console.log(`✅ [HIGH-QUALITY CASUAL] Score: ${combo.score}/100 - ${combo.top.product_name} + ${combo.bottom.product_name} + ${combo.shoes.name}`);
+      debugInfo.outfit_logic.outfit_rules_applied.push(`ENHANCED_CASUAL_SCORE_${combo.score}`);
       
       const lookItems = [
         {
-          id: top.id,
-          title: top.product_name,
-          description: top.description || '',
-          image: this.normalizeImageField(top.image, 'clothing'),
-          price: top.price ? `$${top.price}` : '0',
+          id: combo.top.id,
+          title: combo.top.product_name,
+          description: this.enhanceItemDescription(combo.top, 'top', mood),
+          image: this.normalizeImageField(combo.top.image, 'clothing'),
+          price: combo.top.price ? `$${combo.top.price}` : '0',
           type: 'top'
         },
         {
-          id: coordinatingBottom.id,
-          title: coordinatingBottom.product_name,
-          description: coordinatingBottom.description || '',
-          image: this.normalizeImageField(coordinatingBottom.image, 'clothing'),
-          price: coordinatingBottom.price ? `$${coordinatingBottom.price}` : '0',
+          id: combo.bottom.id,
+          title: combo.bottom.product_name,
+          description: this.enhanceItemDescription(combo.bottom, 'bottom', mood),
+          image: this.normalizeImageField(combo.bottom.image, 'clothing'),
+          price: combo.bottom.price ? `$${combo.bottom.price}` : '0',
           type: 'bottom'
         },
         {
-          id: coordinatingShoes.name,
-          title: coordinatingShoes.name,
-          description: coordinatingShoes.description || '',
-          image: coordinatingShoes.image,
-          price: coordinatingShoes.price ? `$${coordinatingShoes.price}` : '0',
+          id: combo.shoes.name,
+          title: combo.shoes.name,
+          description: this.enhanceItemDescription(combo.shoes, 'shoes', mood),
+          image: combo.shoes.image,
+          price: combo.shoes.price ? `$${combo.shoes.price}` : '0',
           type: 'shoes'
         }
       ];
       
       const look: Look = {
-        id: `coordinated-casual-look-${looks.length}`,
+        id: `enhanced-casual-look-${looks.length + addedLooks}`,
         items: lookItems,
-        description: `${top.product_name} עם ${coordinatingBottom.product_name} ו${coordinatingShoes.name} מטבלת הנעליים`,
+        description: this.generateEnhancedLookDescription(combo.top, combo.bottom, combo.shoes, mood),
         occasion: 'casual',
-        style: 'casual',
+        style: this.determineStyleFromItems([combo.top, combo.bottom, combo.shoes]),
         mood: mood as any
       };
       
       looks.push(look);
-      usedItemIds.add(top.id);
-      usedItemIds.add(coordinatingBottom.id);
-      usedShoeIds.add(coordinatingShoes.name);
+      usedItemIds.add(combo.top.id);
+      usedItemIds.add(combo.bottom.id);
+      usedShoeIds.add(combo.shoes.name);
+      addedLooks++;
     }
+    
+    console.log(`🎉 [ENHANCED CASUAL] Successfully created ${addedLooks} high-quality casual outfits`);
   }
 
   private async createCoordinatedFormalOutfits(
@@ -1426,6 +1421,363 @@ class StylingAgentClass implements Agent {
       name.includes(keyword) || 
       family.includes(keyword)
     );
+  }
+
+  /**
+   * Generate all possible outfit combinations for better selection
+   */
+  private generateOutfitCombinations(
+    tops: ZaraClothItem[], 
+    bottoms: ZaraClothItem[], 
+    shoes: ShoeItem[], 
+    mood: string,
+    budget: number,
+    isUnlimited: boolean
+  ): Array<{top: ZaraClothItem, bottom: ZaraClothItem, shoes: ShoeItem}> {
+    const combinations = [];
+    
+    for (const top of tops.slice(0, 5)) { // Limit to first 5 tops for performance
+      for (const bottom of bottoms.slice(0, 5)) { // Limit to first 5 bottoms
+        for (const shoe of shoes.slice(0, 3)) { // Limit to first 3 shoes
+          const totalCost = top.price + bottom.price + (shoe.price || 0);
+          
+          // Skip if over budget
+          if (!isUnlimited && totalCost > budget) {
+            continue;
+          }
+          
+          // Check basic color compatibility
+          const topBottomCompatible = ColorCoordinationService.areColorsCompatible(
+            top.colour || 'unknown', 
+            bottom.colour || 'unknown'
+          );
+          
+          const topShoeCompatible = ColorCoordinationService.areColorsCompatible(
+            top.colour || 'unknown', 
+            shoe.colour || shoe.color || 'unknown'
+          );
+          
+          if (topBottomCompatible && topShoeCompatible) {
+            combinations.push({ top, bottom, shoes: shoe });
+          }
+        }
+      }
+    }
+    
+    return combinations;
+  }
+
+  /**
+   * Score an outfit combination based on multiple factors
+   */
+  private scoreOutfitCombination(
+    combo: {top: ZaraClothItem, bottom: ZaraClothItem, shoes: ShoeItem}, 
+    mood: string
+  ): number {
+    let score = 60; // Base score
+    
+    // Color coordination score (30 points max)
+    const items = [
+      { colour: combo.top.colour, type: 'top' },
+      { colour: combo.bottom.colour, type: 'bottom' },
+      { colour: combo.shoes.colour || combo.shoes.color, type: 'shoes' }
+    ];
+    
+    const coordinationScore = ColorCoordinationService.scoreOutfitCoordination(items, mood);
+    score += Math.min(30, coordinationScore * 0.3);
+    
+    // Mood alignment (15 points max)
+    const moodColors = ColorCoordinationService.getColorsForMood(mood);
+    const itemColors = [combo.top.colour, combo.bottom.colour, combo.shoes.colour || combo.shoes.color];
+    const moodMatch = itemColors.some(color => 
+      moodColors.some(moodColor => 
+        ColorCoordinationService.areColorsCompatible(color || 'unknown', moodColor)
+      )
+    );
+    if (moodMatch) score += 15;
+    
+    // Price balance (5 points max) - reward balanced pricing
+    const totalPrice = combo.top.price + combo.bottom.price + (combo.shoes.price || 0);
+    const priceBalance = Math.abs(combo.top.price - combo.bottom.price) / Math.max(combo.top.price, combo.bottom.price);
+    if (priceBalance < 0.5) score += 5; // Bonus for balanced pricing
+    
+    return Math.min(100, Math.max(0, Math.round(score)));
+  }
+
+  /**
+   * Enhance item descriptions with mood-appropriate styling tips
+   */
+  private enhanceItemDescription(item: any, itemType: string, mood: string): string {
+    const baseDescription = item.description || item.product_name || item.name || '';
+    
+    const moodTips: Record<string, Record<string, string>> = {
+      elegant: {
+        top: 'מושלם למראה אלגנטי ומעודן',
+        bottom: 'יוצר קו נקי ומחמיא',
+        shoes: 'מעניק גימור מעודן למראה'
+      },
+      energized: {
+        top: 'מוסיף אנרגיה ותוסס למראה',
+        bottom: 'נוח ודינמי לכל יום',
+        shoes: 'נעליים שמתאימות לאורח חיים פעיל'
+      },
+      romantic: {
+        top: 'רך ונשי למראה רומנטי',
+        bottom: 'יוצר צללית חיננית ומחמיאה',
+        shoes: 'מוסיף נגיעה רכה ונשית'
+      },
+      casual: {
+        top: 'נוח וסטייליש לחיי היומיום',
+        bottom: 'מתאים לכל הזדמנות',
+        shoes: 'נוח וטרנדי'
+      }
+    };
+    
+    const tip = moodTips[mood]?.[itemType] || 'פריט איכותי ומתאים';
+    return `${baseDescription}. ${tip}`;
+  }
+
+  /**
+   * Generate enhanced look descriptions
+   */
+  private generateEnhancedLookDescription(
+    top: ZaraClothItem, 
+    bottom: ZaraClothItem, 
+    shoes: ShoeItem, 
+    mood: string
+  ): string {
+    const moodDescriptions: Record<string, string> = {
+      elegant: 'מראה אלגנטי ומעודן',
+      energized: 'לוק אנרגטי ותוסס',
+      romantic: 'מראה רומנטי וחיננית',
+      casual: 'סטייל נוח וקל',
+      powerful: 'מראה חזק ובטוח',
+      calm: 'לוק רגוע ומאוזן'
+    };
+    
+    const moodDesc = moodDescriptions[mood] || 'מראה מתאים';
+    
+    return `${moodDesc} המשלב ${top.product_name} עם ${bottom.product_name} ו${shoes.name}. הצבעים משתלבים יפה יחד ויוצרים הרמוניה חזותית.`;
+  }
+
+  /**
+   * Determine style based on the items in the outfit
+   */
+  private determineStyleFromItems(items: Array<ZaraClothItem | ShoeItem>): string {
+    const names = items.map(item => 
+      ((item as ZaraClothItem).product_name || (item as ShoeItem).name || '').toLowerCase()
+    );
+    
+    const allText = names.join(' ');
+    
+    if (allText.includes('elegant') || allText.includes('formal') || allText.includes('blazer')) {
+      return 'elegant';
+    }
+    if (allText.includes('sport') || allText.includes('athletic') || allText.includes('sneaker')) {
+      return 'sporty';
+    }
+    if (allText.includes('romantic') || allText.includes('floral') || allText.includes('lace')) {
+      return 'romantic';
+    }
+    if (allText.includes('minimal') || allText.includes('clean') || allText.includes('simple')) {
+      return 'minimalist';
+    }
+    
+    return 'casual'; // Default style
+  }
+
+  /**
+   * Score a dress for appropriateness to an event
+   */
+  private scoreDressForEvent(
+    dress: ZaraClothItem, 
+    eventType: string, 
+    mood: string, 
+    budget: number, 
+    isUnlimited: boolean
+  ): number {
+    let score = 50; // Base score
+    
+    const dressName = (dress.product_name || '').toLowerCase();
+    const dressColor = (dress.colour || '').toLowerCase();
+    
+    // Event appropriateness (30 points max)
+    if (eventType === 'evening' || eventType === 'formal') {
+      if (dressName.includes('maxi') || dressName.includes('long') || dressName.includes('gown')) score += 25;
+      if (dressName.includes('sequin') || dressName.includes('satin') || dressName.includes('silk')) score += 20;
+      if (dressColor.includes('black') || dressColor.includes('navy') || dressColor.includes('burgundy')) score += 15;
+    } else if (eventType === 'work' || eventType === 'business') {
+      if (dressName.includes('midi') || dressName.includes('knee') || dressName.includes('shift')) score += 25;
+      if (dressColor.includes('black') || dressColor.includes('navy') || dressColor.includes('gray')) score += 20;
+      if (dressName.includes('blazer') || dressName.includes('professional')) score += 15;
+    } else { // casual
+      if (dressName.includes('mini') || dressName.includes('casual') || dressName.includes('shirt')) score += 25;
+      if (dressName.includes('cotton') || dressName.includes('jersey') || dressName.includes('knit')) score += 20;
+    }
+    
+    // Mood alignment (20 points max)
+    const moodColors = ColorCoordinationService.getColorsForMood(mood);
+    const moodMatch = moodColors.some(moodColor => 
+      ColorCoordinationService.areColorsCompatible(dressColor, moodColor)
+    );
+    if (moodMatch) score += 20;
+    
+    // Budget consideration (20 points max)
+    if (isUnlimited) {
+      score += 20;
+    } else {
+      const budgetRatio = dress.price / (budget * 0.8);
+      if (budgetRatio <= 0.6) score += 20;
+      else if (budgetRatio <= 0.8) score += 15;
+      else if (budgetRatio <= 1.0) score += 10;
+      else score -= 20; // Over budget penalty
+    }
+    
+    // Quality indicators (10 points max)
+    if (dressName.includes('premium') || dressName.includes('luxury')) score += 10;
+    if (dress.description && dress.description.length > 50) score += 5; // Good description
+    
+    return Math.min(100, Math.max(0, Math.round(score)));
+  }
+
+  /**
+   * Calculate compatibility between dress and shoes
+   */
+  private calculateDressShoeCompatibility(
+    dress: ZaraClothItem, 
+    shoe: ShoeItem, 
+    eventType: string, 
+    mood: string, 
+    budget: number, 
+    isUnlimited: boolean
+  ): number {
+    let compatibility = 50; // Base compatibility
+    
+    const dressName = (dress.product_name || '').toLowerCase();
+    const shoeName = (shoe.name || '').toLowerCase();
+    const dressColor = (dress.colour || '').toLowerCase();
+    const shoeColor = (shoe.colour || shoe.color || '').toLowerCase();
+    
+    // Color coordination (30 points max)
+    if (ColorCoordinationService.areColorsCompatible(dressColor, shoeColor)) {
+      compatibility += 30;
+    } else if (this.areNeutralColors(dressColor, shoeColor)) {
+      compatibility += 20; // Neutral colors often work
+    }
+    
+    // Style coordination (25 points max)
+    if (eventType === 'evening' || eventType === 'formal') {
+      if (shoeName.includes('heel') || shoeName.includes('pump') || shoeName.includes('stiletto')) {
+        compatibility += 25;
+      } else if (shoeName.includes('boot') && shoeName.includes('ankle')) {
+        compatibility += 15;
+      }
+    } else if (eventType === 'work' || eventType === 'business') {
+      if (shoeName.includes('loafer') || shoeName.includes('oxford') || shoeName.includes('heel')) {
+        compatibility += 25;
+      } else if (shoeName.includes('flat') || shoeName.includes('pump')) {
+        compatibility += 20;
+      }
+    } else { // casual
+      if (shoeName.includes('sneaker') || shoeName.includes('flat') || shoeName.includes('sandal')) {
+        compatibility += 25;
+      } else if (shoeName.includes('boot') || shoeName.includes('loafer')) {
+        compatibility += 15;
+      }
+    }
+    
+    // Budget consideration (15 points max)
+    const totalCost = dress.price + (shoe.price || 0);
+    if (isUnlimited) {
+      compatibility += 15;
+    } else if (totalCost <= budget) {
+      compatibility += 15;
+    } else if (totalCost <= budget * 1.1) {
+      compatibility += 10;
+    } else {
+      compatibility -= 20; // Over budget penalty
+    }
+    
+    // Mood alignment (10 points max)
+    const moodColors = ColorCoordinationService.getColorsForMood(mood);
+    const shoeMatchesMood = moodColors.some(moodColor => 
+      ColorCoordinationService.areColorsCompatible(shoeColor, moodColor)
+    );
+    if (shoeMatchesMood) compatibility += 10;
+    
+    return Math.min(100, Math.max(0, Math.round(compatibility)));
+  }
+
+  /**
+   * Generate enhanced description for dress outfits
+   */
+  private generateEnhancedDressDescription(
+    dress: ZaraClothItem, 
+    shoes: ShoeItem, 
+    eventType: string, 
+    mood: string
+  ): string {
+    const eventDescriptions: Record<string, string> = {
+      evening: 'מראה ערב אלגנטי ומרשים',
+      formal: 'לוק פורמלי ומעודן',
+      work: 'מראה מקצועי ובטוח',
+      business: 'סטייל עסקי אלגנטי',
+      casual: 'מראה נוח וסטייליש',
+      weekend: 'לוק סוף שבוע רגוע'
+    };
+    
+    const moodDescriptions: Record<string, string> = {
+      elegant: 'אלגנטי ומעודן',
+      romantic: 'רומנטי וחיננית',
+      powerful: 'חזק ובטוח',
+      energized: 'אנרגטי ותוסס',
+      calm: 'רגוע ומאוזן'
+    };
+    
+    const eventDesc = eventDescriptions[eventType] || 'מראה מתאים';
+    const moodDesc = moodDescriptions[mood] || '';
+    
+    return `${eventDesc} המשלב ${dress.product_name} עם ${shoes.name}. ${moodDesc ? `המראה ${moodDesc} ו` : ''}מתאים במיוחד ל${eventType}. הצבעים והסגנון יוצרים הרמוניה מושלמת.`;
+  }
+
+  /**
+   * Determine dress style from its characteristics
+   */
+  private determineDressStyle(dress: ZaraClothItem): string {
+    const dressName = (dress.product_name || '').toLowerCase();
+    const dressDesc = (dress.description || '').toLowerCase();
+    
+    const allText = `${dressName} ${dressDesc}`;
+    
+    if (allText.includes('maxi') || allText.includes('gown') || allText.includes('evening')) {
+      return 'elegant';
+    }
+    if (allText.includes('mini') || allText.includes('casual') || allText.includes('shirt dress')) {
+      return 'casual';
+    }
+    if (allText.includes('floral') || allText.includes('romantic') || allText.includes('lace')) {
+      return 'romantic';
+    }
+    if (allText.includes('midi') || allText.includes('work') || allText.includes('professional')) {
+      return 'classic';
+    }
+    if (allText.includes('minimal') || allText.includes('clean') || allText.includes('simple')) {
+      return 'minimalist';
+    }
+    
+    return 'elegant'; // Default for dresses
+  }
+
+  /**
+   * Check if colors are neutral and likely to work together
+   */
+  private areNeutralColors(color1: string, color2: string): boolean {
+    const neutrals = ['black', 'white', 'gray', 'grey', 'beige', 'brown', 'tan', 'cream', 'nude'];
+    
+    const isColor1Neutral = neutrals.some(neutral => color1.includes(neutral));
+    const isColor2Neutral = neutrals.some(neutral => color2.includes(neutral));
+    
+    return isColor1Neutral || isColor2Neutral;
   }
 
   // Legacy method for backward compatibility
