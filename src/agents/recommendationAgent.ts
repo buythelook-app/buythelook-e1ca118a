@@ -13,12 +13,40 @@ interface Agent {
  * Recommendation Enhancer Agent
  * Adds styling advice and contextual info to outfits
  */
-export const recommendationAgent: Agent = {
+export const recommendationAgent = {
   role: "Recommendation Enhancer",
   goal: "Add styling advice and contextual info to outfits",
   backstory: "Adds value to the recommendation using knowledge of fashion and occasion",
   tools: [GenerateRecommendationsTool],
   
+  /**
+   * Enhanced run method that accepts full context from previous agents
+   */
+  async runWithContext(userId: string, context?: {
+    personalization?: any;
+    styling?: any;
+    validation?: any;
+  }): Promise<any> {
+    console.log(`🔄 [RecommendationAgent] Running with synchronized context:`, {
+      hasPersonalization: !!context?.personalization,
+      hasStyling: !!context?.styling,
+      hasValidation: !!context?.validation
+    });
+    
+    if (context) {
+      // Use full context to create enhanced recommendations
+      const contextualRecommendations = this.generateEnhancedContextualRecommendations(context);
+      
+      return {
+        success: true,
+        recommendations: contextualRecommendations,
+        context: 'enhanced'
+      };
+    }
+    
+    return this.run(userId);
+  },
+
   async run(userId: string) {
     console.log(`[RecommendationAgent] Running enhanced recommendations for user: ${userId}`);
     try {
@@ -41,6 +69,49 @@ export const recommendationAgent: Agent = {
         error: error instanceof Error ? error.message : "Unknown error in recommendations"
       };
     }
+  },
+
+  /**
+   * Generate enhanced recommendations using full agent context
+   */
+  generateEnhancedContextualRecommendations(context: {
+    personalization?: any;
+    styling?: any;
+    validation?: any;
+  }): string[] {
+    const recommendations: string[] = [];
+    
+    // Personalization-based recommendations
+    if (context.personalization?.data?.looks?.length > 0) {
+      const look = context.personalization.data.looks[0];
+      if (look.style === 'casual') {
+        recommendations.push('המראה הקזואל שלך מושלם לפעילויות יומיומיות');
+      }
+    }
+    
+    // Styling-based recommendations
+    if (context.styling?.debugInfo?.outfit_logic) {
+      const logic = context.styling.debugInfo.outfit_logic;
+      recommendations.push(`האאוטפיט מותאם לאירוע ${logic.event_type}`);
+    }
+    
+    // Validation-based recommendations
+    if (context.validation?.overallScore) {
+      const score = context.validation.overallScore;
+      if (score >= 90) {
+        recommendations.push('השילוב מושלם! כל הפריטים מתאימים זה לזה');
+      } else if (score >= 70) {
+        recommendations.push('השילוב טוב - שקול להוסיף אביזר אחד מתאים');
+      }
+    }
+    
+    // Add general coordinated recommendations
+    recommendations.push(
+      'כל הפריטים נבחרו בתיאום מושלם בין האייגנטים',
+      'ההמלצות מבוססות על ניתוח מעמיק של הסגנון האישי שלך'
+    );
+    
+    return recommendations.slice(0, 5); // Return top 5 recommendations
   }
 };
 

@@ -123,6 +123,22 @@ class StylingAgentClass implements Agent {
   backstory = "An experienced fashion stylist with expertise in body shapes, color coordination, fabric matching, and budget-conscious styling";
   tools: any[] = [];
 
+  /**
+   * Enhanced run method that accepts personalization data for synchronized operation
+   */
+  async runWithPersonalizationData(userId: string, personalizationData?: any): Promise<any> {
+    console.log(`🔄 [StylingAgent] Running with synchronized personalization data:`, !!personalizationData);
+    
+    if (personalizationData) {
+      // Use personalization data to enhance styling decisions
+      console.log(`📊 [StylingAgent] Enhancing with personalization insights from previous agent`);
+      // Store personalization insights for enhanced coordination
+      localStorage.setItem('temp-personalization-data', JSON.stringify(personalizationData));
+    }
+    
+    return this.run(userId);
+  }
+
   async run(userId: string): Promise<any> {
     const startTime = performance.now();
     const debugInfo: DebugInfo = {

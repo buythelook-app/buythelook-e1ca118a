@@ -13,6 +13,12 @@ export interface Agent {
   backstory: string;
   tools: any[];
   run: (userId: string) => Promise<any>; // Make run method required
+  
+  // Enhanced synchronized methods for coordinated agent workflow
+  runWithPersonalizationData?: (userId: string, personalizationData?: any) => Promise<any>;
+  runWithOutfitData?: (userId: string, outfitData?: any[]) => Promise<any>;
+  runWithContext?: (userId: string, context?: any) => Promise<any>;
+  generateEnhancedContextualRecommendations?: (context: any) => string[];
 }
 
 // Define agent result interface

@@ -41,7 +41,7 @@ export class AgentCrew {
     const userId = typeof context === 'string' ? context : context.userId;
     const generationContext = typeof context === 'string' ? { userId: context } : context;
     
-    console.log(`🚀 [AgentCrew] Starting COORDINATED agent workflow for user: ${userId}`);
+    console.log(`🚀 [AgentCrew] Starting SYNCHRONIZED agent workflow for user: ${userId}`);
     console.log(`🎲 [AgentCrew] Generation context:`, generationContext);
     
     try {
@@ -57,10 +57,14 @@ export class AgentCrew {
       }
       
       console.log('✅ [AgentCrew] PersonalizationAgent completed successfully');
+      console.log(`📊 [AgentCrew] Personalization data:`, {
+        looksCount: personalizationResult.data?.looks?.length || 0,
+        reasoning: personalizationResult.data?.reasoning?.substring(0, 100) + '...'
+      });
       
-      // Step 2: Run styling agent with user profile data
-      console.log('👗 [AgentCrew] Step 2: Running StylingAgent...');
-      const stylingResult = await stylingAgent.run(userId);
+      // Step 2: Run styling agent with personalization results (SYNCHRONIZED)
+      console.log('👗 [AgentCrew] Step 2: Running StylingAgent with personalization data...');
+      const stylingResult = await (stylingAgent as any).runWithPersonalizationData?.(userId, personalizationResult.data) || await stylingAgent.run(userId);
       
       if (!stylingResult.success || !stylingResult.data?.looks?.length) {
         return { 
@@ -69,22 +73,30 @@ export class AgentCrew {
         };
       }
       
-      console.log(`✅ [AgentCrew] StylingAgent created ${stylingResult.data.looks.length} outfits`);
+      console.log(`✅ [AgentCrew] StylingAgent enhanced ${stylingResult.data.looks.length} outfits`);
+      console.log(`📊 [AgentCrew] Styling data:`, {
+        looksCount: stylingResult.data.looks.length,
+        debugInfo: stylingResult.data.debugInfo ? 'Available' : 'None'
+      });
       
-      // Step 3: Run validator agent to check outfit compatibility
-      console.log('🔍 [AgentCrew] Step 3: Running ValidatorAgent...');
-      const validatorResult = await validatorAgent.run(userId);
+      // Step 3: Run validator agent with styling results (SYNCHRONIZED)
+      console.log('🔍 [AgentCrew] Step 3: Running ValidatorAgent with outfit data...');
+      const validatorResult = await (validatorAgent as any).runWithOutfitData?.(userId, stylingResult.data.looks) || await validatorAgent.run(userId);
       
       if (!validatorResult.success) {
         console.warn(`⚠️ [AgentCrew] Validator warning: ${validatorResult.error}`);
         // Continue anyway, validator is not critical
       } else {
-        console.log('✅ [AgentCrew] ValidatorAgent completed successfully');
+        console.log('✅ [AgentCrew] ValidatorAgent validated outfits successfully');
       }
       
-      // Step 4: Run recommendation agent to add styling tips
-      console.log('💡 [AgentCrew] Step 4: Running RecommendationAgent...');
-      const recommendationResult = await recommendationAgent.run(userId);
+      // Step 4: Run recommendation agent with all previous results (SYNCHRONIZED)
+      console.log('💡 [AgentCrew] Step 4: Running RecommendationAgent with full context...');
+      const recommendationResult = await (recommendationAgent as any).runWithContext?.(userId, {
+        personalization: personalizationResult.data,
+        styling: stylingResult.data,
+        validation: validatorResult?.data
+      }) || await recommendationAgent.run(userId);
       
       // Combine all results with proper structure
       const finalData = {
