@@ -50,7 +50,7 @@ export const supervisorAgent = {
       improvements.push('האייגנטים צריכים לוודא גיוון בפריטים בין הלוקים');
     }
 
-    // בדיקת התאמה לאירועים
+    // בדיקת התאמה לאירועים (כולל סופשבוע)
     const occasionFeedback = this.reviewOccasionAppropriateness(cleanedLooks);
     feedback.push(...occasionFeedback.feedback);
     improvements.push(...occasionFeedback.improvements);
@@ -64,6 +64,11 @@ export const supervisorAgent = {
     const bodyShapeFeedback = this.reviewBodyShapeAlignment(cleanedLooks);
     feedback.push(...bodyShapeFeedback.feedback);
     improvements.push(...bodyShapeFeedback.improvements);
+
+    // בדיקת התאמת נעליים לסיטואציה
+    const shoesFeedback = this.reviewShoesAppropriateness(cleanedLooks);
+    feedback.push(...shoesFeedback.feedback);
+    improvements.push(...shoesFeedback.improvements);
 
     // שיפור איכות התיאורים
     const enhancedLooks = this.enhanceDescriptions(cleanedLooks);
@@ -120,7 +125,7 @@ export const supervisorAgent = {
   },
 
   /**
-   * בדיקת התאמה לאירועים ולמצבי רוח
+   * בדיקת התאמה לאירועים ולמצבי רוח (כולל סופשבוע)
    */
   reviewOccasionAppropriateness(looks: any[]): { feedback: string[]; improvements: string[] } {
     const feedback: string[] = [];
@@ -137,12 +142,13 @@ export const supervisorAgent = {
         const hasWorkAppropriateItems = look.items?.some((item: any) => 
           item.name?.toLowerCase().includes('חליפה') ||
           item.name?.toLowerCase().includes('חולצה') ||
-          item.name?.toLowerCase().includes('מכנסיים')
+          item.name?.toLowerCase().includes('מכנסיים') ||
+          item.name?.toLowerCase().includes('בלייזר')
         );
 
         if (!hasWorkAppropriateItems) {
           feedback.push(`⚠️ לוק ${index + 1}: לא מתאים לעבודה - חסרים פריטים פורמליים`);
-          improvements.push('הוסף חולצות פורמליות ומכנסיים מתאימים לעבודה');
+          improvements.push('הוסף חולצות פורמליות, בלייזרים ומכנסיים מתאימים לעבודה');
         } else {
           feedback.push(`✅ לוק ${index + 1}: מתאים לעבודה`);
         }
@@ -153,14 +159,34 @@ export const supervisorAgent = {
         const hasCasualItems = look.items?.some((item: any) => 
           item.name?.toLowerCase().includes('ג\'ינס') ||
           item.name?.toLowerCase().includes('טישרט') ||
+          item.name?.toLowerCase().includes('סווטשירט') ||
           item.name?.toLowerCase().includes('סניקרס')
         );
 
         if (!hasCasualItems && currentMood === 'casual') {
           feedback.push(`⚠️ לוק ${index + 1}: יותר מדי פורמלי לאירוע קזואל`);
-          improvements.push('הוסף פריטים קזואליים כמו ג\'ינס וטישרטים');
+          improvements.push('הוסף פריטים קזואליים כמו ג\'ינס, טישרטים וסווטשירטים');
         } else {
           feedback.push(`✅ לוק ${index + 1}: מתאים לאירוע קזואל`);
+        }
+      }
+
+      // בדיקת התאמה לסופשבוע - NEW!
+      if (currentEvent === 'weekend') {
+        const hasWeekendItems = look.items?.some((item: any) => 
+          item.name?.toLowerCase().includes('ג\'ינס') ||
+          item.name?.toLowerCase().includes('טישרט') ||
+          item.name?.toLowerCase().includes('הודי') ||
+          item.name?.toLowerCase().includes('סווטשירט') ||
+          item.name?.toLowerCase().includes('סניקרס') ||
+          item.name?.toLowerCase().includes('נעלי ספורט')
+        );
+
+        if (!hasWeekendItems) {
+          feedback.push(`⚠️ לוק ${index + 1}: לא מתאים לסופשבוע - יותר מדי פורמלי`);
+          improvements.push('הוסף פריטים רגועים כמו ג\'ינס, הודי וסניקרס לסופשבוע');
+        } else {
+          feedback.push(`✅ לוק ${index + 1}: מתאים לסופשבוע רגוע`);
         }
       }
 
@@ -169,13 +195,80 @@ export const supervisorAgent = {
         const hasEveningItems = look.items?.some((item: any) => 
           item.name?.toLowerCase().includes('שמלה') ||
           item.name?.toLowerCase().includes('חליפה') ||
+          item.name?.toLowerCase().includes('בלייזר') ||
           item.name?.toLowerCase().includes('עקבים')
         );
 
         if (!hasEveningItems) {
           feedback.push(`⚠️ לוק ${index + 1}: לא מתאים לערב - חסרים פריטים אלגנטיים`);
-          improvements.push('הוסף שמלות אלגנטיות או חליפות לאירועי ערב');
+          improvements.push('הוסף שמלות אלגנטיות, בלייזרים או חליפות לאירועי ערב');
+        } else {
+          feedback.push(`✅ לוק ${index + 1}: מתאים לאירוע ערב`);
         }
+      }
+    });
+
+    return { feedback, improvements };
+  },
+
+  /**
+   * בדיקת התאמת נעליים לסיטואציה - NEW!
+   */
+  reviewShoesAppropriateness(looks: any[]): { feedback: string[]; improvements: string[] } {
+    const feedback: string[] = [];
+    const improvements: string[] = [];
+
+    const currentEvent = localStorage.getItem('current-event') || 'casual';
+
+    looks.forEach((look, index) => {
+      const shoes = look.items?.find((item: any) => 
+        item.name?.toLowerCase().includes('נעל') ||
+        item.name?.toLowerCase().includes('סנדל') ||
+        item.name?.toLowerCase().includes('מגף') ||
+        item.name?.toLowerCase().includes('סניקרס') ||
+        item.name?.toLowerCase().includes('עקב')
+      );
+
+      if (!shoes) {
+        feedback.push(`⚠️ לוק ${index + 1}: חסרות נעליים`);
+        improvements.push('הוסף נעליים מתאימות לכל לוק');
+        return;
+      }
+
+      const shoeName = shoes.name?.toLowerCase() || '';
+
+      // בדיקה לפי סוג אירוע
+      switch (currentEvent) {
+        case 'work':
+          if (shoeName.includes('סניקרס') || shoeName.includes('כפכפים')) {
+            feedback.push(`⚠️ לוק ${index + 1}: הנעליים לא מתאימות לעבודה`);
+            improvements.push('החלף לנעליים פורמליות כמו נעלי עור או עקבים נמוכים');
+          } else {
+            feedback.push(`✅ לוק ${index + 1}: נעליים מתאימות לעבודה`);
+          }
+          break;
+
+        case 'weekend':
+          if (shoeName.includes('עקב') && !shoeName.includes('נמוך')) {
+            feedback.push(`⚠️ לוק ${index + 1}: עקבים גבוהים לא מתאימים לסופשבוע`);
+            improvements.push('החלף לנעליים נוחות כמו סניקרס או נעליים שטוחות');
+          } else {
+            feedback.push(`✅ לוק ${index + 1}: נעליים נוחות לסופשבוע`);
+          }
+          break;
+
+        case 'casual':
+          feedback.push(`✅ לוק ${index + 1}: נעליים מתאימות לקזואל`);
+          break;
+
+        case 'evening':
+          if (shoeName.includes('סניקרס') || shoeName.includes('כפכפים')) {
+            feedback.push(`⚠️ לוק ${index + 1}: הנעליים לא אלגנטיות מספיק לערב`);
+            improvements.push('החלף לנעלי עקב או נעלי עור אלגנטיות');
+          } else {
+            feedback.push(`✅ לוק ${index + 1}: נעליים אלגנטיות לערב`);
+          }
+          break;
       }
     });
 
@@ -260,7 +353,7 @@ export const supervisorAgent = {
   },
 
   /**
-   * יצירת תיאור משופר ללוק
+   * יצירת תיאור משופר ללוק (עדכון עם סופשבוע)
    */
   generateEnhancedDescription(look: any, index: number): string {
     const currentEvent = localStorage.getItem('current-event') || 'casual';
@@ -272,7 +365,7 @@ export const supervisorAgent = {
       work: 'מושלם ליום עבודה מקצועי',
       casual: 'אידיאלי לפעילויות יומיומיות רגועות',
       evening: 'מתאים לאירועי ערב אלגנטיים',
-      weekend: 'נהדר לסוף שבוע נינוח'
+      weekend: 'נהדר לסוף שבוע נינוח ורגוע' // NEW!
     };
 
     const moodDescriptions = {
