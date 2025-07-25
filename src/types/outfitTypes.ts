@@ -27,6 +27,9 @@ export interface CoordinatedOutfitData {
   validation?: any;
   timestamp: string;
   agentFlow: string;
+  supervisorFeedback?: string[]; // הערות הסטייליסטית המפקחת
+  qualityImprovements?: string[]; // שיפורים מוצעים
+  duplicatesRemoved?: number; // מספר כפילויות שהוסרו
 }
 
 export interface EnhancedOutfitData extends CoordinatedOutfitData {
@@ -34,6 +37,12 @@ export interface EnhancedOutfitData extends CoordinatedOutfitData {
     applied: boolean;
     insights: number;
     homepageIntegration: boolean;
+  };
+  supervisorApproval?: {
+    approved: boolean;
+    qualityScore: number;
+    feedback: string[];
+    improvements: string[];
   };
 }
 

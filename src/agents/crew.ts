@@ -1,5 +1,6 @@
 
 import { personalizationAgent, stylingAgent, validatorAgent, recommendationAgent, Agent } from "./index";
+import { supervisorAgent } from "./supervisorAgent";
 import { ProfileFetcherTool } from "../tools/profileFetcherTool";
 import { CompatibilityCheckerTool } from "../tools/compatibilityCheckerTool";
 import { GenerateRecommendationsTool } from "../tools/generateRecommendationsTool";
@@ -27,7 +28,8 @@ export class AgentCrew {
       personalizationAgent,
       stylingAgent,
       validatorAgent,
-      recommendationAgent
+      recommendationAgent,
+      supervisorAgent  // הסטייליסטית המפקחת
     ];
   }
 
@@ -98,22 +100,37 @@ export class AgentCrew {
         validation: validatorResult?.data
       }) || await recommendationAgent.run(userId);
       
-      // Combine all results with proper structure
+      // Step 5: NEW! הפעלת הסטייליסטית המפקחת לבדיקה ושיפור
+      console.log('👩‍🏫 [AgentCrew] Step 5: Running SupervisorAgent for quality control...');
+      const supervisorResult = await supervisorAgent.reviewAndTrain({
+        personalization: personalizationResult.data,
+        styling: stylingResult.data,
+        validation: validatorResult?.data,
+        recommendations: recommendationResult?.recommendations
+      });
+
+      console.log(`✅ [AgentCrew] SupervisorAgent completed: ${supervisorResult.feedback.length} הערות, ${supervisorResult.duplicatesRemoved} כפילויות הוסרו`);
+
+      // Combine all results with supervisor improvements
       const finalData = {
-        looks: stylingResult.data.looks,
+        looks: supervisorResult.approvedLooks, // השתמש בלוקים המאושרים מהמפקחת
         reasoning: stylingResult.data.reasoning,
         recommendations: recommendationResult?.recommendations || [
           'תוכל להוסיף אביזרים מתאימים כדי להשלים את המראה',
           'שקול להתאים את הבחירה לאירוע הספציפי'
         ],
         validation: validatorResult?.data || null,
+        supervisorFeedback: supervisorResult.feedback, // הערות הסטייליסטית
+        qualityImprovements: supervisorResult.improvements, // שיפורים מוצעים
+        duplicatesRemoved: supervisorResult.duplicatesRemoved,
         timestamp: new Date().toISOString(),
-        agentFlow: 'coordinated',
+        agentFlow: 'supervised-coordinated', // עדכון סוג הזרימה
         generationContext: generationContext
       };
       
-      console.log(`🎉 [AgentCrew] COORDINATED workflow completed successfully!`);
-      console.log(`📊 [AgentCrew] Final results: ${finalData.looks.length} outfits with recommendations`);
+      console.log(`🎉 [AgentCrew] SUPERVISED COORDINATED workflow completed successfully!`);
+      console.log(`📊 [AgentCrew] Final results: ${finalData.looks.length} אאוטפיטים מאושרים עם ${finalData.supervisorFeedback?.length || 0} הערות איכות`);
+      console.log(`🚫 [AgentCrew] כפילויות שהוסרו: ${finalData.duplicatesRemoved}`);
       
       return { 
         success: true, 
