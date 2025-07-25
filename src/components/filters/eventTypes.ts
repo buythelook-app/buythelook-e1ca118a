@@ -9,7 +9,7 @@ export const EVENT_TO_STYLES: EventStylesRecord = {
   dateNight: ["romantic"],
   party: ["romantic", "boohoo", "minimalist"],
   workEvent: ["classic", "minimalist", "classic"],
-  weekend: ["casual", "sporty", "minimalist"] // NEW!
+  weekend: ["casual", "sportive", "minimalist"] // NEW!
 };
 
 export const EVENT_ICONS = {
