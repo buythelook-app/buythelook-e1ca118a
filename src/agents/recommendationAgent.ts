@@ -1,4 +1,3 @@
-
 import { GenerateRecommendationsTool } from "../tools/generateRecommendationsTool";
 
 // Interface defined but not exported to avoid conflicts
@@ -29,7 +28,7 @@ export const recommendationAgent: Agent = {
       const currentEvent = localStorage.getItem('current-event') || 'casual';
       
       // Generate contextual recommendations based on mood and event
-      const recommendations = this.generateContextualRecommendations(currentMood, currentEvent, styleData);
+      const recommendations = generateContextualRecommendations(currentMood, currentEvent, styleData);
       
       return {
         success: true,
@@ -43,72 +42,72 @@ export const recommendationAgent: Agent = {
       };
     }
   }
-
-  private generateContextualRecommendations(mood: string, event: string, styleData: string | null): string[] {
-    const baseRecommendations = [];
-    
-    // Mood-based recommendations
-    const moodRecommendations: Record<string, string[]> = {
-      elegant: [
-        'הוסף תכשיטים עדינים כמו שרשרת פנינים או עגילי זהב',
-        'תיק קלאסי או קלאץ' יעניק גימור מושלם',
-        'בחר צבעים נייטרליים או כהים למראה מעודן'
-      ],
-      energized: [
-        'אביזרים צבעוניים יוסיפו אנרגיה למראה',
-        'תיק ספורטיבי או תיק גב אופנתי יתאים מצוין',
-        'בחר בהדפסים או צבעים חיים'
-      ],
-      romantic: [
-        'תכשיטים עדינים עם פנינים או קריסטלים',
-        'תיק רך בגוונים פסטל או ורדרדים',
-        'הוסף צעיף משי או סיכת ראש עדינה'
-      ],
-      casual: [
-        'תיק יומיומי נוח ופרקטי',
-        'אביזרים פשוטים וקלילים',
-        'נעלי סניקרס או נעליים שטוחות לנוחות'
-      ]
-    };
-    
-    // Event-based recommendations
-    const eventRecommendations: Record<string, string[]> = {
-      work: [
-        'תיק עבודה מובנה בצבע נייטרלי',
-        'שעון קלאסי יוסיף מקצועיות',
-        'הימנע מתכשיטים גדולים או צעקניים'
-      ],
-      evening: [
-        'תיק קטן או קלאץ' אלגנטי',
-        'תכשיטים נוצצים או אביזרי יוקרה',
-        'נעלי עקב למראה חגיגי'
-      ],
-      casual: [
-        'תיק כתף או תיק גב נוח',
-        'אביזרים יומיומיים ופרקטיים',
-        'שכבות בגדים למגוון ונוחות'
-      ],
-      weekend: [
-        'תיק קטן או ארנק אופנתי',
-        'אביזרים מינימליים',
-        'נעליים נוחות לטיולים'
-      ]
-    };
-
-    // Add mood-specific recommendations
-    baseRecommendations.push(...(moodRecommendations[mood] || moodRecommendations.casual));
-    
-    // Add event-specific recommendations
-    baseRecommendations.push(...(eventRecommendations[event] || eventRecommendations.casual));
-    
-    // Add general styling tips
-    baseRecommendations.push(
-      'בחר אביזר אחד מרכזי ובנה סביבו את המראה',
-      'שמור על איזון בין הצבעים - לא יותר מ3 צבעים בלוק',
-      'התאם את האביזרים לאירוע ולעונת השנה'
-    );
-    
-    // Return 4-5 most relevant recommendations
-    return baseRecommendations.slice(0, 5);
-  }
 };
+
+function generateContextualRecommendations(mood: string, event: string, styleData: string | null): string[] {
+  const baseRecommendations = [];
+  
+  // Mood-based recommendations
+  const moodRecommendations: Record<string, string[]> = {
+    elegant: [
+      'הוסף תכשיטים עדינים כמו שרשרת פנינים או עגילי זהב',
+      'תיק קלאסי או קלאץ יעניק גימור מושלם',
+      'בחר צבעים נייטרליים או כהים למראה מעודן'
+    ],
+    energized: [
+      'אביזרים צבעוניים יוסיפו אנרגיה למראה',
+      'תיק ספורטיבי או תיק גב אופנתי יתאים מצוין',
+      'בחר בהדפסים או צבעים חיים'
+    ],
+    romantic: [
+      'תכשיטים עדינים עם פנינים או קריסטלים',
+      'תיק רך בגוונים פסטל או ורדרדים',
+      'הוסף צעיף משי או סיכת ראש עדינה'
+    ],
+    casual: [
+      'תיק יומיומי נוח ופרקטי',
+      'אביזרים פשוטים וקלילים',
+      'נעלי סניקרס או נעליים שטוחות לנוחות'
+    ]
+  };
+  
+  // Event-based recommendations
+  const eventRecommendations: Record<string, string[]> = {
+    work: [
+      'תיק עבודה מובנה בצבע נייטרלי',
+      'שעון קלאסי יוסיף מקצועיות',
+      'הימנע מתכשיטים גדולים או צעקניים'
+    ],
+    evening: [
+      'תיק קטן או קלאץ אלגנטי',
+      'תכשיטים נוצצים או אביזרי יוקרה',
+      'נעלי עקב למראה חגיגי'
+    ],
+    casual: [
+      'תיק כתף או תיק גב נוח',
+      'אביזרים יומיומיים ופרקטיים',
+      'שכבות בגדים למגוון ונוחות'
+    ],
+    weekend: [
+      'תיק קטן או ארנק אופנתי',
+      'אביזרים מינימליים',
+      'נעליים נוחות לטיולים'
+    ]
+  };
+
+  // Add mood-specific recommendations
+  baseRecommendations.push(...(moodRecommendations[mood] || moodRecommendations.casual));
+  
+  // Add event-specific recommendations
+  baseRecommendations.push(...(eventRecommendations[event] || eventRecommendations.casual));
+  
+  // Add general styling tips
+  baseRecommendations.push(
+    'בחר אביזר אחד מרכזי ובנה סביבו את המראה',
+    'שמור על איזון בין הצבעים - לא יותר מ3 צבעים בלוק',
+    'התאם את האביזרים לאירוע ולעונת השנה'
+  );
+  
+  // Return 4-5 most relevant recommendations
+  return baseRecommendations.slice(0, 5);
+}
