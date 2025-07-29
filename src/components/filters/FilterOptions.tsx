@@ -5,7 +5,7 @@ import { Button } from "../ui/button";
 import { useToast } from "../ui/use-toast";
 import { EventFilter } from "./EventFilter";
 import { BudgetFilter } from "./BudgetFilter";
-import { StyleFilterButton, Style } from "./StyleFilterButton";
+import { Style } from "./StyleFilterButton";
 
 export const FilterOptions = () => {
   const navigate = useNavigate();
@@ -122,18 +122,6 @@ export const FilterOptions = () => {
           onInputChange={handleInputChange}
         />
         
-        <div className="flex justify-end">
-          <StyleFilterButton
-            selectedStyle={selectedStyle}
-            setSelectedStyle={handleStyleChange}
-            selectedCategory="All"
-            setSelectedCategory={() => {}}
-            selectedMode="All"
-            setSelectedMode={() => {}}
-            selectedColor="All"
-            setSelectedColor={() => {}}
-          />
-        </div>
       </div>
 
       <Button 
