@@ -98,7 +98,18 @@ export const MOOD_COLOR_MAPPING: Record<string, string[]> = {
   optimist: ['yellow', 'orange', 'bright green', 'coral', 'white'],
   mysterious: ['black', 'dark purple', 'navy', 'burgundy', 'charcoal'],
   sweet: ['pink', 'peach', 'cream', 'soft yellow', 'lavender'],
-  passionate: ['red', 'burgundy', 'deep pink', 'black', 'gold']
+  passionate: ['red', 'burgundy', 'deep pink', 'black', 'gold'],
+  general: ['black', 'white', 'gray', 'navy', 'beige'] // Default for general mood
+};
+
+// Style to color mapping - for style-specific filtering
+export const STYLE_COLOR_MAPPING: Record<string, string[]> = {
+  minimalist: ['black', 'white', 'gray', 'beige', 'navy', 'cream', 'stone', 'charcoal'],
+  classic: ['navy', 'black', 'white', 'gray', 'brown', 'beige'],
+  romantic: ['pink', 'rose', 'cream', 'lavender', 'soft blue', 'white'],
+  casual: ['blue', 'gray', 'white', 'khaki', 'brown', 'green'],
+  elegant: ['black', 'navy', 'gray', 'burgundy', 'white', 'gold'],
+  sporty: ['blue', 'black', 'white', 'red', 'gray', 'green']
 };
 
 export class ColorCoordinationService {
@@ -130,7 +141,14 @@ export class ColorCoordinationService {
    * Get colors that match the mood
    */
   static getColorsForMood(mood: string): string[] {
-    return MOOD_COLOR_MAPPING[mood] || MOOD_COLOR_MAPPING.elegant;
+    return MOOD_COLOR_MAPPING[mood] || MOOD_COLOR_MAPPING.general;
+  }
+  
+  /**
+   * Get colors that match the style
+   */
+  static getColorsForStyle(style: string): string[] {
+    return STYLE_COLOR_MAPPING[style] || STYLE_COLOR_MAPPING.classic;
   }
   
   /**

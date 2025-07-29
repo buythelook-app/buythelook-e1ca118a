@@ -70,14 +70,8 @@ export class PersonalizationAgent implements Agent {
         bodyShape = quizData.body_shape?.toLowerCase() || 'rectangle';
         colorPreferences = quizData.color_preferences || [];
         
-        // מציאת מצב רוח רגוע בהתאם לבחירות המשתמש
-        if (quizData.style_preferences && quizData.style_preferences.includes('Casual')) {
-          moodPreferences = 'casual';
-        } else if (quizData.style_preferences && quizData.style_preferences.includes('Minimalist')) {
-          moodPreferences = 'relaxed';
-        } else {
-          moodPreferences = 'general';
-        }
+        // שמירה על הסגנון המקורי מהשאלון ללא שינוי
+        moodPreferences = 'general'; // מצב רוח ניטרלי שלא ישפיע על הסגנון
         
       } else {
         // אם אין נתוני שאלון במאגר, מחפש ב-localStorage
@@ -105,8 +99,8 @@ export class PersonalizationAgent implements Agent {
       let outfitData;
       let recommendations;
 
-      // בדיקה אם המשתמש בחר סגנון רגוע או קזואל
-      if (styleProfile === 'casual' || moodPreferences === 'casual' || moodPreferences === 'relaxed') {
+      // בדיקה אם המשתמש בחר סגנון קזואל ספציפית (לא מינימליסטי)
+      if (styleProfile === 'casual' && (moodPreferences === 'casual' || moodPreferences === 'relaxed')) {
         console.log(`👕 [PersonalizationAgent] יוצר תלבושת קזואלית מותאמת למבנה גוף ${bodyShape}`);
         
         // שימוש בשירות הקזואל החדש עם התחשבות במבנה גוף
@@ -134,13 +128,19 @@ export class PersonalizationAgent implements Agent {
         recommendations = this.getBodyShapeRecommendations(bodyShape, 'casual');
 
       } else {
-        // לוגיקה רגילה לסגנונות אחרים עם התחשבות במבנה גוף
+        // לוגיקה מיוחדת לסגנון מינימליסטי וסגנונות אחרים
+        console.log(`🎨 [PersonalizationAgent] מתחיל חיפוש פריטים עבור סגנון: ${styleProfile}`);
         
-        // קבלת פריטים מהמאגר עם סינון לפי מבנה גוף
-        const { data: allItems, error } = await supabase
-          .from('zara_cloth')
-          .select('*')
-          .limit(100); // הגדלת המגבלה לבחירה טובה יותר
+        // קבלת פריטים מהמאגר עם התחשבות בסגנון הנבחר
+        let query = supabase.from('zara_cloth').select('*');
+        
+        // סינון מיוחד לסגנון מינימליסטי
+        if (styleProfile === 'minimalist') {
+          console.log('🎯 [PersonalizationAgent] מחפש פריטים מינימליסטיים');
+          query = query.or('colour.ilike.%שחור%,colour.ilike.%לבן%,colour.ilike.%אפור%,colour.ilike.%navy%,colour.ilike.%beige%,colour.ilike.%black%,colour.ilike.%white%,colour.ilike.%grey%,colour.ilike.%cream%');
+        }
+        
+        const { data: allItems, error } = await query.limit(150); // הגדלת המגבלה לבחירה טובה יותר
 
         if (error || !allItems) {
           return {
@@ -367,23 +367,20 @@ export class PersonalizationAgent implements Agent {
   private filterItemsByBodyShape(items: any[], bodyShape: string, colorPreferences: string[]): any[] {
     const shapeRecommendations = BODY_SHAPE_RECOMMENDATIONS[bodyShape as keyof typeof BODY_SHAPE_RECOMMENDATIONS];
     
-    if (!shapeRecommendations) {
-      // אם אין המלצות למבנה גוף זה, מחזיר סינון בסיסי לפי צבע בלבד
-      return items.filter(item => {
-        const itemColor = item.colour?.toLowerCase() || '';
-        const colorMatch = colorPreferences.length === 0 || 
-          colorPreferences.some((pref: string) => itemColor.includes(pref.toLowerCase()));
-        return colorMatch;
-      });
-    }
-
     return items.filter(item => {
       const itemName = item.product_name?.toLowerCase() || '';
       const itemColor = item.colour?.toLowerCase() || '';
       
-      // בדיקת התאמת צבע
+      // בדיקת התאמת צבע - קריטריונים נוספים לסינון מינימליסטי
+      const isMinimalistColor = this.isMinimalistColor(itemColor, itemName);
       const colorMatch = colorPreferences.length === 0 || 
-        colorPreferences.some((pref: string) => itemColor.includes(pref.toLowerCase()));
+        colorPreferences.some((pref: string) => itemColor.includes(pref.toLowerCase())) ||
+        isMinimalistColor;
+
+      // אם אין המלצות למבנה גוף ספציפי
+      if (!shapeRecommendations) {
+        return colorMatch && (this.isTop(item) || this.isBottom(item) || this.isShoes(item) || this.isDressOrTunic(item));
+      }
 
       // בדיקת התאמה למבנה גוף
       const isRecommendedTop = this.isTop(item) && 
@@ -470,6 +467,24 @@ export class PersonalizationAgent implements Agent {
     const searchText = `${name} ${subfamily} ${family}`;
     
     return dressKeywords.some(keyword => searchText.includes(keyword));
+  }
+
+  private isMinimalistColor(itemColor: string, itemName: string): boolean {
+    // צבעים מינימליסטיים
+    const minimalistColors = [
+      'שחור', 'לבן', 'אפור', 'קרם', 'בז\'', 'navy', 'חום בהיר',
+      'black', 'white', 'grey', 'gray', 'cream', 'beige', 'navy blue',
+      'taupe', 'khaki', 'stone', 'ivory', 'charcoal'
+    ];
+    
+    // בדיקה אם הצבע או השם מכילים מילות מפתח מינימליסטיות
+    const colorLower = itemColor.toLowerCase();
+    const nameLower = itemName.toLowerCase();
+    
+    return minimalistColors.some(color => 
+      colorLower.includes(color.toLowerCase()) || 
+      nameLower.includes(color.toLowerCase())
+    );
   }
 
   private extractImageUrl(imageJson: any): string {

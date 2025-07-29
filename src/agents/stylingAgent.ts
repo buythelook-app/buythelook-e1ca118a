@@ -355,8 +355,19 @@ class StylingAgentClass implements Agent {
   ): ZaraClothItem[] {
     console.log(`🎨 [MOOD + BUDGET FILTER] Filtering ${clothingItems.length} items for mood: ${mood}`);
     
+    // Get user style profile to apply style-specific filtering
+    const styleData = localStorage.getItem('styleAnalysis');
+    let userStyle = 'classic';
+    if (styleData) {
+      const parsed = JSON.parse(styleData);
+      userStyle = parsed?.analysis?.styleProfile || 'classic';
+    }
+    
+    console.log(`🎯 [STYLE FILTER] Applying ${userStyle} style filtering`);
+    
     const moodColors = ColorCoordinationService.getColorsForMood(mood);
-    console.log(`🎨 [MOOD COLORS] ${mood} → [${moodColors.join(', ')}]`);
+    const styleColors = ColorCoordinationService.getColorsForStyle(userStyle);
+    console.log(`🎨 [COLORS] Mood: ${mood} → [${moodColors.join(', ')}], Style: ${userStyle} → [${styleColors.join(', ')}]`);
     
     const filtered = clothingItems.filter(item => {
       if (!isUnlimited && item.price > budget * 0.7) {
@@ -366,6 +377,25 @@ class StylingAgentClass implements Agent {
       const itemColor = (item.colour || '').toLowerCase();
       const itemName = (item.product_name || '').toLowerCase();
       
+      // Check if item matches style colors (higher priority)
+      const matchesStyleColor = styleColors.some(styleColor => 
+        itemColor.includes(styleColor.toLowerCase()) ||
+        itemName.includes(styleColor.toLowerCase()) ||
+        ColorCoordinationService.areColorsCompatible(itemColor, styleColor)
+      );
+      
+      // For minimalist style, be more strict about colors and simplicity
+      if (userStyle === 'minimalist') {
+        const isMinimalistStyle = itemName.includes('minimal') || itemName.includes('clean') || 
+          itemName.includes('simple') || itemName.includes('basic') || itemName.includes('classic');
+        
+        // For minimalist, require either matching style color OR minimalist style keywords
+        if (!matchesStyleColor && !isMinimalistStyle) {
+          return false;
+        }
+      }
+      
+      // Check mood colors (secondary priority)
       const matchesMoodColor = moodColors.some(moodColor => 
         itemColor.includes(moodColor.toLowerCase()) ||
         itemName.includes(moodColor.toLowerCase()) ||
@@ -377,7 +407,8 @@ class StylingAgentClass implements Agent {
         itemColor.includes(neutral) || itemName.includes(neutral)
       );
       
-      return matchesMoodColor || isNeutral;
+      // Style colors have priority, then mood colors, then neutrals
+      return matchesStyleColor || matchesMoodColor || isNeutral;
     });
     
     debugInfo.filtering_steps.push({
