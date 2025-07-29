@@ -55,7 +55,6 @@ function App() {
       <QueryClientProvider client={queryClient}>
       <div className="App">
         <Router>
-          <DeveloperNav />
           <Routes>
             {/* Main pages */}
             <Route path="/" element={<Index />} />
