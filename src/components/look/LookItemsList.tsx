@@ -6,7 +6,7 @@ import { useCartStore } from "../Cart";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { ExternalLink } from "lucide-react";
-import { ClickTrackingService } from "../../services/clickTrackingService";
+import { AffiliateLink } from "../AffiliateLink";
 
 interface Item {
   id: string;
@@ -127,32 +127,6 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
     setSelectedSizes({});
   };
 
-  const handlePurchaseClick = async (item: Item) => {
-    // Map item type to category for tracking
-    const getCategory = (type?: string): 'top' | 'bottom' | 'shoes' => {
-      if (!type) return 'top';
-      const lowerType = type.toLowerCase();
-      if (lowerType.includes('shoe') || lowerType.includes('boot') || lowerType.includes('sandal')) return 'shoes';
-      if (lowerType.includes('pant') || lowerType.includes('jean') || lowerType.includes('skirt') || lowerType.includes('bottom')) return 'bottom';
-      return 'top';
-    };
-
-    // Track the click
-    await ClickTrackingService.trackClick({
-      item_id: item.id,
-      category: getCategory(item.type)
-    });
-
-    // Open product URL in new tab
-    if (item.url) {
-      window.open(item.url, '_blank');
-    } else {
-      // Create a better fallback URL using Zara search
-      const searchQuery = encodeURIComponent(item.title);
-      const zaraSearchUrl = `https://www.zara.com/il/en/search?searchTerm=${searchQuery}`;
-      window.open(zaraSearchUrl, '_blank');
-    }
-  };
 
   return (
     <div className="space-y-6 bg-netflix-card p-6 rounded-lg shadow-lg">
@@ -227,14 +201,7 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
                 <p className="text-sm text-gray-400 mt-2">Type: {item.type}</p>
               )}
               <div className="flex items-center gap-2 mt-3">
-                <Button
-                  onClick={() => handlePurchaseClick(item)}
-                  className="bg-netflix-accent hover:bg-netflix-accent/80 text-white flex items-center gap-2"
-                  size="sm"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  לרכישה
-                </Button>
+                <AffiliateLink item={item} />
               </div>
             </div>
           </div>

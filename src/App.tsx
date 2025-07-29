@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/sonner";
 import { DeveloperNav } from "@/components/DeveloperNav";
+import { ErrorBoundary } from "@/utils/errorBoundary";
 import AgentResultsPage from './pages/AgentResultsPage';
 import FeedbackManagementPage from './pages/FeedbackManagementPage';
 import AgentLearningDashboard from './pages/AgentLearningDashboard';
@@ -32,12 +33,26 @@ import { StyleGuide } from './components/StyleGuide';
 import { DeveloperTools } from './components/DeveloperTools';
 import { LookSuggestions } from './components/LookSuggestions';
 
-// Create QueryClient instance
-const queryClient = new QueryClient();
+// Create QueryClient instance with error handling
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        // Don't retry on authentication errors
+        if (error?.message?.includes('auth') || error?.message?.includes('unauthorized')) {
+          return false;
+        }
+        return failureCount < 3;
+      },
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
       <div className="App">
         <Router>
           <DeveloperNav />
@@ -85,8 +100,9 @@ function App() {
           </Routes>
           <Toaster />
         </Router>
-      </div>
-    </QueryClientProvider>
+        </div>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
