@@ -16,7 +16,7 @@ import { Badge } from "./ui/badge";
 import { supabase } from "@/lib/supabase";
 
 export const Navbar = () => {
-  const isAuthenticated = true;
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showShippingAddress, setShowShippingAddress] = useState(false);
   const { handleCalendarSync } = useCalendarSync();
   const { favorites } = useFavoritesStore();
@@ -35,6 +35,7 @@ export const Navbar = () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          setIsAuthenticated(true);
           // Get first name from metadata, email, or Google profile
           const name = user.user_metadata?.firstName || 
                       user.user_metadata?.name || 
@@ -48,9 +49,12 @@ export const Navbar = () => {
                         user.user_metadata?.picture || 
                         "";
           setAvatarUrl(avatar);
+        } else {
+          setIsAuthenticated(false);
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
+        setIsAuthenticated(false);
       }
     };
 

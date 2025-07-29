@@ -29,9 +29,20 @@ export const Checkout = () => {
   };
 
   const handleOrderComplete = () => {
-    toast.success("Order placed successfully!");
+    // Since we're affiliate-based, we should redirect to external purchase
+    toast.success("Redirecting to purchase...");
+    
+    // Collect all items from looks and individual items for affiliate tracking
+    const allItems = [
+      ...looks.flatMap(look => look.items),
+      ...items
+    ];
+    
+    // In a real implementation, you'd redirect to affiliate partner
+    // For now, we'll clear cart and show success
     clearCart();
-    navigate("/orders");
+    toast.success("Ready for external purchase!");
+    navigate("/");
   };
 
   if (items.length === 0 && looks.length === 0) {
