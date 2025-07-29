@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabaseClient";
 import { Agent, AgentResult } from "./index";
 import { createCasualOutfit, getCasualStyleRecommendations } from "../services/casualOutfitService";
+import { styleRecommendations } from "@/components/quiz/constants/styleRecommendations";
 import logger from "@/lib/logger";
 
 // Body shape recommendations mapping
@@ -365,29 +366,46 @@ export class PersonalizationAgent implements Agent {
   }
 
   private filterItemsByBodyShape(items: any[], bodyShape: string, colorPreferences: string[]): any[] {
+    // קבל את הסגנון המשתמש מה-localStorage
+    const styleData = localStorage.getItem('styleAnalysis');
+    let userStyle = 'classic';
+    if (styleData) {
+      const parsed = JSON.parse(styleData);
+      userStyle = parsed?.analysis?.styleProfile || 'classic';
+    }
+
+    console.log(`🎯 [PersonalizationAgent] מסנן פריטים לפי סגנון: ${userStyle}`);
+    
+    // קבל את הפריטים המתאימים לסגנון מההגדרות
+    const styleRecs = this.getStyleRecommendations(userStyle);
+    
     const shapeRecommendations = BODY_SHAPE_RECOMMENDATIONS[bodyShape as keyof typeof BODY_SHAPE_RECOMMENDATIONS];
     
     return items.filter(item => {
       const itemName = item.product_name?.toLowerCase() || '';
       const itemColor = item.colour?.toLowerCase() || '';
       
-      // בדיקת התאמת צבע - קריטריונים נוספים לסינון מינימליסטי
-      const isMinimalistColor = this.isMinimalistColor(itemColor, itemName);
+      // בדיקת התאמה לסגנון ספציפי
+      const matchesStyleType = this.matchesStyleType(item, styleRecs);
+      const matchesStyleColor = this.matchesStyleColor(itemColor, itemName, styleRecs);
+      
+      // בדיקת צבע כללית
       const colorMatch = colorPreferences.length === 0 || 
         colorPreferences.some((pref: string) => itemColor.includes(pref.toLowerCase())) ||
-        isMinimalistColor;
+        matchesStyleColor;
 
       // אם אין המלצות למבנה גוף ספציפי
       if (!shapeRecommendations) {
-        return colorMatch && (this.isTop(item) || this.isBottom(item) || this.isShoes(item) || this.isDressOrTunic(item));
+        return (matchesStyleType || matchesStyleColor) && 
+               (this.isTop(item) || this.isBottom(item) || this.isShoes(item) || this.isDressOrTunic(item));
       }
 
       // בדיקת התאמה למבנה גוף
       const isRecommendedTop = this.isTop(item) && 
-        shapeRecommendations.tops.some(recTop => itemName.includes(recTop.toLowerCase()));
+        (shapeRecommendations.tops.some(recTop => itemName.includes(recTop.toLowerCase())) || matchesStyleType);
       
       const isRecommendedBottom = this.isBottom(item) && 
-        shapeRecommendations.bottoms.some(recBottom => itemName.includes(recBottom.toLowerCase()));
+        (shapeRecommendations.bottoms.some(recBottom => itemName.includes(recBottom.toLowerCase())) || matchesStyleType);
 
       const isShoes = this.isShoes(item);
       const isDressOrTunic = this.isDressOrTunic(item);
@@ -398,6 +416,84 @@ export class PersonalizationAgent implements Agent {
 
       return colorMatch && !shouldAvoid && (isRecommendedTop || isRecommendedBottom || isShoes || isDressOrTunic);
     });
+  }
+
+  // פונקציה חדשה שמקבלת את ההמלצות לסגנון ספציפי
+  private getStyleRecommendations(styleProfile: string): any {
+    // מיפוי שמות הסגנונות
+    const styleMapping: { [key: string]: string } = {
+      'minimalist': 'Minimalist',
+      'classic': 'Classic', 
+      'modern': 'Modern',
+      'classy': 'Classy',
+      'casual': 'Casual',
+      'boohoo': 'Boo Hoo',
+      'nordic': 'Nordic'
+    };
+    
+    const mappedStyle = styleMapping[styleProfile] || 'Classic';
+    return styleRecommendations[mappedStyle] || styleRecommendations.Classic;
+  }
+
+  // בדיקה אם הפריט מתאים לסוג הפריט הנדרש בסגנון
+  private matchesStyleType(item: any, styleRecs: any): boolean {
+    const itemName = item.product_name?.toLowerCase() || '';
+    
+    // בדיקה לפי סוג הפריט (חולצה, מכנסיים, נעליים וכו')
+    if (this.isTop(item)) {
+      const topType = styleRecs.top?.type?.toLowerCase() || '';
+      return itemName.includes(topType) || 
+             topType.includes('t-shirt') && itemName.includes('טי') ||
+             topType.includes('blouse') && itemName.includes('בלוזה') ||
+             topType.includes('sweater') && itemName.includes('סוודר');
+    }
+    
+    if (this.isBottom(item)) {
+      const bottomType = styleRecs.bottom?.type?.toLowerCase() || '';
+      return itemName.includes(bottomType) ||
+             bottomType.includes('trousers') && itemName.includes('מכנסי') ||
+             bottomType.includes('jeans') && itemName.includes('ג\'ינס') ||
+             bottomType.includes('skirt') && itemName.includes('חצאית');
+    }
+    
+    if (this.isShoes(item)) {
+      const shoeType = styleRecs.shoes?.type?.toLowerCase() || '';
+      return itemName.includes(shoeType) ||
+             shoeType.includes('loafers') && itemName.includes('נעלי') ||
+             shoeType.includes('heels') && itemName.includes('עקב') ||
+             shoeType.includes('boots') && itemName.includes('מגף');
+    }
+    
+    return false;
+  }
+
+  // בדיקה אם הצבע מתאים לסגנון
+  private matchesStyleColor(itemColor: string, itemName: string, styleRecs: any): boolean {
+    const topColor = styleRecs.top?.color?.toLowerCase() || '';
+    const bottomColor = styleRecs.bottom?.color?.toLowerCase() || '';
+    const shoeColor = styleRecs.shoes?.color?.toLowerCase() || '';
+    
+    const styleColors = [topColor, bottomColor, shoeColor].filter(Boolean);
+    
+    return styleColors.some(styleColor => 
+      itemColor.includes(styleColor) || 
+      itemName.includes(styleColor) ||
+      this.isColorSimilar(itemColor, styleColor)
+    );
+  }
+
+  // בדיקת דמיון בצבעים
+  private isColorSimilar(itemColor: string, styleColor: string): boolean {
+    const colorMap: { [key: string]: string[] } = {
+      'beige': ['בז\'', 'קרם', 'cream', 'tan'],
+      'white': ['לבן', 'שמנת', 'ivory'],
+      'black': ['שחור', 'dark'],
+      'navy': ['כחול כהה', 'כחול', 'blue'],
+      'gray': ['אפור', 'grey']
+    };
+    
+    const similarColors = colorMap[styleColor] || [];
+    return similarColors.some(similar => itemColor.includes(similar));
   }
 
   private getBodyShapeRecommendations(bodyShape: string, style: string): string[] {
