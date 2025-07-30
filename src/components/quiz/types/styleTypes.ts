@@ -12,13 +12,24 @@ export interface StyleRecommendation {
   style: string;
 }
 
+export interface ExtendedStyleRecommendation {
+  family: string;
+  subfamily: string;
+  colors: string[];
+  style: string;
+}
+
 export interface StyleRecommendations {
-  top: StyleRecommendation;
-  bottom: StyleRecommendation;
-  shoes: StyleRecommendation;
-  accessory: StyleRecommendation;
-  sunglasses: StyleRecommendation;
-  outerwear: StyleRecommendation;
+  tops?: ExtendedStyleRecommendation[];
+  bottoms?: ExtendedStyleRecommendation[];
+  shoes?: ExtendedStyleRecommendation[];
+  outerwear?: ExtendedStyleRecommendation[];
+  accessories?: ExtendedStyleRecommendation[];
+  // Legacy support
+  top?: StyleRecommendation;
+  bottom?: StyleRecommendation;
+  accessory?: StyleRecommendation;
+  sunglasses?: StyleRecommendation;
 }
 
 export interface FitRecommendations {
