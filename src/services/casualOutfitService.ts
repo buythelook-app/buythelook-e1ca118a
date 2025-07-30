@@ -2,6 +2,7 @@
 import { supabase } from "@/lib/supabaseClient";
 import logger from "@/lib/logger";
 import { extractImageUrl } from "./outfitGenerationService";
+import { styleRecommendations } from "@/components/quiz/constants/styleRecommendations";
 
 export interface CasualOutfitItem {
   id: string;
@@ -23,71 +24,37 @@ export async function findCasualItems(itemType: 'top' | 'bottom' | 'shoes', limi
       data: { itemType, limit }
     });
 
-    let searchTerms: string[] = [];
-    let excludeTerms: string[] = [];
+    // שימוש בהגדרות הסגנון הקזואל מהקובץ styleRecommendations
+    const casualStyle = styleRecommendations.Casual;
+    let targetItems: any[] = [];
 
     switch (itemType) {
       case 'top':
-        // חיפוש חולצות טי / פולוברים / סווטשירטים
-        searchTerms = [
-          'טי שירט', 'חולצת טי', 'טריקו', 'פולובר', 'סווטשירט', 
-          'הודי', 'קפוצ\'ון', 'חולצה בסיסית', 'טופ בסיסי',
-          't-shirt', 'tee', 'polo', 'sweatshirt', 'hoodie'
-        ];
-        // לא רוצים חולצות מכופתרות או פורמליות
-        excludeTerms = [
-          'חליפה', 'מכופתר', 'עניבה', 'פורמלי', 'עבודה',
-          'suit', 'formal', 'dress shirt', 'button up'
-        ];
+        targetItems = casualStyle.tops;
         break;
-
       case 'bottom':
-        // חיפוש ג'ינסים / מכנסי טרנינג / מכנסיים קצרים
-        searchTerms = [
-          'ג\'ינס', 'ג\'ינסים', 'דנים', 'מכנסי טרנינג', 'ג\'וגר',
-          'מכנסיים קצרים', 'שורטס', 'מכנסי כותנה', 'מכנסי פנוי',
-          'jeans', 'denim', 'joggers', 'shorts', 'casual pants',
-          'cotton pants', 'chino'
-        ];
-        // לא רוצים מכנסי חליפה או פורמליים
-        excludeTerms = [
-          'חליפה', 'פורמלי', 'עבודה', 'מחויט',
-          'suit', 'formal', 'dress pants', 'tailored'
-        ];
+        targetItems = casualStyle.bottoms;
         break;
-
       case 'shoes':
-        // חיפוש סניקרס / נעלי ספורט / נעליים נוחות
-        searchTerms = [
-          'סניקרס', 'נעלי ספורט', 'נעלי ריצה', 'נעלי התעמלות',
-          'אולסטאר', 'קונברס', 'נייק', 'אדידס', 'נעליים נוחות',
-          'sneakers', 'sports shoes', 'running shoes', 'trainers',
-          'converse', 'nike', 'adidas', 'casual shoes'
-        ];
-        // לא רוצים נעלי עקב או פורמליות
-        excludeTerms = [
-          'עקב', 'פורמלי', 'חליפה', 'עבודה', 'מחויט',
-          'heel', 'formal', 'dress shoes', 'oxford', 'loafer'
-        ];
+        targetItems = casualStyle.shoes;
         break;
     }
 
-    // בניית שאילתה עם תנאי OR לחיפוש ו-AND NOT לאיסור
-    const searchQuery = searchTerms.map(term => 
-      `product_name.ilike.%${term}%,description.ilike.%${term}%,product_family.ilike.%${term}%`
-    ).join(',');
+    // בניית שאילתה מבוססת על המשפחות והתת-משפחות המוגדרות
+    const familyQueries = targetItems.map(item => 
+      `product_family.ilike.%${item.family}%,product_subfamily.ilike.%${item.subfamily}%`
+    );
 
     let query = supabase
       .from('zara_cloth')
       .select('*')
-      .or(searchQuery);
+      .or(familyQueries.join(','));
 
-    // הוספת תנאי שלילה לכל מונח שרוצים לא לכלול
-    for (const excludeTerm of excludeTerms) {
-      query = query
-        .not('product_name', 'ilike', `%${excludeTerm}%`)
-        .not('description', 'ilike', `%${excludeTerm}%`)
-        .not('product_family', 'ilike', `%${excludeTerm}%`);
+    // סינון נוסף לפי צבעים קזואליים אם יש
+    const casualColors = targetItems.flatMap(item => item.colors);
+    if (casualColors.length > 0) {
+      const colorQuery = casualColors.map(color => `colour.ilike.%${color}%`).join(',');
+      query = query.or(colorQuery);
     }
 
     // הגבלת תוצאות ומיון לפי מחיר (להעדיף פריטים זולים יותר לקזואל)
