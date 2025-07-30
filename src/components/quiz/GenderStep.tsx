@@ -16,17 +16,23 @@ export const GenderStep = ({ value, onChange }: GenderStepProps) => {
           onValueChange={onChange}
           className="flex flex-col space-y-4 w-full"
         >
-          <div className="flex items-center space-x-2">
+          <div className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all ${
+            value === "male" ? "border-netflix-accent bg-netflix-accent/10" : "border-gray-200 hover:border-netflix-accent/50"
+          }`}>
             <RadioGroupItem value="male" id="male" />
-            <Label htmlFor="male">Male</Label>
+            <Label htmlFor="male" className="text-lg font-medium cursor-pointer flex-1">Male</Label>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all ${
+            value === "female" ? "border-netflix-accent bg-netflix-accent/10" : "border-gray-200 hover:border-netflix-accent/50"
+          }`}>
             <RadioGroupItem value="female" id="female" />
-            <Label htmlFor="female">Female</Label>
+            <Label htmlFor="female" className="text-lg font-medium cursor-pointer flex-1">Female</Label>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all ${
+            value === "other" ? "border-netflix-accent bg-netflix-accent/10" : "border-gray-200 hover:border-netflix-accent/50"
+          }`}>
             <RadioGroupItem value="other" id="other" />
-            <Label htmlFor="other">Other</Label>
+            <Label htmlFor="other" className="text-lg font-medium cursor-pointer flex-1">Other</Label>
           </div>
         </RadioGroup>
       </div>
