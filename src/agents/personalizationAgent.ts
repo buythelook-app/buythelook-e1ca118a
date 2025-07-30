@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabaseClient";
 import { Agent, AgentResult } from "./index";
-import { createCasualOutfit, getCasualStyleRecommendations } from "../services/casualOutfitService";
+import { createStyleOutfit, getStyleRecommendations } from "../services/styleOutfitService";
 import { styleRecommendations } from "@/components/quiz/constants/styleRecommendations";
 import logger from "@/lib/logger";
 
@@ -323,7 +323,7 @@ export class PersonalizationAgent implements Agent {
         .limit(30);
 
       if (error || !casualItems) {
-        return createCasualOutfit(); // fallback to original service
+        return createStyleOutfit('Casual'); // fallback to original service
       }
 
       const filteredItems = this.filterItemsByBodyShape(casualItems, bodyShape, []);
@@ -333,7 +333,7 @@ export class PersonalizationAgent implements Agent {
       const casualShoes = filteredItems.filter(item => this.isShoes(item));
 
       if (casualTops.length === 0 || casualBottoms.length === 0 || casualShoes.length === 0) {
-        return createCasualOutfit(); // fallback
+        return createStyleOutfit('Casual'); // fallback
       }
 
       return {
@@ -361,7 +361,7 @@ export class PersonalizationAgent implements Agent {
       };
     } catch (error) {
       console.error('Error creating body shape aware casual outfit:', error);
-      return createCasualOutfit(); // fallback
+      return createStyleOutfit('Casual'); // fallback
     }
   }
 

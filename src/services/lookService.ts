@@ -2,7 +2,7 @@
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
-import { findCasualItems } from "./casualOutfitService";
+import { findStyleItems } from "./styleOutfitService";
 import { ColorCoordinationService } from "./colorCoordinationService";
 import { extractZaraImageUrl, ZaraImageData } from "@/utils/imageUtils";
 import logger from "@/lib/logger";
