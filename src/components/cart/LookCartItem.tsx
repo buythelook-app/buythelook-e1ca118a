@@ -1,6 +1,6 @@
 
 import { Button } from "../ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, ExternalLink } from "lucide-react";
 
 interface CartItem {
   id: string;
@@ -43,30 +43,47 @@ export const LookCartItem = ({
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {items.map((item) => (
-          <div 
-            key={`${id}-${item.id}`} // Changed key to be more unique
-            className="flex items-center gap-4 bg-netflix-card p-3 rounded-lg relative group"
-          >
-            <img 
-              src={item.image} 
-              alt={item.title} 
-              className="w-20 h-20 object-cover rounded-md"
-            />
-            <div className="flex-1">
-              <p className="font-medium">{item.title}</p>
-              <p className="text-sm text-netflix-accent">{item.price}</p>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onRemoveItem(id, item.id)}
-              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600"
+        {items.map((item) => {
+          const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(item.title + " Zara")}`;
+          
+          return (
+            <div 
+              key={`${id}-${item.id}`}
+              className="flex flex-col gap-2 bg-netflix-card p-3 rounded-lg relative group"
             >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
+              <img 
+                src={item.image} 
+                alt={item.title} 
+                className="w-full h-24 object-cover rounded-md cursor-pointer"
+                onClick={() => window.open(searchUrl, '_blank')}
+              />
+              <div className="flex-1">
+                <p 
+                  className="font-medium cursor-pointer hover:text-netflix-accent transition-colors"
+                  onClick={() => window.open(searchUrl, '_blank')}
+                >
+                  {item.title}
+                </p>
+                <p className="text-sm text-netflix-accent">{item.price}</p>
+                <button
+                  onClick={() => window.open(searchUrl, '_blank')}
+                  className="text-xs text-gray-400 hover:text-netflix-accent transition-colors flex items-center gap-1 mt-1"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  View Product
+                </button>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onRemoveItem(id, item.id)}
+                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
