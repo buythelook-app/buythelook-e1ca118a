@@ -75,18 +75,20 @@ export const Navbar = () => {
           )}
         </div>
         <div className="flex items-center space-x-8">
+          {/* תמיד הצג את העגלה */}
+          <Link to="/cart" className="hover:text-netflix-accent relative">
+            <ShoppingCart className="h-6 w-6 text-white" />
+            {totalCartItems > 0 && (
+              <Badge 
+                className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-netflix-accent text-[10px]"
+              >
+                {cartDisplayCount}
+              </Badge>
+            )}
+          </Link>
+          
           {isAuthenticated ? (
             <>
-              <Link to="/cart" className="hover:text-netflix-accent relative">
-                <ShoppingCart className="h-6 w-6 text-white" />
-                {totalCartItems > 0 && (
-                  <Badge 
-                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-netflix-accent text-[10px]"
-                  >
-                    {cartDisplayCount}
-                  </Badge>
-                )}
-              </Link>
               <Link to="/my-list" className="hover:text-netflix-accent relative">
                 <Heart className="h-6 w-6" />
                 {totalLooks > 0 && (
