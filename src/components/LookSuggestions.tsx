@@ -225,71 +225,69 @@ export const LookSuggestions = () => {
     try {
       console.log("🔄 מייצר מראה חדש בהתאם לסינונים...");
       
-      // קרא את הסינונים הנבחרים מהעמוד הראשי
-      const selectedStyle = localStorage.getItem('selectedStyle');
-      const selectedMood = localStorage.getItem('current-mood');
+      // קרא את כל הסינונים הנבחרים מהעמוד הראשי
+      const styleAnalysis = localStorage.getItem('styleAnalysis');
+      const selectedEvent = localStorage.getItem('selected-event');
+      const currentMood = localStorage.getItem('current-mood');
+      const budgetData = localStorage.getItem('outfit-budget');
       
-      if (!selectedStyle) {
-        console.warn("⚠️ לא נמצא סגנון נבחר, משתמש ב-Casual כברירת מחדל");
+      let selectedStyle = 'Casual'; // ברירת מחדל
+      let budget = 500;
+      
+      // חלץ את הסגנון מ-styleAnalysis
+      if (styleAnalysis) {
+        try {
+          const parsed = JSON.parse(styleAnalysis);
+          selectedStyle = parsed.analysis?.styleProfile || 'Casual';
+        } catch (error) {
+          console.warn("שגיאה בפענוח נתוני סגנון:", error);
+        }
       }
       
-      const styleName = selectedStyle || 'Casual';
-      console.log("🎨 יוצר תלבושת לסגנון:", styleName);
+      // חלץ תקציב
+      if (budgetData) {
+        try {
+          const parsed = JSON.parse(budgetData);
+          budget = parsed.budget || 500;
+        } catch (error) {
+          console.warn("שגיאה בפענוח נתוני תקציב:", error);
+        }
+      }
+      
+      console.log("🎨 מייצר תלבושת עם הפרמטרים:", {
+        style: selectedStyle,
+        mood: currentMood,
+        event: selectedEvent,
+        budget: budget
+      });
       
       // שימוש בשירות החדש ליצירת תלבושת לפי סגנון
-      const { createStyleOutfit } = await import('@/services/styleOutfitService');
-      const styleOutfit = await createStyleOutfit(styleName as any);
+      const { createStyleOutfit, getStyleRecommendations } = await import('@/services/styleOutfitService');
+      const styleOutfit = await createStyleOutfit(selectedStyle as any);
       
       if (styleOutfit.top || styleOutfit.bottom || styleOutfit.shoes) {
-        // המרה לפורמט הנדרש
-        const newItems = [
-          styleOutfit.top && {
-            id: styleOutfit.top.id,
-            name: styleOutfit.top.name,
-            type: styleOutfit.top.type,
-            price: styleOutfit.top.price,
-            image: styleOutfit.top.image,
-            description: styleOutfit.top.description
-          },
-          styleOutfit.bottom && {
-            id: styleOutfit.bottom.id,
-            name: styleOutfit.bottom.name,
-            type: styleOutfit.bottom.type,
-            price: styleOutfit.bottom.price,
-            image: styleOutfit.bottom.image,
-            description: styleOutfit.bottom.description
-          },
-          styleOutfit.shoes && {
-            id: styleOutfit.shoes.id,
-            name: styleOutfit.shoes.name,
-            type: styleOutfit.shoes.type,
-            price: styleOutfit.shoes.price,
-            image: styleOutfit.shoes.image,
-            description: styleOutfit.shoes.description
-          }
-        ].filter(Boolean);
+        console.log("✅ תלבושת חדשה נוצרה בהצלחה לסגנון:", selectedStyle);
         
-        // עדכון התוצאה בשאילתה
-        // זה יעדכן את הנתונים המוצגים בעמוד
+        // כפיית רענון השאילתה לקבלת נתונים חדשים
         await refetch();
         
-        console.log("✅ תלבושת חדשה נוצרה בהצלחה לסגנון:", styleName);
-        
         // קבלת המלצות לסגנון
-        const { getStyleRecommendations } = await import('@/services/styleOutfitService');
-        const styleRecommendations = getStyleRecommendations(styleName as any);
+        const styleRecommendations = getStyleRecommendations(selectedStyle as any);
         setRecommendations(styleRecommendations);
         
+        const moodText = currentMood ? ` במצב רוח ${currentMood}` : '';
+        const eventText = selectedEvent ? ` לאירוע ${selectedEvent}` : '';
+        
         toast({
-          title: `תלבושת ${styleName} חדשה נוצרה! 🎨`,
-          description: `הנה קומבינציית ${styleName} חדשה בהתאם לסינונים שלך!`,
+          title: `תלבושת ${selectedStyle} חדשה נוצרה! 🎨`,
+          description: `הנה קומבינציית ${selectedStyle} חדשה${moodText}${eventText}`,
         });
       } else {
-        console.warn("⚠️ נכשל ביצירת תלבושת חדשה לסגנון:", styleName);
+        console.warn("⚠️ נכשל ביצירת תלבושת חדשה לסגנון:", selectedStyle);
         
         toast({
           title: "שגיאה ביצירת תלבושת",
-          description: `לא הצלחנו ליצור תלבושת ${styleName} חדשה. אנא נסה שוב.`,
+          description: `לא הצלחנו ליצור תלבושת ${selectedStyle} חדשה. אנא נסה שוב.`,
           variant: "destructive",
         });
       }
