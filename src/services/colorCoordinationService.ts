@@ -107,7 +107,7 @@ export const STYLE_COLOR_MAPPING: Record<string, string[]> = {
   minimalist: ['black', 'white', 'gray', 'beige', 'navy', 'cream', 'stone', 'charcoal'],
   classic: ['navy', 'black', 'white', 'gray', 'brown', 'beige'],
   romantic: ['pink', 'rose', 'cream', 'lavender', 'soft blue', 'white'],
-  casual: ['blue', 'gray', 'white', 'khaki', 'brown', 'green'],
+  casual: ['blue', 'denim', 'gray', 'white', 'khaki', 'brown', 'green', 'beige', 'navy', 'black', 'red', 'olive', 'tan', 'burgundy', 'coral', 'teal'],
   elegant: ['black', 'navy', 'gray', 'burgundy', 'white', 'gold'],
   sporty: ['blue', 'black', 'white', 'red', 'gray', 'green']
 };
@@ -223,7 +223,16 @@ export class ColorCoordinationService {
       'verde': 'green',
       'amarillo': 'yellow',
       'violeta': 'purple',
-      'morado': 'purple'
+      'morado': 'purple',
+      'denim': 'blue',
+      'jeans': 'blue',
+      'vaquero': 'blue',
+      'caqui': 'khaki',
+      'coral': 'coral',
+      'turquesa': 'teal',
+      'oliva': 'olive',
+      'camel': 'tan',
+      'crema': 'cream'
     };
     
     return colorMap[normalized] || normalized;
@@ -248,10 +257,23 @@ export class ColorCoordinationService {
   
   private static basicColorCompatibility(color1: string, color2: string): boolean {
     // Basic compatibility rules for colors not in our harmony map
-    const neutrals = ['black', 'white', 'gray', 'beige', 'brown'];
+    const neutrals = ['black', 'white', 'gray', 'beige', 'brown', 'navy', 'cream', 'tan', 'khaki'];
+    const denim = ['blue', 'denim', 'jeans'];
+    const earth = ['brown', 'tan', 'khaki', 'olive', 'beige'];
     
     // Neutrals go with everything
     if (neutrals.includes(color1) || neutrals.includes(color2)) {
+      return true;
+    }
+    
+    // Denim works with most casual colors
+    if ((denim.includes(color1) || denim.includes(color2)) && 
+        (neutrals.includes(color1) || neutrals.includes(color2) || earth.includes(color1) || earth.includes(color2))) {
+      return true;
+    }
+    
+    // Earth tones work together
+    if (earth.includes(color1) && earth.includes(color2)) {
       return true;
     }
     
