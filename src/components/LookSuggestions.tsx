@@ -223,44 +223,82 @@ export const LookSuggestions = () => {
     setIsRefetching(true);
     
     try {
-      console.log("🔄 מייצר מראה חדש עם למידה...");
+      console.log("🔄 מייצר מראה חדש בהתאם לסינונים...");
       
-      // שימוש בגרסה המשופרת עם למידה מעמוד הבית
-      const result = await generateOutfitWithLearning(true);
+      // קרא את הסינונים הנבחרים מהעמוד הראשי
+      const selectedStyle = localStorage.getItem('selectedStyle');
+      const selectedMood = localStorage.getItem('current-mood');
       
-      if (result.success && result.items.length > 0) {
-        // כפיית רענון השאילתה לקבלת נתונים חדשים
+      if (!selectedStyle) {
+        console.warn("⚠️ לא נמצא סגנון נבחר, משתמש ב-Casual כברירת מחדל");
+      }
+      
+      const styleName = selectedStyle || 'Casual';
+      console.log("🎨 יוצר תלבושת לסגנון:", styleName);
+      
+      // שימוש בשירות החדש ליצירת תלבושת לפי סגנון
+      const { createStyleOutfit } = await import('@/services/styleOutfitService');
+      const styleOutfit = await createStyleOutfit(styleName as any);
+      
+      if (styleOutfit.top || styleOutfit.bottom || styleOutfit.shoes) {
+        // המרה לפורמט הנדרש
+        const newItems = [
+          styleOutfit.top && {
+            id: styleOutfit.top.id,
+            name: styleOutfit.top.name,
+            type: styleOutfit.top.type,
+            price: styleOutfit.top.price,
+            image: styleOutfit.top.image,
+            description: styleOutfit.top.description
+          },
+          styleOutfit.bottom && {
+            id: styleOutfit.bottom.id,
+            name: styleOutfit.bottom.name,
+            type: styleOutfit.bottom.type,
+            price: styleOutfit.bottom.price,
+            image: styleOutfit.bottom.image,
+            description: styleOutfit.bottom.description
+          },
+          styleOutfit.shoes && {
+            id: styleOutfit.shoes.id,
+            name: styleOutfit.shoes.name,
+            type: styleOutfit.shoes.type,
+            price: styleOutfit.shoes.price,
+            image: styleOutfit.shoes.image,
+            description: styleOutfit.shoes.description
+          }
+        ].filter(Boolean);
+        
+        // עדכון התוצאה בשאילתה
+        // זה יעדכן את הנתונים המוצגים בעמוד
         await refetch();
         
-        console.log("✅ תלבושת חדשה נוצרה בהצלחה עם למידה:", result.items);
-        console.log("🧠 נתוני למידה:", result.learningData);
+        console.log("✅ תלבושת חדשה נוצרה בהצלחה לסגנון:", styleName);
         
-        // עדכון המלצות משופרות
-        if (enhancedRecommendations.length > 0) {
-          setRecommendations(enhancedRecommendations);
-        }
+        // קבלת המלצות לסגנון
+        const { getStyleRecommendations } = await import('@/services/styleOutfitService');
+        const styleRecommendations = getStyleRecommendations(styleName as any);
+        setRecommendations(styleRecommendations);
         
         toast({
-          title: "תלבושת חדשה נוצרה עם למידה! 🧠",
-          description: result.learningData?.applied 
-            ? "הנה קומבינציית סטייל חדשה שלומדת מההעדפות שלך!"
-            : "הנה קומבינציית סטייל חדשה במיוחד בשבילך!",
+          title: `תלבושת ${styleName} חדשה נוצרה! 🎨`,
+          description: `הנה קומבינציית ${styleName} חדשה בהתאם לסינונים שלך!`,
         });
       } else {
-        console.warn("⚠️ נכשל ביצירת תלבושת חדשה עם למידה");
+        console.warn("⚠️ נכשל ביצירת תלבושת חדשה לסגנון:", styleName);
         
         toast({
           title: "שגיאה ביצירת תלבושת",
-          description: "לא הצלחנו ליצור תלבושת חדשה עם למידה. אנא נסה שוב.",
+          description: `לא הצלחנו ליצור תלבושת ${styleName} חדשה. אנא נסה שוב.`,
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error("❌ שגיאה ביצירת מראה שונה עם למידה:", error);
+      console.error("❌ שגיאה ביצירת מראה שונה:", error);
       
       toast({
         title: "שגיאה",
-        description: "אירעה שגיאה ביצירת תלבושת חדשה עם למידה. אנא נסה שוב.",
+        description: "אירעה שגיאה ביצירת תלבושת חדשה. אנא נסה שוב.",
         variant: "destructive",
       });
     } finally {
