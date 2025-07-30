@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabaseClient";
 import logger from "@/lib/logger";
 import { extractImageUrl } from "./outfitGenerationService";
 import { styleRecommendations } from "@/components/quiz/constants/styleRecommendations";
+import { filterWorkAppropriateItems } from "@/components/filters/WorkAppropriateFilter";
 
 export interface StyleOutfitItem {
   id: string;
@@ -70,7 +71,7 @@ export async function findStyleItems(
     // הגבלת תוצאות ומיון לפי מחיר
     const { data: items, error } = await query
       .order('price', { ascending: true })
-      .limit(limit);
+      .limit(limit * 3); // מגדיל את המגבלה כדי לתת מקום לפילטר העבודה
 
     if (error) {
       logger.error(`שגיאה בחיפוש פריטים מסוג ${itemType} לסגנון ${styleName}:`, {
@@ -88,15 +89,25 @@ export async function findStyleItems(
     }
 
     // המרת התוצאות לפורמט המתאים
-    const styleItems = items.map(item => ({
+    let styleItems = items.map(item => ({
       id: item.id,
       name: item.product_name,
       type: itemType,
       price: `₪${item.price}`,
       image: extractImageUrl(item.image),
       color: item.colour || 'לא צוין',
-      description: item.description
+      description: item.description,
+       // שדות נוספים לפילטר העבודה
+      product_name: item.product_name,
+      product_family: item.product_family
     }));
+
+    // אם זה סגנון עבודה, נפלטר רק פריטים מתאימים לעבודה
+    if (styleName === 'Work') {
+      styleItems = filterWorkAppropriateItems(styleItems);
+      // מגביל לכמות המבוקשת המקורית אחרי הפילטור
+      styleItems = styleItems.slice(0, limit);
+    }
 
     logger.info(`נמצאו ${styleItems.length} פריטים מסוג ${itemType} לסגנון ${styleName}`, {
       context: "styleOutfitService",
