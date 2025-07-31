@@ -23,6 +23,7 @@ export default {
           'primary': 'hsl(var(--fashion-primary))',
           'secondary': 'hsl(var(--fashion-secondary))',
           'accent': 'hsl(var(--fashion-accent))',
+          'accent-light': 'hsl(var(--fashion-accent-light))',
           'neutral': 'hsl(var(--fashion-neutral))',
           'dark': 'hsl(var(--fashion-dark))',
           'light': 'hsl(var(--fashion-light))',

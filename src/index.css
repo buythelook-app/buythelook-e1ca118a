@@ -74,16 +74,17 @@
   :root {
     --fashion-primary: 220 9% 46%;      /* Sophisticated charcoal */
     --fashion-secondary: 0 0% 98%;       /* Clean white */
-    --fashion-accent: 25 80% 55%;        /* Warm terracotta */
+    --fashion-accent: 262 83% 58%;       /* Beautiful purple */
+    --fashion-accent-light: 262 83% 70%; /* Light purple */
     --fashion-neutral: 220 13% 91%;      /* Light warm gray */
     --fashion-dark: 220 13% 9%;          /* Deep charcoal */
     --fashion-light: 60 9% 98%;          /* Warm white */
     --fashion-muted: 220 9% 65%;         /* Mid gray */
     --fashion-border: 220 13% 87%;       /* Subtle border */
     
-    /* Premium gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(220, 9%, 46%), hsl(220, 13%, 9%));
-    --gradient-accent: linear-gradient(135deg, hsl(25, 80%, 55%), hsl(35, 80%, 65%));
+    /* Premium gradients with purple-pink */
+    --gradient-primary: linear-gradient(135deg, hsl(262, 83%, 58%), hsl(300, 65%, 60%));
+    --gradient-accent: linear-gradient(135deg, hsl(262, 83%, 58%), hsl(280, 75%, 65%));
     --gradient-subtle: linear-gradient(180deg, hsl(60, 9%, 98%), hsl(220, 13%, 91%));
     
     /* Premium shadows */
