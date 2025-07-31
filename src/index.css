@@ -70,27 +70,14 @@
     --radius: 0.5rem;
   }
 
-  /* Premium Fashion Brand Colors */
+  /* Netflix-inspired theme colors */
   :root {
-    --fashion-primary: 220 9% 46%;      /* Sophisticated charcoal */
-    --fashion-secondary: 0 0% 98%;       /* Clean white */
-    --fashion-accent: 262 83% 58%;       /* Beautiful purple */
-    --fashion-accent-light: 262 83% 70%; /* Light purple */
-    --fashion-neutral: 220 13% 91%;      /* Light warm gray */
-    --fashion-dark: 220 13% 9%;          /* Deep charcoal */
-    --fashion-light: 60 9% 98%;          /* Warm white */
-    --fashion-muted: 220 9% 65%;         /* Mid gray */
-    --fashion-border: 220 13% 87%;       /* Subtle border */
-    
-    /* Premium gradients with purple-pink */
-    --gradient-primary: linear-gradient(135deg, hsl(262, 83%, 58%), hsl(300, 65%, 60%));
-    --gradient-accent: linear-gradient(135deg, hsl(262, 83%, 58%), hsl(280, 75%, 65%));
-    --gradient-subtle: linear-gradient(180deg, hsl(60, 9%, 98%), hsl(220, 13%, 91%));
-    
-    /* Premium shadows */
-    --shadow-subtle: 0 1px 3px hsl(220, 13%, 9% / 0.1);
-    --shadow-medium: 0 4px 6px hsl(220, 13%, 9% / 0.1);
-    --shadow-large: 0 10px 25px hsl(220, 13%, 9% / 0.15);
+    --netflix-red: 357 92% 47%;
+    --netflix-black: 0 0% 8%;
+    --netflix-dark-gray: 0 0% 18%;
+    --netflix-medium-gray: 0 0% 30%;
+    --netflix-light-gray: 0 0% 45%;
+    --netflix-white: 0 0% 100%;
   }
 }
 
@@ -104,33 +91,13 @@
   }
 }
 
-/* Premium Fashion Components */
-.bg-fashion-card {
-  @apply bg-white border-fashion-border shadow-[var(--shadow-subtle)];
+/* Netflix-inspired components */
+.bg-netflix-card {
+  @apply bg-[#181818] border-[#404040];
 }
 
-.text-fashion-text {
-  @apply text-fashion-dark;
-}
-
-.bg-fashion-gradient {
-  background: var(--gradient-primary);
-}
-
-.bg-fashion-accent-gradient {
-  background: var(--gradient-accent);
-}
-
-.shadow-fashion-subtle {
-  box-shadow: var(--shadow-subtle);
-}
-
-.shadow-fashion-medium {
-  box-shadow: var(--shadow-medium);
-}
-
-.shadow-fashion-large {
-  box-shadow: var(--shadow-large);
+.text-netflix-text {
+  @apply text-[#e5e5e5];
 }
 
 /* Custom animation for remarks */

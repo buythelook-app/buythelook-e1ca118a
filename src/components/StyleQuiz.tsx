@@ -17,67 +17,55 @@ const QuizSummary = () => {
   if (!formData.gender) return null; // Don't show summary until quiz starts
 
   return (
-    <Card className="w-full mb-8 bg-fashion-neutral/30 border-fashion-border">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-medium text-fashion-dark">Your Profile Summary</CardTitle>
+    <Card className="w-full mb-6 bg-netflix-card text-netflix-text">
+      <CardHeader>
+        <CardTitle className="text-lg">Your Answers</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 text-sm">
+      <CardContent className="space-y-2 text-sm">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {formData.gender && (
-            <div className="flex flex-col">
-              <span className="font-medium text-fashion-dark">Gender</span>
-              <span className="text-fashion-muted">{formData.gender}</span>
+            <div>
+              <strong>Gender:</strong> {formData.gender}
             </div>
           )}
           {formData.height && (
-            <div className="flex flex-col">
-              <span className="font-medium text-fashion-dark">Height</span>
-              <span className="text-fashion-muted">{formData.height} cm</span>
+            <div>
+              <strong>Height:</strong> {formData.height} cm
             </div>
           )}
           {formData.weight && (
-            <div className="flex flex-col">
-              <span className="font-medium text-fashion-dark">Weight</span>
-              <span className="text-fashion-muted">
-                {formData.weight !== "prefer_not_to_answer" ? 
-                  `${formData.weight} lbs` : "Prefer not to answer"}
-              </span>
+            <div>
+              <strong>Weight:</strong> {formData.weight !== "prefer_not_to_answer" ? 
+                `${formData.weight} lbs` : "Prefer not to answer"}
             </div>
           )}
           {formData.waist && (
-            <div className="flex flex-col">
-              <span className="font-medium text-fashion-dark">Waist</span>
-              <span className="text-fashion-muted">
-                {formData.waist === "prefer_not_to_answer" ? 
-                  "Prefer not to answer" : `${Math.round(parseInt(formData.waist) / 2.54)} inches`}
-              </span>
+            <div>
+              <strong>Waist:</strong> {formData.waist === "prefer_not_to_answer" ? 
+                "Prefer not to answer" : `${Math.round(parseInt(formData.waist) / 2.54)} inches`}
             </div>
           )}
           {formData.chest && (
-            <div className="flex flex-col">
-              <span className="font-medium text-fashion-dark">Chest</span>
-              <span className="text-fashion-muted">
-                {formData.chest === "prefer_not_to_answer" ? 
-                  "Prefer not to answer" : `${Math.round(parseInt(formData.chest) / 2.54)} inches`}
-              </span>
+            <div>
+              <strong>Chest:</strong> {formData.chest === "prefer_not_to_answer" ? 
+                "Prefer not to answer" : `${Math.round(parseInt(formData.chest) / 2.54)} inches`}
             </div>
           )}
           {formData.bodyShape && (
-            <div className="flex flex-col">
-              <span className="font-medium text-fashion-dark">Body Shape</span>
-              <span className="text-fashion-muted">{formData.bodyShape}</span>
+            <div>
+              <strong>Body Shape:</strong> {formData.bodyShape}
             </div>
           )}
           {formData.colorPreferences.length > 0 && (
-            <div className="flex flex-col md:col-span-2">
-              <span className="font-medium text-fashion-dark">Color Preferences</span>
-              <span className="text-fashion-muted">{formData.colorPreferences.join(", ")}</span>
+            <div className="md:col-span-2">
+              <strong>Color Preferences:</strong>{" "}
+              {formData.colorPreferences.join(", ")}
             </div>
           )}
           {formData.stylePreferences.length > 0 && (
-            <div className="flex flex-col md:col-span-2">
-              <span className="font-medium text-fashion-dark">Style Preferences</span>
-              <span className="text-fashion-muted">{formData.stylePreferences.join(", ")}</span>
+            <div className="md:col-span-2">
+              <strong>Style Preferences:</strong>{" "}
+              {formData.stylePreferences.join(", ")}
             </div>
           )}
         </div>

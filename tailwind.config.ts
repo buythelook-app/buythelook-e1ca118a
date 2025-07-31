@@ -19,16 +19,11 @@ export default {
     },
     extend: {
       colors: {
-        fashion: {
-          'primary': 'hsl(var(--fashion-primary))',
-          'secondary': 'hsl(var(--fashion-secondary))',
-          'accent': 'hsl(var(--fashion-accent))',
-          'accent-light': 'hsl(var(--fashion-accent-light))',
-          'neutral': 'hsl(var(--fashion-neutral))',
-          'dark': 'hsl(var(--fashion-dark))',
-          'light': 'hsl(var(--fashion-light))',
-          'muted': 'hsl(var(--fashion-muted))',
-          'border': 'hsl(var(--fashion-border))',
+        netflix: {
+          background: "#0A0F1C",
+          card: "#141B2D",
+          text: "#F5F5F1",
+          accent: "#8B5CF6",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -65,9 +60,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        display: ["Inter", "system-ui", "sans-serif"],
-        serif: ["Playfair Display", "serif"],
+        sans: ["Inter", "sans-serif"],
+        display: ["Playfair Display", "serif"],
       },
       keyframes: {
         "card-hover": {
