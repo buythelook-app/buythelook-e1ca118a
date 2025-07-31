@@ -15,14 +15,14 @@ interface LookCardProps {
 
 export const LookCard = ({ id, image, title, price, category, items = [] }: LookCardProps) => {
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden h-full">
+    <div className="group bg-white rounded-2xl shadow-[var(--shadow-subtle)] hover:shadow-[var(--shadow-medium)] border border-fashion-border overflow-hidden h-full transition-all duration-300 hover:-translate-y-1">
       <LookImage image={image} title={title} />
-      <div className="p-4">
+      <div className="p-6">
         <div className="flex justify-between items-start">
-          <div>
-            <p className="text-sm text-purple-600 font-medium mb-1 tracking-wide uppercase">{category}</p>
-            <h3 className="text-lg font-semibold mb-1 text-gray-900">{title}</h3>
-            <p className="text-sm text-gray-700 font-medium">{price}</p>
+          <div className="flex-1">
+            <p className="text-xs text-fashion-accent font-medium mb-2 tracking-wide uppercase">{category}</p>
+            <h3 className="text-lg font-medium mb-2 text-fashion-dark leading-tight">{title}</h3>
+            <p className="text-lg font-semibold text-fashion-dark">{price}</p>
           </div>
           <LookActions
             id={id}

@@ -53,34 +53,51 @@ export const MoodFilter = ({ selectedMood, onMoodSelect }: MoodFilterProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full" onClick={() => setIsOpen(true)}>
+        <Button 
+          variant="outline" 
+          className="w-full md:w-auto border-fashion-border hover:border-fashion-accent hover:bg-fashion-accent/5 rounded-full px-6 py-3 transition-all duration-300" 
+          onClick={() => setIsOpen(true)}
+        >
           {selectedMood ? (
             <>
-              <span className="mr-2 text-lg">{moodIcons[selectedMood]}</span>
-              <span>Mood</span>
+              <span className="mr-3 text-lg">{moodIcons[selectedMood]}</span>
+              <span className="font-medium text-fashion-dark capitalize">{selectedMood}</span>
             </>
           ) : (
             <>
-              <span className="mr-2">🎭</span>
-              Select Mood
+              <span className="mr-3 text-lg">🎭</span>
+              <span className="font-medium text-fashion-dark">Select Your Mood</span>
             </>
           )}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>How are you feeling today?</DialogTitle>
+      <DialogContent className="max-w-4xl rounded-2xl">
+        <DialogHeader className="text-center pb-6">
+          <DialogTitle className="text-2xl font-light text-fashion-dark">
+            How are you feeling today?
+          </DialogTitle>
+          <p className="text-fashion-muted mt-2">Your mood helps us curate the perfect look for you</p>
         </DialogHeader>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-2">
           {(Object.keys(moodIcons) as Mood[]).map((mood) => (
             <Button
               key={mood}
-              variant={selectedMood === mood ? "default" : "outline"}
-              className="p-4 h-auto hover:bg-netflix-accent/10 transition-colors"
+              variant="outline"
+              className={`group p-4 h-auto rounded-xl border-2 transition-all duration-300 ${
+                selectedMood === mood 
+                  ? "border-fashion-accent bg-fashion-accent/5 shadow-md" 
+                  : "border-fashion-border hover:border-fashion-accent hover:bg-fashion-accent/5"
+              }`}
               onClick={() => handleMoodSelect(mood)}
             >
-              <span className="mr-2 text-lg">{moodIcons[mood]}</span>
-              <span className="text-sm capitalize">{mood}</span>
+              <div className="flex flex-col items-center space-y-2">
+                <span className="text-2xl">{moodIcons[mood]}</span>
+                <span className={`text-sm font-medium capitalize ${
+                  selectedMood === mood ? "text-fashion-accent" : "text-fashion-dark group-hover:text-fashion-accent"
+                }`}>
+                  {mood}
+                </span>
+              </div>
             </Button>
           ))}
         </div>
