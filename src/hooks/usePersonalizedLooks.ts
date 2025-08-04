@@ -1,7 +1,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
 import { fetchDashboardItems, clearOutfitCache } from "@/services/lookService";
 import { toast as sonnerToast } from "sonner";
 import type { Mood } from "@/components/filters/MoodFilter";
@@ -26,7 +25,6 @@ export interface Look {
 }
 
 export function usePersonalizedLooks() {
-  const { toast } = useToast();
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [userStyle, setUserStyle] = useState<any>(null);
   const [combinations, setCombinations] = useState<{ [key: string]: number }>({});
