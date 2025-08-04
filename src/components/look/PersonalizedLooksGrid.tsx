@@ -46,13 +46,17 @@ export const PersonalizedLooksGrid = memo(({
 
   if (isLoading) {
     return (
-      <div className="fashion-grid">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {occasions.map((occasion) => (
-          <div key={occasion} className="fashion-card rounded-3xl p-8 min-h-[500px] flex items-center justify-center">
-            <div className="text-center space-y-4">
-              <RefreshCw className="h-8 w-8 animate-spin mx-auto text-fashion-accent" />
-              <p className="fashion-text font-medium">Curating your perfect {occasion.toLowerCase()} look...</p>
-              <p className="fashion-muted text-sm">This may take a moment</p>
+          <div key={occasion} className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-netflix-accent">{occasion}</h3>
+            </div>
+            <div className="bg-netflix-card rounded-lg p-6 min-h-[400px] flex items-center justify-center">
+              <div className="text-center space-y-2">
+                <RefreshCw className="h-8 w-8 animate-spin mx-auto text-netflix-accent" />
+                <p className="text-netflix-text">Loading personalized looks...</p>
+              </div>
             </div>
           </div>
         ))}
@@ -62,21 +66,19 @@ export const PersonalizedLooksGrid = memo(({
 
   if (isError) {
     return (
-      <div className="fashion-card rounded-3xl p-12 text-center">
-        <AlertCircle className="h-12 w-12 text-fashion-accent mx-auto mb-6" />
-        <h3 className="text-2xl font-display fashion-text mb-4">Something went wrong</h3>
-        <p className="fashion-muted mb-8 max-w-md mx-auto">
-          We're having trouble curating your looks right now. Please try again in a moment.
-        </p>
-        <button onClick={resetError} className="fashion-button-secondary">
+      <div className="text-center py-12">
+        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Unable to load personalized looks</h3>
+        <p className="text-gray-600 mb-4">There was an issue connecting to our styling service.</p>
+        <Button onClick={resetError} variant="outline">
           Try Again
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="fashion-grid">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       {occasions.map((occasion) => {
         const occasionItems = occasionOutfits[occasion] || [];
         
@@ -89,10 +91,12 @@ export const PersonalizedLooksGrid = memo(({
         
         if (!look) {
           return (
-            <div key={occasion} className="fashion-card rounded-3xl p-8 min-h-[500px] flex items-center justify-center">
-              <div className="text-center">
-                <h4 className="text-lg font-display fashion-text mb-2">{occasion}</h4>
-                <p className="fashion-muted text-sm">No items available for this occasion</p>
+            <div key={occasion} className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-netflix-accent">{occasion}</h3>
+              </div>
+              <div className="bg-netflix-card rounded-lg p-6 min-h-[400px] flex items-center justify-center">
+                <p className="text-netflix-text">No items available for this occasion</p>
               </div>
             </div>
           );
@@ -119,20 +123,34 @@ export const PersonalizedLooksGrid = memo(({
         console.log(`🔍 [PersonalizedLooksGrid] ${occasion} canvas items:`, canvasItems);
 
         return (
-          <PersonalizedLookCard
-            key={occasion}
-            look={look}
-            onShuffle={handleShuffleLook}
-            onAddToCart={handleAddToCart}
-            userStyleProfile={userStyleProfile}
-            customCanvas={
-              <LookCanvas 
-                items={canvasItems}
-                width={300}
-                height={400}
-              />
-            }
-          />
+          <div key={occasion} className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-netflix-accent">{occasion}</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleShuffleLook(occasion)}
+                className="text-netflix-text hover:text-netflix-accent"
+              >
+                <Shuffle className="h-4 w-4 mr-2" />
+                Shuffle
+              </Button>
+            </div>
+            
+            <PersonalizedLookCard
+              look={look}
+              onShuffle={handleShuffleLook}
+              onAddToCart={handleAddToCart}
+              userStyleProfile={userStyleProfile}
+              customCanvas={
+                <LookCanvas 
+                  items={canvasItems}
+                  width={300}
+                  height={400}
+                />
+              }
+            />
+          </div>
         );
       })}
     </div>

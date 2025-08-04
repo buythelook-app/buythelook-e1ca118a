@@ -25,16 +25,6 @@ export default {
           text: "#F5F5F1",
           accent: "#8B5CF6",
         },
-        fashion: {
-          accent: "hsl(264 83% 58%)",
-          secondary: "hsl(314 65% 55%)",
-          background: "hsl(0 0% 98%)",
-          card: "hsl(0 0% 100%)",
-          text: "hsl(0 0% 10%)",
-          muted: "hsl(0 0% 65%)",
-          border: "hsl(0 0% 92%)",
-          success: "hsl(142 76% 36%)",
-        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -70,9 +60,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        sans: ["Inter", "sans-serif"],
         display: ["Playfair Display", "serif"],
-        brand: ["Inter", "system-ui", "sans-serif"],
       },
       keyframes: {
         "card-hover": {

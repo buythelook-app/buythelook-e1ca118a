@@ -70,17 +70,14 @@
     --radius: 0.5rem;
   }
 
-  /* Fashion brand theme colors - premium feel */
+  /* Netflix-inspired theme colors */
   :root {
-    --fashion-accent: 264 83% 58%;
-    --fashion-secondary: 314 65% 55%;
-    --fashion-background: 0 0% 98%;
-    --fashion-card: 0 0% 100%;
-    --fashion-text: 0 0% 10%;
-    --fashion-muted: 0 0% 65%;
-    --fashion-border: 0 0% 92%;
-    --fashion-success: 142 76% 36%;
-    --fashion-gradient: linear-gradient(135deg, hsl(264 83% 58%), hsl(314 65% 55%));
+    --netflix-red: 357 92% 47%;
+    --netflix-black: 0 0% 8%;
+    --netflix-dark-gray: 0 0% 18%;
+    --netflix-medium-gray: 0 0% 30%;
+    --netflix-light-gray: 0 0% 45%;
+    --netflix-white: 0 0% 100%;
   }
 }
 
@@ -94,29 +91,13 @@
   }
 }
 
-/* Fashion brand components - professional eCommerce style */
-.fashion-bg {
-  @apply bg-[hsl(var(--fashion-background))];
+/* Netflix-inspired components */
+.bg-netflix-card {
+  @apply bg-[#181818] border-[#404040];
 }
 
-.fashion-card {
-  @apply bg-[hsl(var(--fashion-card))] border border-[hsl(var(--fashion-border))];
-}
-
-.fashion-text {
-  @apply text-[hsl(var(--fashion-text))];
-}
-
-.fashion-muted {
-  @apply text-[hsl(var(--fashion-muted))];
-}
-
-.fashion-gradient {
-  background: var(--fashion-gradient);
-}
-
-.fashion-hover {
-  @apply transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1;
+.text-netflix-text {
+  @apply text-[#e5e5e5];
 }
 
 /* Custom animation for remarks */
@@ -129,24 +110,8 @@
   animation: fadeIn 0.3s ease-out forwards;
 }
 
-/* Enhanced components for fashion UI */
+/* Enhanced remark box */
 .remark-box {
   @apply p-3 rounded-md border border-emerald-700 bg-emerald-50 text-emerald-800 shadow-sm;
-}
-
-.fashion-button-primary {
-  @apply bg-[hsl(var(--fashion-accent))] text-white px-8 py-3 rounded-full font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg;
-}
-
-.fashion-button-secondary {
-  @apply border border-[hsl(var(--fashion-accent))] text-[hsl(var(--fashion-accent))] px-6 py-2 rounded-full font-medium transition-all duration-300 hover:bg-[hsl(var(--fashion-accent))] hover:text-white;
-}
-
-.fashion-grid {
-  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8;
-}
-
-.fashion-brand-text {
-  @apply font-display font-light tracking-wide;
 }
 
