@@ -15,6 +15,10 @@ let lastResetTime = Date.now();
 // Global tracking for used shoes to ensure variety
 let globalUsedShoesIds: Set<string> = new Set();
 
+// Cross-occasion tracking to prevent duplicates between canvases
+let allUsedItemIds: Set<string> = new Set();
+let allUsedShoesIds: Set<string> = new Set();
+
 // Updated type for shoes data matching the zara_cloth database schema
 type ZaraShoesData = {
   id: string;
@@ -98,6 +102,8 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
     if (forceRefresh || Date.now() - lastResetTime > 300000) { // Reset every 5 minutes
       globalUsedItemIds = {};
       globalUsedShoesIds.clear();
+      allUsedItemIds.clear(); // Clear cross-canvas tracking
+      allUsedShoesIds.clear(); // Clear cross-canvas shoes tracking
       lastResetTime = Date.now();
     }
 
@@ -230,10 +236,11 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
     // סינון פריטי לבוש בלבד (ללא נעליים)
     let filteredClothingItems = allClothingItems.filter(item => {
       const hasValid = hasValidImageData(item.image);
-      const notUsed = !globalUsedItemIds[occasion].has(item.id);
+      const notUsedInOccasion = !globalUsedItemIds[occasion].has(item.id);
+      const notUsedGlobally = !allUsedItemIds.has(item.id); // Prevent cross-canvas duplicates
       const isClothing = isActualClothingItem(item);
       
-      return hasValid && notUsed && isClothing && item.availability !== false;
+      return hasValid && notUsedInOccasion && notUsedGlobally && isClothing && item.availability !== false;
     });
     
     console.log(`🔍 [createAdvancedOutfit] ${filteredClothingItems.length} valid clothing items after filtering for ${occasion}`);
@@ -256,6 +263,36 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
 
     // יצירת תלבושת לפי כללים מותאמים לאירוע (ללא נעליים)
     const outfitItems = await selectOutfitByOccasion(categorizedItems, occasion);
+    
+    // Ensure minimum of 2 clothing items before adding shoes
+    if (outfitItems.length < 2) {
+      console.log(`⚠️ [createAdvancedOutfit] ${occasion} outfit has only ${outfitItems.length} items, adding more...`);
+      
+      // Add missing items to reach at least 2 clothing items
+      if (outfitItems.length === 0 && categorizedItems.tops.length > 0) {
+        outfitItems.push(createDashboardItem(categorizedItems.tops[0], 'top'));
+      }
+      if (outfitItems.length < 2 && categorizedItems.bottoms.length > 0) {
+        outfitItems.push(createDashboardItem(categorizedItems.bottoms[0], 'bottom'));
+      }
+      
+      console.log(`✅ [createAdvancedOutfit] Enhanced ${occasion} outfit to ${outfitItems.length} clothing items`);
+    }
+    
+    // Get matching shoes from zara_cloth table
+    console.log(`👠 [createAdvancedOutfit] Adding MANDATORY shoes from ZARA_CLOTH table for ${occasion}...`);
+    const matchingShoes = await getMatchingShoesFromZara(occasion, []);
+    
+    if (matchingShoes) {
+      outfitItems.push(matchingShoes);
+      console.log(`✅ [createAdvancedOutfit] Successfully added shoes to ${occasion}: ${matchingShoes.name}`);
+    } else {
+      console.error(`❌ [createAdvancedOutfit] Failed to get shoes for ${occasion} - using fallback`);
+      const fallbackShoes = getRandomFallbackShoes();
+      fallbackShoes.id = `${fallbackShoes.id}-${occasion.toLowerCase()}`;
+      outfitItems.push(fallbackShoes);
+      console.log(`🆘 [createAdvancedOutfit] Added fallback shoes to ${occasion}: ${fallbackShoes.name}`);
+    }
     
     console.log(`🔥 [createAdvancedOutfit] OUTFIT ITEMS AFTER selectOutfitByOccasion (${outfitItems.length}):`, 
       outfitItems.map(item => ({
@@ -282,10 +319,12 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
       });
     }
     
-    // Mark selected clothing items as used for this occasion
+    // Mark selected clothing items as used for this occasion and globally
     outfitItems.forEach(item => {
       if (item.id && !item.id.includes('zara-shoes-')) {
-        globalUsedItemIds[occasion].add(item.id.split('-')[0]); // Remove occasion suffix
+        const baseId = item.id.split('-')[0]; // Remove occasion suffix
+        globalUsedItemIds[occasion].add(baseId);
+        allUsedItemIds.add(baseId); // Add to global cross-canvas tracking
       }
     });
     
@@ -682,20 +721,24 @@ async function getMatchingShoesFromZara(occasion: string, usedColors: string[]):
     
     console.log(`🔍 [getMatchingShoesFromZara] STEP 6: Filtering shoes for availability and valid images...`);
     
-    // Filter out previously used shoes and ensure valid images
+    // Filter out previously used shoes globally and per-occasion
     const availableShoes = shoesData.filter(shoe => {
       const shoeId = shoe.id || shoe.product_id?.toString() || shoe.product_name;
-      const alreadyUsed = globalUsedShoesIds.has(String(shoeId));
+      const alreadyUsedInOccasion = globalUsedShoesIds.has(String(shoeId));
+      const alreadyUsedGlobally = allUsedShoesIds.has(String(shoeId));
       const hasValidImage = hasValidZaraShoesImageFromDB(shoe);
       
-      if (alreadyUsed) {
-        console.log(`⚠️ [getMatchingShoesFromZara] Skipping "${shoe.product_name}" - already used`);
+      if (alreadyUsedInOccasion) {
+        console.log(`⚠️ [getMatchingShoesFromZara] Skipping "${shoe.product_name}" - already used in occasion`);
+      }
+      if (alreadyUsedGlobally) {
+        console.log(`⚠️ [getMatchingShoesFromZara] Skipping "${shoe.product_name}" - already used globally`);
       }
       if (!hasValidImage) {
         console.log(`⚠️ [getMatchingShoesFromZara] Skipping "${shoe.product_name}" - invalid image`);
       }
       
-      return !alreadyUsed && hasValidImage;
+      return !alreadyUsedInOccasion && !alreadyUsedGlobally && hasValidImage;
     });
 
     console.log(`🔍 [getMatchingShoesFromZara] STEP 7: Available unused shoes: ${availableShoes.length}`);
@@ -722,6 +765,7 @@ async function getMatchingShoesFromZara(occasion: string, usedColors: string[]):
       
       const shoeId = selectedShoe.id || selectedShoe.product_id?.toString() || selectedShoe.product_name;
       globalUsedShoesIds.add(String(shoeId));
+      allUsedShoesIds.add(String(shoeId)); // Add to cross-canvas tracking
       
       const createdItem = createZaraShoesItemFromDB(selectedShoe, occasion);
       console.log(`✅ [getMatchingShoesFromZara] STEP 12: Successfully created shoes item after reset`);
@@ -741,6 +785,7 @@ async function getMatchingShoesFromZara(occasion: string, usedColors: string[]):
     // Mark this shoe as used
     const shoeId = selectedShoe.id || selectedShoe.product_id?.toString() || selectedShoe.product_name;
     globalUsedShoesIds.add(String(shoeId));
+    allUsedShoesIds.add(String(shoeId)); // Add to cross-canvas tracking
     
     console.log(`🔍 [getMatchingShoesFromZara] STEP 10: Creating DashboardItem from selected shoe...`);
     const createdItem = createZaraShoesItemFromDB(selectedShoe, occasion);
@@ -1154,9 +1199,9 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
     
     console.log('✅ [fetchDashboardItems] Supabase connection verified with styles:', { baseStyle, currentStyle, finalStyle });
     
-    // Reset global tracking for fresh selection but keep separate tracking per occasion
+    // Reset per-occasion tracking but preserve cross-occasion tracking
     globalUsedItemIds = {};
-    globalUsedShoesIds.clear();
+    // Keep allUsedItemIds and allUsedShoesIds to prevent duplicates between canvases
     
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     const data: { [key: string]: DashboardItem[] } = {};
@@ -1165,6 +1210,7 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
     for (const occasion of occasions) {
       try {
         console.log(`🔍 [fetchDashboardItems] ===== PROCESSING ${occasion.toUpperCase()} WITH COMBINED STYLE: ${finalStyle.toUpperCase()} =====`);
+        console.log(`🔍 [fetchDashboardItems] Items used across ALL canvases so far: ${allUsedItemIds.size} clothing, ${allUsedShoesIds.size} shoes`);
         
         const occasionOutfit = await createAdvancedOutfit(finalStyle, occasion.toLowerCase(), [], occasion);
         
@@ -1256,14 +1302,18 @@ export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardI
 export function clearGlobalItemTrackers() {
   globalUsedItemIds = {};
   globalUsedShoesIds.clear();
+  allUsedItemIds.clear(); // Clear cross-canvas tracking
+  allUsedShoesIds.clear(); // Clear cross-canvas shoes tracking
   lastResetTime = Date.now();
-  console.log('🔄 [clearGlobalItemTrackers] Global trackers cleared');
+  console.log('🔄 [clearGlobalItemTrackers] Global trackers cleared including cross-canvas tracking');
 }
 
 export function clearOutfitCache() {
   globalUsedItemIds = {};
   globalUsedShoesIds.clear();
-  console.log('🔄 [clearOutfitCache] Outfit cache cleared');
+  allUsedItemIds.clear(); // Clear cross-canvas tracking
+  allUsedShoesIds.clear(); // Clear cross-canvas shoes tracking
+  console.log('🔄 [clearOutfitCache] Outfit cache cleared including cross-canvas tracking');
 }
 
 function extractColorFromName(name: string): string {
