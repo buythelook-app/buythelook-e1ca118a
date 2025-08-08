@@ -1,3 +1,4 @@
+import { extractZaraImageUrl } from "@/utils/imageUtils";
 import { supabase } from "@/lib/supabaseClient";
 import logger from "@/lib/logger";
 
@@ -244,76 +245,11 @@ const inspectImageStructure = (imageData: any): string => {
  */
 export function extractImageUrl(imageJson: any): string {
   try {
-    // Case 1: If imageJson is a string (direct URL)
-    if (typeof imageJson === 'string') {
-      return imageJson;
-    }
-    
-    // Case 2: If imageJson is null or undefined
-    if (!imageJson) {
-      return '/placeholder.svg';
-    }
-    
-    // Case 3: If imageJson is an array, take the first element
-    if (Array.isArray(imageJson)) {
-      if (imageJson.length > 0) {
-        // If first element is a string (URL), return it
-        if (typeof imageJson[0] === 'string') {
-          return imageJson[0];
-        }
-        // If first element is an object with a url property
-        if (typeof imageJson[0] === 'object' && imageJson[0] && imageJson[0].url) {
-          return imageJson[0].url;
-        }
-      }
-      return '/placeholder.svg';
-    }
-    
-    // Case 4: If imageJson is an object with urls array
-    if (typeof imageJson === 'object' && imageJson.urls && Array.isArray(imageJson.urls)) {
-      return imageJson.urls[0] || '/placeholder.svg';
-    }
-    
-    // Case 5: If imageJson is an object with url property
-    if (typeof imageJson === 'object' && imageJson.url) {
-      return imageJson.url;
-    }
-
-    // Case 6: If imageJson is an object with images array
-    if (typeof imageJson === 'object' && imageJson.images && Array.isArray(imageJson.images)) {
-      return imageJson.images[0] || '/placeholder.svg';
-    }
-    
-    // Case 7: Search for any string property that looks like a URL
-    if (typeof imageJson === 'object') {
-      for (const key of Object.keys(imageJson)) {
-        const value = imageJson[key];
-        if (typeof value === 'string' && 
-            (value.startsWith('http') || value.startsWith('/') || 
-             value.includes('image') || value.includes('.jpg') || 
-             value.includes('.png') || value.includes('.webp'))) {
-          return value;
-        }
-        
-        // Check for nested arrays of strings
-        if (Array.isArray(value) && value.length > 0) {
-          if (typeof value[0] === 'string') {
-            return value[0];
-          }
-        }
-      }
-    }
-    
-    // Log the structure for debugging
-    logger.debug("Unable to extract image URL, JSON structure:", {
-      context: "extractImageUrl",
-      data: JSON.stringify(imageJson).substring(0, 200) + '...'
-    });
-    
-    return '/placeholder.svg';
+    // Use specialized image extractor that prioritizes no-model images (6th and up)
+    return extractZaraImageUrl(imageJson);
   } catch (error) {
     logger.error("Error extracting image URL", {
-      context: "extractImageUrl",
+      context: "outfitGenerationService",
       data: error
     });
     return '/placeholder.svg';

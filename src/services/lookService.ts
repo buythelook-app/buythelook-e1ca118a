@@ -698,11 +698,9 @@ function createDashboardItem(item: any, type: string): DashboardItem {
     name: item.product_name,
     image: extractImageUrl(item.image),
     type: type as DashboardItem['type'],
-    colour: item.colour,
+    color: item.color || item.colour || '#000000',
     price: `₪${item.price}`,
-    description: item.description || '',
-    url: item.url || '',
-    availability: item.availability !== false
+    description: item.description || ''
   };
 }
 
@@ -803,11 +801,9 @@ async function getMatchingShoesFromZara(occasion: string, usedColors: string[]):
       name: selectedShoe.product_name,
       image: imageUrl,
       type: 'shoes',
-      colour: selectedShoe.colour,
+      color: selectedShoe.colour || '#000000',
       price: `₪${selectedShoe.price}`,
-      description: selectedShoe.description || '',
-      url: selectedShoe.url || '',
-      availability: selectedShoe.availability !== false
+      description: selectedShoe.description || ''
     };
 
     return shoeItem;
@@ -829,33 +825,27 @@ function getFallbackOutfit(): DashboardItem[] {
       name: 'Fallback Top',
       image: '/images/fallback-top.png',
       type: 'top',
-      colour: 'blue',
+      color: 'blue',
       price: '₪99',
-      description: 'Fallback top item',
-      url: '',
-      availability: true
+      description: 'Fallback top item'
     },
     {
       id: 'fallback-bottom-1',
       name: 'Fallback Bottom',
       image: '/images/fallback-bottom.png',
       type: 'bottom',
-      colour: 'black',
-      price: 0,
-      description: 'Fallback bottom item',
-      url: '',
-      availability: true
+      color: 'black',
+      price: '₪99',
+      description: 'Fallback bottom item'
     },
     {
       id: 'fallback-shoes-1',
       name: 'Fallback Shoes',
       image: '/images/fallback-shoes.png',
       type: 'shoes',
-      colour: 'black',
-      price: 0,
-      description: 'Fallback shoes item',
-      url: '',
-      availability: true
+      color: 'black',
+      price: '₪149',
+      description: 'Fallback shoes item'
     }
   ];
 }
@@ -869,10 +859,8 @@ function getRandomFallbackShoes(): DashboardItem {
     name: 'Fallback Shoes',
     image: '/images/fallback-shoes.png',
     type: 'shoes',
-    colour: 'black',
-    price: 0,
-    description: 'Fallback shoes item',
-    url: '',
-    availability: true
+    color: 'black',
+    price: '₪149',
+    description: 'Fallback shoes item'
   };
 }
