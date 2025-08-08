@@ -361,78 +361,137 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
   // לוגיקה שונה לכל סוג אירוע (ללא נעליים כאן)
   switch (occasion.toLowerCase()) {
     case 'work':
-      // עבודה - תלבושת פורמלית (חולצה + מכנס/חצאית)
+      // עבודה - תלבושת פורמלית (חולצה + מכנס/חצאית או ז'קט + חולצה + מכנס)
       if (categories.tops.length > 0 && categories.bottoms.length > 0) {
         const formalTop = categories.tops.find(item => isFormalItem(item)) || categories.tops[0];
         const formalBottom = categories.bottoms.find(item => isFormalItem(item)) || categories.bottoms[0];
         
+        // בדיקה אם הפריט העליון הוא ז'קט
+        const isJacket = isJacketItem(formalTop);
+        
         if (formalTop && formalBottom) {
           selectedItems.push(createDashboardItem(formalTop, 'top'));
-          selectedItems.push(createDashboardItem(formalBottom, 'bottom'));
           usedColors.push(formalTop.colour?.toLowerCase() || '');
+          
+          // אם זה ז'קט, מוסיפים חולצה מתחת
+          if (isJacket && categories.tops.length > 1) {
+            const underShirt = categories.tops.find(item => !isJacketItem(item) && item.id !== formalTop.id) || categories.tops[1];
+            if (underShirt) {
+              selectedItems.push(createDashboardItem(underShirt, 'top'));
+              usedColors.push(underShirt.colour?.toLowerCase() || '');
+              console.log(`🧥 [selectOutfitByOccasion] Added under-shirt for jacket: ${underShirt.product_name}`);
+            }
+          }
+          
+          selectedItems.push(createDashboardItem(formalBottom, 'bottom'));
           usedColors.push(formalBottom.colour?.toLowerCase() || '');
-          console.log(`👔 [selectOutfitByOccasion] Selected WORK outfit: ${formalTop.product_name} + ${formalBottom.product_name}`);
+          console.log(`👔 [selectOutfitByOccasion] Selected WORK outfit: ${formalTop.product_name} + ${formalBottom.product_name}${isJacket ? ' (with jacket)' : ''}`);
         }
       }
       break;
       
     case 'evening':
-      // ערב - שמלה או תלבושת אלגנטית
+      // ערב - שמלה (ללא חלק תחתון) או תלבושת אלגנטית
       if (categories.dresses.length > 0) {
         const dress = categories.dresses[0];
         selectedItems.push(createDashboardItem(dress, 'dress'));
         usedColors.push(dress.colour?.toLowerCase() || '');
-        console.log(`👗 [selectOutfitByOccasion] Selected EVENING dress: ${dress.product_name}`);
+        console.log(`👗 [selectOutfitByOccasion] Selected EVENING dress: ${dress.product_name} (no bottom needed)`);
       } else if (categories.tops.length > 0 && categories.bottoms.length > 0) {
         const elegantTop = categories.tops[0];
         const elegantBottom = categories.bottoms[0];
+        
+        // בדיקה אם הפריט העליון הוא ז'קט
+        const isJacket = isJacketItem(elegantTop);
+        
         selectedItems.push(createDashboardItem(elegantTop, 'top'));
-        selectedItems.push(createDashboardItem(elegantBottom, 'bottom'));
         usedColors.push(elegantTop.colour?.toLowerCase() || '');
+        
+        // אם זה ז'קט, מוסיפים חולצה מתחת
+        if (isJacket && categories.tops.length > 1) {
+          const underShirt = categories.tops.find(item => !isJacketItem(item) && item.id !== elegantTop.id) || categories.tops[1];
+          if (underShirt) {
+            selectedItems.push(createDashboardItem(underShirt, 'top'));
+            usedColors.push(underShirt.colour?.toLowerCase() || '');
+            console.log(`🧥 [selectOutfitByOccasion] Added under-shirt for jacket: ${underShirt.product_name}`);
+          }
+        }
+        
+        selectedItems.push(createDashboardItem(elegantBottom, 'bottom'));
         usedColors.push(elegantBottom.colour?.toLowerCase() || '');
-        console.log(`👗 [selectOutfitByOccasion] Selected EVENING outfit: ${elegantTop.product_name} + ${elegantBottom.product_name}`);
+        console.log(`👗 [selectOutfitByOccasion] Selected EVENING outfit: ${elegantTop.product_name} + ${elegantBottom.product_name}${isJacket ? ' (with jacket)' : ''}`);
       }
       break;
       
     case 'casual':
     case 'general':
-      // מזדמן - חולצה + מכנס/חצאית או שמלה נוחה
+      // מזדמן - חולצה + מכנס/חצאית או שמלה נוחה (ללא חלק תחתון)
       console.log(`👕 [selectOutfitByOccasion] Processing CASUAL/GENERAL outfit selection`);
       console.log(`👕 [selectOutfitByOccasion] Available dresses: ${categories.dresses.length}, tops: ${categories.tops.length}, bottoms: ${categories.bottoms.length}`);
       
       if (categories.dresses.length > 0 && Math.random() > 0.5) {
-        // לפעמים בוחרים שמלה גם לאירוע מזדמן
+        // לפעמים בוחרים שמלה גם לאירוע מזדמן - ללא חלק תחתון
         const casualDress = categories.dresses[0];
         selectedItems.push(createDashboardItem(casualDress, 'dress'));
         usedColors.push(casualDress.colour?.toLowerCase() || '');
-        console.log(`👗 [selectOutfitByOccasion] Selected CASUAL dress: ${casualDress.product_name}`);
+        console.log(`👗 [selectOutfitByOccasion] Selected CASUAL dress: ${casualDress.product_name} (no bottom needed)`);
       } else if (categories.tops.length > 0 && categories.bottoms.length > 0) {
         const casualTop = categories.tops[0];
         const casualBottom = categories.bottoms[0];
+        
+        // בדיקה אם הפריט העליון הוא ז'קט
+        const isJacket = isJacketItem(casualTop);
+        
         selectedItems.push(createDashboardItem(casualTop, 'top'));
-        selectedItems.push(createDashboardItem(casualBottom, 'bottom'));
         usedColors.push(casualTop.colour?.toLowerCase() || '');
+        
+        // אם זה ז'קט, מוסיפים חולצה מתחת
+        if (isJacket && categories.tops.length > 1) {
+          const underShirt = categories.tops.find(item => !isJacketItem(item) && item.id !== casualTop.id) || categories.tops[1];
+          if (underShirt) {
+            selectedItems.push(createDashboardItem(underShirt, 'top'));
+            usedColors.push(underShirt.colour?.toLowerCase() || '');
+            console.log(`🧥 [selectOutfitByOccasion] Added under-shirt for jacket: ${underShirt.product_name}`);
+          }
+        }
+        
+        selectedItems.push(createDashboardItem(casualBottom, 'bottom'));
         usedColors.push(casualBottom.colour?.toLowerCase() || '');
-        console.log(`👕 [selectOutfitByOccasion] Selected CASUAL outfit: ${casualTop.product_name} + ${casualBottom.product_name}`);
+        console.log(`👕 [selectOutfitByOccasion] Selected CASUAL outfit: ${casualTop.product_name} + ${casualBottom.product_name}${isJacket ? ' (with jacket)' : ''}`);
       }
       break;
       
     case 'weekend':
-      // סוף שבוע - נוח ורגוע, גם שמלות נוחות אפשריות
+      // סוף שבוע - נוח ורגוע, גם שמלות נוחות אפשריות (ללא חלק תחתון)
       if (categories.dresses.length > 0 && Math.random() > 0.6) {
-        // לפעמים בוחרים שמלה גם לסוף השבוע
+        // לפעמים בוחרים שמלה גם לסוף השבוע - ללא חלק תחתון
         const weekendDress = categories.dresses[0];
         selectedItems.push(createDashboardItem(weekendDress, 'dress'));
         usedColors.push(weekendDress.colour?.toLowerCase() || '');
-        console.log(`👗 [selectOutfitByOccasion] Selected WEEKEND dress: ${weekendDress.product_name}`);
+        console.log(`👗 [selectOutfitByOccasion] Selected WEEKEND dress: ${weekendDress.product_name} (no bottom needed)`);
       } else if (categories.tops.length > 0 && categories.bottoms.length > 0) {
         const comfortableTop = categories.tops[0];
         const comfortableBottom = categories.bottoms[0];
+        
+        // בדיקה אם הפריט העליון הוא ז'קט
+        const isJacket = isJacketItem(comfortableTop);
+        
         selectedItems.push(createDashboardItem(comfortableTop, 'top'));
-        selectedItems.push(createDashboardItem(comfortableBottom, 'bottom'));
         usedColors.push(comfortableTop.colour?.toLowerCase() || '');
+        
+        // אם זה ז'קט, מוסיפים חולצה מתחת
+        if (isJacket && categories.tops.length > 1) {
+          const underShirt = categories.tops.find(item => !isJacketItem(item) && item.id !== comfortableTop.id) || categories.tops[1];
+          if (underShirt) {
+            selectedItems.push(createDashboardItem(underShirt, 'top'));
+            usedColors.push(underShirt.colour?.toLowerCase() || '');
+            console.log(`🧥 [selectOutfitByOccasion] Added under-shirt for jacket: ${underShirt.product_name}`);
+          }
+        }
+        
+        selectedItems.push(createDashboardItem(comfortableBottom, 'bottom'));
         usedColors.push(comfortableBottom.colour?.toLowerCase() || '');
-        console.log(`👕 [selectOutfitByOccasion] Selected WEEKEND outfit: ${comfortableTop.product_name} + ${comfortableBottom.product_name}`);
+        console.log(`👕 [selectOutfitByOccasion] Selected WEEKEND outfit: ${comfortableTop.product_name} + ${comfortableBottom.product_name}${isJacket ? ' (with jacket)' : ''}`);
       }
       break;
       
@@ -441,11 +500,26 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
       if (categories.tops.length > 0 && categories.bottoms.length > 0) {
         const defaultTop = categories.tops[0];
         const defaultBottom = categories.bottoms[0];
+        
+        // בדיקה אם הפריט העליון הוא ז'קט
+        const isJacket = isJacketItem(defaultTop);
+        
         selectedItems.push(createDashboardItem(defaultTop, 'top'));
-        selectedItems.push(createDashboardItem(defaultBottom, 'bottom'));
         usedColors.push(defaultTop.colour?.toLowerCase() || '');
+        
+        // אם זה ז'קט, מוסיפים חולצה מתחת
+        if (isJacket && categories.tops.length > 1) {
+          const underShirt = categories.tops.find(item => !isJacketItem(item) && item.id !== defaultTop.id) || categories.tops[1];
+          if (underShirt) {
+            selectedItems.push(createDashboardItem(underShirt, 'top'));
+            usedColors.push(underShirt.colour?.toLowerCase() || '');
+            console.log(`🧥 [selectOutfitByOccasion] Added under-shirt for jacket: ${underShirt.product_name}`);
+          }
+        }
+        
+        selectedItems.push(createDashboardItem(defaultBottom, 'bottom'));
         usedColors.push(defaultBottom.colour?.toLowerCase() || '');
-        console.log(`👕 [selectOutfitByOccasion] Selected DEFAULT outfit: ${defaultTop.product_name} + ${defaultBottom.product_name}`);
+        console.log(`👕 [selectOutfitByOccasion] Selected DEFAULT outfit: ${defaultTop.product_name} + ${defaultBottom.product_name}${isJacket ? ' (with jacket)' : ''}`);
       }
       break;
   }
@@ -1035,6 +1109,27 @@ function isFormalItem(item: any): boolean {
   
   const formalKeywords = ['בלייזר', 'חליפה', 'חצאית', 'blazer', 'suit', 'formal', 'dress shirt'];
   return formalKeywords.some(keyword => searchText.includes(keyword));
+}
+
+/**
+ * Check if item is a jacket/coat/blazer that needs an undershirt
+ */
+function isJacketItem(item: any): boolean {
+  const name = (item?.product_name || item?.name || '').toLowerCase();
+  const family = (item?.product_family || '').toLowerCase();
+  const subfamily = (item?.product_subfamily || '').toLowerCase();
+  
+  const searchText = `${name} ${family} ${subfamily}`;
+  
+  return searchText.includes('jacket') ||
+         searchText.includes('blazer') ||
+         searchText.includes('coat') ||
+         searchText.includes('cardigan') ||
+         searchText.includes('sweater') ||
+         name.includes('ז\'קט') ||
+         name.includes('מעיל') ||
+         name.includes('קרדיגן') ||
+         name.includes('סוודר');
 }
 
 /**
