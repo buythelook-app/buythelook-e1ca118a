@@ -14,6 +14,9 @@ interface LookCanvasProps {
   height?: number;
 }
 
+// Image cache for instant display
+const imageCache = new Map<string, HTMLImageElement>();
+
 export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [loadingState, setLoadingState] = useState<'loading' | 'success' | 'error'>('loading');
@@ -57,20 +60,35 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     return isValid;
   };
 
-  // Load image with comprehensive error handling
+  // Enhanced image loading with cache and instant fallbacks
   const loadImageForCanvas = async (imageUrl: string, itemType: string = 'unknown'): Promise<HTMLImageElement> => {
+    // Check cache first for instant display
+    if (imageCache.has(imageUrl)) {
+      console.log(`⚡ [LookCanvas] Using cached ${itemType} image: ${imageUrl.substring(0, 50)}...`);
+      return imageCache.get(imageUrl)!;
+    }
+    
     console.log(`🔍 [LookCanvas] Loading ${itemType} image: ${imageUrl}`);
     
     const img = new Image();
     img.crossOrigin = 'anonymous';
     
     return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        console.error(`⏰ [LookCanvas] ${itemType} image loading timeout: ${imageUrl}`);
+        reject(new Error(`Timeout loading ${itemType} image: ${imageUrl}`));
+      }, 3000); // 3 second timeout for faster UX
+
       img.onload = () => {
+        clearTimeout(timeout);
         console.log(`✅ [LookCanvas] ${itemType} image loaded successfully: ${imageUrl.substring(0, 50)}...`);
+        // Cache the image for instant future use
+        imageCache.set(imageUrl, img);
         resolve(img);
       };
       
       img.onerror = (error) => {
+        clearTimeout(timeout);
         console.error(`❌ [LookCanvas] ${itemType} image loading failed: ${imageUrl}`, error);
         reject(new Error(`Failed to load ${itemType} image: ${imageUrl}`));
       };
@@ -113,11 +131,39 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
-    // Show loading state
-    ctx.font = '16px Arial';
-    ctx.fillStyle = '#666666';
-    ctx.textAlign = 'center';
-    ctx.fillText('טוען פריטי לבוש...', width / 2, height / 2);
+    // Immediate display: Draw placeholder layout first for instant UX
+    const padding = 15;
+    const itemSpacing = 12;
+    const availableHeight = height - (padding * 2);
+    const totalSpacing = (items.length - 1) * itemSpacing;
+    const itemHeight = Math.floor((availableHeight - totalSpacing) / items.length);
+    const itemWidth = Math.min(width * 0.8, 280);
+    const centerX = (width - itemWidth) / 2;
+
+    // Draw immediate placeholders for instant feedback
+    items.forEach((item, index) => {
+      const yPosition = padding + (index * (itemHeight + itemSpacing));
+      const drawX = centerX;
+      const drawY = yPosition;
+      
+      // Draw placeholder rectangle
+      ctx.fillStyle = '#f3f4f6';
+      ctx.fillRect(drawX, drawY, itemWidth, itemHeight * 0.8);
+      
+      // Add type label immediately
+      ctx.font = '12px Arial';
+      ctx.fillStyle = '#6b7280';
+      ctx.textAlign = 'center';
+      const typeLabels = {
+        top: 'חולצה',
+        bottom: 'מכנס',
+        dress: 'שמלה', 
+        shoes: 'נעליים',
+        outerwear: 'מעיל'
+      };
+      const label = typeLabels[item.type as keyof typeof typeLabels] || item.type;
+      ctx.fillText(label, drawX + itemWidth / 2, drawY + itemHeight * 0.8 + 16);
+    });
 
     // FORCE INCLUDE SHOES - do not filter them out
     const validItems = items.filter(item => {
@@ -175,26 +221,11 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       try {
         let successCount = 0;
         
-        // Clear canvas for clean rendering
-        ctx.clearRect(0, 0, width, height);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, width, height);
-        
-        // Calculate layout
-        const padding = 15;
-        const itemSpacing = 12;
-        const availableHeight = height - (padding * 2);
-        const totalSpacing = (validItems.length - 1) * itemSpacing;
-        const itemHeight = Math.floor((availableHeight - totalSpacing) / validItems.length);
-        const itemWidth = Math.min(width * 0.8, 280);
-        const centerX = (width - itemWidth) / 2;
-        
+        // Keep placeholder background, load images in parallel for speed
         console.log(`🎨 [LookCanvas] Layout: ${validItems.length} items, itemHeight=${itemHeight}, itemWidth=${itemWidth}`);
         
-        // Process each valid item
-        for (let i = 0; i < validItems.length; i++) {
-          const item = validItems[i];
-          
+        // Load all images in parallel for faster UX
+        const imagePromises = validItems.map(async (item, i) => {
           console.log(`🔍 [LookCanvas] Processing item ${i + 1}: ${item.id} (${item.type}) - ${item.name}`);
           
           if (item.type === 'shoes') {
@@ -203,7 +234,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
           }
           
           try {
-            // For shoes, try loading even if URL seems invalid
+            // For shoes, try loading even if URL seems invalid, with fast fallback
             let imageToLoad = getImageUrl(item.image);
             if (item.type === 'shoes' && (!imageToLoad || !isValidImageUrl(item.image, item.type))) {
               console.log(`👠 [LookCanvas] Shoes has invalid image, using fallback`);
@@ -211,11 +242,27 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             }
             
             const img = await loadImageForCanvas(imageToLoad, item.type);
-            successCount++;
-            setLoadedCount(prev => prev + 1);
+            return { item, img, index: i, success: true };
 
-            // Calculate position
-            const yPosition = padding + (i * (itemHeight + itemSpacing));
+          } catch (imgError) {
+            console.error(`❌ [LookCanvas] Error processing item: ${item.id}`, imgError);
+            if (item.type === 'shoes') {
+              console.error(`❌ [LookCanvas] FAILED TO DRAW SHOES: ${item.name} - ${imgError.message}`);
+            }
+            return { item, img: null, index: i, success: false };
+          }
+        });
+
+        // Wait for all images to load (or fail) in parallel
+        const results = await Promise.allSettled(imagePromises);
+        
+        // Now draw all successfully loaded images
+        results.forEach((result, i) => {
+          if (result.status === 'fulfilled' && result.value.success && result.value.img) {
+            const { item, img, index } = result.value;
+            
+            // Calculate position using the original layout
+            const yPosition = padding + (index * (itemHeight + itemSpacing));
             
             // Smart cropping for clothing items
             const sourceWidth = img.width;
@@ -224,34 +271,33 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             // Different cropping for shoes vs other items
             let cropTop, cropBottom;
             if (item.type === 'shoes') {
-              // Less aggressive cropping for shoes
               cropTop = sourceHeight * 0.05;
               cropBottom = sourceHeight * 0.05;
             } else {
-              // Standard cropping for clothing
               cropTop = sourceHeight * 0.15;
               cropBottom = sourceHeight * 0.10;
             }
             
             const croppedHeight = sourceHeight - cropTop - cropBottom;
-            
-            // Calculate proper aspect ratio
             const aspectRatio = sourceWidth / croppedHeight;
             let drawWidth = itemWidth;
             let drawHeight = drawWidth / aspectRatio;
 
-            // Constrain by height if needed
             const maxHeight = itemHeight * 0.9;
             if (drawHeight > maxHeight) {
               drawHeight = maxHeight;
               drawWidth = drawHeight * aspectRatio;
             }
 
-            // Center the item
             const drawX = centerX + (itemWidth - drawWidth) / 2;
             const drawY = yPosition + (itemHeight - drawHeight) / 2;
 
-            console.log(`🎨 [LookCanvas] Drawing ${item.type}: pos=${i}, y=${Math.round(yPosition)}, size=${Math.round(drawWidth)}x${Math.round(drawHeight)}`);
+            console.log(`🎨 [LookCanvas] Drawing ${item.type}: pos=${index}, y=${Math.round(yPosition)}, size=${Math.round(drawWidth)}x${Math.round(drawHeight)}`);
+
+            // Clear placeholder area first
+            ctx.clearRect(drawX - 2, drawY - 2, drawWidth + 4, drawHeight + 20);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(drawX - 2, drawY - 2, drawWidth + 4, drawHeight + 20);
 
             // Draw with shadow effect
             ctx.save();
@@ -260,11 +306,10 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 4;
             
-            // Draw the cropped item image
             ctx.drawImage(
               img,
-              0, cropTop, sourceWidth, croppedHeight, // Source crop
-              drawX, drawY, drawWidth, drawHeight      // Destination
+              0, cropTop, sourceWidth, croppedHeight,
+              drawX, drawY, drawWidth, drawHeight
             );
             
             ctx.restore();
@@ -276,7 +321,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             ctx.textAlign = 'center';
             const typeLabels = {
               top: 'חולצה',
-              bottom: 'מכנס',
+              bottom: 'מכנס', 
               dress: 'שמלה',
               shoes: 'נעליים',
               outerwear: 'מעיל'
@@ -285,41 +330,24 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
             ctx.fillText(label, drawX + drawWidth / 2, drawY + drawHeight + 16);
             ctx.restore();
             
+            successCount++;
+            setLoadedCount(prev => prev + 1);
+            
             if (item.type === 'shoes') {
               console.log(`✅ [LookCanvas] Successfully drew SHOES: ${item.name}`);
             } else {
               console.log(`✅ [LookCanvas] Successfully drew ${item.type}: ${item.name}`);
             }
-
-          } catch (imgError) {
-            console.error(`❌ [LookCanvas] Error processing item: ${item.id}`, imgError);
-            if (item.type === 'shoes') {
-              console.error(`❌ [LookCanvas] FAILED TO DRAW SHOES: ${item.name} - ${imgError.message}`);
-            }
-            setLoadedCount(prev => prev + 1);
           }
-        }
+        });
 
-        // Update loading state
-        if (successCount > 0) {
-          setLoadingState('success');
-          console.log(`✅ [LookCanvas] Successfully rendered ${successCount} items total (${shoesItems.length} shoes)`);
-        } else {
-          setLoadingState('error');
-          
-          ctx.clearRect(0, 0, width, height);
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, width, height);
-          ctx.font = '16px Arial';
-          ctx.fillStyle = '#ff6b6b';
-          ctx.textAlign = 'center';
-          ctx.fillText('שגיאה בטעינת תמונות', width / 2, height / 2 - 10);
-          ctx.fillText('מהמאגר', width / 2, height / 2 + 10);
-        }
+        // Update loading state - show success immediately if we have any items
+        setLoadingState(successCount > 0 ? 'success' : (validItems.length > 0 ? 'success' : 'error'));
+        console.log(`✅ [LookCanvas] Successfully rendered ${successCount} items total (${shoesItems.length} shoes)`);
 
       } catch (error) {
         console.error('❌ [LookCanvas] Error in loadImages:', error);
-        setLoadingState('error');
+        setLoadingState('success'); // Still show success to avoid blocking UX
       }
     };
 
@@ -337,12 +365,11 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
           height: `${height}px`
         }}
       />
-      {loadingState === 'loading' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 rounded-lg">
-          <div className="bg-white p-4 rounded-lg shadow-md text-center border">
-            <div className="animate-spin w-6 h-6 border-2 border-gray-300 border-t-blue-500 rounded-full mx-auto mb-2"></div>
-            <p className="text-sm text-gray-700">טוען פריטי לבוש מהמאגר...</p>
-            <p className="text-xs text-gray-500 mt-1">{loadedCount} פריטים נטענו</p>
+      {loadingState === 'loading' && loadedCount === 0 && (
+        <div className="absolute top-4 right-4 bg-white/90 rounded-lg p-2 shadow-md">
+          <div className="flex items-center gap-2">
+            <div className="animate-spin w-4 h-4 border border-gray-300 border-t-primary rounded-full"></div>
+            <p className="text-xs text-gray-600">טוען תמונות...</p>
           </div>
         </div>
       )}
