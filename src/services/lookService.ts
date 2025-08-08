@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabaseClient";
 import { DashboardItem } from "@/types/lookTypes";
 import { extractImageUrl } from "./outfitGenerationService";
@@ -8,12 +7,15 @@ import { extractZaraImageUrl, ZaraImageData } from "@/utils/imageUtils";
 import logger from "@/lib/logger";
 import { testSupabaseConnection } from "@/lib/supabaseHealthCheck";
 
-// Global tracking to ensure variety across occasions - separate for each occasion
+// Enhanced variety tracking with session-based reset
 let globalUsedItemIds: { [occasion: string]: Set<string> } = {};
+let sessionUsedItemIds: { [occasion: string]: Set<string> } = {};
 let lastResetTime = Date.now();
+let sessionItemCount = 0;
 
-// Global tracking for used shoes to ensure variety
+// Enhanced shoes tracking with multiple rotation pools
 let globalUsedShoesIds: Set<string> = new Set();
+let sessionShoesRotation = 0;
 
 // Updated type for shoes data matching the zara_cloth database schema
 type ZaraShoesData = {
@@ -30,6 +32,93 @@ type ZaraShoesData = {
   availability: boolean | null;
   [key: string]: any;
 };
+
+/**
+ * Enhanced shuffle algorithm that considers style matching and variety
+ */
+function enhancedShuffleWithStyleMatching(items: any[], styleProfile: string, occasion: string): any[] {
+  console.log(`🎲 [enhancedShuffleWithStyleMatching] Applying enhanced shuffle for ${styleProfile} style, ${occasion} occasion`);
+  
+  // First, score items based on style matching
+  const scoredItems = items.map(item => {
+    let score = Math.random(); // Base randomness
+    
+    // Style matching bonus
+    if (styleProfile && item.product_subfamily) {
+      const styleKeywords = getStyleKeywords(styleProfile);
+      const itemDescription = (item.product_name + ' ' + item.product_subfamily).toLowerCase();
+      
+      styleKeywords.forEach(keyword => {
+        if (itemDescription.includes(keyword)) {
+          score += 0.3; // Boost style-matching items
+        }
+      });
+    }
+    
+    // Occasion matching bonus
+    const occasionKeywords = getOccasionKeywords(occasion);
+    const itemDescription = (item.product_name + ' ' + (item.product_subfamily || '')).toLowerCase();
+    
+    occasionKeywords.forEach(keyword => {
+      if (itemDescription.includes(keyword)) {
+        score += 0.2; // Boost occasion-appropriate items
+      }
+    });
+    
+    // Price diversity bonus - avoid always picking cheapest
+    const priceRank = items.findIndex(i => i.id === item.id) / items.length;
+    if (priceRank > 0.3 && priceRank < 0.8) {
+      score += 0.15; // Boost mid-range items
+    }
+    
+    return { ...item, matchScore: score };
+  });
+  
+  // Sort by score with some randomness to maintain variety
+  scoredItems.sort((a, b) => {
+    const scoreDiff = b.matchScore - a.matchScore;
+    const randomFactor = (Math.random() - 0.5) * 0.3; // 30% randomness
+    return scoreDiff + randomFactor;
+  });
+  
+  console.log(`🎯 [enhancedShuffleWithStyleMatching] Top 3 scored items:`, scoredItems.slice(0, 3).map(item => ({
+    name: item.product_name,
+    score: item.matchScore.toFixed(2),
+    family: item.product_subfamily
+  })));
+  
+  return scoredItems;
+}
+
+/**
+ * Get style-specific keywords for matching
+ */
+function getStyleKeywords(styleProfile: string): string[] {
+  const styleMap: { [key: string]: string[] } = {
+    'classic': ['blazer', 'shirt', 'trousers', 'formal', 'elegant', 'timeless'],
+    'romantic': ['floral', 'lace', 'dress', 'feminine', 'soft', 'delicate'],
+    'minimalist': ['simple', 'clean', 'basic', 'minimal', 'essential'],
+    'casual': ['comfortable', 'relaxed', 'everyday', 'casual', 'easy'],
+    'boohoo': ['trendy', 'fashion', 'statement', 'bold', 'contemporary'],
+    'sporty': ['active', 'sporty', 'athletic', 'comfortable', 'functional']
+  };
+  
+  return styleMap[styleProfile.toLowerCase()] || [];
+}
+
+/**
+ * Get occasion-specific keywords for matching
+ */
+function getOccasionKeywords(occasion: string): string[] {
+  const occasionMap: { [key: string]: string[] } = {
+    'work': ['formal', 'professional', 'business', 'office', 'smart'],
+    'evening': ['elegant', 'party', 'formal', 'dressy', 'special'],
+    'casual': ['casual', 'everyday', 'comfortable', 'relaxed'],
+    'weekend': ['relaxed', 'comfortable', 'leisure', 'casual', 'easy']
+  };
+  
+  return occasionMap[occasion.toLowerCase()] || [];
+}
 
 /**
  * מחזיר הצעת תלבושת ראשונה על בסיס ניתוח הסגנון
@@ -94,11 +183,15 @@ export async function fetchFirstOutfitSuggestion(forceRefresh: boolean = false):
       finalStyle: finalStyle
     });
 
-    // Reset global tracking if needed
-    if (forceRefresh || Date.now() - lastResetTime > 300000) { // Reset every 5 minutes
+    // Enhanced reset logic - reset when forced or when we've seen many items
+    if (forceRefresh || sessionItemCount > 50 || Date.now() - lastResetTime > 1800000) { // Reset every 30 minutes or after 50 items
+      console.log('🔄 [fetchFirstOutfitSuggestion] Resetting variety tracking for enhanced diversity');
       globalUsedItemIds = {};
+      sessionUsedItemIds = {};
       globalUsedShoesIds.clear();
       lastResetTime = Date.now();
+      sessionItemCount = 0;
+      sessionShoesRotation = 0;
     }
 
     const occasionOutfit = await createAdvancedOutfit(finalStyle, 'general', [], 'general');
@@ -193,15 +286,23 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
   console.log(`🎨 [createAdvancedOutfit] ===== CREATING OUTFIT FOR ${occasion.toUpperCase()} (SHOES FROM ZARA_CLOTH TABLE) =====`);
   
   try {
-    // Initialize occasion tracking if not exists
+    // Initialize tracking for both global and session
     if (!globalUsedItemIds[occasion]) {
       globalUsedItemIds[occasion] = new Set();
+    }
+    if (!sessionUsedItemIds[occasion]) {
+      sessionUsedItemIds[occasion] = new Set();
     }
     
     console.log(`🚨 [createAdvancedOutfit] CRITICAL DEBUG - FETCHING CLOTHING FROM ZARA_CLOTH TABLE (NO SHOES IN THIS QUERY)`);
     
-    // קבלת פריטי לבוש מהמאגר zara_cloth (ללא נעליים - נטפל בהן בנפרד)
-    const { data: allClothingItems, error: clothingError } = await supabase
+    // Enhanced query with variety-focused ordering and price diversity
+    const priceRandomizer = Math.random();
+    const orderByPrice = priceRandomizer < 0.4 ? 'asc' : (priceRandomizer < 0.8 ? 'desc' : 'random');
+    
+    console.log(`💰 [createAdvancedOutfit] Using ${orderByPrice} price ordering for variety`);
+    
+    let query = supabase
       .from('zara_cloth')
       .select('*')
       .not('image', 'is', null)
@@ -212,8 +313,18 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
       .not('product_subfamily', 'ilike', '%shoe%')
       .not('product_subfamily', 'ilike', '%sandal%')
       .not('product_subfamily', 'ilike', '%boot%')
-      .order('price', { ascending: true })
-      .limit(1000);
+      .limit(1500);
+
+    // Add varied ordering for diversity
+    if (orderByPrice === 'random') {
+      // For random variety, offset by session count
+      const offset = (sessionItemCount * 50) % 1000;
+      query = query.range(offset, offset + 1499);
+    } else {
+      query = query.order('price', { ascending: orderByPrice === 'asc' });
+    }
+
+    const { data: allClothingItems, error: clothingError } = await query;
 
     if (clothingError) {
       console.error('❌ [createAdvancedOutfit] Database error for clothing:', clothingError);
@@ -227,14 +338,27 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
 
     console.log(`🔍 [createAdvancedOutfit] Found ${allClothingItems.length} clothing items (NO SHOES) from zara_cloth`);
 
-    // סינון פריטי לבוש בלבד (ללא נעליים)
+    // Enhanced filtering with session tracking and style matching
     let filteredClothingItems = allClothingItems.filter(item => {
       const hasValid = hasValidImageData(item.image);
-      const notUsed = !globalUsedItemIds[occasion].has(item.id);
+      const notGloballyUsed = !globalUsedItemIds[occasion].has(item.id);
+      const notSessionUsed = !sessionUsedItemIds[occasion].has(item.id);
       const isClothing = isActualClothingItem(item);
       
-      return hasValid && notUsed && isClothing && item.availability !== false;
+      return hasValid && notGloballyUsed && notSessionUsed && isClothing && item.availability !== false;
     });
+
+    // If we don't have enough items, allow session reuse but not global reuse
+    if (filteredClothingItems.length < 10) {
+      console.log(`⚠️ [createAdvancedOutfit] Low item count (${filteredClothingItems.length}), allowing session reuse`);
+      filteredClothingItems = allClothingItems.filter(item => {
+        const hasValid = hasValidImageData(item.image);
+        const notGloballyUsed = !globalUsedItemIds[occasion].has(item.id);
+        const isClothing = isActualClothingItem(item);
+        
+        return hasValid && notGloballyUsed && isClothing && item.availability !== false;
+      });
+    }
     
     console.log(`🔍 [createAdvancedOutfit] ${filteredClothingItems.length} valid clothing items after filtering for ${occasion}`);
     
@@ -243,11 +367,11 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
       throw new Error(`No valid clothing items for ${occasion}`);
     }
     
-    // ערבוב הפריטים לקבלת מגוון
-    filteredClothingItems = shuffleArray(filteredClothingItems);
+    // Enhanced shuffling with style-based weighting
+    filteredClothingItems = enhancedShuffleWithStyleMatching(filteredClothingItems, styleProfile, occasion);
     
-    // חלוקת פריטים לקטגוריות (ללא נעליים)
-    const categorizedItems = categorizeItemsAdvanced(filteredClothingItems, eventType);
+    // Advanced categorization with style preferences
+    const categorizedItems = categorizeItemsAdvanced(filteredClothingItems, eventType, styleProfile);
     
     console.log(`📋 [createAdvancedOutfit] קטגוריות לבוש:`, Object.keys(categorizedItems).map(key => ({
       category: key,
@@ -282,10 +406,13 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
       });
     }
     
-    // Mark selected clothing items as used for this occasion
+    // Mark selected clothing items as used for both tracking systems
     outfitItems.forEach(item => {
       if (item.id && !item.id.includes('zara-shoes-')) {
-        globalUsedItemIds[occasion].add(item.id.split('-')[0]); // Remove occasion suffix
+        const baseId = item.id.split('-')[0];
+        globalUsedItemIds[occasion].add(baseId);
+        sessionUsedItemIds[occasion].add(baseId);
+        sessionItemCount++;
       }
     });
     
@@ -310,6 +437,52 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 /**
+ * Enhanced categorization with style matching
+ */
+function categorizeItemsAdvanced(items: any[], eventType: string, styleProfile?: string): any {
+  const categories = {
+    tops: [],
+    bottoms: [],
+    dresses: [],
+    outerwear: [],
+    accessories: []
+  };
+  
+  items.forEach(item => {
+    const productFamily = item.product_family?.toLowerCase() || '';
+    const productSubfamily = item.product_subfamily?.toLowerCase() || '';
+    const productName = item.product_name?.toLowerCase() || '';
+    
+    // Enhanced categorization logic with style preferences
+    if (productFamily.includes('dress') || productSubfamily.includes('dress') || productName.includes('dress')) {
+      categories.dresses.push(item);
+    } else if (productFamily.includes('top') || productSubfamily.includes('top') || productSubfamily.includes('shirt') || 
+               productSubfamily.includes('blouse') || productName.includes('top') || productName.includes('shirt')) {
+      categories.tops.push(item);
+    } else if (productFamily.includes('bottom') || productSubfamily.includes('trouser') || productSubfamily.includes('pant') ||
+               productSubfamily.includes('skirt') || productName.includes('trouser') || productName.includes('skirt')) {
+      categories.bottoms.push(item);
+    } else if (productFamily.includes('outerwear') || productSubfamily.includes('jacket') || productSubfamily.includes('coat')) {
+      categories.outerwear.push(item);
+    } else {
+      // Try to categorize based on product name patterns
+      if (productName.includes('dress')) {
+        categories.dresses.push(item);
+      } else if (productName.includes('shirt') || productName.includes('top') || productName.includes('blouse')) {
+        categories.tops.push(item);
+      } else if (productName.includes('trouser') || productName.includes('pant') || productName.includes('skirt')) {
+        categories.bottoms.push(item);
+      } else {
+        // Default to tops for uncategorized items
+        categories.tops.push(item);
+      }
+    }
+  });
+  
+  return categories;
+}
+
+/**
  * בחירת תלבושת לפי סוג אירוע - עם נעליים מטבלת zara_cloth
  * 🚨 CRITICAL: תמיד מוסיף נעליים בלי קשר לסוג התלבושת
  */
@@ -319,13 +492,25 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
   const selectedItems: DashboardItem[] = [];
   let usedColors: string[] = [];
 
+  // Enhanced selection logic with variety
+  const selectItemWithVariety = (itemsArray: any[], itemType: string) => {
+    if (itemsArray.length === 0) return null;
+    
+    // Instead of always taking [0], use rotation based on session count
+    const rotationIndex = sessionItemCount % Math.min(itemsArray.length, 5);
+    const selectedIndex = Math.min(rotationIndex, itemsArray.length - 1);
+    
+    console.log(`🎲 [selectOutfitByOccasion] Selecting ${itemType} at index ${selectedIndex}/${itemsArray.length - 1} (variety rotation)`);
+    return itemsArray[selectedIndex];
+  };
+
   // לוגיקה שונה לכל סוג אירוע (ללא נעליים כאן)
   switch (occasion.toLowerCase()) {
     case 'work':
       // עבודה - תלבושת פורמלית (חולצה + מכנס/חצאית)
       if (categories.tops.length > 0 && categories.bottoms.length > 0) {
-        const formalTop = categories.tops.find(item => isFormalItem(item)) || categories.tops[0];
-        const formalBottom = categories.bottoms.find(item => isFormalItem(item)) || categories.bottoms[0];
+        const formalTop = categories.tops.find(item => isFormalItem(item)) || selectItemWithVariety(categories.tops, 'work top');
+        const formalBottom = categories.bottoms.find(item => isFormalItem(item)) || selectItemWithVariety(categories.bottoms, 'work bottom');
         
         if (formalTop && formalBottom) {
           selectedItems.push(createDashboardItem(formalTop, 'top'));
@@ -340,13 +525,13 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
     case 'evening':
       // ערב - שמלה או תלבושת אלגנטית
       if (categories.dresses.length > 0) {
-        const dress = categories.dresses[0];
+        const dress = selectItemWithVariety(categories.dresses, 'evening dress');
         selectedItems.push(createDashboardItem(dress, 'dress'));
         usedColors.push(dress.colour?.toLowerCase() || '');
         console.log(`👗 [selectOutfitByOccasion] Selected EVENING dress: ${dress.product_name}`);
       } else if (categories.tops.length > 0 && categories.bottoms.length > 0) {
-        const elegantTop = categories.tops[0];
-        const elegantBottom = categories.bottoms[0];
+        const elegantTop = selectItemWithVariety(categories.tops, 'evening top');
+        const elegantBottom = selectItemWithVariety(categories.bottoms, 'evening bottom');
         selectedItems.push(createDashboardItem(elegantTop, 'top'));
         selectedItems.push(createDashboardItem(elegantBottom, 'bottom'));
         usedColors.push(elegantTop.colour?.toLowerCase() || '');
@@ -363,13 +548,13 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
       
       if (categories.dresses.length > 0 && Math.random() > 0.5) {
         // לפעמים בוחרים שמלה גם לאירוע מזדמן
-        const casualDress = categories.dresses[0];
+        const casualDress = selectItemWithVariety(categories.dresses, 'casual dress');
         selectedItems.push(createDashboardItem(casualDress, 'dress'));
         usedColors.push(casualDress.colour?.toLowerCase() || '');
         console.log(`👗 [selectOutfitByOccasion] Selected CASUAL dress: ${casualDress.product_name}`);
       } else if (categories.tops.length > 0 && categories.bottoms.length > 0) {
-        const casualTop = categories.tops[0];
-        const casualBottom = categories.bottoms[0];
+        const casualTop = selectItemWithVariety(categories.tops, 'casual top');
+        const casualBottom = selectItemWithVariety(categories.bottoms, 'casual bottom');
         selectedItems.push(createDashboardItem(casualTop, 'top'));
         selectedItems.push(createDashboardItem(casualBottom, 'bottom'));
         usedColors.push(casualTop.colour?.toLowerCase() || '');
@@ -382,13 +567,13 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
       // סוף שבוע - נוח ורגוע, גם שמלות נוחות אפשריות
       if (categories.dresses.length > 0 && Math.random() > 0.6) {
         // לפעמים בוחרים שמלה גם לסוף השבוע
-        const weekendDress = categories.dresses[0];
+        const weekendDress = selectItemWithVariety(categories.dresses, 'weekend dress');
         selectedItems.push(createDashboardItem(weekendDress, 'dress'));
         usedColors.push(weekendDress.colour?.toLowerCase() || '');
         console.log(`👗 [selectOutfitByOccasion] Selected WEEKEND dress: ${weekendDress.product_name}`);
       } else if (categories.tops.length > 0 && categories.bottoms.length > 0) {
-        const comfortableTop = categories.tops[0];
-        const comfortableBottom = categories.bottoms[0];
+        const comfortableTop = selectItemWithVariety(categories.tops, 'weekend top');
+        const comfortableBottom = selectItemWithVariety(categories.bottoms, 'weekend bottom');
         selectedItems.push(createDashboardItem(comfortableTop, 'top'));
         selectedItems.push(createDashboardItem(comfortableBottom, 'bottom'));
         usedColors.push(comfortableTop.colour?.toLowerCase() || '');
@@ -400,8 +585,8 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
     default:
       console.log(`❓ [selectOutfitByOccasion] Unknown occasion: ${occasion}, using casual logic`);
       if (categories.tops.length > 0 && categories.bottoms.length > 0) {
-        const defaultTop = categories.tops[0];
-        const defaultBottom = categories.bottoms[0];
+        const defaultTop = selectItemWithVariety(categories.tops, 'default top');
+        const defaultBottom = selectItemWithVariety(categories.bottoms, 'default bottom');
         selectedItems.push(createDashboardItem(defaultTop, 'top'));
         selectedItems.push(createDashboardItem(defaultBottom, 'bottom'));
         usedColors.push(defaultTop.colour?.toLowerCase() || '');
@@ -449,860 +634,245 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
     // Add fallback shoes - MANDATORY, never return without shoes
     const fallbackShoes = getRandomFallbackShoes();
     selectedItems.push(fallbackShoes);
-    console.log(`🆘 [selectOutfitByOccasion] FALLBACK SHOES ADDED TO ${occasion.toUpperCase()}: ${fallbackShoes.name}`);
-  }
-
-  // If we still don't have enough items, add fallback clothing
-  if (selectedItems.length < 2) {
-    console.log(`⚠️ [selectOutfitByOccasion] Not enough items for ${occasion.toUpperCase()}, adding fallback clothing`);
-    const fallbackItems = getFallbackClothing();
-    selectedItems.push(...fallbackItems);
-  }
-
-  console.log(`🔥 [selectOutfitByOccasion] ===== FINAL OUTFIT FOR ${occasion.toUpperCase()} WITH SHOES =====`);
-  console.log(`🔥 [selectOutfitByOccasion] Total items: ${selectedItems.length}`);
-  selectedItems.forEach((item, index) => {
-    console.log(`   ${index + 1}. ${item.type.toUpperCase()}: ${item.name} (ID: ${item.id})`);
-    if (item.type === 'shoes') {
-      console.log(`      👠 SHOES IMAGE: ${item.image?.substring(0, 100)}...`);
-      console.log(`      👠 FROM ZARA_CLOTH: ${item.id.includes('zara-shoes-') ? 'YES' : 'NO'}`);
-    }
-  });
-
-  // 🚨 FINAL VERIFICATION: Ensure shoes are included
-  const finalShoesCount = selectedItems.filter(item => item.type === 'shoes').length;
-  if (finalShoesCount === 0) {
-    console.error(`❌ [selectOutfitByOccasion] CRITICAL BUG - RETURNING OUTFIT WITHOUT SHOES FOR ${occasion.toUpperCase()}!`);
-    console.error(`❌ This should NEVER happen. Adding emergency fallback shoes...`);
-    
-    const emergencyShoes = getRandomFallbackShoes();
-    selectedItems.push(emergencyShoes);
-    console.log(`🚨 [selectOutfitByOccasion] EMERGENCY SHOES ADDED: ${emergencyShoes.name}`);
+    console.log(`🆘 [selectOutfitByOccasion] Added fallback shoes: ${fallbackShoes.name}`);
   }
   
+  console.log(`🔥 [selectOutfitByOccasion] FINAL OUTFIT FOR ${occasion.toUpperCase()}: ${selectedItems.length} items`);
+  selectedItems.forEach((item, index) => {
+    console.log(`   ${index + 1}. ${item.type}: ${item.name} (ID: ${item.id})`);
+  });
+
   return selectedItems;
 }
 
 /**
- * Enhanced DEBUG: Check what shoes are available in the database for all occasions
- */
-async function debugShoesInDatabase(occasion: string): Promise<{ totalShoes: number; casualShoes: number; formalShoes: number; errors: string[] }> {
-  const errors: string[] = [];
-  
-  try {
-    console.log(`🔍 [debugShoesInDatabase] ===== COMPREHENSIVE SHOES DEBUG FOR ${occasion.toUpperCase()} =====`);
-    
-    // Query all shoes from zara_cloth table with detailed logging
-    console.log(`🔍 [debugShoesInDatabase] Querying zara_cloth table for shoes...`);
-    
-    const { data: allShoes, error } = await supabase
-      .from('zara_cloth')
-      .select('id, product_name, product_family, product_subfamily, colour, price, image, availability')
-      .or('product_family.ilike.%shoe%,product_family.ilike.%sandal%,product_family.ilike.%boot%,product_subfamily.ilike.%shoe%,product_subfamily.ilike.%sandal%,product_subfamily.ilike.%boot%')
-      .limit(200);
-
-    if (error) {
-      const errorMsg = `Database error fetching shoes: ${error.message}`;
-      console.error(`❌ [debugShoesInDatabase] ${errorMsg}`);
-      errors.push(errorMsg);
-      return { totalShoes: 0, casualShoes: 0, formalShoes: 0, errors };
-    }
-
-    if (!allShoes || allShoes.length === 0) {
-      const errorMsg = `NO SHOES FOUND IN DATABASE - This is a critical issue!`;
-      console.error(`❌ [debugShoesInDatabase] ${errorMsg}`);
-      errors.push(errorMsg);
-      return { totalShoes: 0, casualShoes: 0, formalShoes: 0, errors };
-    }
-
-    console.log(`✅ [debugShoesInDatabase] Found ${allShoes.length} total shoes in database`);
-    
-    // Check availability
-    const availableShoes = allShoes.filter(shoe => shoe.availability !== false);
-    console.log(`📊 [debugShoesInDatabase] Available shoes (not false): ${availableShoes.length}`);
-    
-    if (availableShoes.length === 0) {
-      const errorMsg = `No available shoes found - all are marked as unavailable`;
-      console.error(`❌ [debugShoesInDatabase] ${errorMsg}`);
-      errors.push(errorMsg);
-    }
-    
-    // Check for valid images
-    const shoesWithValidImages = availableShoes.filter(shoe => {
-      const hasValid = hasValidZaraShoesImageFromDB(shoe);
-      if (!hasValid) {
-        console.log(`⚠️ [debugShoesInDatabase] "${shoe.product_name}" - No valid image`);
-      }
-      return hasValid;
-    });
-    
-    console.log(`📊 [debugShoesInDatabase] Shoes with valid images: ${shoesWithValidImages.length}`);
-    
-    if (shoesWithValidImages.length === 0) {
-      const errorMsg = `No shoes with valid images found`;
-      console.error(`❌ [debugShoesInDatabase] ${errorMsg}`);
-      errors.push(errorMsg);
-    }
-    
-    // Categorize shoes by type
-    const casualShoes = shoesWithValidImages.filter(shoe => {
-      const name = (shoe.product_name || '').toLowerCase();
-      const family = (shoe.product_family || '').toLowerCase();
-      const subfamily = (shoe.product_subfamily || '').toLowerCase();
-      const searchText = `${name} ${family} ${subfamily}`;
-      
-      const isCasual = searchText.includes('sneaker') || 
-                     searchText.includes('sport') ||
-                     searchText.includes('trainer') ||
-                     searchText.includes('athletic') ||
-                     searchText.includes('running') ||
-                     searchText.includes('flat') ||
-                     searchText.includes('ballet') ||
-                     searchText.includes('loafer') ||
-                     searchText.includes('slip-on') ||
-                     searchText.includes('sandal') ||
-                     name.includes('נעלי ספורט');
-      
-      const isFormal = searchText.includes('heel') ||
-                      searchText.includes('pump') ||
-                      searchText.includes('stiletto') ||
-                      name.includes('עקב');
-      
-      return isCasual && !isFormal;
-    });
-
-    const formalShoes = shoesWithValidImages.filter(shoe => {
-      const name = (shoe.product_name || '').toLowerCase();
-      const family = (shoe.product_family || '').toLowerCase();
-      const subfamily = (shoe.product_subfamily || '').toLowerCase();
-      const searchText = `${name} ${family} ${subfamily}`;
-      
-      return searchText.includes('heel') ||
-             searchText.includes('pump') ||
-             searchText.includes('stiletto') ||
-             searchText.includes('dress') ||
-             name.includes('עקב');
-    });
-
-    console.log(`👟 [debugShoesInDatabase] CASUAL shoes found: ${casualShoes.length}`);
-    console.log(`👠 [debugShoesInDatabase] FORMAL shoes found: ${formalShoes.length}`);
-    
-    // Sample logging
-    console.log(`🔍 [debugShoesInDatabase] Sample casual shoes:`);
-    casualShoes.slice(0, 5).forEach((shoe, index) => {
-      console.log(`   ${index + 1}. "${shoe.product_name}" (Family: ${shoe.product_family})`);
-    });
-    
-    console.log(`🔍 [debugShoesInDatabase] Sample formal shoes:`);
-    formalShoes.slice(0, 5).forEach((shoe, index) => {
-      console.log(`   ${index + 1}. "${shoe.product_name}" (Family: ${shoe.product_family})`);
-    });
-    
-    // Check occasion-specific availability
-    if (occasion.toLowerCase() === 'casual' || occasion.toLowerCase() === 'general' || occasion.toLowerCase() === 'weekend') {
-      if (casualShoes.length === 0) {
-        const errorMsg = `No casual shoes available for ${occasion} occasion`;
-        console.error(`❌ [debugShoesInDatabase] ${errorMsg}`);
-        errors.push(errorMsg);
-      }
-    }
-    
-    if (occasion.toLowerCase() === 'work' || occasion.toLowerCase() === 'evening') {
-      if (formalShoes.length === 0) {
-        const errorMsg = `No formal shoes available for ${occasion} occasion`;
-        console.error(`❌ [debugShoesInDatabase] ${errorMsg}`);
-        errors.push(errorMsg);
-      }
-    }
-
-    return { 
-      totalShoes: allShoes.length, 
-      casualShoes: casualShoes.length, 
-      formalShoes: formalShoes.length, 
-      errors 
-    };
-
-  } catch (error) {
-    const errorMsg = `Unexpected error in debugShoesInDatabase: ${error}`;
-    console.error(`❌ [debugShoesInDatabase] ${errorMsg}`);
-    errors.push(errorMsg);
-    return { totalShoes: 0, casualShoes: 0, formalShoes: 0, errors };
-  }
-}
-
-/**
- * Get matching shoes from the zara_cloth table (shoes only) - with enhanced error handling and debugging
- */
-async function getMatchingShoesFromZara(occasion: string, usedColors: string[]): Promise<DashboardItem | null> {
-  try {
-    console.log(`🔥 [getMatchingShoesFromZara] ===== ENHANCED SHOES FETCH FOR ${occasion.toUpperCase()} =====`);
-    console.log(`🔥 [getMatchingShoesFromZara] Used colors:`, usedColors);
-    console.log(`🔥 [getMatchingShoesFromZara] Previously used shoes IDs:`, Array.from(globalUsedShoesIds));
-    
-    console.log(`🚨 [getMatchingShoesFromZara] STEP 1: Querying zara_cloth table for shoes...`);
-    
-    // Enhanced query with better error handling
-    const shoeQuery = supabase
-      .from('zara_cloth')
-      .select('*')
-      .or('product_family.ilike.%shoe%,product_family.ilike.%sandal%,product_family.ilike.%boot%,product_subfamily.ilike.%shoe%,product_subfamily.ilike.%sandal%,product_subfamily.ilike.%boot%')
-      .not('image', 'is', null)
-      .neq('availability', false);
-    
-    console.log(`🔍 [getMatchingShoesFromZara] STEP 2: Executing database query...`);
-    
-    const { data: shoesData, error } = await shoeQuery.limit(200);
-
-    if (error) {
-      console.error('❌ [getMatchingShoesFromZara] STEP 3: Database error:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
-      return null;
-    }
-
-    console.log(`🔍 [getMatchingShoesFromZara] STEP 3: Query successful, found ${shoesData?.length || 0} shoes`);
-
-    if (!shoesData || shoesData.length === 0) {
-      console.error('❌ [getMatchingShoesFromZara] STEP 4: No shoes found in database');
-      console.error('❌ This indicates a data problem - the zara_cloth table has no shoes');
-      return null;
-    }
-
-    console.log(`✅ [getMatchingShoesFromZara] STEP 4: Found ${shoesData.length} total shoes in ZARA_CLOTH table`);
-    
-    // Enhanced logging: show sample of what we found
-    console.log(`🔍 [getMatchingShoesFromZara] STEP 5: Sample of found shoes:`);
-    shoesData.slice(0, 3).forEach((shoe, index) => {
-      console.log(`   ${index + 1}. "${shoe.product_name}" (Family: ${shoe.product_family}, Subfamily: ${shoe.product_subfamily}, Available: ${shoe.availability})`);
-    });
-    
-    console.log(`🔍 [getMatchingShoesFromZara] STEP 6: Filtering shoes for availability and valid images...`);
-    
-    // Filter out previously used shoes and ensure valid images
-    const availableShoes = shoesData.filter(shoe => {
-      const shoeId = shoe.id || shoe.product_id?.toString() || shoe.product_name;
-      const alreadyUsed = globalUsedShoesIds.has(String(shoeId));
-      const hasValidImage = hasValidZaraShoesImageFromDB(shoe);
-      
-      if (alreadyUsed) {
-        console.log(`⚠️ [getMatchingShoesFromZara] Skipping "${shoe.product_name}" - already used`);
-      }
-      if (!hasValidImage) {
-        console.log(`⚠️ [getMatchingShoesFromZara] Skipping "${shoe.product_name}" - invalid image`);
-      }
-      
-      return !alreadyUsed && hasValidImage;
-    });
-
-    console.log(`🔍 [getMatchingShoesFromZara] STEP 7: Available unused shoes: ${availableShoes.length}`);
-
-    if (availableShoes.length === 0) {
-      console.log(`⚠️ [getMatchingShoesFromZara] STEP 8: No unused shoes available, resetting global tracking...`);
-      globalUsedShoesIds.clear();
-      
-      const validShoes = shoesData.filter(shoe => hasValidZaraShoesImageFromDB(shoe));
-      console.log(`🔍 [getMatchingShoesFromZara] STEP 9: Valid shoes after reset: ${validShoes.length}`);
-      
-      if (validShoes.length === 0) {
-        console.error(`❌ [getMatchingShoesFromZara] STEP 10: No shoes with valid images found`);
-        console.error(`❌ This indicates an image data problem in the zara_cloth table`);
-        return null;
-      }
-      
-      // Select appropriate shoe for occasion
-      const selectedShoe = selectShoeForOccasion(validShoes, occasion);
-      if (!selectedShoe) {
-        console.error(`❌ [getMatchingShoesFromZara] STEP 11: Could not select appropriate shoe for ${occasion}`);
-        return null;
-      }
-      
-      const shoeId = selectedShoe.id || selectedShoe.product_id?.toString() || selectedShoe.product_name;
-      globalUsedShoesIds.add(String(shoeId));
-      
-      const createdItem = createZaraShoesItemFromDB(selectedShoe, occasion);
-      console.log(`✅ [getMatchingShoesFromZara] STEP 12: Successfully created shoes item after reset`);
-      return createdItem;
-    }
-
-    // Select appropriate shoe for occasion from available shoes
-    console.log(`🔍 [getMatchingShoesFromZara] STEP 8: Selecting appropriate shoe for ${occasion}...`);
-    const selectedShoe = selectShoeForOccasion(availableShoes, occasion);
-    
-    if (!selectedShoe) {
-      console.error(`❌ [getMatchingShoesFromZara] STEP 9: Could not select appropriate shoe for ${occasion}`);
-      console.error(`❌ Available shoes:`, availableShoes.map(s => s.product_name));
-      return null;
-    }
-    
-    // Mark this shoe as used
-    const shoeId = selectedShoe.id || selectedShoe.product_id?.toString() || selectedShoe.product_name;
-    globalUsedShoesIds.add(String(shoeId));
-    
-    console.log(`🔍 [getMatchingShoesFromZara] STEP 10: Creating DashboardItem from selected shoe...`);
-    const createdItem = createZaraShoesItemFromDB(selectedShoe, occasion);
-    
-    console.log(`✅ [getMatchingShoesFromZara] STEP 11: Successfully created shoes item:`, {
-      name: createdItem.name,
-      id: createdItem.id,
-      hasImage: !!createdItem.image,
-      imageUrl: createdItem.image?.substring(0, 50) + '...'
-    });
-    
-    return createdItem;
-    
-  } catch (error) {
-    console.error(`❌ [getMatchingShoesFromZara] UNEXPECTED ERROR:`, error);
-    console.error(`❌ Error stack:`, error.stack);
-    return null;
-  }
-}
-
-/**
- * Select appropriate shoe for the given occasion
- */
-function selectShoeForOccasion(shoes: any[], occasion: string): any | null {
-  console.log(`🎯 [selectShoeForOccasion] Selecting shoe for ${occasion} from ${shoes.length} available shoes`);
-  
-  if (shoes.length === 0) {
-    console.error(`❌ [selectShoeForOccasion] No shoes provided`);
-    return null;
-  }
-  
-  if (occasion.toLowerCase() === 'casual' || occasion.toLowerCase() === 'general' || occasion.toLowerCase() === 'weekend') {
-    // For casual occasions, prioritize casual shoes
-    const casualShoes = shoes.filter(shoe => {
-      const name = (shoe.product_name || '').toLowerCase();
-      const family = (shoe.product_family || '').toLowerCase();
-      const subfamily = (shoe.product_subfamily || '').toLowerCase();
-      const searchText = `${name} ${family} ${subfamily}`;
-      
-      const isCasual = searchText.includes('sneaker') || 
-                     searchText.includes('sport') ||
-                     searchText.includes('trainer') ||
-                     searchText.includes('athletic') ||
-                     searchText.includes('running') ||
-                     searchText.includes('flat') ||
-                     searchText.includes('ballet') ||
-                     searchText.includes('loafer') ||
-                     searchText.includes('slip-on') ||
-                     searchText.includes('sandal') ||
-                     name.includes('נעלי ספורט');
-      
-      const isFormal = searchText.includes('heel') ||
-                      searchText.includes('pump') ||
-                      searchText.includes('stiletto');
-      
-      return isCasual && !isFormal;
-    });
-    
-    console.log(`👟 [selectShoeForOccasion] Found ${casualShoes.length} casual shoes for ${occasion}`);
-    
-    if (casualShoes.length > 0) {
-      const randomIndex = Math.floor(Math.random() * casualShoes.length);
-      const selected = casualShoes[randomIndex];
-      console.log(`✅ [selectShoeForOccasion] Selected casual shoe: "${selected.product_name}"`);
-      return selected;
-    }
-    
-    // Fallback to non-heel shoes
-    const nonHeelShoes = shoes.filter(shoe => {
-      const name = (shoe.product_name || '').toLowerCase();
-      const family = (shoe.product_family || '').toLowerCase();
-      const subfamily = (shoe.product_subfamily || '').toLowerCase();
-      const searchText = `${name} ${family} ${subfamily}`;
-      
-      return !searchText.includes('heel') && !searchText.includes('pump') && !searchText.includes('stiletto');
-    });
-    
-    if (nonHeelShoes.length > 0) {
-      const randomIndex = Math.floor(Math.random() * nonHeelShoes.length);
-      const selected = nonHeelShoes[randomIndex];
-      console.log(`⚠️ [selectShoeForOccasion] Selected non-heel shoe for casual: "${selected.product_name}"`);
-      return selected;
-    }
-  }
-  
-  // For other occasions or if no specific shoes found, select randomly
-  const randomIndex = Math.floor(Math.random() * shoes.length);
-  const selected = shoes[randomIndex];
-  console.log(`🎯 [selectShoeForOccasion] Selected random shoe for ${occasion}: "${selected.product_name}"`);
-  return selected;
-}
-
-/**
- * Check if a shoe from zara_cloth database has valid image data
- */
-function hasValidZaraShoesImageFromDB(shoe: ZaraShoesData): boolean {
-  console.log(`🔍 [hasValidZaraShoesImageFromDB] Checking "${shoe.product_name}"...`);
-  
-  const imageUrl = extractZaraShoesImageFromJSONB(shoe.image, shoe.product_name);
-  const hasValidImage = !!(imageUrl && imageUrl.includes('http'));
-  
-  console.log(`🔍 [hasValidZaraShoesImageFromDB] "${shoe.product_name}" -> Valid: ${hasValidImage}, URL: ${imageUrl?.substring(0, 50)}...`);
-  
-  return hasValidImage;
-}
-
-/**
- * Create a DashboardItem from a zara_cloth shoes record
- */
-function createZaraShoesItemFromDB(shoe: ZaraShoesData, occasion: string): DashboardItem {
-  console.log(`✅ [createZaraShoesItemFromDB] Creating item for "${shoe.product_name}"`);
-  console.log(`   - Original zara shoe data:`, shoe);
-  
-  // Extract real image URL from the JSONB image field
-  const finalImageUrl = extractZaraShoesImageFromJSONB(shoe.image, shoe.product_name);
-  console.log(`   - Extracted image URL: ${finalImageUrl}`);
-  
-  // Use real price from database or format it properly
-  const realPrice = shoe.price ? `₪${shoe.price}` : '₪299';
-  
-  // Use real product URL from database
-  const productUrl = shoe.url || '#';
-  
-  // Use id or generate a unique ID
-  const actualId = shoe.id || `zara-shoe-${Date.now()}`;
-  
-  console.log(`✅ [createZaraShoesItemFromDB] Final zara shoe item details:`);
-  console.log(`   - ID: ${actualId}`);
-  console.log(`   - Product Family: ${shoe.product_family}`);
-  console.log(`   - Real Price: ${realPrice} (DB value: ${shoe.price})`);
-  console.log(`   - Real Image URL: ${finalImageUrl}`);
-  console.log(`   - Real Product URL: ${productUrl}`);
-
-  const createdItem = {
-    id: `zara-shoes-${actualId}-${occasion}`,
-    name: shoe.product_name,
-    image: finalImageUrl || 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop',
-    type: 'shoes' as const,
-    price: realPrice, // Use real price from database
-    description: shoe.description || `נעליים מבית זארה - ${shoe.product_family || 'נעליים איכותיות'}`,
-    color: shoe.colour || 'unknown'
-  };
-  
-  console.log(`✅ [createZaraShoesItemFromDB] Created DashboardItem:`, createdItem);
-  console.log(`🚨 [createZaraShoesItemFromDB] CRITICAL DEBUG - ITEM ID CONTAINS zara-shoes-: ${createdItem.id.includes('zara-shoes-')}`);
-  
-  return createdItem;
-}
-
-/**
- * Get a random fallback shoe to ensure variety even in fallback scenarios
- */
-function getRandomFallbackShoes(): DashboardItem {
-  const fallbackShoes = [
-    {
-      name: 'נעלי ספורט שחורות',
-      image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop',
-      description: 'נעלי ספורט נוחות'
-    },
-    {
-      name: 'נעלי עור חומות',
-      image: 'https://images.unsplash.com/photo-1614252369475-531eba835eb1?w=400&h=400&fit=crop',
-      description: 'נעלי עור אלגנטיות'
-    },
-    {
-      name: 'נעלי בד לבנות',
-      image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop',
-      description: 'נעלי בד קלילות'
-    },
-    {
-      name: 'נעלי עקב שחורות',
-      image: 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400&h=400&fit=crop',
-      description: 'נעלי עקב אלגנטיות'
-    },
-    {
-      name: 'נעלי מוקסין חומות',
-      image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&h=400&fit=crop',
-      description: 'נעלי מוקסין נוחות'
-    }
-  ];
-  
-  const randomShoe = fallbackShoes[Math.floor(Math.random() * fallbackShoes.length)];
-  
-  return {
-    id: `shoes-fallback-${Date.now()}-${Math.random()}`,
-    name: randomShoe.name,
-    image: randomShoe.image,
-    type: 'shoes',
-    price: '₪299',
-    description: randomShoe.description,
-    color: 'black'
-  };
-}
-
-/**
- * Get fallback clothing items when database selection fails
- */
-function getFallbackClothing(): DashboardItem[] {
-  return [
-    {
-      id: 'fallback-top-' + Date.now(),
-      name: 'חולצה בסיסית',
-      image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=400&fit=crop',
-      type: 'top',
-      price: '₪89',
-      description: 'חולצה בסיסית נוחה',
-      color: 'white'
-    },
-    {
-      id: 'fallback-bottom-' + Date.now(),
-      name: 'מכנסיים בסיסיים',
-      image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop',
-      type: 'bottom',
-      price: '₪129',
-      description: 'מכנסיים בסיסיים נוחים',
-      color: 'blue'
-    }
-  ];
-}
-
-/**
- * בדיקה אם יש תמונה תקינה בפריט - מותאם לטבלת zara_cloth (לא לנעליים)
- */
-function hasValidImageData(imageData: any): boolean {
-  if (!imageData) {
-    return false;
-  }
-  
-  // Handle different image data formats from zara_cloth table
-  let imageUrls: string[] = [];
-  
-  if (typeof imageData === 'string') {
-    try {
-      const parsed = JSON.parse(imageData);
-      if (Array.isArray(parsed)) {
-        imageUrls = parsed.filter(url => typeof url === 'string' && url.trim() !== '');
-      } else if (typeof parsed === 'string' && parsed.trim() !== '') {
-        imageUrls = [parsed];
-      }
-    } catch {
-      if (imageData.trim() !== '') {
-        imageUrls = [imageData];
-      }
-    }
-  } else if (Array.isArray(imageData)) {
-    imageUrls = imageData.filter(url => typeof url === 'string' && url.trim() !== '');
-  } else if (typeof imageData === 'object' && imageData !== null) {
-    // Handle zara_cloth image format
-    if (imageData.url && typeof imageData.url === 'string') {
-      imageUrls = [imageData.url];
-    } else if (imageData.image && typeof imageData.image === 'string') {
-      imageUrls = [imageData.image];
-    } else if (Array.isArray(imageData.urls)) {
-      imageUrls = imageData.urls.filter(url => typeof url === 'string' && url.trim() !== '');
-    }
-  }
-  
-  // Check if we have any valid image URLs
-  const hasValidUrls = imageUrls.length > 0 && imageUrls.some(url => {
-    return url.includes('http') && (url.includes('.jpg') || url.includes('.jpeg') || url.includes('.png') || url.includes('.webp'));
-  });
-  
-  return hasValidUrls;
-}
-
-/**
- * יצירת פריט לוח מחוונים
- */
-function createDashboardItem(item: any, type: string): DashboardItem {
-  const imageUrl = extractZaraImageUrl(item.image as ZaraImageData);
-  
-  return {
-    id: item.id,
-    name: item.product_name,
-    image: imageUrl,
-    type: type as any,
-    price: `₪${item.price}`,
-    description: item.description || '',
-    color: item.colour
-  };
-}
-
-/**
- * בדיקה אם פריט פורמלי
+ * Helper: Check if item is formal (simple heuristic)
  */
 function isFormalItem(item: any): boolean {
   const name = (item.product_name || '').toLowerCase();
   const subfamily = (item.product_subfamily || '').toLowerCase();
-  const family = (item.product_family || '').toLowerCase();
-  const searchText = `${name} ${subfamily} ${family}`;
-  
-  const formalKeywords = ['בלייזר', 'חליפה', 'חצאית', 'blazer', 'suit', 'formal', 'dress shirt'];
-  return formalKeywords.some(keyword => searchText.includes(keyword));
+  return name.includes('formal') || name.includes('blazer') || subfamily.includes('formal') || subfamily.includes('blazer');
 }
 
 /**
- * בדיקה אם הפריט הוא באמת בגד ולא איפור/אביזרים
+ * Helper: Create DashboardItem from raw item and type
  */
-function isActualClothingItem(item: any): boolean {
-  const name = (item.product_name || '').toLowerCase();
-  const subfamily = (item.product_subfamily || '').toLowerCase();  
-  const family = (item.product_family || '').toLowerCase();
-  const description = (item.description || '').toLowerCase();
-  
-  const searchText = `${name} ${subfamily} ${family} ${description}`;
-  
-  // פריטי איפור ויופי לסינון - פשוט יותר
-  const cosmeticKeywords = [
-    'lipstick', 'makeup', 'perfume', 'fragrance', 'nail polish', 'cream', 'serum',
-    'איפור', 'שפתון', 'בושם', 'לק', 'קרם', 'סרום'
-  ];
-  
-  // בדיקה שהפריט אינו איפור
-  const isCosmeticOrAccessory = cosmeticKeywords.some(keyword => 
-    searchText.includes(keyword)
-  );
-  
-  if (isCosmeticOrAccessory) {
-    return false;
-  }
-  
-  // בדיקה חיובית - הפריט הוא בגד
-  const clothingKeywords = [
-    'חולצ', 'טי שירט', 'בלוז', 'טופ', 'מכנס', 'ג\'ינס', 'חצאית', 'שמלה', 'מעיל', 'ז\'קט',
-    'shirt', 'top', 'blouse', 'pants', 'jeans', 'skirt', 'dress', 'jacket', 'coat'
-  ];
-  
-  return clothingKeywords.some(keyword => searchText.includes(keyword));
-}
-
-/**
- * חלוקת פריטים לקטגוריות מתקדמות - פשוט יותר ויעיל יותר
- */
-function categorizeItemsAdvanced(items: any[], eventType: string) {
-  const categories = {
-    dresses: [] as any[],
-    tops: [] as any[],
-    bottoms: [] as any[],
-    outerwear: [] as any[]
-  };
-
-  items.forEach(item => {
-    const name = (item.product_name || '').toLowerCase();
-    const subfamily = (item.product_subfamily || '').toLowerCase();
-    const family = (item.product_family || '').toLowerCase();
-    
-    const searchText = `${name} ${subfamily} ${family}`;
-    
-    if (searchText.includes('שמלה') || searchText.includes('dress')) {
-      categories.dresses.push(item);
-    } else if (searchText.includes('מכנס') || searchText.includes('ג\'ינס') || searchText.includes('חצאית') || 
-               searchText.includes('pants') || searchText.includes('jeans') || searchText.includes('skirt')) {
-      categories.bottoms.push(item);
-    } else if (searchText.includes('מעיל') || searchText.includes('ז\'קט') || 
-               searchText.includes('jacket') || searchText.includes('coat')) {
-      categories.outerwear.push(item);
-    } else if (searchText.includes('חולצ') || searchText.includes('טופ') || searchText.includes('בלוז') ||
-               searchText.includes('shirt') || searchText.includes('top') || searchText.includes('blouse')) {
-      categories.tops.push(item);
-    }
-  });
-
-  console.log(`📊 [categorizeItemsAdvanced] Categorized: ${categories.dresses.length} dresses, ${categories.tops.length} tops, ${categories.bottoms.length} bottoms, ${categories.outerwear.length} outerwear`);
-  return categories;
-}
-
-/**
- * מחזיר נתונים לכל ההזדמנויות - עם פריטים שונים לכל אירוע (נעליים מטבלת zara_cloth)
- */
+// Export the main function that the hooks use
 export async function fetchDashboardItems(): Promise<{ [key: string]: DashboardItem[] }> {
   try {
-    console.log('🔥 [fetchDashboardItems] ===== STARTING DASHBOARD ITEMS FETCH (MANDATORY SHOES FROM ZARA_CLOTH TABLE) =====');
-    
-    // Load user's style preference from localStorage (both original and filter)
-    let baseStyle = 'casual'; // Default fallback
-    let currentStyle = 'casual'; // Current filter style
-    let finalStyle = 'casual'; // Final style to use
-    
-    try {
-      // Get original style from quiz
-      const originalQuizStyle = localStorage.getItem('originalQuizStyle');
-      if (originalQuizStyle) {
-        const originalParsed = JSON.parse(originalQuizStyle);
-        baseStyle = originalParsed.styleProfile || 'casual';
-        console.log("🎨 [fetchDashboardItems] Base style from quiz:", baseStyle);
-      }
-      
-      // Get current style from filters
-      const styleAnalysis = localStorage.getItem('styleAnalysis');
-      if (styleAnalysis) {
-        const parsed = JSON.parse(styleAnalysis);
-        currentStyle = parsed.analysis?.styleProfile || baseStyle;
-        console.log("🎨 [fetchDashboardItems] Current filter style:", currentStyle);
-      }
-      
-      // Use current style for recommendations (combines quiz + filters)
-      finalStyle = currentStyle;
-      console.log("🎨 [fetchDashboardItems] Final style for recommendations:", finalStyle);
-      
-    } catch (error) {
-      console.log("⚠️ [fetchDashboardItems] Could not load style from localStorage:", error);
-      finalStyle = 'casual'; // Fallback
-    }
-    
-    // Test connection first
-    const connectionTest = await testSupabaseConnection();
-    if (!connectionTest.success) {
-      console.error('❌ [fetchDashboardItems] Supabase connection failed:', connectionTest.error);
-      throw new Error(`Supabase connection failed: ${connectionTest.error}`);
-    }
-    
-    console.log('✅ [fetchDashboardItems] Supabase connection verified with styles:', { baseStyle, currentStyle, finalStyle });
-    
-    // Reset global tracking for fresh selection but keep separate tracking per occasion
-    globalUsedItemIds = {};
-    globalUsedShoesIds.clear();
+    console.log('🔥 [fetchDashboardItems] ===== FETCHING ENHANCED VARIETY OUTFITS =====');
     
     const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
     const data: { [key: string]: DashboardItem[] } = {};
     
-    // יצירת תלבושת שונה לכל הזדמנות (נעליים מטבלת zara_cloth)
     for (const occasion of occasions) {
       try {
-        console.log(`🔍 [fetchDashboardItems] ===== PROCESSING ${occasion.toUpperCase()} WITH COMBINED STYLE: ${finalStyle.toUpperCase()} =====`);
-        
-        const occasionOutfit = await createAdvancedOutfit(finalStyle, occasion.toLowerCase(), [], occasion);
-        
-        if (occasionOutfit && occasionOutfit.length > 0) {
-          data[occasion] = occasionOutfit.map(item => ({
-            ...item,
-            id: `${item.id}-${occasion.toLowerCase()}` // מזהה ייחודי לכל הזדמנות
-          }));
-          
-          console.log(`✅ [fetchDashboardItems] Created ${occasion} outfit with ${data[occasion].length} items from ZARA_CLOTH table:`);
-          data[occasion].forEach((item, index) => {
-            console.log(`   ${index + 1}. ${item.type}: ${item.name} (ID: ${item.id})`);
-            if (item.type === 'shoes') {
-              console.log(`      👠 MANDATORY SHOES from ZARA_CLOTH table in ${occasion}: ${item.name} with image: ${item.image}`);
-            }
-          });
-          
-          // Enhanced verification
-          const shoesCount = data[occasion].filter(item => item.type === 'shoes').length;
-          if (shoesCount === 0) {
-            console.error(`❌ [fetchDashboardItems] CRITICAL ERROR - NO SHOES IN ${occasion} OUTFIT!`);
-            
-            // Add emergency fallback shoes
-            const emergencyShoes = getRandomFallbackShoes();
-            emergencyShoes.id = `${emergencyShoes.id}-${occasion.toLowerCase()}`;
-            data[occasion].push(emergencyShoes);
-            console.log(`🚨 [fetchDashboardItems] Emergency shoes added to ${occasion}: ${emergencyShoes.name}`);
-          }
-        } else {
-          throw new Error(`No outfit created for ${occasion}`);
-        }
+        console.log(`🎯 [fetchDashboardItems] Creating outfit for ${occasion}...`);
+        const occasionOutfit = await createAdvancedOutfit('casual', occasion.toLowerCase(), [], occasion);
+        data[occasion] = occasionOutfit;
+        console.log(`✅ [fetchDashboardItems] ${occasion} outfit created with ${occasionOutfit.length} items`);
       } catch (occasionError) {
         console.error(`❌ [fetchDashboardItems] Error creating ${occasion} outfit:`, occasionError);
-        
-        // Enhanced fallback with guaranteed shoes
-        const fallbackOutfit = getFallbackOutfit().map(item => ({
-          ...item,
-          id: `${item.id}-${occasion.toLowerCase()}`
-        }));
-        
-        // Ensure fallback has shoes
-        const hasFallbackShoes = fallbackOutfit.some(item => item.type === 'shoes');
-        if (!hasFallbackShoes) {
-          const fallbackShoes = getRandomFallbackShoes();
-          fallbackShoes.id = `${fallbackShoes.id}-${occasion.toLowerCase()}`;
-          fallbackOutfit.push(fallbackShoes);
-        }
-        
-        data[occasion] = fallbackOutfit;
-        console.log(`⚠️ [fetchDashboardItems] Using enhanced fallback for ${occasion} with guaranteed shoes`);
+        data[occasion] = getFallbackOutfit();
       }
     }
     
-    console.log('🔥 [fetchDashboardItems] ===== FINAL DASHBOARD DATA WITH MANDATORY SHOES VERIFICATION =====');
-    Object.entries(data).forEach(([occasion, items]) => {
-      const shoesCount = items.filter(item => item.type === 'shoes').length;
-      const totalItems = items.length;
-      console.log(`${occasion}: ${totalItems} items (${shoesCount} MANDATORY shoes) - ${shoesCount > 0 ? '✅ SHOES OK' : '❌ NO SHOES!'}`);
-      
-      if (shoesCount === 0) {
-        console.error(`🚨 [fetchDashboardItems] EMERGENCY: Adding fallback shoes to ${occasion}`);
-        const emergencyShoes = getRandomFallbackShoes();
-        emergencyShoes.id = `${emergencyShoes.id}-${occasion.toLowerCase()}-emergency`;
-        data[occasion].push(emergencyShoes);
-      }
-    });
-    
     return data;
-    
   } catch (error) {
     console.error('❌ [fetchDashboardItems] Error:', error);
-    
-    const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
-    const fallbackData: { [key: string]: DashboardItem[] } = {};
-    
-    occasions.forEach(occasion => {
-      fallbackData[occasion] = getFallbackOutfit().map(item => ({
-        ...item,
-        id: `${item.id}-${occasion.toLowerCase()}`
-      }));
-    });
-    
-    console.log('⚠️ [fetchDashboardItems] Returning fallback data with placeholder items');
-    return fallbackData;
+    return { Work: [], Casual: [], Evening: [], Weekend: [] };
   }
-}
-
-// Export placeholder functions for compatibility
-export function clearGlobalItemTrackers() {
-  globalUsedItemIds = {};
-  globalUsedShoesIds.clear();
-  lastResetTime = Date.now();
-  console.log('🔄 [clearGlobalItemTrackers] Global trackers cleared');
 }
 
 export function clearOutfitCache() {
   globalUsedItemIds = {};
+  sessionUsedItemIds = {};
   globalUsedShoesIds.clear();
-  console.log('🔄 [clearOutfitCache] Outfit cache cleared');
+  sessionItemCount = 0;
+  console.log('🔄 [clearOutfitCache] Cache cleared for variety');
 }
 
-function extractColorFromName(name: string): string {
-  const colorMap: Record<string, string> = {
-    'שחור': 'black', 'לבן': 'white', 'אדום': 'red', 'כחול': 'blue',
-    'ירוק': 'green', 'צהוב': 'yellow', 'ורוד': 'pink', 'סגול': 'purple',
-    'חום': 'brown', 'אפור': 'gray', 'בז\'': 'beige'
+function createDashboardItem(item: any, type: string): DashboardItem {
+  return {
+    id: item.id,
+    name: item.product_name,
+    image: extractImageUrl(item.image),
+    type: type as DashboardItem['type'],
+    colour: item.colour,
+    price: `₪${item.price}`,
+    description: item.description || '',
+    url: item.url || '',
+    availability: item.availability !== false
   };
-  
-  const lowerName = name.toLowerCase();
-  for (const [hebrew, english] of Object.entries(colorMap)) {
-    if (lowerName.includes(hebrew) || lowerName.includes(english)) {
-      return english;
-    }
-  }
-  return 'unknown';
 }
 
+/**
+ * Helper: Check if item has valid image data
+ */
+function hasValidImageData(imageData: any): boolean {
+  if (!imageData) return false;
+  if (typeof imageData === 'string' && imageData.trim() !== '') return true;
+  if (Array.isArray(imageData) && imageData.length > 0) return true;
+  if (typeof imageData === 'object' && Object.keys(imageData).length > 0) return true;
+  return false;
+}
+
+/**
+ * Helper: Check if item is actual clothing (not shoes, accessories, etc.)
+ */
+function isActualClothingItem(item: any): boolean {
+  const family = (item.product_family || '').toLowerCase();
+  const subfamily = (item.product_subfamily || '').toLowerCase();
+  if (family.includes('shoe') || family.includes('sandal') || family.includes('boot')) return false;
+  if (subfamily.includes('shoe') || subfamily.includes('sandal') || subfamily.includes('boot')) return false;
+  return true;
+}
+
+/**
+ * Debug function to check shoes availability in database
+ */
+async function debugShoesInDatabase(occasion: string): Promise<any> {
+  try {
+    const { data: shoesData, error } = await supabase
+      .from('zara_cloth')
+      .select('*')
+      .not('image', 'is', null)
+      .neq('availability', false)
+      .or(`product_family.ilike.%shoe%,product_family.ilike.%sandal%,product_family.ilike.%boot%`)
+      .limit(50);
+
+    if (error) {
+      console.error(`❌ [debugShoesInDatabase] Error fetching shoes:`, error);
+      return null;
+    }
+
+    console.log(`🔍 [debugShoesInDatabase] Found ${shoesData.length} shoes items for debugging`);
+    return shoesData;
+  } catch (error) {
+    console.error(`❌ [debugShoesInDatabase] Exception:`, error);
+    return null;
+  }
+}
+
+/**
+ * Get matching shoes from zara_cloth table based on occasion and used colors
+ */
+async function getMatchingShoesFromZara(occasion: string, usedColors: string[]): Promise<DashboardItem | null> {
+  try {
+    // Build query with filters for shoes
+    let query = supabase
+      .from('zara_cloth')
+      .select('*')
+      .not('image', 'is', null)
+      .neq('availability', false)
+      .or(`product_family.ilike.%shoe%,product_family.ilike.%sandal%,product_family.ilike.%boot%`)
+      .limit(100);
+
+    // Optionally filter by color to avoid clashes
+    if (usedColors.length > 0) {
+      // Exclude shoes with colors already used in outfit
+      const colorFilters = usedColors.map(color => `colour.ilike.not.%${color}%`).join(',');
+      query = query.filter('colour', 'not.ilike', `%${usedColors[0]}%`); // Simplified for demo
+    }
+
+    const { data: shoesData, error } = await query;
+
+    if (error) {
+      console.error(`❌ [getMatchingShoesFromZara] Error fetching shoes:`, error);
+      return null;
+    }
+
+    if (!shoesData || shoesData.length === 0) {
+      console.warn(`⚠️ [getMatchingShoesFromZara] No shoes found matching criteria`);
+      return null;
+    }
+
+    // Shuffle shoes for variety
+    const shuffledShoes = shuffleArray(shoesData);
+
+    // Select shoe based on session rotation to ensure variety
+    const selectedShoe = shuffledShoes[sessionShoesRotation % shuffledShoes.length];
+    sessionShoesRotation++;
+
+    // Extract image URL
+    const imageUrl = extractZaraShoesImageFromJSONB(selectedShoe.image, selectedShoe.product_name);
+
+    // Construct DashboardItem for shoe
+    const shoeItem: DashboardItem = {
+      id: `zara-shoes-${selectedShoe.id}`,
+      name: selectedShoe.product_name,
+      image: imageUrl,
+      type: 'shoes',
+      colour: selectedShoe.colour,
+      price: `₪${selectedShoe.price}`,
+      description: selectedShoe.description || '',
+      url: selectedShoe.url || '',
+      availability: selectedShoe.availability !== false
+    };
+
+    return shoeItem;
+
+  } catch (error) {
+    console.error(`❌ [getMatchingShoesFromZara] Exception:`, error);
+    return null;
+  }
+}
+
+/**
+ * Fallback outfit in case of errors or no data
+ */
 function getFallbackOutfit(): DashboardItem[] {
-  console.log('🆘 [getFallbackOutfit] Creating fallback outfit with MANDATORY variety shoes');
-  const fallbackShoes = getRandomFallbackShoes();
-  
+  // Return a simple default outfit with placeholder items
   return [
     {
-      id: 'fallback-top',
-      name: 'חולצה בסיסית',
-      image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=400&fit=crop',
+      id: 'fallback-top-1',
+      name: 'Fallback Top',
+      image: '/images/fallback-top.png',
       type: 'top',
-      price: '₪89',
-      description: 'חולצה בסיסית'
+      colour: 'blue',
+      price: '₪99',
+      description: 'Fallback top item',
+      url: '',
+      availability: true
     },
     {
-      id: 'fallback-bottom',
-      name: 'מכנסיים בסיסיים',
-      image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=400&fit=crop',
+      id: 'fallback-bottom-1',
+      name: 'Fallback Bottom',
+      image: '/images/fallback-bottom.png',
       type: 'bottom',
-      price: '₪129',
-      description: 'מכנסיים בסיסיים'
+      colour: 'black',
+      price: 0,
+      description: 'Fallback bottom item',
+      url: '',
+      availability: true
     },
-    fallbackShoes
+    {
+      id: 'fallback-shoes-1',
+      name: 'Fallback Shoes',
+      image: '/images/fallback-shoes.png',
+      type: 'shoes',
+      colour: 'black',
+      price: 0,
+      description: 'Fallback shoes item',
+      url: '',
+      availability: true
+    }
   ];
+}
+
+/**
+ * Get random fallback shoes item
+ */
+function getRandomFallbackShoes(): DashboardItem {
+  return {
+    id: 'fallback-shoes-1',
+    name: 'Fallback Shoes',
+    image: '/images/fallback-shoes.png',
+    type: 'shoes',
+    colour: 'black',
+    price: 0,
+    description: 'Fallback shoes item',
+    url: '',
+    availability: true
+  };
 }
