@@ -450,53 +450,17 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
       break;
   }
 
-  console.log(`🔍 [selectOutfitByOccasion] BEFORE SHOES ADDITION - ${occasion.toUpperCase()} has ${selectedItems.length} items`);
+  console.log(`🔍 [selectOutfitByOccasion] AFTER OUTFIT SELECTION - ${occasion.toUpperCase()} has ${selectedItems.length} clothing items`);
   selectedItems.forEach((item, index) => {
     console.log(`   ${index + 1}. ${item.type}: ${item.name}`);
   });
 
-  // 🚨 CRITICAL: תמיד מוסיף נעליים - חובה לכל סוג תלבושת
-  console.log(`👠 [selectOutfitByOccasion] ===== MANDATORY SHOES ADDITION FOR ${occasion.toUpperCase()} =====`);
-  console.log(`👠 [selectOutfitByOccasion] Current outfit has ${selectedItems.length} items before adding shoes`);
-  console.log(`👠 [selectOutfitByOccasion] Used colors:`, usedColors);
+  // 🚨 NOTE: Shoes are added separately in createAdvancedOutfit function - not here
+  console.log(`👠 [selectOutfitByOccasion] SHOES WILL BE ADDED BY createAdvancedOutfit - NOT HERE`);
   
-  // 🔍 ENHANCED DEBUGGING: Let's check what shoes are available in the database
-  console.log(`🔍 [selectOutfitByOccasion] ===== DEBUGGING SHOES AVAILABILITY =====`);
-  const shoesDebugResult = await debugShoesInDatabase(occasion);
+  console.log(`✅ [selectOutfitByOccasion] FINAL OUTFIT WITHOUT SHOES: ${selectedItems.length} items for ${occasion.toUpperCase()}`);
   
-  console.log(`🔍 [selectOutfitByOccasion] CALLING getMatchingShoesFromZara for ${occasion.toUpperCase()}...`);
-  const shoesResult = await getMatchingShoesFromZara(occasion, usedColors);
-  
-  console.log(`🔍 [selectOutfitByOccasion] SHOES RESULT:`, shoesResult);
-  
-  if (shoesResult) {
-    selectedItems.push(shoesResult);
-    console.log(`✅ [selectOutfitByOccasion] SHOES SUCCESSFULLY ADDED TO ${occasion.toUpperCase()}: ${shoesResult.name} with ID: ${shoesResult.id}`);
-    console.log(`✅ [selectOutfitByOccasion] Shoes image URL: ${shoesResult.image}`);
-    console.log(`✅ [selectOutfitByOccasion] FROM ZARA_CLOTH TABLE: ${shoesResult.id.includes('zara-shoes-') ? 'YES' : 'NO'}`);
-    
-    // Log the final outfit combination
-    const hasDress = selectedItems.some(item => item.type === 'dress');
-    if (hasDress) {
-      console.log(`👗👠 [selectOutfitByOccasion] FINAL COMBINATION: DRESS + SHOES for ${occasion.toUpperCase()}`);
-    } else {
-      console.log(`👕👖👠 [selectOutfitByOccasion] FINAL COMBINATION: TOP + BOTTOM + SHOES for ${occasion.toUpperCase()}`);
-    }
-  } else {
-    console.error(`❌ [selectOutfitByOccasion] FAILED TO GET SHOES FROM ZARA_CLOTH - ADDING FALLBACK SHOES FOR ${occasion.toUpperCase()}`);
-    
-    // Add fallback shoes - MANDATORY, never return without shoes
-    const fallbackShoes = getRandomFallbackShoes();
-    selectedItems.push(fallbackShoes);
-    console.log(`🆘 [selectOutfitByOccasion] FALLBACK SHOES ADDED TO ${occasion.toUpperCase()}: ${fallbackShoes.name}`);
-  }
-
-  // If we still don't have enough items, add fallback clothing
-  if (selectedItems.length < 2) {
-    console.log(`⚠️ [selectOutfitByOccasion] Not enough items for ${occasion.toUpperCase()}, adding fallback clothing`);
-    const fallbackItems = getFallbackClothing();
-    selectedItems.push(...fallbackItems);
-  }
+  return selectedItems;
 
   console.log(`🔥 [selectOutfitByOccasion] ===== FINAL OUTFIT FOR ${occasion.toUpperCase()} WITH SHOES =====`);
   console.log(`🔥 [selectOutfitByOccasion] Total items: ${selectedItems.length}`);
@@ -508,16 +472,8 @@ async function selectOutfitByOccasion(categories: any, occasion: string): Promis
     }
   });
 
-  // 🚨 FINAL VERIFICATION: Ensure shoes are included
-  const finalShoesCount = selectedItems.filter(item => item.type === 'shoes').length;
-  if (finalShoesCount === 0) {
-    console.error(`❌ [selectOutfitByOccasion] CRITICAL BUG - RETURNING OUTFIT WITHOUT SHOES FOR ${occasion.toUpperCase()}!`);
-    console.error(`❌ This should NEVER happen. Adding emergency fallback shoes...`);
-    
-    const emergencyShoes = getRandomFallbackShoes();
-    selectedItems.push(emergencyShoes);
-    console.log(`🚨 [selectOutfitByOccasion] EMERGENCY SHOES ADDED: ${emergencyShoes.name}`);
-  }
+  // 🚨 NOTE: Shoes validation removed - shoes are added in createAdvancedOutfit
+  console.log(`✅ [selectOutfitByOccasion] RETURNING CLOTHING-ONLY OUTFIT: ${selectedItems.length} items for ${occasion.toUpperCase()}`);
   
   return selectedItems;
 }
