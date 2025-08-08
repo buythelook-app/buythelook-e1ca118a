@@ -264,19 +264,27 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
     // יצירת תלבושת לפי כללים מותאמים לאירוע (ללא נעליים)
     const outfitItems = await selectOutfitByOccasion(categorizedItems, occasion);
     
-    // Ensure minimum of 2 clothing items before adding shoes
+    // Ensure minimum of 2 clothing items before adding shoes, but don't add bottom for dresses
     if (outfitItems.length < 2) {
-      console.log(`⚠️ [createAdvancedOutfit] ${occasion} outfit has only ${outfitItems.length} items, adding more...`);
+      console.log(`⚠️ [createAdvancedOutfit] ${occasion} outfit has only ${outfitItems.length} items, checking what to add...`);
       
-      // Add missing items to reach at least 2 clothing items
-      if (outfitItems.length === 0 && categorizedItems.tops.length > 0) {
-        outfitItems.push(createDashboardItem(categorizedItems.tops[0], 'top'));
-      }
-      if (outfitItems.length < 2 && categorizedItems.bottoms.length > 0) {
-        outfitItems.push(createDashboardItem(categorizedItems.bottoms[0], 'bottom'));
-      }
+      // Check if we already have a dress - if so, don't add bottom
+      const hasDress = outfitItems.some(item => item.type === 'dress');
       
-      console.log(`✅ [createAdvancedOutfit] Enhanced ${occasion} outfit to ${outfitItems.length} clothing items`);
+      if (hasDress) {
+        console.log(`👗 [createAdvancedOutfit] ${occasion} outfit has a dress - NOT adding bottom (dress = complete outfit)`);
+        // For dress outfit, we only need the dress + shoes later, so we're good
+      } else {
+        // Add missing items to reach at least 2 clothing items (only if no dress)
+        if (outfitItems.length === 0 && categorizedItems.tops.length > 0) {
+          outfitItems.push(createDashboardItem(categorizedItems.tops[0], 'top'));
+        }
+        if (outfitItems.length < 2 && categorizedItems.bottoms.length > 0) {
+          outfitItems.push(createDashboardItem(categorizedItems.bottoms[0], 'bottom'));
+        }
+        
+        console.log(`✅ [createAdvancedOutfit] Enhanced ${occasion} outfit to ${outfitItems.length} clothing items`);
+      }
     }
     
     // Get matching shoes from zara_cloth table
