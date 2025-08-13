@@ -423,21 +423,83 @@ class StylingAgentClass implements Agent {
   }
 
   /**
-   * 🆕 Filter shoes by mood appropriateness
+   * 🆕 Filter shoes by mood and style appropriateness (FIXED FOR MINIMALIST)
    */
   private filterShoesByMood(shoes: ShoeItem[], mood: string, debugInfo: DebugInfo): ShoeItem[] {
-    console.log(`👠 [SHOES MOOD FILTER] Filtering ${shoes.length} shoes from "shoes" table for mood: ${mood}`);
+    console.log(`👠 [SHOES STYLE+MOOD FILTER] Filtering ${shoes.length} shoes for mood: ${mood}`);
+    
+    // Get user style profile
+    const styleData = localStorage.getItem('styleAnalysis');
+    let userStyle = 'classic';
+    if (styleData) {
+      const parsed = JSON.parse(styleData);
+      userStyle = parsed?.analysis?.styleProfile || 'classic';
+    }
+    
+    console.log(`🎯 [SHOES STYLE FILTER] Applying ${userStyle} style filtering to shoes`);
     
     const moodColors = ColorCoordinationService.getColorsForMood(mood);
+    const styleColors = ColorCoordinationService.getColorsForStyle(userStyle);
     
     const filtered = shoes.filter(shoe => {
       const shoeColor = (shoe.colour || shoe.color || '').toLowerCase();
       const shoeName = (shoe.name || '').toLowerCase();
+      const shoeDesc = (shoe.description || '').toLowerCase();
+      const shoeBrand = (shoe.brand || '').toLowerCase();
       
+      // MINIMALIST STYLE FILTERING - Very strict criteria
+      if (userStyle === 'minimalist') {
+        console.log(`🔍 [MINIMALIST CHECK] Checking shoe: ${shoe.name}`);
+        
+        // Exclude flashy/sports brands that don't align with minimalism
+        const nonMinimalistBrands = ['nike', 'adidas', 'new balance', 'converse'];
+        const isNonMinimalistBrand = nonMinimalistBrands.some(brand => shoeBrand.includes(brand));
+        
+        // Exclude non-minimalist shoe types
+        const nonMinimalistTypes = ['trainers', 'sneakers', 'sandals', 'heeled', 'block heel', 
+                                   'kitten heel', 'barely there', 'cutout', 'chain', 'metallic'];
+        const hasNonMinimalistType = nonMinimalistTypes.some(type => 
+          shoeName.includes(type) || shoeDesc.includes(type)
+        );
+        
+        // Only allow minimalist-appropriate colors
+        const minimalistColors = ['white', 'cream', 'beige', 'tan', 'light gray', 'taupe', 'nude'];
+        const hasMinimalistColor = minimalistColors.some(color => 
+          shoeColor.includes(color) || shoeName.includes(color)
+        );
+        
+        // Look for minimalist-friendly terms
+        const minimalistTerms = ['flat', 'simple', 'basic', 'minimal', 'clean', 'slip-on', 'loafer', 'mule'];
+        const hasMinimalistTerms = minimalistTerms.some(term => 
+          shoeName.includes(term) || shoeDesc.includes(term)
+        );
+        
+        // For minimalist style, be VERY strict
+        if (isNonMinimalistBrand || hasNonMinimalistType) {
+          console.log(`❌ [MINIMALIST REJECT] ${shoe.name} - Brand: ${shoeBrand}, Type: non-minimalist`);
+          return false;
+        }
+        
+        if (!hasMinimalistColor && !hasMinimalistTerms) {
+          console.log(`❌ [MINIMALIST REJECT] ${shoe.name} - No minimalist colors or terms`);
+          return false;
+        }
+        
+        console.log(`✅ [MINIMALIST ACCEPT] ${shoe.name} - Passed minimalist criteria`);
+        return true;
+      }
+      
+      // For other styles, use regular mood/color filtering
       const matchesMoodColor = moodColors.some(moodColor => 
         shoeColor.includes(moodColor.toLowerCase()) ||
         shoeName.includes(moodColor.toLowerCase()) ||
         ColorCoordinationService.areColorsCompatible(shoeColor, moodColor)
+      );
+      
+      const matchesStyleColor = styleColors.some(styleColor => 
+        shoeColor.includes(styleColor.toLowerCase()) ||
+        shoeName.includes(styleColor.toLowerCase()) ||
+        ColorCoordinationService.areColorsCompatible(shoeColor, styleColor)
       );
       
       const neutralColors = ['black', 'white', 'brown', 'beige', 'gray'];
@@ -445,17 +507,17 @@ class StylingAgentClass implements Agent {
         shoeColor.includes(neutral) || shoeName.includes(neutral)
       );
       
-      return matchesMoodColor || isNeutral;
+      return matchesStyleColor || matchesMoodColor || isNeutral;
     });
     
     debugInfo.filtering_steps.push({
-      step: 'Shoes Mood Filter (shoes table)',
+      step: `Shoes Style+Mood Filter (${userStyle})`,
       items_before: shoes.length,
       items_after: filtered.length,
-      criteria: `Mood colors: [${moodColors.join(', ')}] from "shoes" table`
+      criteria: `Style: ${userStyle}, Mood: ${mood}, Style colors: [${styleColors.join(', ')}]`
     });
     
-    console.log(`👠 [SHOES TABLE RESULT] Filtered from ${shoes.length} to ${filtered.length} mood-appropriate shoes`);
+    console.log(`👠 [SHOES FILTERED] ${userStyle} style: ${shoes.length} → ${filtered.length} appropriate shoes`);
     return filtered;
   }
 
