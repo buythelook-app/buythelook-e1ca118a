@@ -17,12 +17,12 @@ const QuizSummary = () => {
   if (!formData.gender) return null; // Don't show summary until quiz starts
 
   return (
-    <Card className="w-full mb-6 bg-netflix-card text-netflix-text">
-      <CardHeader>
-        <CardTitle className="text-lg">Your Answers</CardTitle>
+    <Card className="w-full mb-4 bg-netflix-card text-netflix-text">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">Your Answers</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2 text-sm">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <CardContent className="pt-0">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
           {formData.gender && (
             <div>
               <strong>Gender:</strong> {formData.gender}
@@ -36,36 +36,17 @@ const QuizSummary = () => {
           {formData.weight && (
             <div>
               <strong>Weight:</strong> {formData.weight !== "prefer_not_to_answer" ? 
-                `${formData.weight} lbs` : "Prefer not to answer"}
-            </div>
-          )}
-          {formData.waist && (
-            <div>
-              <strong>Waist:</strong> {formData.waist === "prefer_not_to_answer" ? 
-                "Prefer not to answer" : `${Math.round(parseInt(formData.waist) / 2.54)} inches`}
-            </div>
-          )}
-          {formData.chest && (
-            <div>
-              <strong>Chest:</strong> {formData.chest === "prefer_not_to_answer" ? 
-                "Prefer not to answer" : `${Math.round(parseInt(formData.chest) / 2.54)} inches`}
+                `${formData.weight} lbs` : "N/A"}
             </div>
           )}
           {formData.bodyShape && (
             <div>
-              <strong>Body Shape:</strong> {formData.bodyShape}
+              <strong>Body:</strong> {formData.bodyShape}
             </div>
           )}
           {formData.colorPreferences.length > 0 && (
             <div className="md:col-span-2">
-              <strong>Color Preferences:</strong>{" "}
-              {formData.colorPreferences.join(", ")}
-            </div>
-          )}
-          {formData.stylePreferences.length > 0 && (
-            <div className="md:col-span-2">
-              <strong>Style Preferences:</strong>{" "}
-              {formData.stylePreferences.join(", ")}
+              <strong>Colors:</strong> {formData.colorPreferences.slice(0, 2).join(", ")}{formData.colorPreferences.length > 2 ? "..." : ""}
             </div>
           )}
         </div>
