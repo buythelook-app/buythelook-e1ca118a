@@ -162,33 +162,6 @@ export const HeroSection = () => {
                 Take Style Quiz Now!
               </Button>
             </motion.div>
-            
-            {/* Floating particles effect */}
-            <motion.div
-              className="absolute -top-2 -right-2 w-3 h-3 bg-purple-400/20 rounded-full"
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.1, 0.3, 0.1],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                repeatType: "reverse"
-              }}
-            />
-            <motion.div
-              className="absolute -bottom-1 -left-1 w-2 h-2 bg-emerald-400/20 rounded-full"
-              animate={{
-                scale: [1, 1.1, 1],
-                opacity: [0.1, 0.25, 0.1],
-              }}
-              transition={{
-                duration: 2.5,
-                repeat: Infinity,
-                repeatType: "reverse",
-                delay: 0.8
-              }}
-            />
           </motion.div>
         </div>
       </motion.div>
