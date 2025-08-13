@@ -69,9 +69,9 @@ export const Navbar = () => {
         <div className="flex flex-col items-start">
           <Link to="/" className="flex items-center space-x-3 text-2xl font-display text-netflix-accent">
             <img 
-              src="/lovable-uploads/6ce34178-dd5a-44de-85a2-ba3f21071156.png" 
+              src="/lovable-uploads/36f503f4-5335-485a-84dd-293fee3fc453.png" 
               alt="Buy the Look Logo" 
-              className="h-8 w-8 object-contain filter invert"
+              className="h-8 w-8 object-contain"
             />
             <span>Buy the Look</span>
           </Link>
