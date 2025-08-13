@@ -18,22 +18,22 @@ const bodyShapeEmojis = {
 export const BodyShapeStep = ({ value, onChange }: BodyShapeStepProps) => {
   return (
     <div className="h-full flex flex-col">
-      <h2 className="text-2xl font-display font-semibold mb-6">What's your body shape?</h2>
+      <h2 className="text-xl font-display font-semibold mb-4">What's your body shape?</h2>
       <div className="flex-1 flex items-center">
         <RadioGroup
           value={value}
           onValueChange={onChange}
-          className="flex flex-col space-y-2 w-full"
+          className="flex flex-col space-y-1 w-full"
         >
           {["hourglass", "pear", "rectangle", "triangle", "oval"].map((shape) => {
             const emoji = bodyShapeEmojis[shape];
             return (
-              <div key={shape} className={`flex items-center space-x-3 p-3 rounded-lg border-2 transition-all ${
+              <div key={shape} className={`flex items-center space-x-2 p-2 rounded-md border transition-all ${
                 value === shape ? "border-netflix-accent bg-netflix-accent/10" : "border-gray-200 hover:border-netflix-accent/50"
               }`}>
-                <RadioGroupItem value={shape} id={shape} />
-                <span className="text-xl">{emoji}</span>
-                <Label htmlFor={shape} className="text-base font-medium cursor-pointer flex-1 capitalize">{shape}</Label>
+                <RadioGroupItem value={shape} id={shape} className="w-4 h-4" />
+                <span className="text-lg">{emoji}</span>
+                <Label htmlFor={shape} className="text-sm font-medium cursor-pointer flex-1 capitalize">{shape}</Label>
               </div>
             );
           })}
