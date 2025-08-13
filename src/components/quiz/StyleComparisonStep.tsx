@@ -27,7 +27,7 @@ const STYLE_IMAGES = {
 };
 
 export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleComparisonStepProps) => {
-  const { formData, setFormData } = useQuizContext();
+  const { formData, setFormData, step, handleNext } = useQuizContext();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -49,37 +49,45 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
     };
     setFormData(updatedFormData);
     
-    toast({
-      title: "Style selected!",
-      description: "Analyzing your preferences and creating your personalized look...",
-    });
+    // Only complete quiz and navigate if we're on the last step (13)
+    if (step === 13) {
+      toast({
+        title: "Style selected!",
+        description: "Analyzing your preferences and creating your personalized look...",
+      });
 
-    try {
-      // Import the analysis function here to avoid circular dependencies
-      const { analyzeStyleWithAI } = await import('./utils/quizUtils');
-      const styleAnalysis = await analyzeStyleWithAI(updatedFormData);
-      
-      // Store analysis in localStorage
-      localStorage.setItem('styleAnalysis', JSON.stringify(styleAnalysis));
-      localStorage.setItem('originalQuizStyle', JSON.stringify({
-        styleProfile: styleAnalysis.analysis.styleProfile,
-        timestamp: new Date().toISOString()
-      }));
-      
-      toast({
-        title: "Analysis complete!",
-        description: "Your personalized look suggestions are ready!",
-      });
-      
-      // Navigate directly to suggestions page
-      navigate('/suggestions');
-    } catch (error) {
-      console.error('Style analysis error:', error);
-      toast({
-        title: "Analysis Error",
-        description: "Failed to analyze your style. Please try again.",
-        variant: "destructive",
-      });
+      try {
+        // Import the analysis function here to avoid circular dependencies
+        const { analyzeStyleWithAI } = await import('./utils/quizUtils');
+        const styleAnalysis = await analyzeStyleWithAI(updatedFormData);
+        
+        // Store analysis in localStorage
+        localStorage.setItem('styleAnalysis', JSON.stringify(styleAnalysis));
+        localStorage.setItem('originalQuizStyle', JSON.stringify({
+          styleProfile: styleAnalysis.analysis.styleProfile,
+          timestamp: new Date().toISOString()
+        }));
+        
+        toast({
+          title: "Analysis complete!",
+          description: "Your personalized look suggestions are ready!",
+        });
+        
+        // Navigate directly to suggestions page
+        navigate('/suggestions');
+      } catch (error) {
+        console.error('Style analysis error:', error);
+        toast({
+          title: "Analysis Error",
+          description: "Failed to analyze your style. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // Continue to next step if not on final step
+      setTimeout(() => {
+        handleNext();
+      }, 500);
     }
   };
 
