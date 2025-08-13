@@ -60,7 +60,7 @@ export const HeroSection = () => {
       </div>
       
       <motion.div 
-        className="relative h-full flex items-center"
+        className="relative h-full flex items-end pb-20"
         variants={containerVariants}
         initial="hidden"
         animate={isVisible ? "visible" : "hidden"}
