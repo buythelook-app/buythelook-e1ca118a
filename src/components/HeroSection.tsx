@@ -165,28 +165,28 @@ export const HeroSection = () => {
             
             {/* Floating particles effect */}
             <motion.div
-              className="absolute -top-2 -right-2 w-3 h-3 bg-purple-400 rounded-full"
+              className="absolute -top-2 -right-2 w-3 h-3 bg-purple-400/20 rounded-full"
               animate={{
-                scale: [1, 1.5, 1],
-                opacity: [0.7, 1, 0.7],
+                scale: [1, 1.2, 1],
+                opacity: [0.1, 0.3, 0.1],
               }}
               transition={{
-                duration: 2,
+                duration: 3,
                 repeat: Infinity,
                 repeatType: "reverse"
               }}
             />
             <motion.div
-              className="absolute -bottom-1 -left-1 w-2 h-2 bg-emerald-400 rounded-full"
+              className="absolute -bottom-1 -left-1 w-2 h-2 bg-emerald-400/20 rounded-full"
               animate={{
-                scale: [1, 1.3, 1],
-                opacity: [0.5, 1, 0.5],
+                scale: [1, 1.1, 1],
+                opacity: [0.1, 0.25, 0.1],
               }}
               transition={{
-                duration: 1.5,
+                duration: 2.5,
                 repeat: Infinity,
                 repeatType: "reverse",
-                delay: 0.5
+                delay: 0.8
               }}
             />
           </motion.div>
