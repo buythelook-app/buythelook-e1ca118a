@@ -35,7 +35,7 @@ export const QuizContainer = ({ children }: QuizContainerProps) => {
           
           {/* Main quiz content */}
           <div className="lg:col-span-3">
-            <div className="bg-netflix-card rounded-lg p-6 h-[calc(100vh-12rem)] max-h-[700px] min-h-[500px] flex flex-col">
+            <div className="bg-netflix-card rounded-lg p-6 h-[calc(100vh-12rem)] max-h-[650px] min-h-[450px] flex flex-col">
               {children.content}
             </div>
           </div>

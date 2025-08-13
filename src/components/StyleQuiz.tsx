@@ -73,10 +73,10 @@ const QuizContent = () => {
   return (
     <div className="flex flex-col h-full">
       <QuizProgress currentStep={step} totalSteps={TOTAL_STEPS} />
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex-1 flex flex-col justify-center min-h-0 py-4">
         <QuizStepRenderer />
       </div>
-      <div className="mt-auto pt-4">
+      <div className="border-t pt-4 bg-netflix-card">
         <QuizNavigation
           currentStep={step}
           totalSteps={TOTAL_STEPS}
