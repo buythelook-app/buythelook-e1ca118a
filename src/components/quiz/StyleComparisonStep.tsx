@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useQuizContext } from "./QuizContext";
-import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 interface StyleComparisonStepProps {
   style1: {
@@ -26,7 +27,9 @@ const STYLE_IMAGES = {
 };
 
 export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleComparisonStepProps) => {
-  const { formData, handleNext } = useQuizContext();
+  const { formData, setFormData } = useQuizContext();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   
   const getStyleImage = (styleName: string) => {
     return STYLE_IMAGES[styleName as keyof typeof STYLE_IMAGES] || "/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png";
@@ -36,11 +39,48 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
     return formData.stylePreferences[0] === styleName;
   };
 
-  const handleStyleSelect = (styleName: string) => {
+  const handleStyleSelect = async (styleName: string) => {
     onSelect(styleName);
-    setTimeout(() => {
-      handleNext();
-    }, 500);
+    
+    // Update form data with selected style
+    const updatedFormData = {
+      ...formData,
+      stylePreferences: [styleName]
+    };
+    setFormData(updatedFormData);
+    
+    toast({
+      title: "Style selected!",
+      description: "Analyzing your preferences and creating your personalized look...",
+    });
+
+    try {
+      // Import the analysis function here to avoid circular dependencies
+      const { analyzeStyleWithAI } = await import('./utils/quizUtils');
+      const styleAnalysis = await analyzeStyleWithAI(updatedFormData);
+      
+      // Store analysis in localStorage
+      localStorage.setItem('styleAnalysis', JSON.stringify(styleAnalysis));
+      localStorage.setItem('originalQuizStyle', JSON.stringify({
+        styleProfile: styleAnalysis.analysis.styleProfile,
+        timestamp: new Date().toISOString()
+      }));
+      
+      toast({
+        title: "Analysis complete!",
+        description: "Your personalized look suggestions are ready!",
+      });
+      
+      // Navigate directly to suggestions page
+      navigate('/suggestions');
+    } catch (error) {
+      console.error('Style analysis error:', error);
+      toast({
+        title: "Analysis Error",
+        description: "Failed to analyze your style. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
