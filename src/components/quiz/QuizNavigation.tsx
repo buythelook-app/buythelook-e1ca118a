@@ -38,28 +38,28 @@ export const QuizNavigation = ({
   };
 
   return (
-    <div className="flex justify-between mt-8">
+    <div className="flex justify-between items-center">
       <Button
         variant="outline"
         onClick={onBack}
         disabled={currentStep === 1}
-        className="w-28"
+        className="w-24 h-10"
       >
         Back
       </Button>
       <Button
-        className="bg-netflix-accent w-40 ml-2 mr-2"
+        className="bg-netflix-accent w-32 h-10 mx-2"
         onClick={handleSaveForLater}
       >
-        <Clock className="mr-2 h-4 w-4" />
-        Continue Later
+        <Clock className="mr-1 h-4 w-4" />
+        Later
       </Button>
       {currentStep < totalSteps ? (
-        <Button className="bg-netflix-accent w-28" onClick={onNext}>
+        <Button className="bg-netflix-accent w-24 h-10" onClick={onNext}>
           Next
         </Button>
       ) : (
-        <Button className="bg-netflix-accent w-28" onClick={onComplete}>
+        <Button className="bg-netflix-accent w-24 h-10" onClick={onComplete}>
           Complete
         </Button>
       )}
