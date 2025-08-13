@@ -14,44 +14,45 @@ const TOTAL_STEPS = 13;
 const QuizSummary = () => {
   const { formData } = useQuizContext();
   
-  if (!formData.gender) return null; // Don't show summary until quiz starts
+  if (!formData.gender) return null;
 
   return (
-    <Card className="w-full mb-4 bg-netflix-card text-netflix-text">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm">Your Answers</CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-          {formData.gender && (
-            <div>
-              <strong>Gender:</strong> {formData.gender}
-            </div>
-          )}
-          {formData.height && (
-            <div>
-              <strong>Height:</strong> {formData.height} cm
-            </div>
-          )}
-          {formData.weight && (
-            <div>
-              <strong>Weight:</strong> {formData.weight !== "prefer_not_to_answer" ? 
-                `${formData.weight} lbs` : "N/A"}
-            </div>
-          )}
-          {formData.bodyShape && (
-            <div>
-              <strong>Body:</strong> {formData.bodyShape}
-            </div>
-          )}
-          {formData.colorPreferences.length > 0 && (
-            <div className="md:col-span-2">
-              <strong>Colors:</strong> {formData.colorPreferences.slice(0, 2).join(", ")}{formData.colorPreferences.length > 2 ? "..." : ""}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold text-center mb-4">Your Answers</h3>
+      <div className="space-y-2 text-sm">
+        {formData.gender && (
+          <div className="bg-netflix-background/50 p-2 rounded">
+            <strong>Gender:</strong><br />{formData.gender}
+          </div>
+        )}
+        {formData.height && (
+          <div className="bg-netflix-background/50 p-2 rounded">
+            <strong>Height:</strong><br />{formData.height} cm
+          </div>
+        )}
+        {formData.weight && (
+          <div className="bg-netflix-background/50 p-2 rounded">
+            <strong>Weight:</strong><br />{formData.weight !== "prefer_not_to_answer" ? 
+              `${formData.weight} lbs` : "N/A"}
+          </div>
+        )}
+        {formData.bodyShape && (
+          <div className="bg-netflix-background/50 p-2 rounded">
+            <strong>Body:</strong><br />{formData.bodyShape}
+          </div>
+        )}
+        {formData.colorPreferences.length > 0 && (
+          <div className="bg-netflix-background/50 p-2 rounded">
+            <strong>Colors:</strong><br />{formData.colorPreferences.slice(0, 3).join(", ")}{formData.colorPreferences.length > 3 ? "..." : ""}
+          </div>
+        )}
+        {formData.stylePreferences.length > 0 && (
+          <div className="bg-netflix-background/50 p-2 rounded">
+            <strong>Style:</strong><br />{formData.stylePreferences.join(", ")}
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
@@ -70,25 +71,22 @@ const QuizContent = () => {
   }, [toast]);
 
   return (
-    <>
-      <QuizSummary />
+    <div className="flex flex-col h-full">
+      <QuizProgress currentStep={step} totalSteps={TOTAL_STEPS} />
       <div className="flex-1 flex flex-col min-h-0">
-        <QuizProgress currentStep={step} totalSteps={TOTAL_STEPS} />
-        <div className="flex-1 flex flex-col min-h-0">
-          <QuizStepRenderer />
-        </div>
-        <div className="mt-auto pt-4">
-          <QuizNavigation
-            currentStep={step}
-            totalSteps={TOTAL_STEPS}
-            onNext={handleNext}
-            onBack={handleBack}
-            onComplete={handleSubmit}
-            onSaveForLater={handleSaveForLater}
-          />
-        </div>
+        <QuizStepRenderer />
       </div>
-    </>
+      <div className="mt-auto pt-4">
+        <QuizNavigation
+          currentStep={step}
+          totalSteps={TOTAL_STEPS}
+          onNext={handleNext}
+          onBack={handleBack}
+          onComplete={handleSubmit}
+          onSaveForLater={handleSaveForLater}
+        />
+      </div>
+    </div>
   );
 };
 
@@ -97,7 +95,10 @@ export const StyleQuiz = () => {
     <div>
       <QuizProvider>
         <QuizContainer>
-          <QuizContent />
+          {{
+            summary: <QuizSummary />,
+            content: <QuizContent />
+          }}
         </QuizContainer>
       </QuizProvider>
       <HomeButton />
