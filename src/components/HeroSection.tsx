@@ -18,15 +18,49 @@ export const HeroSection = () => {
       opacity: 1,
       transition: { 
         when: "beforeChildren",
-        staggerChildren: 0.3,
-        duration: 0.8 
+        staggerChildren: 0.4,
+        duration: 1 
       }
     }
   };
 
   const childVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+    hidden: { opacity: 0, y: 30, scale: 0.9 },
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      scale: 1,
+      transition: { 
+        duration: 0.8,
+        ease: [0.25, 0.46, 0.45, 0.94]
+      } 
+    }
+  };
+
+  const titleVariants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { 
+        duration: 1,
+        ease: "easeOut"
+      } 
+    }
+  };
+
+  const buttonVariants = {
+    hidden: { opacity: 0, scale: 0.8, y: 20 },
+    visible: { 
+      opacity: 1, 
+      scale: 1, 
+      y: 0,
+      transition: { 
+        duration: 0.6,
+        ease: "backOut",
+        delay: 0.3
+      } 
+    }
   };
 
   return (
@@ -68,18 +102,26 @@ export const HeroSection = () => {
         <div className="container mx-auto px-4 text-center">
           <motion.h1 
             className="text-5xl md:text-7xl font-display font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600"
-            variants={childVariants}
+            variants={titleVariants}
           >
             Your Personal Style,<br />
             <motion.span 
               className="bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent"
+              initial={{ opacity: 0, x: -50 }}
               animate={{ 
+                opacity: 1,
+                x: 0,
                 backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
               }}
               transition={{ 
-                duration: 5, 
-                repeat: Infinity,
-                repeatType: "mirror" 
+                opacity: { duration: 0.8, delay: 0.5 },
+                x: { duration: 0.8, delay: 0.5, ease: "easeOut" },
+                backgroundPosition: { 
+                  duration: 5, 
+                  repeat: Infinity,
+                  repeatType: "mirror",
+                  delay: 1.3
+                }
               }}
             >
               Curated
@@ -89,18 +131,26 @@ export const HeroSection = () => {
           <motion.p 
             className="text-xl mb-8 max-w-xl mx-auto text-gray-200"
             variants={childVariants}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.8, ease: "easeOut" }}
           >
             Discover personalized looks that match your style, occasion, and budget.
             Let our AI stylist create the perfect outfit for you.
           </motion.p>
           
-          <motion.div variants={childVariants}>
+          <motion.div 
+            variants={buttonVariants}
+            initial="hidden"
+            animate="visible"
+          >
             <motion.div
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
             >
               <Button 
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-shadow"
                 size="lg"
                 onClick={() => navigate('/quiz')}
               >
