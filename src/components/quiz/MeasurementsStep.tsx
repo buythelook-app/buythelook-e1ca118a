@@ -131,10 +131,10 @@ export const MeasurementsStep = ({
 
   if (step === 2) {
     return (
-      <div className="flex-1 flex flex-col">
+      <div className="h-full flex flex-col">
         <h2 className="text-2xl font-display font-semibold mb-6">What's your height?</h2>
-        <div className="flex-1">
-          <div className="flex flex-col gap-4">
+        <div className="flex-1 flex items-center">
+          <div className="flex flex-col gap-4 w-full">
             {!skipHeight ? (
               <>
                 <div className="flex gap-2 items-end">
@@ -191,9 +191,9 @@ export const MeasurementsStep = ({
 
   if (step === 3) {
     return (
-      <div className="flex-1 flex flex-col">
+      <div className="h-full flex flex-col">
         <h2 className="text-2xl font-display font-semibold mb-6">What's your weight?</h2>
-        <div className="flex-1 flex flex-col gap-4">
+        <div className="flex-1 flex flex-col justify-center gap-4">
           <div className="w-full">
             <Label htmlFor="weight">Weight (lbs)</Label>
             <Input
@@ -232,9 +232,9 @@ export const MeasurementsStep = ({
   }
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="h-full flex flex-col">
       <h2 className="text-2xl font-display font-semibold mb-6">Your measurements</h2>
-      <div className="flex-1 flex flex-col gap-4">
+      <div className="flex-1 flex flex-col justify-center gap-6">
         <div>
           <Label htmlFor="waist">Waist (inches)</Label>
           <Input

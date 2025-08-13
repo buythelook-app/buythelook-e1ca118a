@@ -72,9 +72,9 @@ export const PhotoUploadStep = ({ photo, onPhotoChange }: PhotoUploadStepProps) 
   };
 
   return (
-    <div className="space-y-4">
+    <div className="h-full flex flex-col">
       <h2 className="text-2xl font-display font-semibold mb-6">Upload a photo (optional)</h2>
-      <div className="flex flex-col items-center space-y-4">
+      <div className="flex-1 flex flex-col items-center justify-center space-y-4">
         <div className="w-full max-w-xs">
           <Label htmlFor="photo" className="cursor-pointer">
             <div className={`border-2 border-dashed ${isUploading ? 'border-gray-400' : 'border-netflix-accent'} rounded-lg p-8 text-center hover:bg-netflix-card transition-colors`}>

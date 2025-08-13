@@ -44,13 +44,13 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
   };
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="h-full flex flex-col">
       <h2 className="text-2xl font-display font-semibold mb-6">
         {formData.stylePreferences.length > 0 
           ? "Do you prefer your current style or this new option?" 
           : "Which style do you prefer?"}
       </h2>
-      <div className="grid grid-cols-2 gap-6 flex-1">
+      <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
         <div className="flex flex-col space-y-2">
           <div 
             className={`relative cursor-pointer group flex-1 ${
@@ -61,7 +61,7 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
             <img 
               src={getStyleImage(style1.name)}
               alt={style1.name} 
-              className={`w-full h-full object-cover rounded-lg transition-transform ${
+              className={`w-full h-full max-h-72 object-cover rounded-lg transition-transform ${
                 isSelected(style1.name) ? 'scale-[1.02]' : 'group-hover:scale-105'
               }`}
             />
@@ -85,7 +85,7 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
             <img 
               src={getStyleImage(style2.name)}
               alt={style2.name} 
-              className={`w-full h-full object-cover rounded-lg transition-transform ${
+              className={`w-full h-full max-h-72 object-cover rounded-lg transition-transform ${
                 isSelected(style2.name) ? 'scale-[1.02]' : 'group-hover:scale-105'
               }`}
             />

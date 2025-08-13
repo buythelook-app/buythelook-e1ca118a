@@ -17,7 +17,7 @@ const bodyShapeEmojis = {
 
 export const BodyShapeStep = ({ value, onChange }: BodyShapeStepProps) => {
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="h-full flex flex-col">
       <h2 className="text-2xl font-display font-semibold mb-6">What's your body shape?</h2>
       <div className="flex-1 flex items-center">
         <RadioGroup
