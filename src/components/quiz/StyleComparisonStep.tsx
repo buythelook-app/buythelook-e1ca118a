@@ -45,59 +45,59 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
 
   return (
     <div className="h-full flex flex-col">
-      <h2 className="text-2xl font-display font-semibold mb-6">
+      <h2 className="text-xl font-display font-semibold mb-4">
         {formData.stylePreferences.length > 0 
           ? "Do you prefer your current style or this new option?" 
           : "Which style do you prefer?"}
       </h2>
-      <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
+      <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
         <div className="flex flex-col space-y-2">
           <div 
             className={`relative cursor-pointer group flex-1 ${
-              isSelected(style1.name) ? 'ring-4 ring-netflix-accent' : ''
+              isSelected(style1.name) ? 'ring-2 ring-netflix-accent' : ''
             }`}
             onClick={() => handleStyleSelect(style1.name)}
           >
             <img 
               src={getStyleImage(style1.name)}
               alt={style1.name} 
-              className={`w-full h-full max-h-72 object-cover rounded-lg transition-transform ${
+              className={`w-full h-40 object-cover rounded-lg transition-transform ${
                 isSelected(style1.name) ? 'scale-[1.02]' : 'group-hover:scale-105'
               }`}
             />
             {isSelected(style1.name) && (
               <div className="absolute inset-0 bg-netflix-accent/20 rounded-lg flex items-center justify-center">
-                <div className="bg-netflix-accent text-white px-4 py-2 rounded-full">
+                <div className="bg-netflix-accent text-white px-2 py-1 rounded-full text-xs">
                   Current Preference
                 </div>
               </div>
             )}
           </div>
-          <p className="text-center font-medium text-lg">{style1.name}</p>
+          <p className="text-center font-medium text-sm">{style1.name}</p>
         </div>
         <div className="flex flex-col space-y-2">
           <div 
             className={`relative cursor-pointer group flex-1 ${
-              isSelected(style2.name) ? 'ring-4 ring-netflix-accent' : ''
+              isSelected(style2.name) ? 'ring-2 ring-netflix-accent' : ''
             }`}
             onClick={() => handleStyleSelect(style2.name)}
           >
             <img 
               src={getStyleImage(style2.name)}
               alt={style2.name} 
-              className={`w-full h-full max-h-72 object-cover rounded-lg transition-transform ${
+              className={`w-full h-40 object-cover rounded-lg transition-transform ${
                 isSelected(style2.name) ? 'scale-[1.02]' : 'group-hover:scale-105'
               }`}
             />
             {isSelected(style2.name) && (
               <div className="absolute inset-0 bg-netflix-accent/20 rounded-lg flex items-center justify-center">
-                <div className="bg-netflix-accent text-white px-4 py-2 rounded-full">
+                <div className="bg-netflix-accent text-white px-2 py-1 rounded-full text-xs">
                   Current Preference
                 </div>
               </div>
             )}
           </div>
-          <p className="text-center font-medium text-lg">{style2.name}</p>
+          <p className="text-center font-medium text-sm">{style2.name}</p>
         </div>
       </div>
     </div>
