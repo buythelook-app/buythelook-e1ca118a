@@ -55,7 +55,7 @@ const Index = () => {
   const renderNoStyleContent = useMemo(() => (
     <div className="min-h-screen bg-netflix-background">
       <Navbar />
-      <div className="container mx-auto px-4 py-16 text-center">
+      <div className="container mx-auto px-4 pt-[220px] py-16 text-center">
         <h2 className="text-2xl font-bold mb-4">Complete Your Style Quiz</h2>
         <p className="text-gray-600 mb-8">
           Take our style quiz to get personalized look suggestions that match your style.
@@ -78,7 +78,9 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-netflix-background">
       <Navbar />
-      <HeroSection />
+      <div className="pt-[200px]"> {/* Account for fixed navbar height */}
+        <HeroSection />
+      </div>
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <MoodFilter selectedMood={selectedMood} onMoodSelect={handleMoodSelect} />
