@@ -72,16 +72,20 @@ const QuizContent = () => {
   return (
     <>
       <QuizSummary />
-      <QuizProgress currentStep={step} totalSteps={TOTAL_STEPS} />
-      <QuizStepRenderer />
-      <QuizNavigation
-        currentStep={step}
-        totalSteps={TOTAL_STEPS}
-        onNext={handleNext}
-        onBack={handleBack}
-        onComplete={handleSubmit}
-        onSaveForLater={handleSaveForLater}
-      />
+      <div className="flex-1 min-h-0 flex flex-col">
+        <QuizProgress currentStep={step} totalSteps={TOTAL_STEPS} />
+        <div className="flex-1 min-h-0">
+          <QuizStepRenderer />
+        </div>
+        <QuizNavigation
+          currentStep={step}
+          totalSteps={TOTAL_STEPS}
+          onNext={handleNext}
+          onBack={handleBack}
+          onComplete={handleSubmit}
+          onSaveForLater={handleSaveForLater}
+        />
+      </div>
     </>
   );
 };
