@@ -23,17 +23,17 @@ export const BodyShapeStep = ({ value, onChange }: BodyShapeStepProps) => {
         <RadioGroup
           value={value}
           onValueChange={onChange}
-          className="flex flex-col space-y-4 w-full"
+          className="flex flex-col space-y-2 w-full"
         >
           {["hourglass", "pear", "rectangle", "triangle", "oval"].map((shape) => {
             const emoji = bodyShapeEmojis[shape];
             return (
-              <div key={shape} className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all ${
+              <div key={shape} className={`flex items-center space-x-3 p-3 rounded-lg border-2 transition-all ${
                 value === shape ? "border-netflix-accent bg-netflix-accent/10" : "border-gray-200 hover:border-netflix-accent/50"
               }`}>
                 <RadioGroupItem value={shape} id={shape} />
-                <span className="text-2xl">{emoji}</span>
-                <Label htmlFor={shape} className="text-lg font-medium cursor-pointer flex-1 capitalize">{shape}</Label>
+                <span className="text-xl">{emoji}</span>
+                <Label htmlFor={shape} className="text-base font-medium cursor-pointer flex-1 capitalize">{shape}</Label>
               </div>
             );
           })}
