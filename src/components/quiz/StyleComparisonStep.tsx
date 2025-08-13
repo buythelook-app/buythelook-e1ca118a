@@ -61,7 +61,7 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
             <img 
               src={getStyleImage(style1.name)}
               alt={style1.name} 
-              className={`w-full h-40 object-cover rounded-lg transition-transform ${
+              className={`w-full h-32 object-contain rounded-lg transition-transform ${
                 isSelected(style1.name) ? 'scale-[1.02]' : 'group-hover:scale-105'
               }`}
             />
@@ -85,7 +85,7 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
             <img 
               src={getStyleImage(style2.name)}
               alt={style2.name} 
-              className={`w-full h-40 object-cover rounded-lg transition-transform ${
+              className={`w-full h-32 object-contain rounded-lg transition-transform ${
                 isSelected(style2.name) ? 'scale-[1.02]' : 'group-hover:scale-105'
               }`}
             />
