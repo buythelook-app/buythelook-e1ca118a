@@ -152,20 +152,20 @@ export const HeroSection = () => {
               className="relative"
             >
               {/* Glowing background effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg blur-lg opacity-75 animate-pulse"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-lg blur-lg opacity-90 animate-pulse"></div>
               
               <Button 
                 className="relative bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 hover:from-purple-600 hover:via-pink-600 hover:to-purple-700 text-white font-bold text-lg px-8 py-4 shadow-2xl border-2 border-white/20 backdrop-blur-sm"
                 size="lg"
                 onClick={() => navigate('/quiz')}
               >
-                🌟 Take Style Quiz Now!
+                Take Style Quiz Now!
               </Button>
             </motion.div>
             
             {/* Floating particles effect */}
             <motion.div
-              className="absolute -top-2 -right-2 w-3 h-3 bg-yellow-400 rounded-full"
+              className="absolute -top-2 -right-2 w-3 h-3 bg-purple-400 rounded-full"
               animate={{
                 scale: [1, 1.5, 1],
                 opacity: [0.7, 1, 0.7],
@@ -177,7 +177,7 @@ export const HeroSection = () => {
               }}
             />
             <motion.div
-              className="absolute -bottom-1 -left-1 w-2 h-2 bg-cyan-400 rounded-full"
+              className="absolute -bottom-1 -left-1 w-2 h-2 bg-emerald-400 rounded-full"
               animate={{
                 scale: [1, 1.3, 1],
                 opacity: [0.5, 1, 0.5],
