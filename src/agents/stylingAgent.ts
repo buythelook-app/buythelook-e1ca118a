@@ -455,9 +455,9 @@ class StylingAgentClass implements Agent {
         const nonMinimalistBrands = ['nike', 'adidas', 'new balance', 'converse'];
         const isNonMinimalistBrand = nonMinimalistBrands.some(brand => shoeBrand.includes(brand));
         
-        // Exclude non-minimalist shoe types
-        const nonMinimalistTypes = ['trainers', 'sneakers', 'sandals', 'heeled', 'block heel', 
-                                   'kitten heel', 'barely there', 'cutout', 'chain', 'metallic'];
+        // Exclude non-minimalist shoe types (allow classic heels, exclude flashy/decorative types)
+        const nonMinimalistTypes = ['trainers', 'sneakers', 'barely there', 'cutout', 'chain', 
+                                   'metallic', 'platform', 'wedge', 'strappy', 'studded', 'embellished'];
         const hasNonMinimalistType = nonMinimalistTypes.some(type => 
           shoeName.includes(type) || shoeDesc.includes(type)
         );
@@ -468,8 +468,9 @@ class StylingAgentClass implements Agent {
           shoeColor.includes(color) || shoeName.includes(color)
         );
         
-        // Look for minimalist-friendly terms
-        const minimalistTerms = ['flat', 'simple', 'basic', 'minimal', 'clean', 'slip-on', 'loafer', 'mule'];
+        // Look for minimalist-friendly terms (including classic heels)
+        const minimalistTerms = ['flat', 'simple', 'basic', 'minimal', 'clean', 'slip-on', 'loafer', 'mule', 
+                                'heel', 'pump', 'pointed', 'classic', 'court'];
         const hasMinimalistTerms = minimalistTerms.some(term => 
           shoeName.includes(term) || shoeDesc.includes(term)
         );
