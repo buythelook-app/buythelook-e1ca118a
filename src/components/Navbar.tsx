@@ -71,7 +71,7 @@ export const Navbar = () => {
             <img 
               src="/lovable-uploads/36f503f4-5335-485a-84dd-293fee3fc453.png" 
               alt="Buy the Look Logo" 
-              className="h-8 w-8 object-contain"
+              className="h-16 w-16 object-contain"
             />
             <span>Buy the Look</span>
           </Link>
