@@ -67,8 +67,13 @@ export const Navbar = () => {
     <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex flex-col items-start">
-          <Link to="/" className="text-2xl font-display text-netflix-accent">
-            Buy the Look
+          <Link to="/" className="flex items-center space-x-3">
+            <img 
+              src="/lovable-uploads/36f503f4-5335-485a-84dd-293fee3fc453.png" 
+              alt="Buy the Look Logo" 
+              className="h-20 w-20 object-contain"
+            />
+            <span className="text-2xl font-display text-netflix-accent">Buy the Look</span>
           </Link>
           {firstName && (
             <span className="text-xs text-white mt-1">Hello, {firstName}</span>
