@@ -65,20 +65,20 @@ export const Navbar = () => {
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
-      <div className="container mx-auto flex items-center justify-between">
-        <div className="flex flex-col items-start w-full">
-          <Link to="/" className="block w-fit">
+      <div className="w-full flex items-center justify-start">
+        <div className="flex flex-col items-start">
+          <Link to="/" className="block">
             <img 
               src="/lovable-uploads/36f503f4-5335-485a-84dd-293fee3fc453.png" 
               alt="Buy the Look Logo" 
-              className="h-48 w-48 object-left object-contain"
+              className="h-48 w-48 object-contain"
             />
           </Link>
           {firstName && (
-            <span className="text-xs text-white mt-1 ml-0">Hello, {firstName}</span>
+            <span className="text-xs text-white mt-1">Hello, {firstName}</span>
           )}
         </div>
-        <div className="flex items-center space-x-8">
+        <div className="flex items-center space-x-8 ml-auto">
           {/* תמיד הצג את העגלה */}
           <Link to="/cart" className="hover:text-netflix-accent relative">
             <ShoppingCart className="h-6 w-6 text-white" />
