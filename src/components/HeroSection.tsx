@@ -65,7 +65,7 @@ export const HeroSection = () => {
         initial="hidden"
         animate={isVisible ? "visible" : "hidden"}
       >
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 text-center">
           <motion.h1 
             className="text-5xl md:text-7xl font-display font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600"
             variants={childVariants}
@@ -87,7 +87,7 @@ export const HeroSection = () => {
           </motion.h1>
           
           <motion.p 
-            className="text-xl mb-8 max-w-xl text-gray-200"
+            className="text-xl mb-8 max-w-xl mx-auto text-gray-200"
             variants={childVariants}
           >
             Discover personalized looks that match your style, occasion, and budget.
