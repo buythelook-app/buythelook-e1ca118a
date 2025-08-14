@@ -64,24 +64,24 @@ export const Navbar = () => {
   console.log("Current firstName:", firstName);
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-black/90 backdrop-blur-sm border-b border-white/10 px-4 py-2">
-      <div className="w-full flex items-center justify-between">
-        <div className="flex items-center">
+    <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
+      <div className="w-full flex items-center justify-start">
+        <div className="flex flex-col items-start">
           <Link to="/" className="block">
             <img 
               src="/lovable-uploads/36f503f4-5335-485a-84dd-293fee3fc453.png" 
               alt="Buy the Look Logo" 
-              className="h-12 w-auto object-contain"
+              className="h-48 w-48 object-contain"
             />
           </Link>
           {firstName && (
-            <span className="text-xs text-white ml-3">Hello, {firstName}</span>
+            <span className="text-xs text-white mt-1">Hello, {firstName}</span>
           )}
         </div>
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-8 ml-auto">
           {/* תמיד הצג את העגלה */}
           <Link to="/cart" className="hover:text-netflix-accent relative">
-            <ShoppingCart className="h-5 w-5 text-white" />
+            <ShoppingCart className="h-6 w-6 text-white" />
             {totalCartItems > 0 && (
               <Badge 
                 className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-netflix-accent text-[10px]"
@@ -94,7 +94,7 @@ export const Navbar = () => {
           {isAuthenticated ? (
             <>
               <Link to="/my-list" className="hover:text-netflix-accent relative">
-                <Heart className="h-5 w-5" />
+                <Heart className="h-6 w-6" />
                 {totalLooks > 0 && (
                   <Badge 
                     className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-netflix-accent text-[10px]"
@@ -112,7 +112,7 @@ export const Navbar = () => {
                         <AvatarFallback>{firstName.charAt(0)}</AvatarFallback>
                       </Avatar>
                     ) : (
-                      <User className="h-5 w-5 text-white fill-white stroke-[1.5]" />
+                      <User className="h-6 w-6 text-white fill-white stroke-[1.5]" />
                     )}
                   </DropdownMenuTrigger>
                   <UserDropdownMenu 
@@ -124,7 +124,7 @@ export const Navbar = () => {
             </>
           ) : (
             <Link to="/auth" className="hover:text-netflix-accent">
-              <User className="h-5 w-5 text-white stroke-[1.5]" />
+              <User className="h-6 w-6 text-white stroke-[1.5]" />
             </Link>
           )}
         </div>
