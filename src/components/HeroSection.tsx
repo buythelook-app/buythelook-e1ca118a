@@ -146,21 +146,20 @@ export const HeroSection = () => {
             className="relative"
           >
             <motion.div
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.08, y: -3 }}
+              whileTap={{ scale: 0.95 }}
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className="relative group"
+              className="relative"
             >
-              {/* Subtle elegant background */}
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg blur-sm group-hover:blur-md transition-all duration-300"></div>
-              <div className="absolute inset-0 bg-white/5 rounded-lg border border-white/10"></div>
+              {/* Glowing background effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-lg blur-lg opacity-90 animate-pulse"></div>
               
               <Button 
-                className="relative bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 hover:from-purple-700 hover:via-pink-700 hover:to-purple-800 text-white font-semibold text-lg px-8 py-4 shadow-xl transition-all duration-300 hover:shadow-2xl"
+                className="relative bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 hover:from-purple-600 hover:via-pink-600 hover:to-purple-700 text-white font-bold text-lg px-8 py-4 shadow-2xl border-2 border-white/20 backdrop-blur-sm"
                 size="lg"
                 onClick={() => navigate('/quiz')}
               >
-                בצע את שאלון הסטיילינג עכשיו
+                Take Style Quiz Now!
               </Button>
             </motion.div>
           </motion.div>
