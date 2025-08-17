@@ -23,3 +23,7 @@ method = "POST"
 headers = { "Content-Type" = "application/json" }
 body = "{}"
 
+[functions.serp-search]
+verify_jwt = false
+cors = true
+
