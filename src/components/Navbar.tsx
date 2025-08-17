@@ -64,7 +64,7 @@ export const Navbar = () => {
   console.log("Current firstName:", firstName);
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-black/90 backdrop-blur-sm border-b border-white/10 px-4 py-2">
+    <nav className="fixed top-0 w-full z-50 px-4 py-2">
       <div className="w-full flex items-center justify-between">
         <div className="flex items-center">
           <Link to="/" className="block">
