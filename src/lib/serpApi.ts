@@ -1,7 +1,7 @@
 // SerpAPI Integration for Fashion Styling App
 // Adapted for TypeScript and Supabase Edge Functions
 
-import { supabase } from './supabase';
+import { supabase } from '@/lib/supabase';
 
 export interface FashionItem {
   id: string;
@@ -39,48 +39,24 @@ export async function getFashionItems(
   gender: 'women' | 'men' = 'women'
 ): Promise<FashionSearchResult> {
   try {
-    // Build search query based on user preferences
-    const query = buildSearchQuery(eventType, style, budget, gender);
-    
-    console.log('🔍 Searching for fashion items:', { eventType, style, budget, gender, query });
-    
-    // Use the existing Supabase Edge function for SerpAPI
-    const { data, error } = await supabase.functions.invoke('serp-search', {
-      body: {
-        query,
-        engine: 'google',
-        num: 20
-      }
+    console.log('🔍 Requesting fashion-items edge function:', { eventType, style, budget, gender });
+    const { data, error } = await supabase.functions.invoke('fashion-items', {
+      body: { eventType, style, budget, gender }
     });
 
     if (error) {
-      console.error('❌ SerpAPI error:', error);
-      return {
-        success: false,
-        error: error.message,
-        items: []
-      };
+      console.error('❌ fashion-items error:', error);
+      return { success: false, error: error.message, items: [] };
     }
 
-    // Process and filter results for fashion items
-    const fashionItems = processFashionResults(data?.images_results || []);
-    
-    console.log('✅ Fashion items found:', fashionItems.length);
-    
-    return {
-      success: true,
-      items: fashionItems,
-      query: query,
-      totalResults: fashionItems.length
-    };
-    
+    if (!data?.success) {
+      return { success: false, error: data?.error || 'Unknown error', items: [] };
+    }
+
+    return data as FashionSearchResult;
   } catch (error: any) {
     console.error('❌ Error fetching fashion items:', error);
-    return {
-      success: false,
-      error: error.message || 'Unknown error occurred',
-      items: []
-    };
+    return { success: false, error: error.message || 'Unknown error occurred', items: [] };
   }
 }
 

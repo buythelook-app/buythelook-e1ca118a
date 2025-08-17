@@ -1,6 +1,4 @@
-
-
-project_id = "mwsblnposuyhrgzrtoyo"
+project_id = "aqkeprwxxsryropnhfvm"
 
 [functions.generate-outfit]
 verify_jwt = false
@@ -27,3 +25,6 @@ body = "{}"
 verify_jwt = false
 cors = true
 
+[functions.fashion-items]
+verify_jwt = false
+cors = true
