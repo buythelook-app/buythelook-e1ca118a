@@ -86,8 +86,20 @@ export const QuizProvider = ({ children }: { children: React.ReactNode }) => {
         styleProfile: styleAnalysis.analysis.styleProfile,
         timestamp: new Date().toISOString()
       }));
+
+      // Prepare fashion search parameters from quiz data
+      const fashionParams = {
+        eventType: 'casual', // Default, could be enhanced with a quiz step
+        style: formData.stylePreferences[0] || 'classic', // Use first style preference
+        budget: 'medium', // Default, could be enhanced with a quiz step
+        gender: formData.gender === 'male' ? 'men' : 'women'
+      };
+
+      // Store fashion search params for the results page
+      localStorage.setItem('quizData', JSON.stringify(fashionParams));
       
-      navigate('/suggestions');
+      // Redirect to fashion results instead of suggestions
+      navigate('/fashion-results');
     } catch (error) {
       console.error('Style analysis error:', error);
       toast({

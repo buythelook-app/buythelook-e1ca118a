@@ -19,6 +19,7 @@ import RecommendationTest from './pages/RecommendationTest';
 import AgentSimulationPage from './pages/AgentSimulationPage';
 import AgentTrainingPage from './pages/AgentTrainingPage';
 import AIImageAnalysisPage from './pages/AIImageAnalysisPage';
+import FashionResultsPage from './pages/FashionResultsPage';
 import { StyleQuiz } from './components/StyleQuiz';
 import { Cart } from './components/Cart';
 import { MyList } from './components/MyList';
@@ -68,6 +69,7 @@ function App() {
             
             {/* User features */}
             <Route path="/quiz" element={<StyleQuiz />} />
+            <Route path="/fashion-results" element={<FashionResultsPage />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/my-list" element={<MyList />} />
             <Route path="/checkout" element={<Checkout />} />
