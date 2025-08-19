@@ -115,3 +115,23 @@
   @apply p-3 rounded-md border border-emerald-700 bg-emerald-50 text-emerald-800 shadow-sm;
 }
 
+/* Hide development environment messages */
+[data-testid*="preview"], 
+[class*="preview-loading"],
+[class*="live-preview"],
+div:has-text("Starting live preview"),
+div:has-text("starting live preview"),
+*[class*="gptengineer"] {
+  display: none !important;
+}
+
+/* Hide any floating development messages */
+body > div:last-child:not(#root) {
+  display: none !important;
+}
+
+/* Hide elements containing "Starting" or "preview" text */
+*:contains("Starting live preview") {
+  display: none !important;
+}
+
