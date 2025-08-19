@@ -60,8 +60,8 @@ export const useMagicLinkAuth = ({
       });
 
       toast({
-        title: "קישור נשלח!",
-        description: `קישור התחברות נשלח לכתובת ${email}. בדוק את תיבת המייל שלך.`,
+        title: "Link Sent!",
+        description: `Login link sent to ${email}. Check your inbox.`,
         variant: "default",
       });
 
@@ -76,8 +76,8 @@ export const useMagicLinkAuth = ({
       });
       
       toast({
-        title: "שגיאה",
-        description: error.message || "נכשל בשליחת קישור התחברות",
+        title: "Error",
+        description: error.message || "Failed to send login link",
         variant: "destructive",
       });
     } finally {

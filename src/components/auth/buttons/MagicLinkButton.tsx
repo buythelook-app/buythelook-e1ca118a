@@ -17,8 +17,8 @@ export const MagicLinkButton = ({ isLoading, onSendMagicLink }: MagicLinkButtonP
   const handleSendMagicLink = async () => {
     if (!email.trim()) {
       toast({
-        title: "שגיאה",
-        description: "נא להזין כתובת מייל",
+        title: "Error",
+        description: "Please enter an email address",
         variant: "destructive",
       });
       return;
@@ -26,8 +26,8 @@ export const MagicLinkButton = ({ isLoading, onSendMagicLink }: MagicLinkButtonP
 
     if (!email.includes("@")) {
       toast({
-        title: "שגיאה", 
-        description: "נא להזין כתובת מייל תקינה",
+        title: "Error", 
+        description: "Please enter a valid email address",
         variant: "destructive",
       });
       return;
@@ -43,11 +43,11 @@ export const MagicLinkButton = ({ isLoading, onSendMagicLink }: MagicLinkButtonP
       <div className="space-y-3">
         <Input
           type="email"
-          placeholder="הזן כתובת מייל"
+          placeholder="Enter email address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="text-right"
-          dir="rtl"
+          className="text-left"
+          dir="ltr"
         />
         <div className="flex gap-2">
           <Button
@@ -57,14 +57,14 @@ export const MagicLinkButton = ({ isLoading, onSendMagicLink }: MagicLinkButtonP
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             <Mail className="mr-2 h-4 w-4" />
-            שלח קישור התחברות
+            Send Login Link
           </Button>
           <Button
             variant="outline"
             onClick={() => setShowEmailInput(false)}
             disabled={isLoading}
           >
-            ביטול
+            Cancel
           </Button>
         </div>
       </div>
