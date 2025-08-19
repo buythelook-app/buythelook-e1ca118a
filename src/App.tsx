@@ -33,6 +33,7 @@ import { OurRules } from './components/OurRules';
 import { StyleGuide } from './components/StyleGuide';
 import { DeveloperTools } from './components/DeveloperTools';
 import { LookSuggestions } from './components/LookSuggestions';
+import { LookDetail } from './components/LookDetail';
 
 // Create QueryClient instance with error handling
 const queryClient = new QueryClient({
@@ -70,6 +71,7 @@ function App() {
             {/* User features */}
             <Route path="/quiz" element={<StyleQuiz />} />
             <Route path="/fashion-results" element={<FashionResultsPage />} />
+            <Route path="/look/:id" element={<LookDetail />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/my-list" element={<MyList />} />
             <Route path="/checkout" element={<Checkout />} />
