@@ -188,8 +188,11 @@ export const Cart = () => {
     }, 0);
 
     const looksTotal = looks.reduce((sum, look) => {
-      const price = parseFloat(look.totalPrice.replace('$', ''));
-      return sum + price;
+      const lookPrice = look.items.reduce((lookSum, item) => {
+        const price = parseFloat(item.price.replace('$', ''));
+        return lookSum + price;
+      }, 0);
+      return sum + lookPrice;
     }, 0);
 
     return itemsTotal + looksTotal;

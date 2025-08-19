@@ -26,12 +26,23 @@ export const LookCartItem = ({
   onRemoveLook, 
   onRemoveItem 
 }: LookCartItemProps) => {
+  const calculateLookTotal = () => {
+    return items.reduce((sum, item) => {
+      const price = parseFloat(item.price.replace('$', ''));
+      return sum + price;
+    }, 0);
+  };
+
   return (
     <div className="bg-netflix-background rounded-lg p-4 space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-xl font-semibold">{title}</h3>
         <div className="flex items-center gap-4">
-          <span className="text-netflix-accent">{totalPrice}</span>
+          {items.length > 1 ? (
+            <span className="text-netflix-accent">${calculateLookTotal().toFixed(2)}</span>
+          ) : (
+            <span className="text-netflix-accent">{items[0]?.price}</span>
+          )}
           <Button
             variant="ghost"
             size="icon"
