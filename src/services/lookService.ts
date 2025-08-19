@@ -854,6 +854,53 @@ function selectShoeForOccasion(shoes: any[], occasion: string): any | null {
     console.error(`❌ [selectShoeForOccasion] No shoes provided`);
     return null;
   }
+
+  // Detect user style (from quiz/filters stored in localStorage)
+  let userStyle = 'casual';
+  try {
+    const styleAnalysis = localStorage.getItem('styleAnalysis');
+    if (styleAnalysis) {
+      const parsed = JSON.parse(styleAnalysis);
+      userStyle = parsed?.analysis?.styleProfile || 'casual';
+    }
+  } catch (e) {
+    console.warn('[selectShoeForOccasion] Failed to read styleAnalysis from localStorage');
+  }
+
+  // Strict Minimalist filtering (brands, terms, colors)
+  if (userStyle === 'minimalist') {
+    const minimalistColors = ['white', 'cream', 'beige', 'tan', 'taupe', 'light gray', 'light grey', 'gray', 'grey', 'nude', 'black'];
+    const minimalistTerms = ['flat', 'simple', 'basic', 'minimal', 'clean', 'slip-on', 'loafer', 'mule', 'ballet', 'derby', 'oxford', 'chelsea', 'boot', 'court', 'pointed', 'leather', 'smooth', 'low-top', 'plain'];
+    const nonMinimalistBrands = ['nike', 'adidas', 'new balance', 'converse', 'puma', 'asics', 'reebok'];
+    const nonMinimalistTerms = ['trainer', 'trainers', 'sneaker', 'sneakers', 'running', 'runner', 'athletic', 'sport', 'mesh', 'neon', 'logo', 'branding', 'chunky', 'platform', 'wedge', 'studded', 'embellished', 'chain', 'metallic', 'cutout', 'strappy'];
+
+    const minimalistCandidates = shoes.filter(shoe => {
+      const name = (shoe.product_name || '').toLowerCase();
+      const desc = (shoe.description || '').toLowerCase();
+      const family = (shoe.product_family || '').toLowerCase();
+      const subfamily = (shoe.product_subfamily || '').toLowerCase();
+      const color = (shoe.colour || shoe.color || '').toLowerCase();
+      const brand = (shoe.brand || '').toLowerCase();
+      const text = `${name} ${desc} ${family} ${subfamily}`;
+
+      // Exclude obvious non-minimalist brands/terms
+      if (nonMinimalistBrands.some(b => brand.includes(b))) return false;
+      if (nonMinimalistTerms.some(t => text.includes(t))) return false;
+
+      // Require either minimalist color OR minimalist descriptive term
+      const hasMinColor = minimalistColors.some(c => color.includes(c) || text.includes(c));
+      const hasMinTerm = minimalistTerms.some(t => text.includes(t));
+      return hasMinColor || hasMinTerm;
+    });
+
+    console.log(`👠 [selectShoeForOccasion] Minimalist candidates: ${minimalistCandidates.length}`);
+    if (minimalistCandidates.length > 0) {
+      const idx = Math.floor(Math.random() * minimalistCandidates.length);
+      const selected = minimalistCandidates[idx];
+      console.log(`✅ [selectShoeForOccasion] Selected minimalist shoe: "${selected.product_name}"`);
+      return selected;
+    }
+  }
   
   if (occasion.toLowerCase() === 'casual' || occasion.toLowerCase() === 'general' || occasion.toLowerCase() === 'weekend') {
     // For casual occasions, prioritize casual shoes
