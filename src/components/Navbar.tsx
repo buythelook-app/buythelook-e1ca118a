@@ -51,14 +51,46 @@ export const Navbar = () => {
           setAvatarUrl(avatar);
         } else {
           setIsAuthenticated(false);
+          setFirstName("");
+          setAvatarUrl("");
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
         setIsAuthenticated(false);
+        setFirstName("");
+        setAvatarUrl("");
       }
     };
 
+    // Set up auth state listener to update navbar when auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed in Navbar:", event);
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (session?.user) {
+          setIsAuthenticated(true);
+          const name = session.user.user_metadata?.firstName || 
+                      session.user.user_metadata?.name || 
+                      session.user.email?.split('@')[0] || 
+                      "";
+          setFirstName(name);
+          
+          const avatar = session.user.user_metadata?.avatar_url || 
+                        session.user.user_metadata?.picture || 
+                        "";
+          setAvatarUrl(avatar);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        setFirstName("");
+        setAvatarUrl("");
+      }
+    });
+
     getUserData();
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   console.log("Current firstName:", firstName);
@@ -115,10 +147,10 @@ export const Navbar = () => {
                       <User className="h-5 w-5 text-white fill-white stroke-[1.5]" />
                     )}
                   </DropdownMenuTrigger>
-                  <UserDropdownMenu 
-                    onAddressClick={() => setShowShippingAddress(true)}
-                    handleCalendarSync={handleCalendarSync}
-                  />
+        <UserDropdownMenu 
+          onAddressClick={() => setShowShippingAddress(true)}
+          handleCalendarSync={handleCalendarSync}
+        />
                 </DropdownMenu>
               </div>
             </>

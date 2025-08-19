@@ -22,8 +22,8 @@ export const useMagicLinkAuth = ({
       
       setProviderLoading(true);
       
-      // Get the current site URL for the redirect
-      const redirectUrl = window.location.origin;
+      // Get the current site URL for the redirect - make it same tab
+      const redirectUrl = `${window.location.origin}/auth?type=magiclink`;
       
       logger.info("Sending magic link", { 
         data: { 

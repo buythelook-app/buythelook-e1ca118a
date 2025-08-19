@@ -24,7 +24,8 @@ export const useAuthUrlParams = ({
                          window.location.search.includes('token=') ||
                          window.location.search.includes('type=') ||
                          window.location.search.includes('error=') ||
-                         window.location.search.includes('access_token=');
+                         window.location.search.includes('access_token=') ||
+                         window.location.search.includes('magiclink');
     
     if (hasAuthParams) {
       console.log("Auth params detected in URL:", window.location.href);
@@ -49,10 +50,33 @@ export const useAuthUrlParams = ({
           throw new Error(errorDescription);
         }
         
-        // Check for password recovery type in URL parameters
+        // Check for magic link authentication  
         const type = url.searchParams.get('type') || 
                     (url.hash && new URLSearchParams(url.hash.substring(1)).get('type'));
         
+        if (type === 'magiclink') {
+          logger.info("Magic link authentication detected");
+          // For magic link, we need to handle the session differently
+          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+          
+          if (sessionError) {
+            console.error("Magic link session error:", sessionError);
+            throw sessionError;
+          }
+          
+          if (sessionData.session) {
+            console.log("Magic link authentication successful:", sessionData.session.user?.id);
+            setAuthError(null);
+            toast({
+              title: "Welcome!",
+              description: "Successfully signed in via email link.",
+            });
+            navigate('/home');
+            return true;
+          }
+        }
+        
+        // Check for password recovery type in URL parameters
         if (type === 'recovery') {
           logger.info("Password recovery link detected, redirecting to reset password page");
           navigate('/reset-password');
