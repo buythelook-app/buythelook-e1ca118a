@@ -242,7 +242,7 @@ const AgentLearningDashboard = () => {
       <div className="mb-6">
         <Button onClick={triggerLearningUpdate} className="ml-4">
           <Brain className="w-4 h-4 ml-2" />
-          עדכן למידה
+          Update Learning
         </Button>
         <Button onClick={fetchDashboardData} variant="outline">
           <Activity className="w-4 h-4 ml-2" />

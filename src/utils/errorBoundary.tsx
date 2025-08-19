@@ -62,7 +62,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                 onClick={() => window.location.href = '/'}
                 className="w-full"
               >
-                חזור לעמוד הבית
+                Back to Home
               </Button>
             </div>
             {this.state.error && (

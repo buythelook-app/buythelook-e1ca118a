@@ -90,7 +90,7 @@ export const BudgetFilter = ({
               onClick={() => setOpen(false)}
               className="bg-netflix-accent hover:bg-netflix-accent/90"
             >
-              סגור
+              Close
             </Button>
           </div>
         </div>

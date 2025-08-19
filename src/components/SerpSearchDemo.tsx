@@ -121,7 +121,7 @@ export const SerpSearchDemo = () => {
             
             {results && (
               <Button variant="outline" onClick={clearResults}>
-                נקה תוצאות
+                Clear Results
               </Button>
             )}
           </div>

@@ -220,7 +220,7 @@ const FeedbackManagementPage = () => {
             <AlertDialogFooter>
               <AlertDialogCancel>ביטול</AlertDialogCancel>
               <AlertDialogAction onClick={resetAllData}>
-                מחק הכל
+                Delete All
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -294,7 +294,7 @@ const FeedbackManagementPage = () => {
                                 <AlertDialogAction 
                                   onClick={() => deleteFeedback(feedback.id)}
                                 >
-                                  מחק
+                                  Delete
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>

@@ -280,7 +280,7 @@ export const ItemScoreManager: React.FC<ItemScoreManagerProps> = ({ items, onSco
                   onClick={() => saveToDatabase(item.itemId)}
                   className="flex-1"
                 >
-                  שמור
+                  Save
                 </Button>
                 <Button 
                   size="sm" 
