@@ -78,7 +78,7 @@ export const MagicLinkButton = ({ isLoading, onSendMagicLink }: MagicLinkButtonP
       onClick={() => setShowEmailInput(true)}
     >
       <Mail className="mr-2 h-4 w-4" />
-      התחבר עם מייל
+      Sign in with Email
     </Button>
   );
 };

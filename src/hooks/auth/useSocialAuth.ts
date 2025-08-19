@@ -2,19 +2,21 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useMagicLinkAuth } from "./providers/useMagicLinkAuth";
+import { useGoogleAuth } from "./providers/useGoogleAuth";
 import { useAppleAuth } from "./providers/useAppleAuth";
 import { useAIAuth } from "./providers/useAIAuth";
 import { detectMobilePlatform, setupMobileDeepLinkListener } from "./utils/platformUtils";
 import { SocialAuthState } from "./types/socialAuthTypes";
 import logger from "@/lib/logger";
 
-export type SocialProvider = "magiclink" | "apple" | "ai";
+export type SocialProvider = "magiclink" | "google" | "apple" | "ai";
 
 export const useSocialAuth = () => {
   const { toast } = useToast();
   const [authState, setAuthState] = useState<SocialAuthState>({
     isLoading: {
       magiclink: false,
+      google: false,
       apple: false,
       ai: false
     },
@@ -55,17 +57,18 @@ export const useSocialAuth = () => {
   // This effect will automatically reset loading state if stuck for too long
   useEffect(() => {
     const { isLoading } = authState;
-    if (isLoading.magiclink || isLoading.apple) {
+    if (isLoading.magiclink || isLoading.google || isLoading.apple) {
       logger.info(`Setting auth timeout`, {
         data: {
           magiclink: isLoading.magiclink,
+          google: isLoading.google,
           apple: isLoading.apple,
           timestamp: new Date().toISOString()
         }
       });
       
       const timeoutId = setTimeout(() => {
-        if (isLoading.magiclink || isLoading.apple) {
+        if (isLoading.magiclink || isLoading.google || isLoading.apple) {
           logger.info("Authentication timeout - resetting loading state after 60 seconds", {
             data: {
               timestamp: new Date().toISOString(),
@@ -109,6 +112,7 @@ export const useSocialAuth = () => {
       isLoading: {
         ...prev.isLoading,
         magiclink: false, 
+        google: false,
         apple: false,
         ai: false
       },
@@ -153,6 +157,13 @@ export const useSocialAuth = () => {
     setProviderLoading: (isLoading) => setProviderLoading("magiclink", isLoading),
   });
 
+  const { handleGoogleSignIn } = useGoogleAuth({
+    isMobile: authState.isMobile,
+    setProviderLoading: (isLoading) => setProviderLoading("google", isLoading),
+    setAuthAttemptId,
+    resetLoadingState
+  });
+
   const { handleAppleSignIn } = useAppleAuth({
     isMobile: authState.isMobile,
     setProviderLoading: (isLoading) => setProviderLoading("apple", isLoading),
@@ -166,6 +177,7 @@ export const useSocialAuth = () => {
   return {
     authState,
     handleMagicLinkSignIn,
+    handleGoogleSignIn,
     handleAppleSignIn,
     handleAISignIn
   };

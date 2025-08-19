@@ -1,6 +1,7 @@
 
 import { useSocialAuth } from "@/hooks/auth/useSocialAuth";
 import { MagicLinkButton } from "./buttons/MagicLinkButton";
+import { GoogleButton } from "./buttons/GoogleButton";
 import { AppleButton } from "./buttons/AppleButton";
 import { AIButton } from "./buttons/AIButton";
 import { AuthDivider } from "./dividers/AuthDivider";
@@ -9,7 +10,8 @@ import logger from "@/lib/logger";
 export const SocialSignIn = () => {
   const { 
     authState, 
-    handleMagicLinkSignIn, 
+    handleMagicLinkSignIn,
+    handleGoogleSignIn, 
     handleAppleSignIn, 
     handleAISignIn 
   } = useSocialAuth();
@@ -25,6 +27,16 @@ export const SocialSignIn = () => {
       }
     });
     await handleMagicLinkSignIn(email);
+  };
+
+  const onGoogleClick = () => {
+    logger.info("Google button clicked in SocialSignIn", {
+      data: {
+        timestamp: new Date().toISOString(),
+        currentLoadingState: isLoading
+      }
+    });
+    handleGoogleSignIn();
   };
 
   const onAppleClick = () => {
@@ -55,6 +67,11 @@ export const SocialSignIn = () => {
         <MagicLinkButton 
           isLoading={isLoading.magiclink} 
           onSendMagicLink={onMagicLinkSend} 
+        />
+        
+        <GoogleButton 
+          isLoading={isLoading.google} 
+          onClick={onGoogleClick} 
         />
         
         <AppleButton 
