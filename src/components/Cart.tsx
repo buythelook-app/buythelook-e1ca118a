@@ -37,80 +37,145 @@ interface CartStore {
   clearCart: () => Promise<void>;
 }
 
-export const useCartStore = create<CartStore>((set, get) => ({
-  items: [],
-  looks: [],
-  addItem: async (item) => {
+export const useCartStore = create<CartStore>((set, get) => {
+  // Load initial state from localStorage
+  const loadFromStorage = () => {
     try {
-      set(state => ({
-        items: [...state.items, item]
-      }));
-      toast.success('Item added to cart');
-    } catch (err) {
-      console.error('Error in addItem:', err);
-      toast.error('Failed to add item to cart');
-    }
-  },
-  addItems: async (newItems) => {
-    try {
-      set(state => ({
-        items: [...state.items, ...newItems]
-      }));
-      toast.success('Items added to cart');
-    } catch (err) {
-      console.error('Error in addItems:', err);
-      toast.error('Failed to add items to cart');
-    }
-  },
-  addLook: async (look) => {
-    set(state => ({ 
-      looks: [...state.looks, look]
-    }));
-    toast.success('Look added to cart');
-  },
-  removeLook: async (lookId) => {
-    const look = get().looks.find(l => l.id === lookId);
-    if (look) {
-      for (const item of look.items) {
-        await get().removeItem(item.id);
+      const savedCart = localStorage.getItem('shopping-cart');
+      if (savedCart) {
+        const parsed = JSON.parse(savedCart);
+        return {
+          items: parsed.items || [],
+          looks: parsed.looks || []
+        };
       }
+    } catch (error) {
+      console.error('Error loading cart from localStorage:', error);
     }
-    set(state => ({
-      looks: state.looks.filter(l => l.id !== lookId)
-    }));
-  },
-  removeItem: async (itemId) => {
-    set(state => ({
-      items: state.items.filter(item => item.id !== itemId),
-      looks: state.looks.map(look => ({
-        ...look,
-        items: look.items.filter(item => item.id !== itemId)
-      })).filter(look => look.items.length > 0)
-    }));
-  },
-  removeItemFromLook: async (lookId, itemId) => {
-    await get().removeItem(itemId);
-    set(state => ({
-      looks: state.looks.map(look => {
-        if (look.id === lookId) {
-          const updatedItems = look.items.filter(item => item.id !== itemId);
-          if (updatedItems.length === 0) {
-            return null;
-          }
-          return {
-            ...look,
-            items: updatedItems
+    return { items: [], looks: [] };
+  };
+
+  // Save to localStorage
+  const saveToStorage = (state: { items: CartItem[]; looks: Look[] }) => {
+    try {
+      localStorage.setItem('shopping-cart', JSON.stringify({
+        items: state.items,
+        looks: state.looks
+      }));
+    } catch (error) {
+      console.error('Error saving cart to localStorage:', error);
+    }
+  };
+
+  const initialState = loadFromStorage();
+
+  return {
+    items: initialState.items,
+    looks: initialState.looks,
+    addItem: async (item) => {
+      try {
+        set(state => {
+          const newState = {
+            ...state,
+            items: [...state.items, item]
           };
+          saveToStorage(newState);
+          return newState;
+        });
+        toast.success('Item added to cart');
+      } catch (err) {
+        console.error('Error in addItem:', err);
+        toast.error('Failed to add item to cart');
+      }
+    },
+    addItems: async (newItems) => {
+      try {
+        set(state => {
+          const newState = {
+            ...state,
+            items: [...state.items, ...newItems]
+          };
+          saveToStorage(newState);
+          return newState;
+        });
+        toast.success('Items added to cart');
+      } catch (err) {
+        console.error('Error in addItems:', err);
+        toast.error('Failed to add items to cart');
+      }
+    },
+    addLook: async (look) => {
+      set(state => {
+        const newState = { 
+          ...state,
+          looks: [...state.looks, look]
+        };
+        saveToStorage(newState);
+        return newState;
+      });
+      toast.success('Look added to cart');
+    },
+    removeLook: async (lookId) => {
+      const look = get().looks.find(l => l.id === lookId);
+      if (look) {
+        for (const item of look.items) {
+          await get().removeItem(item.id);
         }
-        return look;
-      }).filter((look): look is Look => look !== null)
-    }));
-  },
-  clearCart: async () => {
-    set({ items: [], looks: [] });
-    toast.success('Cart cleared');
-  }
-}));
+      }
+      set(state => {
+        const newState = {
+          ...state,
+          looks: state.looks.filter(l => l.id !== lookId)
+        };
+        saveToStorage(newState);
+        return newState;
+      });
+    },
+    removeItem: async (itemId) => {
+      set(state => {
+        const newState = {
+          ...state,
+          items: state.items.filter(item => item.id !== itemId),
+          looks: state.looks.map(look => ({
+            ...look,
+            items: look.items.filter(item => item.id !== itemId)
+          })).filter(look => look.items.length > 0)
+        };
+        saveToStorage(newState);
+        return newState;
+      });
+    },
+    removeItemFromLook: async (lookId, itemId) => {
+      await get().removeItem(itemId);
+      set(state => {
+        const newState = {
+          ...state,
+          looks: state.looks.map(look => {
+            if (look.id === lookId) {
+              const updatedItems = look.items.filter(item => item.id !== itemId);
+              if (updatedItems.length === 0) {
+                return null;
+              }
+              return {
+                ...look,
+                items: updatedItems
+              };
+            }
+            return look;
+          }).filter((look): look is Look => look !== null)
+        };
+        saveToStorage(newState);
+        return newState;
+      });
+    },
+    clearCart: async () => {
+      const newState = { items: [], looks: [] };
+      set(newState);
+      saveToStorage(newState);
+      toast.success('Cart cleared');
+    }
+  };
+});
 
 export const Cart = () => {
   const navigate = useNavigate();
