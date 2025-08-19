@@ -51,12 +51,14 @@ export const LookCartItem = ({
               key={`${id}-${item.id}`}
               className="flex flex-col gap-2 bg-netflix-card p-3 rounded-lg relative group"
             >
-              <img 
-                src={item.image} 
-                alt={item.title} 
-                className="w-full h-24 object-cover rounded-md cursor-pointer"
-                onClick={() => window.open(searchUrl, '_blank')}
-              />
+              <div className="aspect-[3/4] mb-2">
+                <img 
+                  src={item.image} 
+                  alt={item.title} 
+                  className="w-full h-full object-cover rounded-md cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => window.open(searchUrl, '_blank')}
+                />
+              </div>
               <div className="flex-1">
                 <p 
                   className="font-medium cursor-pointer hover:text-netflix-accent transition-colors"

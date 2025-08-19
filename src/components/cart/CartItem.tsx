@@ -17,12 +17,14 @@ export const CartItem = ({ id, image, title, price, onRemove }: CartItemProps) =
   return (
     <div className="flex items-center justify-between gap-4 bg-netflix-background p-4 rounded-lg">
       <div className="flex items-center gap-4 flex-1">
-        <img 
-          src={image} 
-          alt={title} 
-          className="w-24 h-24 object-cover rounded-md cursor-pointer"
-          onClick={() => window.open(searchUrl, '_blank')}
-        />
+        <div className="w-32 h-40 flex-shrink-0">
+          <img 
+            src={image} 
+            alt={title} 
+            className="w-full h-full object-cover rounded-md cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => window.open(searchUrl, '_blank')}
+          />
+        </div>
         <div className="flex-1">
           <h3 
             className="font-medium cursor-pointer hover:text-netflix-accent transition-colors"
