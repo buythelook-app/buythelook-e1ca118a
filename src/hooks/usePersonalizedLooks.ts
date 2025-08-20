@@ -68,30 +68,59 @@ export function usePersonalizedLooks() {
     }
   }, []);
 
-  // Memoized query function - fetch from database and create complete outfits
+  // Function to fetch clothing items from SERP API
+  async function getClothingItems(itemType: string) {
+    const response = await fetch(`https://serpapi.com/search.json?q=${itemType}+fashion+shop&api_key=4372aba9d8cd4bd187611e0f7ed265e130d00a0b44c9c9e2d8625c5659bcc7cb&tbm=shop`);
+    const data = await response.json();
+    return data.shopping_results || [];
+  }
+
+  // Memoized query function - fetch from SERP API and create complete outfits
   const queryFn = useCallback(async () => {
     try {
-      console.log('🔍 [usePersonalizedLooks] Starting fetch for dashboard items...');
+      console.log('🔍 [usePersonalizedLooks] Starting fetch from SERP API...');
       
-      // Clear global tracking when forced refresh
-      if (forceRefresh) {
-        clearOutfitCache();
+      const occasionItems = {
+        'Work': ['blouse', 'trousers', 'blazer', 'dress shoes'],
+        'Casual': ['t-shirt', 'jeans', 'sneakers', 'casual jacket'],
+        'Evening': ['dress', 'heels', 'elegant top', 'formal shoes'],
+        'Weekend': ['sweater', 'casual pants', 'comfortable shoes', 'casual shirt']
+      };
+
+      const data: { [key: string]: DashboardItem[] } = {};
+      
+      for (const [occasion, itemTypes] of Object.entries(occasionItems)) {
+        console.log(`🔍 [usePersonalizedLooks] Fetching items for ${occasion}:`, itemTypes);
+        data[occasion] = [];
+        
+        for (const itemType of itemTypes) {
+          try {
+            const serpResults = await getClothingItems(itemType);
+            
+            // Convert SERP results to DashboardItem format
+            const convertedItems: DashboardItem[] = serpResults.slice(0, 3).map((item: any, index: number) => ({
+              id: `${itemType}-${index}-${Date.now()}`,
+              name: item.title || `${itemType} item`,
+              type: itemType.includes('shoe') ? 'shoes' : 
+                    itemType.includes('dress') ? 'dress' :
+                    itemType.includes('pant') || itemType.includes('jean') || itemType.includes('trouser') ? 'bottom' :
+                    'top',
+              image: item.thumbnail || '/placeholder.svg',
+              price: item.price || '$29.99',
+              category: occasion.toLowerCase(),
+              brand: item.source || 'Fashion Brand'
+            }));
+            
+            data[occasion].push(...convertedItems);
+          } catch (itemError) {
+            console.error(`❌ Error fetching ${itemType} for ${occasion}:`, itemError);
+          }
+        }
+        
+        console.log(`📋 [usePersonalizedLooks] ${occasion} items:`, data[occasion].length);
       }
       
-      const data = await fetchDashboardItems();
-      console.log('🔍 [usePersonalizedLooks] Raw data received:', data);
-      
-      // Log each occasion's data
-      Object.keys(data).forEach(occasion => {
-        console.log(`📋 [usePersonalizedLooks] ${occasion} items:`, data[occasion].map(item => ({
-          id: item.id,
-          name: item.name,
-          type: item.type,
-          hasImage: !!item.image
-        })));
-      });
-      
-      console.log('✅ [usePersonalizedLooks] All occasions processed:', data);
+      console.log('✅ [usePersonalizedLooks] All occasions processed from SERP API:', data);
       return data;
       
     } catch (err) {
