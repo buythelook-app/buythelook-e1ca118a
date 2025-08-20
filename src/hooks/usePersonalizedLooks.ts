@@ -70,9 +70,27 @@ export function usePersonalizedLooks() {
 
   // Function to fetch clothing items from SERP API
   async function getClothingItems(itemType: string) {
-    const response = await fetch(`https://serpapi.com/search.json?q=${itemType}+fashion+shop&api_key=4372aba9d8cd4bd187611e0f7ed265e130d00a0b44c9c9e2d8625c5659bcc7cb&tbm=shop`);
-    const data = await response.json();
-    return data.shopping_results || [];
+    try {
+      console.log(`🔍 [getClothingItems] Fetching ${itemType} from SERP API...`);
+      const response = await fetch(`https://serpapi.com/search.json?q=${itemType}+fashion+shop&api_key=4372aba9d8cd4bd187611e0f7ed265e130d00a0b44c9c9e2d8625c5659bcc7cb&tbm=shop`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log(`✅ [getClothingItems] Successfully fetched ${itemType}:`, data.shopping_results?.length || 0, 'items');
+      
+      if (data.error) {
+        throw new Error(`SERP API error: ${data.error}`);
+      }
+      
+      return data.shopping_results || [];
+    } catch (error) {
+      console.error(`❌ [getClothingItems] Error fetching ${itemType}:`, error);
+      sonnerToast.error(`Failed to fetch ${itemType} items: ${error.message}`);
+      return [];
+    }
   }
 
   // Memoized query function - fetch from SERP API and create complete outfits
@@ -88,36 +106,54 @@ export function usePersonalizedLooks() {
       };
 
       const data: { [key: string]: DashboardItem[] } = {};
+      let hasApiErrors = false;
       
       for (const [occasion, itemTypes] of Object.entries(occasionItems)) {
         console.log(`🔍 [usePersonalizedLooks] Fetching items for ${occasion}:`, itemTypes);
         data[occasion] = [];
         
         for (const itemType of itemTypes) {
-          try {
-            const serpResults = await getClothingItems(itemType);
-            
-            // Convert SERP results to DashboardItem format
-            const convertedItems: DashboardItem[] = serpResults.slice(0, 3).map((item: any, index: number) => ({
-              id: `${itemType}-${index}-${Date.now()}`,
-              name: item.title || `${itemType} item`,
-              type: itemType.includes('shoe') ? 'shoes' : 
-                    itemType.includes('dress') ? 'dress' :
-                    itemType.includes('pant') || itemType.includes('jean') || itemType.includes('trouser') ? 'bottom' :
-                    'top',
-              image: item.thumbnail || '/placeholder.svg',
-              price: item.price || '$29.99',
-              category: occasion.toLowerCase(),
-              brand: item.source || 'Fashion Brand'
-            }));
-            
-            data[occasion].push(...convertedItems);
-          } catch (itemError) {
-            console.error(`❌ Error fetching ${itemType} for ${occasion}:`, itemError);
+          const serpResults = await getClothingItems(itemType);
+          
+          if (serpResults.length === 0) {
+            hasApiErrors = true;
           }
+          
+          // Convert SERP results to DashboardItem format
+          const convertedItems: DashboardItem[] = serpResults.slice(0, 3).map((item: any, index: number) => ({
+            id: `${itemType}-${index}-${Date.now()}`,
+            name: item.title || `${itemType} item`,
+            type: itemType.includes('shoe') ? 'shoes' : 
+                  itemType.includes('dress') ? 'dress' :
+                  itemType.includes('pant') || itemType.includes('jean') || itemType.includes('trouser') ? 'bottom' :
+                  'top',
+            image: item.thumbnail || '/placeholder.svg',
+            price: item.price || '$29.99',
+            category: occasion.toLowerCase(),
+            brand: item.source || 'Fashion Brand'
+          }));
+          
+          data[occasion].push(...convertedItems);
         }
         
         console.log(`📋 [usePersonalizedLooks] ${occasion} items:`, data[occasion].length);
+      }
+      
+      // Show user-friendly error if all API calls failed
+      if (hasApiErrors) {
+        console.warn('⚠️ [usePersonalizedLooks] Some or all SERP API calls failed - this could be due to CORS issues or API key problems');
+        if (!apiErrorShown) {
+          sonnerToast.error("Unable to fetch fashion items from external API. This could be due to CORS restrictions or API limitations. Please try refreshing the page.", {
+            duration: 5000
+          });
+          setApiErrorShown(true);
+        }
+        
+        // Fallback to database items when API fails
+        console.log('🔄 [usePersonalizedLooks] Falling back to database items...');
+        const fallbackData = await fetchDashboardItems();
+        console.log('✅ [usePersonalizedLooks] Fallback data loaded:', fallbackData);
+        return fallbackData;
       }
       
       console.log('✅ [usePersonalizedLooks] All occasions processed from SERP API:', data);
@@ -125,14 +161,24 @@ export function usePersonalizedLooks() {
       
     } catch (err) {
       console.error("❌ [usePersonalizedLooks] Error fetching data:", err);
-      // Return empty outfits instead of fallbacks
-      const emptyData: { [key: string]: DashboardItem[] } = {};
-      occasions.forEach(occasion => {
-        emptyData[occasion] = [];
-      });
-      return emptyData;
+      sonnerToast.error("Failed to load fashion items. Please try again later.");
+      
+      // Fallback to database items on error
+      try {
+        console.log('🔄 [usePersonalizedLooks] Falling back to database items...');
+        const fallbackData = await fetchDashboardItems();
+        return fallbackData;
+      } catch (fallbackError) {
+        console.error("❌ [usePersonalizedLooks] Fallback also failed:", fallbackError);
+        // Return empty outfits as last resort
+        const emptyData: { [key: string]: DashboardItem[] } = {};
+        occasions.forEach(occasion => {
+          emptyData[occasion] = [];
+        });
+        return emptyData;
+      }
     }
-  }, [forceRefresh]);
+  }, [forceRefresh, apiErrorShown]);
 
   // The useQuery hook - only database items
   const { data: occasionOutfits, isLoading, isError, error, refetch } = useQuery({
