@@ -11,6 +11,13 @@ import { PersonalizedLooksGrid } from "@/components/look/PersonalizedLooksGrid";
 import { usePersonalizedLooks } from "@/hooks/usePersonalizedLooks";
 import { memo, useCallback, useMemo } from "react";
 
+// Function to fetch clothing items from SERP API
+async function getClothingItems(itemType) {
+  const response = await fetch(`https://serpapi.com/search.json?q=${itemType}+fashion+shop&api_key=YOUR_API_KEY_HERE&tbm=shop`);
+  const data = await response.json();
+  return data.shopping_results || [];
+}
+
 const Index = () => {
   const navigate = useNavigate();
   const { addLook } = useCartStore();
