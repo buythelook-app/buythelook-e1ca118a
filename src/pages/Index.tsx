@@ -13,7 +13,7 @@ import { memo, useCallback, useMemo } from "react";
 
 // Function to fetch clothing items from SERP API
 async function getClothingItems(itemType) {
-  const response = await fetch(`https://serpapi.com/search.json?q=${itemType}+fashion+shop&api_key=YOUR_API_KEY_HERE&tbm=shop`);
+  const response = await fetch(`https://serpapi.com/search.json?q=${itemType}+fashion+shop&api_key=4372aba9d8cd4bd187611e0f7ed265e130d00a0b44c9c9e2d8625c5659bcc7cb&tbm=shop`);
   const data = await response.json();
   return data.shopping_results || [];
 }
