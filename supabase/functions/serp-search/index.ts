@@ -1,3 +1,4 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -12,63 +13,61 @@ serve(async (req) => {
   }
 
   try {
-    const { query, engine = 'google', location, num = 10 } = await req.json();
-    
-    if (!query) {
-      return new Response(
-        JSON.stringify({ error: 'Query parameter is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const { itemType } = await req.json();
+    console.log(`🔍 [serp-search] Fetching items for: ${itemType}`);
+
+    if (!itemType) {
+      throw new Error('itemType parameter is required');
     }
 
+    // Get the SERP API key from environment variables
     const serpApiKey = Deno.env.get('SERP_API_KEY');
     if (!serpApiKey) {
-      console.error('SERP_API_KEY not found');
-      return new Response(
-        JSON.stringify({ error: 'SerpAPI key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error('SERP_API_KEY not configured');
     }
 
-    // Build SerpAPI URL
-    const searchParams = new URLSearchParams({
-      engine,
-      q: query,
-      api_key: serpApiKey,
-      num: num.toString(),
-    });
-
-    if (location) {
-      searchParams.append('location', location);
-    }
-
-    const serpUrl = `https://serpapi.com/search?${searchParams.toString()}`;
-    
-    console.log(`Making SerpAPI request for query: "${query}"`);
+    // Make the request to SERP API
+    const serpUrl = `https://serpapi.com/search.json?q=${encodeURIComponent(itemType)}+fashion+shop&api_key=${serpApiKey}&tbm=shop`;
+    console.log(`🌐 [serp-search] Calling SERP API for: ${itemType}`);
     
     const response = await fetch(serpUrl);
     
     if (!response.ok) {
-      console.error(`SerpAPI request failed: ${response.status} ${response.statusText}`);
-      return new Response(
-        JSON.stringify({ error: `SerpAPI request failed: ${response.status}` }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error(`SERP API request failed: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
-    
-    console.log(`SerpAPI request successful for query: "${query}"`);
-    
-    return new Response(JSON.stringify(data), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.log(`✅ [serp-search] Successfully fetched ${data.shopping_results?.length || 0} items for ${itemType}`);
+
+    // Check for API errors
+    if (data.error) {
+      throw new Error(`SERP API error: ${data.error}`);
+    }
+
+    // Return the shopping results
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: data.shopping_results || [],
+        count: data.shopping_results?.length || 0
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
 
   } catch (error) {
-    console.error('Error in serp-search function:', error);
+    console.error('❌ [serp-search] Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        success: false,
+        error: error.message,
+        data: []
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
     );
   }
 });

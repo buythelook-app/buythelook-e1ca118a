@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDashboardItems, clearOutfitCache } from "@/services/lookService";
+import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { toast as sonnerToast } from "sonner";
 import type { Mood } from "@/components/filters/MoodFilter";
 import { DashboardItem } from "@/types/lookTypes";
@@ -68,24 +69,26 @@ export function usePersonalizedLooks() {
     }
   }, []);
 
-  // Function to fetch clothing items from SERP API
+  // Function to fetch clothing items from SERP API via edge function
   async function getClothingItems(itemType: string) {
     try {
-      console.log(`🔍 [getClothingItems] Fetching ${itemType} from SERP API...`);
-      const response = await fetch(`https://serpapi.com/search.json?q=${itemType}+fashion+shop&api_key=4372aba9d8cd4bd187611e0f7ed265e130d00a0b44c9c9e2d8625c5659bcc7cb&tbm=shop`);
+      console.log(`🔍 [getClothingItems] Fetching ${itemType} via edge function...`);
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const { data, error } = await supabaseClient.functions.invoke('serp-search', {
+        body: { itemType }
+      });
+
+      if (error) {
+        throw new Error(`Edge function error: ${error.message}`);
       }
-      
-      const data = await response.json();
-      console.log(`✅ [getClothingItems] Successfully fetched ${itemType}:`, data.shopping_results?.length || 0, 'items');
-      
-      if (data.error) {
-        throw new Error(`SERP API error: ${data.error}`);
+
+      if (!data.success) {
+        throw new Error(data.error || 'Unknown error from edge function');
       }
+
+      console.log(`✅ [getClothingItems] Successfully fetched ${data.count} ${itemType} items`);
+      return data.data || [];
       
-      return data.shopping_results || [];
     } catch (error) {
       console.error(`❌ [getClothingItems] Error fetching ${itemType}:`, error);
       sonnerToast.error(`Failed to fetch ${itemType} items: ${error.message}`);
