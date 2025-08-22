@@ -69,138 +69,34 @@ export function usePersonalizedLooks() {
     }
   }, []);
 
-  // Function to fetch clothing items from SERP API via edge function
-  async function getClothingItems(itemType: string) {
-    try {
-      console.log(`🔍 [getClothingItems] Fetching ${itemType} via edge function...`);
-      
-      const { data, error } = await supabaseClient.functions.invoke('serp-search', {
-        body: { itemType }
-      });
-
-      if (error) {
-        throw new Error(`Edge function error: ${error.message}`);
-      }
-
-      if (!data.success) {
-        throw new Error(data.error || 'Unknown error from edge function');
-      }
-
-      console.log(`✅ [getClothingItems] Successfully fetched ${data.count} ${itemType} items`);
-      return data.data || [];
-      
-    } catch (error) {
-      console.error(`❌ [getClothingItems] Error fetching ${itemType}:`, error);
-      sonnerToast.error(`Failed to fetch ${itemType} items: ${error.message}`);
-      return [];
-    }
-  }
-
-  // Memoized query function - fetch from SERP API and create complete outfits
+  // Memoized query function - fetch from database
   const queryFn = useCallback(async () => {
     try {
-      console.log('🔍 [usePersonalizedLooks] Starting fetch from SERP API...');
+      console.log('🔍 [usePersonalizedLooks] Starting fetch from database...');
       
-      const occasionItems = {
-        'Work': ['blouse', 'trousers', 'blazer', 'dress shoes'],
-        'Casual': ['t-shirt', 'jeans', 'sneakers', 'casual jacket'],
-        'Evening': ['dress', 'heels', 'elegant top', 'formal shoes'],
-        'Weekend': ['sweater', 'casual pants', 'comfortable shoes', 'casual shirt']
-      };
-
-      const data: { [key: string]: DashboardItem[] } = {};
-      let hasApiErrors = false;
-      
-      for (const [occasion, itemTypes] of Object.entries(occasionItems)) {
-        console.log(`🔍 [usePersonalizedLooks] Fetching items for ${occasion}:`, itemTypes);
-        data[occasion] = [];
-        
-        for (const itemType of itemTypes) {
-          const serpResults = await getClothingItems(itemType);
-          
-          if (serpResults.length === 0) {
-            hasApiErrors = true;
-          }
-          
-          // Convert SERP results to DashboardItem format with proper type mapping
-          const convertedItems: DashboardItem[] = serpResults.slice(0, 3).map((item: any, index: number) => {
-             // Determine correct item type based on search term and item data
-             let finalItemType: string;
-             if (itemType.includes('shoe') || itemType.includes('sneaker') || itemType.includes('boot') || itemType.includes('sandal') || itemType.includes('heel')) {
-               finalItemType = 'shoes';
-             } else if (itemType.includes('dress') || item.title?.toLowerCase().includes('dress')) {
-               finalItemType = 'dress';
-             } else if (itemType.includes('pant') || itemType.includes('jean') || itemType.includes('trouser') || itemType.includes('short')) {
-               finalItemType = 'bottom';
-             } else if (itemType.includes('jacket') || itemType.includes('blazer') || itemType.includes('coat') || itemType.includes('cardigan')) {
-               finalItemType = 'outerwear';
-             } else {
-               finalItemType = 'top'; // Default for shirts, blouses, sweaters, etc.
-             }
-
-            return {
-              id: `${finalItemType}-${index}-${Date.now()}`,
-              name: item.title || `${finalItemType} item`,
-              type: finalItemType,
-              image: item.thumbnail || '/placeholder.svg',
-              price: item.price || '$29.99',
-              category: occasion.toLowerCase(),
-              brand: item.source || 'Fashion Brand'
-            };
-          });
-          
-          data[occasion].push(...convertedItems);
-        }
-        
-        console.log(`📋 [usePersonalizedLooks] ${occasion} items:`, data[occasion].length);
-      }
-      
-      // Show user-friendly error if all API calls failed
-      if (hasApiErrors) {
-        console.warn('⚠️ [usePersonalizedLooks] Some or all SERP API calls failed - this could be due to CORS issues or API key problems');
-        if (!apiErrorShown) {
-          sonnerToast.error("Unable to fetch fashion items from external API. This could be due to CORS restrictions or API limitations. Please try refreshing the page.", {
-            duration: 5000
-          });
-          setApiErrorShown(true);
-        }
-        
-        // Fallback to database items when API fails
-        console.log('🔄 [usePersonalizedLooks] Falling back to database items...');
-        const fallbackData = await fetchDashboardItems();
-        console.log('✅ [usePersonalizedLooks] Fallback data loaded:', fallbackData);
-        return fallbackData;
-      }
-      
-      console.log('✅ [usePersonalizedLooks] All occasions processed from SERP API:', data);
+      // Use the original database fetch function
+      const data = await fetchDashboardItems();
+      console.log('✅ [usePersonalizedLooks] Database data loaded:', data);
       return data;
       
     } catch (err) {
       console.error("❌ [usePersonalizedLooks] Error fetching data:", err);
       sonnerToast.error("Failed to load fashion items. Please try again later.");
       
-      // Fallback to database items on error
-      try {
-        console.log('🔄 [usePersonalizedLooks] Falling back to database items...');
-        const fallbackData = await fetchDashboardItems();
-        return fallbackData;
-      } catch (fallbackError) {
-        console.error("❌ [usePersonalizedLooks] Fallback also failed:", fallbackError);
-        // Return empty outfits as last resort
-        const emptyData: { [key: string]: DashboardItem[] } = {};
-        occasions.forEach(occasion => {
-          emptyData[occasion] = [];
-        });
-        return emptyData;
-      }
+      // Return empty outfits on error
+      const emptyData: { [key: string]: DashboardItem[] } = {};
+      occasions.forEach(occasion => {
+        emptyData[occasion] = [];
+      });
+      return emptyData;
     }
-  }, [forceRefresh, apiErrorShown]);
+  }, [forceRefresh]);
 
-  // The useQuery hook - SERP API data
+  // The useQuery hook - back to database items
   const { data: occasionOutfits, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['dashboardItems', selectedMood, forceRefresh, userStyle?.analysis?.styleProfile],
     queryFn,
-    enabled: true, // Always enabled, no need to wait for userStyle
+    enabled: !!userStyle, // Back to requiring style analysis
     staleTime: 5000,
     retry: 1,
     placeholderData: { Work: [], Casual: [], Evening: [], Weekend: [] },
@@ -236,40 +132,8 @@ export function usePersonalizedLooks() {
       return null;
     }
     
-    // Group items by type to ensure we get exactly 3 items: top, bottom/dress, shoes
-    const itemsByType = {
-      top: items.filter(item => item.type === 'top'),
-      bottom: items.filter(item => item.type === 'bottom' || item.type === 'dress'), // Accept dress as bottom for evening wear
-      shoes: items.filter(item => item.type === 'shoes')
-    };
-    
-    console.log(`📊 [usePersonalizedLooks] Items by type for ${occasion}:`, {
-      tops: itemsByType.top.length,
-      bottoms: itemsByType.bottom.length, 
-      shoes: itemsByType.shoes.length
-    });
-    
-    // Select one item from each category
-    const selectedItems: DashboardItem[] = [];
-    
-    if (itemsByType.top.length > 0) {
-      selectedItems.push(itemsByType.top[0]);
-    }
-    if (itemsByType.bottom.length > 0) {
-      selectedItems.push(itemsByType.bottom[0]);
-    }
-    if (itemsByType.shoes.length > 0) {
-      selectedItems.push(itemsByType.shoes[0]);
-    }
-    
-    // If we don't have all 3 categories, return null
-    if (selectedItems.length < 3) {
-      console.log(`❌ [usePersonalizedLooks] Not enough item types for ${occasion} look. Have: ${selectedItems.map(i => i.type).join(', ')}`);
-      return null;
-    }
-    
     // Convert DashboardItem[] to LookItem[] for the Look interface
-    const lookItems: LookItem[] = selectedItems.map(item => ({
+    const lookItems: LookItem[] = items.map(item => ({
       id: item.id,
       image: item.image || '/placeholder.svg',
       type: item.type,
@@ -279,7 +143,7 @@ export function usePersonalizedLooks() {
     
     // Calculate total price
     let totalPrice = 0;
-    selectedItems.forEach(item => {
+    items.forEach(item => {
       if (item.price) {
         const price = typeof item.price === 'string' 
           ? parseFloat(item.price.replace(/[^0-9.]/g, '')) 
@@ -295,7 +159,7 @@ export function usePersonalizedLooks() {
       id: `look-${occasion}-${index}`,
       title: `${occasion} Look`,
       items: lookItems,
-      price: totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : '$89.99',
+      price: totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : '$29.99',
       category: userStyle?.analysis?.styleProfile || "Casual",
       occasion: occasion
     };
