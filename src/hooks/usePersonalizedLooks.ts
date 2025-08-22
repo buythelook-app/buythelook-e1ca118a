@@ -183,11 +183,11 @@ export function usePersonalizedLooks() {
     }
   }, [forceRefresh, apiErrorShown]);
 
-  // The useQuery hook - only database items
+  // The useQuery hook - SERP API data
   const { data: occasionOutfits, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['dashboardItems', selectedMood, forceRefresh, userStyle?.analysis?.styleProfile],
     queryFn,
-    enabled: !!userStyle,
+    enabled: true, // Always enabled, no need to wait for userStyle
     staleTime: 5000,
     retry: 1,
     placeholderData: { Work: [], Casual: [], Evening: [], Weekend: [] },
