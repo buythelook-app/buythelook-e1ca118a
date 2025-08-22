@@ -52,11 +52,13 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       return false;
     }
     
+    // More lenient validation for SERP API images - accept any URL that looks like an image
     const hasHttp = imageUrl.includes('http');
     const notPlaceholder = !imageUrl.includes('placeholder.svg');
-    const isValid = hasHttp && notPlaceholder;
+    const looksLikeImage = hasHttp && (imageUrl.includes('.jpg') || imageUrl.includes('.jpeg') || imageUrl.includes('.png') || imageUrl.includes('.webp') || imageUrl.includes('serpapi.com') || imageUrl.includes('encrypted-tbn'));
+    const isValid = hasHttp && notPlaceholder && looksLikeImage;
     
-    console.log(`🔍 [LookCanvas] ${itemType} validation result: ${isValid} (hasHttp: ${hasHttp}, notPlaceholder: ${notPlaceholder})`);
+    console.log(`🔍 [LookCanvas] ${itemType} validation result: ${isValid} (hasHttp: ${hasHttp}, notPlaceholder: ${notPlaceholder}, looksLikeImage: ${looksLikeImage})`);
     return isValid;
   };
 
