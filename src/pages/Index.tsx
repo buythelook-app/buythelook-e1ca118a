@@ -71,10 +71,14 @@ const Index = () => {
     </div>
   ), [navigate]);
 
-  // Early return if no user style to prevent unnecessary rendering
-  if (!userStyle) {
-    return renderNoStyleContent;
-  }
+  console.log('🎨 [Index] userStyle:', userStyle);
+  console.log('🎨 [Index] occasionOutfits:', occasionOutfits);
+  console.log('🎨 [Index] isLoading:', isLoading);
+
+  // Show content even without style data - the hook now handles this
+  // if (!userStyle) {
+  //   return renderNoStyleContent;
+  // }
 
   return (
     <div className="min-h-screen bg-netflix-background">
