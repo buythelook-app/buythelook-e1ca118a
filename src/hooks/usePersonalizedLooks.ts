@@ -124,19 +124,19 @@ export function usePersonalizedLooks() {
           
           // Convert SERP results to DashboardItem format with proper type mapping
           const convertedItems: DashboardItem[] = serpResults.slice(0, 3).map((item: any, index: number) => {
-            // Determine correct item type based on search term and item data
-            let finalItemType: string;
-            if (itemType.includes('shoe') || itemType.includes('sneaker') || itemType.includes('boot') || itemType.includes('sandal') || itemType.includes('heel')) {
-              finalItemType = 'shoes';
-            } else if (itemType.includes('dress') || item.title?.toLowerCase().includes('dress')) {
-              finalItemType = 'dress';
-            } else if (itemType.includes('pant') || itemType.includes('jean') || itemType.includes('trouser') || itemType.includes('short')) {
-              finalItemType = 'bottom';
-            } else if (itemType.includes('jacket') || itemType.includes('blazer') || itemType.includes('coat') || itemType.includes('cardigan')) {
-              finalItemType = 'outerwear';
-            } else {
-              finalItemType = 'top'; // Default for shirts, blouses, sweaters, etc.
-            }
+             // Determine correct item type based on search term and item data
+             let finalItemType: string;
+             if (itemType.includes('shoe') || itemType.includes('sneaker') || itemType.includes('boot') || itemType.includes('sandal') || itemType.includes('heel')) {
+               finalItemType = 'shoes';
+             } else if (itemType.includes('dress') || item.title?.toLowerCase().includes('dress')) {
+               finalItemType = 'dress';
+             } else if (itemType.includes('pant') || itemType.includes('jean') || itemType.includes('trouser') || itemType.includes('short')) {
+               finalItemType = 'bottom';
+             } else if (itemType.includes('jacket') || itemType.includes('blazer') || itemType.includes('coat') || itemType.includes('cardigan')) {
+               finalItemType = 'outerwear';
+             } else {
+               finalItemType = 'top'; // Default for shirts, blouses, sweaters, etc.
+             }
 
             return {
               id: `${finalItemType}-${index}-${Date.now()}`,
@@ -236,10 +236,10 @@ export function usePersonalizedLooks() {
       return null;
     }
     
-    // Group items by type to ensure we get exactly 3 items: top, bottom, shoes
+    // Group items by type to ensure we get exactly 3 items: top, bottom/dress, shoes
     const itemsByType = {
       top: items.filter(item => item.type === 'top'),
-      bottom: items.filter(item => item.type === 'bottom'), 
+      bottom: items.filter(item => item.type === 'bottom' || item.type === 'dress'), // Accept dress as bottom for evening wear
       shoes: items.filter(item => item.type === 'shoes')
     };
     
