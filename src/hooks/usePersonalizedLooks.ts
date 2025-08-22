@@ -122,19 +122,32 @@ export function usePersonalizedLooks() {
             hasApiErrors = true;
           }
           
-          // Convert SERP results to DashboardItem format
-          const convertedItems: DashboardItem[] = serpResults.slice(0, 3).map((item: any, index: number) => ({
-            id: `${itemType}-${index}-${Date.now()}`,
-            name: item.title || `${itemType} item`,
-            type: itemType.includes('shoe') ? 'shoes' : 
-                  itemType.includes('dress') ? 'dress' :
-                  itemType.includes('pant') || itemType.includes('jean') || itemType.includes('trouser') ? 'bottom' :
-                  'top',
-            image: item.thumbnail || '/placeholder.svg',
-            price: item.price || '$29.99',
-            category: occasion.toLowerCase(),
-            brand: item.source || 'Fashion Brand'
-          }));
+          // Convert SERP results to DashboardItem format with proper type mapping
+          const convertedItems: DashboardItem[] = serpResults.slice(0, 3).map((item: any, index: number) => {
+            // Determine correct item type based on search term and item data
+            let finalItemType: string;
+            if (itemType.includes('shoe') || itemType.includes('sneaker') || itemType.includes('boot') || itemType.includes('sandal') || itemType.includes('heel')) {
+              finalItemType = 'shoes';
+            } else if (itemType.includes('dress') || item.title?.toLowerCase().includes('dress')) {
+              finalItemType = 'dress';
+            } else if (itemType.includes('pant') || itemType.includes('jean') || itemType.includes('trouser') || itemType.includes('short')) {
+              finalItemType = 'bottom';
+            } else if (itemType.includes('jacket') || itemType.includes('blazer') || itemType.includes('coat') || itemType.includes('cardigan')) {
+              finalItemType = 'outerwear';
+            } else {
+              finalItemType = 'top'; // Default for shirts, blouses, sweaters, etc.
+            }
+
+            return {
+              id: `${finalItemType}-${index}-${Date.now()}`,
+              name: item.title || `${finalItemType} item`,
+              type: finalItemType,
+              image: item.thumbnail || '/placeholder.svg',
+              price: item.price || '$29.99',
+              category: occasion.toLowerCase(),
+              brand: item.source || 'Fashion Brand'
+            };
+          });
           
           data[occasion].push(...convertedItems);
         }
