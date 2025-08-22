@@ -42,7 +42,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     return '';
   };
 
-  // Ultra simplified validation - just check for HTTP URLs
+  // More lenient validation - accept SERP API images
   const isValidImageUrl = (image: any, itemType: string): boolean => {
     const imageUrl = getImageUrl(image);
     console.log(`🔍 [LookCanvas] Validating ${itemType} image: "${imageUrl}"`);
@@ -52,13 +52,12 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       return false;
     }
     
-    // More lenient validation for SERP API images - accept any URL that looks like an image
+    // Accept any HTTP URL that's not a placeholder
     const hasHttp = imageUrl.includes('http');
     const notPlaceholder = !imageUrl.includes('placeholder.svg');
-    const looksLikeImage = hasHttp && (imageUrl.includes('.jpg') || imageUrl.includes('.jpeg') || imageUrl.includes('.png') || imageUrl.includes('.webp') || imageUrl.includes('serpapi.com') || imageUrl.includes('encrypted-tbn'));
-    const isValid = hasHttp && notPlaceholder && looksLikeImage;
+    const isValid = hasHttp && notPlaceholder;
     
-    console.log(`🔍 [LookCanvas] ${itemType} validation result: ${isValid} (hasHttp: ${hasHttp}, notPlaceholder: ${notPlaceholder}, looksLikeImage: ${looksLikeImage})`);
+    console.log(`🔍 [LookCanvas] ${itemType} validation result: ${isValid} (hasHttp: ${hasHttp}, notPlaceholder: ${notPlaceholder})`);
     return isValid;
   };
 

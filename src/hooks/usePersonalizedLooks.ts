@@ -223,8 +223,40 @@ export function usePersonalizedLooks() {
       return null;
     }
     
+    // Group items by type to ensure we get exactly 3 items: top, bottom, shoes
+    const itemsByType = {
+      top: items.filter(item => item.type === 'top'),
+      bottom: items.filter(item => item.type === 'bottom'), 
+      shoes: items.filter(item => item.type === 'shoes')
+    };
+    
+    console.log(`📊 [usePersonalizedLooks] Items by type for ${occasion}:`, {
+      tops: itemsByType.top.length,
+      bottoms: itemsByType.bottom.length, 
+      shoes: itemsByType.shoes.length
+    });
+    
+    // Select one item from each category
+    const selectedItems: DashboardItem[] = [];
+    
+    if (itemsByType.top.length > 0) {
+      selectedItems.push(itemsByType.top[0]);
+    }
+    if (itemsByType.bottom.length > 0) {
+      selectedItems.push(itemsByType.bottom[0]);
+    }
+    if (itemsByType.shoes.length > 0) {
+      selectedItems.push(itemsByType.shoes[0]);
+    }
+    
+    // If we don't have all 3 categories, return null
+    if (selectedItems.length < 3) {
+      console.log(`❌ [usePersonalizedLooks] Not enough item types for ${occasion} look. Have: ${selectedItems.map(i => i.type).join(', ')}`);
+      return null;
+    }
+    
     // Convert DashboardItem[] to LookItem[] for the Look interface
-    const lookItems: LookItem[] = items.map(item => ({
+    const lookItems: LookItem[] = selectedItems.map(item => ({
       id: item.id,
       image: item.image || '/placeholder.svg',
       type: item.type,
@@ -234,7 +266,7 @@ export function usePersonalizedLooks() {
     
     // Calculate total price
     let totalPrice = 0;
-    items.forEach(item => {
+    selectedItems.forEach(item => {
       if (item.price) {
         const price = typeof item.price === 'string' 
           ? parseFloat(item.price.replace(/[^0-9.]/g, '')) 
@@ -250,7 +282,7 @@ export function usePersonalizedLooks() {
       id: `look-${occasion}-${index}`,
       title: `${occasion} Look`,
       items: lookItems,
-      price: totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : '$29.99',
+      price: totalPrice > 0 ? `$${totalPrice.toFixed(2)}` : '$89.99',
       category: userStyle?.analysis?.styleProfile || "Casual",
       occasion: occasion
     };
