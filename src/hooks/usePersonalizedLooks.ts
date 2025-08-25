@@ -1,11 +1,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchDashboardItems, clearOutfitCache } from "@/services/lookService";
-import { supabase as supabaseClient } from "@/integrations/supabase/client";
+import { getFashionItems } from "@/lib/serpApi";
 import { toast as sonnerToast } from "sonner";
 import type { Mood } from "@/components/filters/MoodFilter";
-import { DashboardItem } from "@/types/lookTypes";
 
 export interface LookItem {
   id: string;
@@ -69,34 +67,61 @@ export function usePersonalizedLooks() {
     }
   }, []);
 
-  // Memoized query function - fetch from database
+  // Memoized query function - fetch from API
   const queryFn = useCallback(async () => {
     try {
-      console.log('🔍 [usePersonalizedLooks] Starting fetch from database...');
+      console.log('🔍 [usePersonalizedLooks] Starting fetch from API...');
       
-      // Use the original database fetch function
-      const data = await fetchDashboardItems();
-      console.log('✅ [usePersonalizedLooks] Database data loaded:', data);
-      return data;
+      const occasionData: { [key: string]: any[] } = {};
+      
+      // Fetch items for each occasion from API
+      for (const occasion of occasions) {
+        console.log(`🔍 [usePersonalizedLooks] Fetching ${occasion} items from API...`);
+        const result = await getFashionItems(
+          occasion.toLowerCase(), 
+          userStyle?.analysis?.styleProfile || 'classic', 
+          'medium',
+          'women'
+        );
+        
+        if (result.success && result.items) {
+          // Convert API items to our format
+          occasionData[occasion] = result.items.map(item => ({
+            id: item.id,
+            name: item.title,
+            image: item.imageUrl,
+            type: item.category as any,
+            price: item.estimatedPrice || '$29.99',
+            product_subfamily: item.category
+          }));
+          console.log(`✅ [usePersonalizedLooks] Got ${result.items.length} items for ${occasion}`);
+        } else {
+          console.log(`❌ [usePersonalizedLooks] No items found for ${occasion}`);
+          occasionData[occasion] = [];
+        }
+      }
+      
+      console.log('✅ [usePersonalizedLooks] API data loaded:', occasionData);
+      return occasionData;
       
     } catch (err) {
-      console.error("❌ [usePersonalizedLooks] Error fetching data:", err);
-      sonnerToast.error("Failed to load fashion items. Please try again later.");
+      console.error("❌ [usePersonalizedLooks] Error fetching API data:", err);
+      sonnerToast.error("Failed to load fashion items from API. Please try again later.");
       
       // Return empty outfits on error
-      const emptyData: { [key: string]: DashboardItem[] } = {};
+      const emptyData: { [key: string]: any[] } = {};
       occasions.forEach(occasion => {
         emptyData[occasion] = [];
       });
       return emptyData;
     }
-  }, [forceRefresh]);
+  }, [forceRefresh, userStyle]);
 
-  // The useQuery hook - back to database items
+  // The useQuery hook - fetch from API
   const { data: occasionOutfits, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['dashboardItems', selectedMood, forceRefresh, userStyle?.analysis?.styleProfile],
+    queryKey: ['apiItems', selectedMood, forceRefresh, userStyle?.analysis?.styleProfile],
     queryFn,
-    enabled: !!userStyle, // Back to requiring style analysis
+    enabled: true, // Always enabled for API
     staleTime: 5000,
     retry: 1,
     placeholderData: { Work: [], Casual: [], Evening: [], Weekend: [] },
@@ -118,7 +143,7 @@ export function usePersonalizedLooks() {
     }
   }, [occasionOutfits, forceRefresh]);
 
-  const createLookFromItems = useCallback((items: DashboardItem[] = [], occasion: string, index: number): Look | null => {
+  const createLookFromItems = useCallback((items: any[] = [], occasion: string, index: number): Look | null => {
     console.log(`🔍 [usePersonalizedLooks] Creating look from ${items.length} items for ${occasion}`);
     console.log(`📋 [usePersonalizedLooks] Items details:`, items.map(item => ({
       id: item.id,
@@ -180,8 +205,6 @@ export function usePersonalizedLooks() {
   }, []);
 
   const handleShuffleLook = useCallback((occasion: string) => {
-    clearOutfitCache();
-    
     setCombinations(prev => ({
       ...prev,
       [occasion]: (prev[occasion] || 0) + 1
@@ -190,7 +213,7 @@ export function usePersonalizedLooks() {
     setForceRefresh(true);
     setApiErrorShown(false);
     
-    sonnerToast.info("Finding new look combinations...", {
+    sonnerToast.info("Finding new look combinations from API...", {
       duration: 1500
     });
     
@@ -202,10 +225,10 @@ export function usePersonalizedLooks() {
     refetch();
   }, [refetch]);
 
-  // Always return database data only
+  // Return API data
   const getOutfitData = useCallback(() => {
     const data = occasionOutfits || { Work: [], Casual: [], Evening: [], Weekend: [] };
-    console.log('🔍 [usePersonalizedLooks] Returning outfit data:', Object.keys(data).map(occasion => ({
+    console.log('🔍 [usePersonalizedLooks] Returning API outfit data:', Object.keys(data).map(occasion => ({
       occasion,
       itemCount: data[occasion].length
     })));
