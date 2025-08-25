@@ -67,7 +67,7 @@ export function usePersonalizedLooks() {
     }
   }, []);
 
-  // Memoized query function - fetch from API
+  // Memoized query function - fetch from API with proper categorization
   const queryFn = useCallback(async () => {
     try {
       console.log('🔍 [usePersonalizedLooks] Starting fetch from API...');
@@ -85,16 +85,14 @@ export function usePersonalizedLooks() {
         );
         
         if (result.success && result.items) {
-          // Convert API items to our format
-          occasionData[occasion] = result.items.map(item => ({
-            id: item.id,
-            name: item.title,
-            image: item.imageUrl,
-            type: item.category as any,
-            price: item.estimatedPrice || '$29.99',
-            product_subfamily: item.category
-          }));
-          console.log(`✅ [usePersonalizedLooks] Got ${result.items.length} items for ${occasion}`);
+          // Convert API items to our format and ensure proper categorization
+          const categorizedItems = categorizeAPIItems(result.items);
+          
+          // Create balanced outfit: 1 top, 1 bottom, 1 shoes (exactly 3 items)
+          const balancedOutfit = createBalancedOutfit(categorizedItems, occasion);
+          
+          occasionData[occasion] = balancedOutfit;
+          console.log(`✅ [usePersonalizedLooks] Created balanced outfit for ${occasion}: ${balancedOutfit.length} items`);
         } else {
           console.log(`❌ [usePersonalizedLooks] No items found for ${occasion}`);
           occasionData[occasion] = [];
@@ -116,6 +114,72 @@ export function usePersonalizedLooks() {
       return emptyData;
     }
   }, [forceRefresh, userStyle]);
+
+  // Helper function to categorize API items
+  const categorizeAPIItems = useCallback((items: any[]) => {
+    const categorized = {
+      tops: items.filter(item => ['top', 'shirt', 'blouse', 'jacket', 'coat'].includes(item.category?.toLowerCase())),
+      bottoms: items.filter(item => ['bottom', 'pants', 'trousers', 'skirt', 'jeans'].includes(item.category?.toLowerCase())),
+      shoes: items.filter(item => ['shoes', 'footwear', 'boots', 'sandals', 'heels'].includes(item.category?.toLowerCase())),
+      dresses: items.filter(item => ['dress', 'gown'].includes(item.category?.toLowerCase()))
+    };
+    
+    console.log('🔍 [categorizeAPIItems] Categorized:', {
+      tops: categorized.tops.length,
+      bottoms: categorized.bottoms.length,
+      shoes: categorized.shoes.length,
+      dresses: categorized.dresses.length
+    });
+    
+    return categorized;
+  }, []);
+
+  // Helper function to create balanced outfit (exactly 3 items)
+  const createBalancedOutfit = useCallback((categorized: any, occasion: string) => {
+    const outfit: any[] = [];
+    
+    // Try to get dress first for evening occasions
+    if (occasion.toLowerCase() === 'evening' && categorized.dresses.length > 0) {
+      outfit.push({
+        ...categorized.dresses[0],
+        type: 'dress'
+      });
+    } else {
+      // Add top (required)
+      if (categorized.tops.length > 0) {
+        outfit.push({
+          ...categorized.tops[0],
+          type: 'top'
+        });
+      }
+      
+      // Add bottom (required if no dress)
+      if (categorized.bottoms.length > 0) {
+        outfit.push({
+          ...categorized.bottoms[0],
+          type: 'bottom'
+        });
+      }
+    }
+    
+    // Add shoes (always required)
+    if (categorized.shoes.length > 0) {
+      outfit.push({
+        ...categorized.shoes[0],
+        type: 'shoes'
+      });
+    }
+    
+    // Convert to proper format
+    return outfit.map(item => ({
+      id: item.id,
+      name: item.title,
+      image: item.imageUrl,
+      type: item.type,
+      price: item.estimatedPrice || '$29.99',
+      product_subfamily: item.category
+    }));
+  }, []);
 
   // The useQuery hook - fetch from API
   const { data: occasionOutfits, isLoading, isError, error, refetch } = useQuery({
