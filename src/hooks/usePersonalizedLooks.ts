@@ -73,10 +73,19 @@ export function usePersonalizedLooks() {
       console.log('🔍 [usePersonalizedLooks] Starting fetch from API...');
       
       const occasionData: { [key: string]: any[] } = {};
+      const debugInfo = {
+        totalApiCalls: 0,
+        successfulCalls: 0,
+        failedCalls: 0,
+        totalItemsReceived: 0,
+        errors: [] as string[]
+      };
       
       // Fetch items for each occasion from API
       for (const occasion of occasions) {
         console.log(`🔍 [usePersonalizedLooks] Fetching ${occasion} items from API...`);
+        debugInfo.totalApiCalls++;
+        
         const result = await getFashionItems(
           occasion.toLowerCase(), 
           userStyle?.analysis?.styleProfile || 'classic', 
@@ -85,6 +94,21 @@ export function usePersonalizedLooks() {
         );
         
         if (result.success && result.items) {
+          debugInfo.successfulCalls++;
+          debugInfo.totalItemsReceived += result.items.length;
+          
+          console.log(`📊 [usePersonalizedLooks] ${occasion} API response:`, {
+            success: result.success,
+            itemCount: result.items.length,
+            query: result.query,
+            firstItemSample: result.items[0] ? {
+              id: result.items[0].id,
+              title: result.items[0].title?.substring(0, 30) + '...',
+              category: result.items[0].category,
+              hasImage: !!result.items[0].imageUrl
+            } : null
+          });
+          
           // Convert API items to our format and ensure proper categorization
           const categorizedItems = categorizeAPIItems(result.items);
           
@@ -94,17 +118,47 @@ export function usePersonalizedLooks() {
           occasionData[occasion] = balancedOutfit;
           console.log(`✅ [usePersonalizedLooks] Created balanced outfit for ${occasion}: ${balancedOutfit.length} items`);
         } else {
-          console.log(`❌ [usePersonalizedLooks] No items found for ${occasion}`);
+          debugInfo.failedCalls++;
+          const errorMsg = `${occasion}: ${result.error || 'No items returned'}`;
+          debugInfo.errors.push(errorMsg);
+          console.log(`❌ [usePersonalizedLooks] No items found for ${occasion}:`, result.error);
           occasionData[occasion] = [];
         }
       }
       
-      console.log('✅ [usePersonalizedLooks] API data loaded:', occasionData);
+      // Log comprehensive debug summary
+      console.log('📈 [usePersonalizedLooks] API Fetch Summary:', debugInfo);
+      console.log('✅ [usePersonalizedLooks] Final outfit data structure:', 
+        Object.keys(occasionData).map(key => ({
+          occasion: key,
+          itemCount: occasionData[key].length,
+          items: occasionData[key].map((item: any) => ({
+            id: item.id,
+            name: item.name?.substring(0, 20) + '...',
+            type: item.type
+          }))
+        }))
+      );
+      
+      // Store debug info for DebugPanel
+      (window as any).fashionApiDebug = {
+        ...debugInfo,
+        occasionData,
+        lastUpdated: new Date().toISOString()
+      };
+      
       return occasionData;
       
     } catch (err) {
-      console.error("❌ [usePersonalizedLooks] Error fetching API data:", err);
+      console.error("❌ [usePersonalizedLooks] Unexpected error in queryFn:", err);
       sonnerToast.error("Failed to load fashion items from API. Please try again later.");
+      
+      // Store error info for debugging
+      (window as any).fashionApiDebug = {
+        error: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined,
+        lastUpdated: new Date().toISOString()
+      };
       
       // Return empty outfits on error
       const emptyData: { [key: string]: any[] } = {};
@@ -117,40 +171,75 @@ export function usePersonalizedLooks() {
 
   // Helper function to categorize API items
   const categorizeAPIItems = useCallback((items: any[]) => {
+    console.log('🔍 [categorizeAPIItems] Processing items:', items.map(item => ({
+      id: item.id,
+      title: item.title?.substring(0, 30) + '...',
+      category: item.category,
+      estimatedPrice: item.estimatedPrice
+    })));
+    
     const categorized = {
-      tops: items.filter(item => ['top', 'shirt', 'blouse', 'jacket', 'coat'].includes(item.category?.toLowerCase())),
+      tops: items.filter(item => ['top', 'shirt', 'blouse', 'jacket', 'coat', 'outerwear'].includes(item.category?.toLowerCase())),
       bottoms: items.filter(item => ['bottom', 'pants', 'trousers', 'skirt', 'jeans'].includes(item.category?.toLowerCase())),
       shoes: items.filter(item => ['shoes', 'footwear', 'boots', 'sandals', 'heels'].includes(item.category?.toLowerCase())),
       dresses: items.filter(item => ['dress', 'gown'].includes(item.category?.toLowerCase()))
     };
     
-    console.log('🔍 [categorizeAPIItems] Categorized:', {
+    console.log('🔍 [categorizeAPIItems] Categorization results:', {
       tops: categorized.tops.length,
-      bottoms: categorized.bottoms.length,
+      bottoms: categorized.bottoms.length, 
       shoes: categorized.shoes.length,
-      dresses: categorized.dresses.length
+      dresses: categorized.dresses.length,
+      uncategorized: items.length - (categorized.tops.length + categorized.bottoms.length + categorized.shoes.length + categorized.dresses.length)
     });
+    
+    // Log items that didn't get categorized
+    const allCategorized = [...categorized.tops, ...categorized.bottoms, ...categorized.shoes, ...categorized.dresses];
+    const uncategorized = items.filter(item => !allCategorized.some(cat => cat.id === item.id));
+    if (uncategorized.length > 0) {
+      console.warn('⚠️ [categorizeAPIItems] Uncategorized items:', uncategorized.map(item => ({
+        id: item.id,
+        title: item.title?.substring(0, 40),
+        category: item.category
+      })));
+    }
     
     return categorized;
   }, []);
 
   // Helper function to create balanced outfit (exactly 3 items)
   const createBalancedOutfit = useCallback((categorized: any, occasion: string) => {
-    const outfit: any[] = [];
+    console.log(`🏗️ [createBalancedOutfit] Building outfit for ${occasion} with available items:`, {
+      tops: categorized.tops.length,
+      bottoms: categorized.bottoms.length,
+      shoes: categorized.shoes.length,
+      dresses: categorized.dresses.length
+    });
     
-    // Try to get dress first for evening occasions
+    const outfit: any[] = [];
+    let strategy = '';
+    
+    // Strategy 1: For evening occasions, prefer dress + shoes
     if (occasion.toLowerCase() === 'evening' && categorized.dresses.length > 0) {
+      strategy = 'evening-dress';
       outfit.push({
         ...categorized.dresses[0],
         type: 'dress'
       });
-    } else {
+      console.log(`✅ [createBalancedOutfit] Added dress for evening: ${categorized.dresses[0].title?.substring(0, 30)}`);
+    } 
+    // Strategy 2: Standard top + bottom combination
+    else {
+      strategy = 'top-bottom';
       // Add top (required)
       if (categorized.tops.length > 0) {
         outfit.push({
           ...categorized.tops[0],
           type: 'top'
         });
+        console.log(`✅ [createBalancedOutfit] Added top: ${categorized.tops[0].title?.substring(0, 30)}`);
+      } else {
+        console.warn(`⚠️ [createBalancedOutfit] No tops available for ${occasion}`);
       }
       
       // Add bottom (required if no dress)
@@ -159,6 +248,9 @@ export function usePersonalizedLooks() {
           ...categorized.bottoms[0],
           type: 'bottom'
         });
+        console.log(`✅ [createBalancedOutfit] Added bottom: ${categorized.bottoms[0].title?.substring(0, 30)}`);
+      } else {
+        console.warn(`⚠️ [createBalancedOutfit] No bottoms available for ${occasion}`);
       }
     }
     
@@ -168,17 +260,36 @@ export function usePersonalizedLooks() {
         ...categorized.shoes[0],
         type: 'shoes'
       });
+      console.log(`✅ [createBalancedOutfit] Added shoes: ${categorized.shoes[0].title?.substring(0, 30)}`);
+    } else {
+      console.warn(`⚠️ [createBalancedOutfit] No shoes available for ${occasion}`);
     }
     
+    console.log(`📦 [createBalancedOutfit] Final outfit for ${occasion} (${strategy}): ${outfit.length} items`);
+    
     // Convert to proper format
-    return outfit.map(item => ({
-      id: item.id,
-      name: item.title,
-      image: item.imageUrl,
-      type: item.type,
-      price: item.estimatedPrice || '$29.99',
-      product_subfamily: item.category
-    }));
+    const formattedOutfit = outfit.map((item, index) => {
+      const formatted = {
+        id: item.id,
+        name: item.title,
+        image: item.imageUrl,
+        type: item.type,
+        price: item.estimatedPrice || '$29.99',
+        product_subfamily: item.category
+      };
+      
+      console.log(`🔄 [createBalancedOutfit] Formatted item ${index + 1}:`, {
+        id: formatted.id,
+        name: formatted.name?.substring(0, 30) + '...',
+        type: formatted.type,
+        hasImage: !!formatted.image,
+        price: formatted.price
+      });
+      
+      return formatted;
+    });
+    
+    return formattedOutfit;
   }, []);
 
   // The useQuery hook - fetch from API

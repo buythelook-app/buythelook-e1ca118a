@@ -3,7 +3,8 @@ import { Shuffle, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "../ui/button";
 import { PersonalizedLookCard } from "./PersonalizedLookCard";
 import { LookCanvas } from "../LookCanvas";
-import { memo, useMemo } from "react";
+import { DebugPanel } from "../DebugPanel";
+import { memo, useMemo, useEffect, useState } from "react";
 import type { Look } from "@/hooks/usePersonalizedLooks";
 import { DashboardItem } from "@/types/lookTypes";
 
@@ -30,9 +31,22 @@ export const PersonalizedLooksGrid = memo(({
   resetError,
   userStyleProfile
 }: PersonalizedLooksGridProps) => {
+  // Debug state
+  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   // Track used items for this render session
   const usedItemsInCurrentSession = useMemo(() => new Set<string>(), [occasionOutfits]);
+
+  // Update debug info from global state
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if ((window as any).fashionApiDebug) {
+        setDebugInfo((window as any).fashionApiDebug);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Function to filter out already used items for this session
   const getAvailableItems = (items: DashboardItem[]): DashboardItem[] => {
@@ -77,83 +91,111 @@ export const PersonalizedLooksGrid = memo(({
     );
   }
 
+  const totalItemsDisplayed = occasions.reduce((total, occasion) => {
+    return total + (occasionOutfits[occasion] || []).length;
+  }, 0);
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      {occasions.map((occasion) => {
-        const occasionItems = occasionOutfits[occasion] || [];
-        
-        // Get available items (not used in this session yet)
-        const availableItems = getAvailableItems(occasionItems);
-        
-        console.log(`🔍 [PersonalizedLooksGrid] ${occasion} - Total items: ${occasionItems.length}, Available (unused): ${availableItems.length}`);
-        
-        const look = createLookFromItems(availableItems, occasion, 0);
-        
-        if (!look) {
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {occasions.map((occasion) => {
+          const occasionItems = occasionOutfits[occasion] || [];
+          
+          // Get available items (not used in this session yet)
+          const availableItems = getAvailableItems(occasionItems);
+          
+          console.log(`🔍 [PersonalizedLooksGrid] ${occasion} - Total items: ${occasionItems.length}, Available (unused): ${availableItems.length}`);
+          
+          const look = createLookFromItems(availableItems, occasion, 0);
+          
+          if (!look) {
+            return (
+              <div key={occasion} className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold text-netflix-accent">{occasion}</h3>
+                </div>
+                <div className="bg-netflix-card rounded-lg p-6 min-h-[400px] flex items-center justify-center">
+                  <div className="text-center space-y-2">
+                    <p className="text-netflix-text">No items available for this occasion</p>
+                    <p className="text-sm text-netflix-text/60">
+                      Try shuffling or check the debug panel for more details
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // Mark the items used in this look as used for this session
+          const usedItems = availableItems.filter(item => 
+            look.items.some(lookItem => lookItem.id === item.id)
+          );
+          markItemsAsUsed(usedItems);
+
+          console.log(`✅ [PersonalizedLooksGrid] ${occasion} - Marked ${usedItems.length} items as used:`, usedItems.map(i => i.id));
+
+          // Convert DashboardItems to canvas items format
+          const canvasItems = availableItems
+            .filter(item => look.items.some(lookItem => lookItem.id === item.id))
+            .map(item => ({
+              id: item.id,
+              image: item.image || '/placeholder.svg',
+              type: item.type,
+              name: item.name
+            }));
+
+          console.log(`🔍 [PersonalizedLooksGrid] ${occasion} canvas items:`, canvasItems);
+
           return (
             <div key={occasion} className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-semibold text-netflix-accent">{occasion}</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleShuffleLook(occasion)}
+                  className="text-netflix-text hover:text-netflix-accent"
+                >
+                  <Shuffle className="h-4 w-4 mr-2" />
+                  Shuffle
+                </Button>
               </div>
-              <div className="bg-netflix-card rounded-lg p-6 min-h-[400px] flex items-center justify-center">
-                <p className="text-netflix-text">No items available for this occasion</p>
-              </div>
+              
+              <PersonalizedLookCard
+                look={look}
+                onShuffle={handleShuffleLook}
+                onAddToCart={handleAddToCart}
+                userStyleProfile={userStyleProfile}
+                customCanvas={
+                  <LookCanvas 
+                    items={canvasItems}
+                    width={300}
+                    height={400}
+                  />
+                }
+              />
             </div>
           );
-        }
-
-        // Mark the items used in this look as used for this session
-        const usedItems = availableItems.filter(item => 
-          look.items.some(lookItem => lookItem.id === item.id)
-        );
-        markItemsAsUsed(usedItems);
-
-        console.log(`✅ [PersonalizedLooksGrid] ${occasion} - Marked ${usedItems.length} items as used:`, usedItems.map(i => i.id));
-
-        // Convert DashboardItems to canvas items format
-        const canvasItems = availableItems
-          .filter(item => look.items.some(lookItem => lookItem.id === item.id))
-          .map(item => ({
-            id: item.id,
-            image: item.image || '/placeholder.svg',
-            type: item.type,
-            name: item.name
-          }));
-
-        console.log(`🔍 [PersonalizedLooksGrid] ${occasion} canvas items:`, canvasItems);
-
-        return (
-          <div key={occasion} className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-netflix-accent">{occasion}</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleShuffleLook(occasion)}
-                className="text-netflix-text hover:text-netflix-accent"
-              >
-                <Shuffle className="h-4 w-4 mr-2" />
-                Shuffle
-              </Button>
-            </div>
-            
-            <PersonalizedLookCard
-              look={look}
-              onShuffle={handleShuffleLook}
-              onAddToCart={handleAddToCart}
-              userStyleProfile={userStyleProfile}
-              customCanvas={
-                <LookCanvas 
-                  items={canvasItems}
-                  width={300}
-                  height={400}
-                />
-              }
-            />
-          </div>
-        );
-      })}
-    </div>
+        })}
+      </div>
+      
+      {/* Debug Panel */}
+      <DebugPanel
+        apiCallStatus={isLoading ? 'loading' : isError ? 'error' : 'success'}
+        itemsReceived={totalItemsDisplayed}
+        rawApiData={debugInfo}
+        currentDisplayState={{
+          occasions: occasions.map(occasion => ({
+            name: occasion,
+            itemCount: (occasionOutfits[occasion] || []).length
+          })),
+          isLoading,
+          isError
+        }}
+        errors={debugInfo?.errors || (isError ? ['Failed to load fashion items'] : [])}
+        isLoading={isLoading}
+      />
+    </>
   );
 });
 
