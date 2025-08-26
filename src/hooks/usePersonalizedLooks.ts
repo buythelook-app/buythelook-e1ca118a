@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getFashionItems } from "@/lib/serpApi";
+import { getFashionItems, getFashionItemsByCategory } from "@/lib/serpApi";
 import { toast as sonnerToast } from "sonner";
 import type { Mood } from "@/components/filters/MoodFilter";
 
@@ -29,6 +29,7 @@ export function usePersonalizedLooks() {
   const [combinations, setCombinations] = useState<{ [key: string]: number }>({});
   const [forceRefresh, setForceRefresh] = useState(false);
   const [apiErrorShown, setApiErrorShown] = useState(false);
+  const [categoriesByOccasion, setCategoriesByOccasion] = useState<{ [key: string]: { tops: any[]; bottoms: any[]; shoes: any[]; dresses: any[] } }>({});
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
 
   // Load style analysis from localStorage on component mount and listen for changes
@@ -73,6 +74,7 @@ export function usePersonalizedLooks() {
       console.log('🔍 [usePersonalizedLooks] Starting fetch from API...');
       
       const occasionData: { [key: string]: any[] } = {};
+      const categoryData: { [key: string]: { tops: any[]; bottoms: any[]; shoes: any[]; dresses: any[] } } = {};
       const debugInfo = {
         totalApiCalls: 0,
         successfulCalls: 0,
@@ -81,49 +83,71 @@ export function usePersonalizedLooks() {
         errors: [] as string[]
       };
       
-      // Fetch items for each occasion from API
+      // Fetch multiple items per category for each occasion from API
       for (const occasion of occasions) {
-        console.log(`🔍 [usePersonalizedLooks] Fetching ${occasion} items from API...`);
-        debugInfo.totalApiCalls++;
+        console.log(`🔍 [usePersonalizedLooks] Fetching ${occasion} items by category from API...`);
         
-        const result = await getFashionItems(
-          occasion.toLowerCase(), 
-          userStyle?.analysis?.styleProfile || 'classic', 
-          'medium',
-          'women'
+        const styleProfile = userStyle?.analysis?.styleProfile || 'classic';
+        const budget = 'medium';
+        const gender: 'women' | 'men' = 'women';
+        const categories = ['top', 'bottom', 'shoes', 'dress'] as const;
+
+        // Increase total calls by number of categories
+        debugInfo.totalApiCalls += categories.length;
+
+        // Parallel fetch per category
+        const results = await Promise.all(
+          categories.map(async (cat) => {
+            const res = await getFashionItemsByCategory(cat, styleProfile, gender, {
+              eventType: occasion.toLowerCase(),
+              budget,
+              num: 30
+            });
+            return { cat, res };
+          })
         );
-        
-        if (result.success && result.items) {
-          debugInfo.successfulCalls++;
-          debugInfo.totalItemsReceived += result.items.length;
-          
-          console.log(`📊 [usePersonalizedLooks] ${occasion} API response:`, {
-            success: result.success,
-            itemCount: result.items.length,
-            query: result.query,
-            firstItemSample: result.items[0] ? {
-              id: result.items[0].id,
-              title: result.items[0].title?.substring(0, 30) + '...',
-              category: result.items[0].category,
-              hasImage: !!result.items[0].imageUrl
-            } : null
-          });
-          
-          // Convert API items to our format and ensure proper categorization
-          const categorizedItems = categorizeAPIItems(result.items);
-          
-          // Create balanced outfit: 1 top, 1 bottom, 1 shoes (exactly 3 items)
-          const balancedOutfit = createBalancedOutfit(categorizedItems, occasion);
-          
-          occasionData[occasion] = balancedOutfit;
-          console.log(`✅ [usePersonalizedLooks] Created balanced outfit for ${occasion}: ${balancedOutfit.length} items`);
-        } else {
-          debugInfo.failedCalls++;
-          const errorMsg = `${occasion}: ${result.error || 'No items returned'}`;
-          debugInfo.errors.push(errorMsg);
-          console.log(`❌ [usePersonalizedLooks] No items found for ${occasion}:`, result.error);
-          occasionData[occasion] = [];
-        }
+
+        // Build categorized data for this occasion
+        const catMap: { [K in typeof categories[number]]: any[] } = {
+          top: [],
+          bottom: [],
+          shoes: [],
+          dress: []
+        };
+
+        results.forEach(({ cat, res }) => {
+          if (res.success && res.items) {
+            debugInfo.successfulCalls++;
+            debugInfo.totalItemsReceived += res.items.length;
+            console.log(`📊 [usePersonalizedLooks] ${occasion} → ${cat}: ${res.items.length} items (query: ${res.query})`);
+            catMap[cat] = res.items;
+          } else {
+            debugInfo.failedCalls++;
+            const errorMsg = `${occasion} → ${cat}: ${res.error || 'No items returned'}`;
+            debugInfo.errors.push(errorMsg);
+            console.warn(`❌ [usePersonalizedLooks] ${errorMsg}`);
+          }
+        });
+
+        // Save full category options for UI display
+        categoryData[occasion] = {
+          tops: catMap.top,
+          bottoms: catMap.bottom,
+          shoes: catMap.shoes,
+          dresses: catMap.dress
+        };
+
+        console.log(`✅ [usePersonalizedLooks] ${occasion} category counts:`, {
+          tops: categoryData[occasion].tops.length,
+          bottoms: categoryData[occasion].bottoms.length,
+          shoes: categoryData[occasion].shoes.length,
+          dresses: categoryData[occasion].dresses.length
+        });
+
+        // Create balanced outfit: 1 per category (or dress + shoes for evening)
+        const balancedOutfit = createBalancedOutfit(categoryData[occasion], occasion);
+        occasionData[occasion] = balancedOutfit;
+        console.log(`🎯 [usePersonalizedLooks] ${occasion} balanced outfit items: ${balancedOutfit.length}`);
       }
       
       // Log comprehensive debug summary
