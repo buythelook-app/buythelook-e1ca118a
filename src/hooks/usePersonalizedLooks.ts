@@ -1,9 +1,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getFashionItems, getFashionItemsByCategory } from "@/lib/serpApi";
+import { fetchDashboardItems, clearOutfitCache } from "@/services/lookService";
 import { toast as sonnerToast } from "sonner";
 import type { Mood } from "@/components/filters/MoodFilter";
+import { DashboardItem } from "@/types/lookTypes";
 
 export interface LookItem {
   id: string;
@@ -29,7 +30,6 @@ export function usePersonalizedLooks() {
   const [combinations, setCombinations] = useState<{ [key: string]: number }>({});
   const [forceRefresh, setForceRefresh] = useState(false);
   const [apiErrorShown, setApiErrorShown] = useState(false);
-  const [categoriesByOccasion, setCategoriesByOccasion] = useState<{ [key: string]: { tops: any[]; bottoms: any[]; shoes: any[]; dresses: any[] } }>({});
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
 
   // Load style analysis from localStorage on component mount and listen for changes
@@ -68,259 +68,48 @@ export function usePersonalizedLooks() {
     }
   }, []);
 
-  // Memoized query function - fetch from API with proper categorization
+  // Memoized query function - fetch from database and create complete outfits
   const queryFn = useCallback(async () => {
     try {
-      console.log('🔍 [usePersonalizedLooks] Starting fetch from API...');
+      console.log('🔍 [usePersonalizedLooks] Starting fetch for dashboard items...');
       
-      const occasionData: { [key: string]: any[] } = {};
-      const categoryData: { [key: string]: { tops: any[]; bottoms: any[]; shoes: any[]; dresses: any[] } } = {};
-      const debugInfo = {
-        totalApiCalls: 0,
-        successfulCalls: 0,
-        failedCalls: 0,
-        totalItemsReceived: 0,
-        errors: [] as string[]
-      };
-      
-      // Fetch multiple items per category for each occasion from API
-      for (const occasion of occasions) {
-        console.log(`🔍 [usePersonalizedLooks] Fetching ${occasion} items by category from API...`);
-        
-        const styleProfile = userStyle?.analysis?.styleProfile || 'classic';
-        const budget = 'medium';
-        const gender: 'women' | 'men' = 'women';
-        const categories = ['top', 'bottom', 'shoes', 'dress'] as const;
-
-        // Increase total calls by number of categories
-        debugInfo.totalApiCalls += categories.length;
-
-        // Parallel fetch per category
-        const results = await Promise.all(
-          categories.map(async (cat) => {
-            const res = await getFashionItemsByCategory(cat, styleProfile, gender, {
-              eventType: occasion.toLowerCase(),
-              budget,
-              num: 30
-            });
-            return { cat, res };
-          })
-        );
-
-        // Build categorized data for this occasion
-        const catMap: { [K in typeof categories[number]]: any[] } = {
-          top: [],
-          bottom: [],
-          shoes: [],
-          dress: []
-        };
-
-        results.forEach(({ cat, res }) => {
-          if (res.success && res.items) {
-            debugInfo.successfulCalls++;
-            debugInfo.totalItemsReceived += res.items.length;
-            console.log(`📊 [usePersonalizedLooks] ${occasion} → ${cat}: ${res.items.length} items (query: ${res.query})`);
-            catMap[cat] = res.items;
-          } else {
-            debugInfo.failedCalls++;
-            const errorMsg = `${occasion} → ${cat}: ${res.error || 'No items returned'}`;
-            debugInfo.errors.push(errorMsg);
-            console.warn(`❌ [usePersonalizedLooks] ${errorMsg}`);
-          }
-        });
-
-        // Save full category options for UI display
-        categoryData[occasion] = {
-          tops: catMap.top,
-          bottoms: catMap.bottom,
-          shoes: catMap.shoes,
-          dresses: catMap.dress
-        };
-
-        console.log(`✅ [usePersonalizedLooks] ${occasion} category counts:`, {
-          tops: categoryData[occasion].tops.length,
-          bottoms: categoryData[occasion].bottoms.length,
-          shoes: categoryData[occasion].shoes.length,
-          dresses: categoryData[occasion].dresses.length
-        });
-
-        // Create balanced outfit: 1 per category (or dress + shoes for evening)
-        const balancedOutfit = createBalancedOutfit(categoryData[occasion], occasion);
-        occasionData[occasion] = balancedOutfit;
-        console.log(`🎯 [usePersonalizedLooks] ${occasion} balanced outfit items: ${balancedOutfit.length}`);
+      // Clear global tracking when forced refresh
+      if (forceRefresh) {
+        clearOutfitCache();
       }
       
-      // Log comprehensive debug summary
-      console.log('📈 [usePersonalizedLooks] API Fetch Summary:', debugInfo);
-      console.log('✅ [usePersonalizedLooks] Final outfit data structure:', 
-        Object.keys(occasionData).map(key => ({
-          occasion: key,
-          itemCount: occasionData[key].length,
-          items: occasionData[key].map((item: any) => ({
-            id: item.id,
-            name: item.name?.substring(0, 20) + '...',
-            type: item.type
-          }))
-        }))
-      );
+      const data = await fetchDashboardItems();
+      console.log('🔍 [usePersonalizedLooks] Raw data received:', data);
       
-      // Store debug info for DebugPanel
-      (window as any).fashionApiDebug = {
-        ...debugInfo,
-        occasionData,
-        lastUpdated: new Date().toISOString()
-      };
+      // Log each occasion's data
+      Object.keys(data).forEach(occasion => {
+        console.log(`📋 [usePersonalizedLooks] ${occasion} items:`, data[occasion].map(item => ({
+          id: item.id,
+          name: item.name,
+          type: item.type,
+          hasImage: !!item.image
+        })));
+      });
       
-      return occasionData;
+      console.log('✅ [usePersonalizedLooks] All occasions processed:', data);
+      return data;
       
     } catch (err) {
-      console.error("❌ [usePersonalizedLooks] Unexpected error in queryFn:", err);
-      sonnerToast.error("Failed to load fashion items from API. Please try again later.");
-      
-      // Store error info for debugging
-      (window as any).fashionApiDebug = {
-        error: err instanceof Error ? err.message : 'Unknown error',
-        stack: err instanceof Error ? err.stack : undefined,
-        lastUpdated: new Date().toISOString()
-      };
-      
-      // Return empty outfits on error
-      const emptyData: { [key: string]: any[] } = {};
+      console.error("❌ [usePersonalizedLooks] Error fetching data:", err);
+      // Return empty outfits instead of fallbacks
+      const emptyData: { [key: string]: DashboardItem[] } = {};
       occasions.forEach(occasion => {
         emptyData[occasion] = [];
       });
       return emptyData;
     }
-  }, [forceRefresh, userStyle]);
+  }, [forceRefresh]);
 
-  // Helper function to categorize API items
-  const categorizeAPIItems = useCallback((items: any[]) => {
-    console.log('🔍 [categorizeAPIItems] Processing items:', items.map(item => ({
-      id: item.id,
-      title: item.title?.substring(0, 30) + '...',
-      category: item.category,
-      estimatedPrice: item.estimatedPrice
-    })));
-    
-    const categorized = {
-      tops: items.filter(item => ['top', 'shirt', 'blouse', 'jacket', 'coat', 'outerwear'].includes(item.category?.toLowerCase())),
-      bottoms: items.filter(item => ['bottom', 'pants', 'trousers', 'skirt', 'jeans'].includes(item.category?.toLowerCase())),
-      shoes: items.filter(item => ['shoes', 'footwear', 'boots', 'sandals', 'heels'].includes(item.category?.toLowerCase())),
-      dresses: items.filter(item => ['dress', 'gown'].includes(item.category?.toLowerCase()))
-    };
-    
-    console.log('🔍 [categorizeAPIItems] Categorization results:', {
-      tops: categorized.tops.length,
-      bottoms: categorized.bottoms.length, 
-      shoes: categorized.shoes.length,
-      dresses: categorized.dresses.length,
-      uncategorized: items.length - (categorized.tops.length + categorized.bottoms.length + categorized.shoes.length + categorized.dresses.length)
-    });
-    
-    // Log items that didn't get categorized
-    const allCategorized = [...categorized.tops, ...categorized.bottoms, ...categorized.shoes, ...categorized.dresses];
-    const uncategorized = items.filter(item => !allCategorized.some(cat => cat.id === item.id));
-    if (uncategorized.length > 0) {
-      console.warn('⚠️ [categorizeAPIItems] Uncategorized items:', uncategorized.map(item => ({
-        id: item.id,
-        title: item.title?.substring(0, 40),
-        category: item.category
-      })));
-    }
-    
-    return categorized;
-  }, []);
-
-  // Helper function to create balanced outfit (exactly 3 items)
-  const createBalancedOutfit = useCallback((categorized: any, occasion: string) => {
-    console.log(`🏗️ [createBalancedOutfit] Building outfit for ${occasion} with available items:`, {
-      tops: categorized.tops.length,
-      bottoms: categorized.bottoms.length,
-      shoes: categorized.shoes.length,
-      dresses: categorized.dresses.length
-    });
-    
-    const outfit: any[] = [];
-    let strategy = '';
-    
-    // Strategy 1: For evening occasions, prefer dress + shoes
-    if (occasion.toLowerCase() === 'evening' && categorized.dresses.length > 0) {
-      strategy = 'evening-dress';
-      outfit.push({
-        ...categorized.dresses[0],
-        type: 'dress'
-      });
-      console.log(`✅ [createBalancedOutfit] Added dress for evening: ${categorized.dresses[0].title?.substring(0, 30)}`);
-    } 
-    // Strategy 2: Standard top + bottom combination
-    else {
-      strategy = 'top-bottom';
-      // Add top (required)
-      if (categorized.tops.length > 0) {
-        outfit.push({
-          ...categorized.tops[0],
-          type: 'top'
-        });
-        console.log(`✅ [createBalancedOutfit] Added top: ${categorized.tops[0].title?.substring(0, 30)}`);
-      } else {
-        console.warn(`⚠️ [createBalancedOutfit] No tops available for ${occasion}`);
-      }
-      
-      // Add bottom (required if no dress)
-      if (categorized.bottoms.length > 0) {
-        outfit.push({
-          ...categorized.bottoms[0],
-          type: 'bottom'
-        });
-        console.log(`✅ [createBalancedOutfit] Added bottom: ${categorized.bottoms[0].title?.substring(0, 30)}`);
-      } else {
-        console.warn(`⚠️ [createBalancedOutfit] No bottoms available for ${occasion}`);
-      }
-    }
-    
-    // Add shoes (always required)
-    if (categorized.shoes.length > 0) {
-      outfit.push({
-        ...categorized.shoes[0],
-        type: 'shoes'
-      });
-      console.log(`✅ [createBalancedOutfit] Added shoes: ${categorized.shoes[0].title?.substring(0, 30)}`);
-    } else {
-      console.warn(`⚠️ [createBalancedOutfit] No shoes available for ${occasion}`);
-    }
-    
-    console.log(`📦 [createBalancedOutfit] Final outfit for ${occasion} (${strategy}): ${outfit.length} items`);
-    
-    // Convert to proper format
-    const formattedOutfit = outfit.map((item, index) => {
-      const formatted = {
-        id: item.id,
-        name: item.title,
-        image: item.imageUrl,
-        type: item.type,
-        price: item.estimatedPrice || '$29.99',
-        product_subfamily: item.category
-      };
-      
-      console.log(`🔄 [createBalancedOutfit] Formatted item ${index + 1}:`, {
-        id: formatted.id,
-        name: formatted.name?.substring(0, 30) + '...',
-        type: formatted.type,
-        hasImage: !!formatted.image,
-        price: formatted.price
-      });
-      
-      return formatted;
-    });
-    
-    return formattedOutfit;
-  }, []);
-
-  // The useQuery hook - fetch from API
+  // The useQuery hook - only database items
   const { data: occasionOutfits, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['apiItems', selectedMood, forceRefresh, userStyle?.analysis?.styleProfile],
+    queryKey: ['dashboardItems', selectedMood, forceRefresh, userStyle?.analysis?.styleProfile],
     queryFn,
-    enabled: true, // Always enabled for API
+    enabled: !!userStyle,
     staleTime: 5000,
     retry: 1,
     placeholderData: { Work: [], Casual: [], Evening: [], Weekend: [] },
@@ -342,7 +131,7 @@ export function usePersonalizedLooks() {
     }
   }, [occasionOutfits, forceRefresh]);
 
-  const createLookFromItems = useCallback((items: any[] = [], occasion: string, index: number): Look | null => {
+  const createLookFromItems = useCallback((items: DashboardItem[] = [], occasion: string, index: number): Look | null => {
     console.log(`🔍 [usePersonalizedLooks] Creating look from ${items.length} items for ${occasion}`);
     console.log(`📋 [usePersonalizedLooks] Items details:`, items.map(item => ({
       id: item.id,
@@ -404,6 +193,8 @@ export function usePersonalizedLooks() {
   }, []);
 
   const handleShuffleLook = useCallback((occasion: string) => {
+    clearOutfitCache();
+    
     setCombinations(prev => ({
       ...prev,
       [occasion]: (prev[occasion] || 0) + 1
@@ -412,7 +203,7 @@ export function usePersonalizedLooks() {
     setForceRefresh(true);
     setApiErrorShown(false);
     
-    sonnerToast.info("Finding new look combinations from API...", {
+    sonnerToast.info("Finding new look combinations...", {
       duration: 1500
     });
     
@@ -424,10 +215,10 @@ export function usePersonalizedLooks() {
     refetch();
   }, [refetch]);
 
-  // Return API data
+  // Always return database data only
   const getOutfitData = useCallback(() => {
     const data = occasionOutfits || { Work: [], Casual: [], Evening: [], Weekend: [] };
-    console.log('🔍 [usePersonalizedLooks] Returning API outfit data:', Object.keys(data).map(occasion => ({
+    console.log('🔍 [usePersonalizedLooks] Returning outfit data:', Object.keys(data).map(occasion => ({
       occasion,
       itemCount: data[occasion].length
     })));
@@ -439,7 +230,6 @@ export function usePersonalizedLooks() {
     userStyle,
     occasions,
     occasionOutfits: getOutfitData(),
-    categoriesByOccasion,
     isLoading,
     isError,
     createLookFromItems,

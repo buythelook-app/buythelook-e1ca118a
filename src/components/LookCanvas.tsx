@@ -42,7 +42,7 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     return '';
   };
 
-  // More lenient validation - accept SERP API images
+  // Ultra simplified validation - just check for HTTP URLs
   const isValidImageUrl = (image: any, itemType: string): boolean => {
     const imageUrl = getImageUrl(image);
     console.log(`🔍 [LookCanvas] Validating ${itemType} image: "${imageUrl}"`);
@@ -52,7 +52,6 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       return false;
     }
     
-    // Accept any HTTP URL that's not a placeholder
     const hasHttp = imageUrl.includes('http');
     const notPlaceholder = !imageUrl.includes('placeholder.svg');
     const isValid = hasHttp && notPlaceholder;

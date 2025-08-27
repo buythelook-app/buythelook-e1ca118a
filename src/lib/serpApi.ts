@@ -39,66 +39,24 @@ export async function getFashionItems(
   gender: 'women' | 'men' = 'women'
 ): Promise<FashionSearchResult> {
   try {
-    console.log('🔍 [SERP API] Starting request to fashion-items edge function:', { eventType, style, budget, gender });
-    
-    const startTime = performance.now();
+    console.log('🔍 Requesting fashion-items edge function:', { eventType, style, budget, gender });
     const { data, error } = await supabase.functions.invoke('fashion-items', {
       body: { eventType, style, budget, gender }
     });
-    const endTime = performance.now();
-    
-    console.log(`⏱️ [SERP API] Request completed in ${(endTime - startTime).toFixed(2)}ms`);
 
     if (error) {
-      console.error('❌ [SERP API] Edge function error:', error);
-      console.error('❌ [SERP API] Error details:', JSON.stringify(error, null, 2));
+      console.error('❌ fashion-items error:', error);
       return { success: false, error: error.message, items: [] };
     }
 
-    if (!data) {
-      console.error('❌ [SERP API] No data received from edge function');
-      return { success: false, error: 'No data received from server', items: [] };
-    }
-
-    console.log('📊 [SERP API] Raw response received:', {
-      success: data.success,
-      itemsCount: data.items?.length || 0,
-      query: data.query,
-      totalResults: data.totalResults,
-      categoriesFound: data.categoriesFound
-    });
-
     if (!data?.success) {
-      console.error('❌ [SERP API] Server returned error:', data?.error);
-      return { success: false, error: data?.error || 'Unknown server error', items: [] };
-    }
-
-    // Log detailed item breakdown
-    if (data.items && data.items.length > 0) {
-      const itemsByCategory = data.items.reduce((acc: any, item: any) => {
-        const category = item.category || 'unknown';
-        if (!acc[category]) acc[category] = 0;
-        acc[category]++;
-        return acc;
-      }, {});
-      
-      console.log('📋 [SERP API] Items breakdown by category:', itemsByCategory);
-      console.log('📋 [SERP API] Sample items:', data.items.slice(0, 3).map((item: any) => ({
-        id: item.id,
-        title: item.title?.substring(0, 50) + '...',
-        category: item.category,
-        price: item.estimatedPrice,
-        hasImage: !!item.imageUrl
-      })));
-    } else {
-      console.warn('⚠️ [SERP API] No items in successful response');
+      return { success: false, error: data?.error || 'Unknown error', items: [] };
     }
 
     return data as FashionSearchResult;
   } catch (error: any) {
-    console.error('❌ [SERP API] Unexpected error in getFashionItems:', error);
-    console.error('❌ [SERP API] Error stack:', error.stack);
-    return { success: false, error: error.message || 'Network or unexpected error occurred', items: [] };
+    console.error('❌ Error fetching fashion items:', error);
+    return { success: false, error: error.message || 'Unknown error occurred', items: [] };
   }
 }
 
@@ -205,26 +163,20 @@ function categorizeFashionItem(title?: string): string {
 export async function getFashionItemsByCategory(
   category: string, 
   style: string, 
-  gender: 'women' | 'men' = 'women',
-  options?: { eventType?: string; budget?: string; num?: number }
+  gender: 'women' | 'men' = 'women'
 ): Promise<FashionSearchResult> {
-  const { eventType, budget, num = 24 } = options || {};
-  const query = [gender, eventType, category, style, 'fashion', budget]
-    .filter(Boolean)
-    .join(' ');
+  const query = `${gender} ${category} ${style} fashion`;
   
   try {
-    console.log('🔍 [SERP API] Category request →', { category, style, gender, eventType, budget, num, query });
     const { data, error } = await supabase.functions.invoke('serp-search', {
       body: {
         query,
         engine: 'google',
-        num
+        num: 15
       }
     });
 
     if (error) {
-      console.error('❌ [SERP API] Category fetch error:', error);
       return {
         success: false,
         error: error.message,
@@ -233,17 +185,15 @@ export async function getFashionItemsByCategory(
     }
 
     const fashionItems = processFashionResults(data?.images_results || []);
-    console.log('📦 [SERP API] Category items received:', { category, count: fashionItems.length });
     
     return {
       success: true,
       items: fashionItems,
-      query,
+      query: query,
       totalResults: fashionItems.length
     };
     
   } catch (error: any) {
-    console.error('❌ [SERP API] Unexpected error in getFashionItemsByCategory:', error);
     return {
       success: false,
       error: error.message || 'Unknown error occurred',
