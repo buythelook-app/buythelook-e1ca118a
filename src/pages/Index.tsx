@@ -8,6 +8,7 @@ import { useCartStore } from "@/components/Cart";
 import { toast as sonnerToast } from "sonner";
 import { StyleProfileDisplay } from "@/components/look/StyleProfileDisplay";
 import { PersonalizedLooksGrid } from "@/components/look/PersonalizedLooksGrid";
+import { SimpleFashionDisplay } from "@/components/SimpleFashionDisplay";
 import { usePersonalizedLooks } from "@/hooks/usePersonalizedLooks";
 import { memo, useCallback, useMemo } from "react";
 
@@ -88,6 +89,14 @@ const Index = () => {
           <MoodFilter selectedMood={selectedMood} onMoodSelect={handleMoodSelect} />
         </div>
         <FilterOptions />
+        {/* Temporary: Simple Fashion Display for Testing */}
+        <section className="py-8">
+          <div className="container mx-auto px-4">
+            <SimpleFashionDisplay />
+          </div>
+        </section>
+
+        {/* Original complex display - temporarily hidden 
         <section className="py-8">
           <div className="container mx-auto px-4">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
@@ -101,17 +110,18 @@ const Index = () => {
             <PersonalizedLooksGrid
               isLoading={isLoading}
               isError={isError}
-        occasionOutfits={occasionOutfits}
-        categoriesByOccasion={categoriesByOccasion}
-        occasions={occasions}
-        createLookFromItems={createLookFromItems}
-        handleShuffleLook={handleShuffleLook}
-        handleAddToCart={handleAddToCart}
-        resetError={resetError}
-        userStyleProfile={userStyle?.analysis?.styleProfile}
+              occasionOutfits={occasionOutfits}
+              categoriesByOccasion={categoriesByOccasion}
+              occasions={occasions}
+              createLookFromItems={createLookFromItems}
+              handleShuffleLook={handleShuffleLook}
+              handleAddToCart={handleAddToCart}
+              resetError={resetError}
+              userStyleProfile={userStyle?.analysis?.styleProfile}
             />
           </div>
         </section>
+        */}
       </main>
     </div>
   );
