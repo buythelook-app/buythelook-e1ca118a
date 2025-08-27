@@ -21,6 +21,7 @@ const Index = () => {
     userStyle,
     occasions,
     occasionOutfits,
+    categoriesByOccasion,
     isLoading,
     isError,
     createLookFromItems,
@@ -100,13 +101,14 @@ const Index = () => {
             <PersonalizedLooksGrid
               isLoading={isLoading}
               isError={isError}
-              occasionOutfits={occasionOutfits}
-              occasions={occasions}
-              createLookFromItems={createLookFromItems}
-              handleShuffleLook={handleShuffleLook}
-              handleAddToCart={handleAddToCart}
-              resetError={resetError}
-              userStyleProfile={userStyle?.analysis?.styleProfile}
+        occasionOutfits={occasionOutfits}
+        categoriesByOccasion={categoriesByOccasion}
+        occasions={occasions}
+        createLookFromItems={createLookFromItems}
+        handleShuffleLook={handleShuffleLook}
+        handleAddToCart={handleAddToCart}
+        resetError={resetError}
+        userStyleProfile={userStyle?.analysis?.styleProfile}
             />
           </div>
         </section>

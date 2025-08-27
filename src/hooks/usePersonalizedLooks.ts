@@ -439,6 +439,7 @@ export function usePersonalizedLooks() {
     userStyle,
     occasions,
     occasionOutfits: getOutfitData(),
+    categoriesByOccasion,
     isLoading,
     isError,
     createLookFromItems,
