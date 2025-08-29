@@ -5,6 +5,7 @@ import { fetchDashboardItems, clearOutfitCache } from "@/services/lookService";
 import { toast as sonnerToast } from "sonner";
 import type { Mood } from "@/components/filters/MoodFilter";
 import { DashboardItem } from "@/types/lookTypes";
+import { useExternalCatalog } from "./useExternalCatalog";
 
 export interface LookItem {
   id: string;
@@ -31,6 +32,7 @@ export function usePersonalizedLooks() {
   const [forceRefresh, setForceRefresh] = useState(false);
   const [apiErrorShown, setApiErrorShown] = useState(false);
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
+  const { fetchCatalog } = useExternalCatalog();
 
   // Load style analysis from localStorage on component mount and listen for changes
   useEffect(() => {
@@ -68,7 +70,7 @@ export function usePersonalizedLooks() {
     }
   }, []);
 
-  // Memoized query function - fetch from database and create complete outfits
+  // Memoized query function - fetch from RapidAPI and database, then merge
   const queryFn = useCallback(async () => {
     try {
       console.log('🔍 [usePersonalizedLooks] Starting fetch for dashboard items...');
@@ -78,21 +80,68 @@ export function usePersonalizedLooks() {
         clearOutfitCache();
       }
       
-      const data = await fetchDashboardItems();
-      console.log('🔍 [usePersonalizedLooks] Raw data received:', data);
-      
-      // Log each occasion's data
-      Object.keys(data).forEach(occasion => {
-        console.log(`📋 [usePersonalizedLooks] ${occasion} items:`, data[occasion].map(item => ({
-          id: item.id,
-          name: item.name,
-          type: item.type,
-          hasImage: !!item.image
-        })));
+      // Fetch from RapidAPI for each occasion
+      const rapidApiPromises = occasions.map(async (occasion) => {
+        const query = `women ${occasion.toLowerCase()}`;
+        const category = occasion === 'Work' ? 'dresses' : occasion === 'Evening' ? 'dresses' : 'tops';
+        
+        const catalogResult = await fetchCatalog({
+          query,
+          gender: 'women',
+          category,
+          limit: 6
+        });
+        
+        if (catalogResult.success && catalogResult.items) {
+          // Convert CatalogItem to DashboardItem format
+          const dashboardItems: DashboardItem[] = catalogResult.items.map((item, index) => ({
+            id: `rapidapi-${occasion}-${item.id}`,
+            name: item.title,
+            type: (occasion === 'Work' || occasion === 'Evening') ? 'dress' : 
+                  (index % 3 === 0 ? 'top' : index % 3 === 1 ? 'bottom' : 'shoes') as any,
+            image: item.imageUrl || item.thumbnailUrl || '/placeholder.svg',
+            price: item.estimatedPrice?.replace(/[^0-9.]/g, '') || '29.99',
+            brand: item.source || 'ASOS',
+            color: 'mixed',
+            category: item.category || 'clothing',
+            season: 'all',
+            formality: occasion === 'Work' ? 'formal' : occasion === 'Evening' ? 'formal' : 'casual',
+            style: 'modern',
+            affiliate_link: item.link
+          }));
+          
+          return { occasion, items: dashboardItems };
+        }
+        
+        return { occasion, items: [] };
       });
       
-      console.log('✅ [usePersonalizedLooks] All occasions processed:', data);
-      return data;
+      // Wait for all RapidAPI calls to complete
+      const rapidApiResults = await Promise.all(rapidApiPromises);
+      
+      // Also fetch from database as fallback
+      const databaseData = await fetchDashboardItems();
+      
+      // Merge RapidAPI data with database data
+      const mergedData: { [key: string]: DashboardItem[] } = {};
+      
+      occasions.forEach(occasion => {
+        const rapidApiItems = rapidApiResults.find(r => r.occasion === occasion)?.items || [];
+        const databaseItems = databaseData[occasion] || [];
+        
+        // Prioritize RapidAPI items, fallback to database items if needed
+        mergedData[occasion] = rapidApiItems.length > 0 ? rapidApiItems : databaseItems;
+        
+        console.log(`📋 [usePersonalizedLooks] ${occasion} merged items:`, {
+          rapidApiCount: rapidApiItems.length,
+          databaseCount: databaseItems.length,
+          totalUsed: mergedData[occasion].length,
+          source: rapidApiItems.length > 0 ? 'RapidAPI' : 'Database'
+        });
+      });
+      
+      console.log('✅ [usePersonalizedLooks] All occasions processed with RapidAPI data:', mergedData);
+      return mergedData;
       
     } catch (err) {
       console.error("❌ [usePersonalizedLooks] Error fetching data:", err);
@@ -103,9 +152,9 @@ export function usePersonalizedLooks() {
       });
       return emptyData;
     }
-  }, [forceRefresh]);
+  }, [forceRefresh, fetchCatalog, occasions]);
 
-  // The useQuery hook - only database items
+  // The useQuery hook - fetches RapidAPI items with database fallback
   const { data: occasionOutfits, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['dashboardItems', selectedMood, forceRefresh, userStyle?.analysis?.styleProfile],
     queryFn,
@@ -215,7 +264,7 @@ export function usePersonalizedLooks() {
     refetch();
   }, [refetch]);
 
-  // Always return database data only
+  // Return merged RapidAPI and database data
   const getOutfitData = useCallback(() => {
     const data = occasionOutfits || { Work: [], Casual: [], Evening: [], Weekend: [] };
     console.log('🔍 [usePersonalizedLooks] Returning outfit data:', Object.keys(data).map(occasion => ({
