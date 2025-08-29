@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export type CatalogProvider = 'mock' | 'rapidapi-asos' | 'shopify';
+export type CatalogProvider = 'rapidapi-asos';
 
 export interface CatalogItem {
   id: string;
@@ -31,7 +31,7 @@ export function useExternalCatalog() {
     try {
       const { data, error } = await supabase.functions.invoke('catalog-proxy', {
         body: {
-          provider: opts.provider ?? 'mock',
+          provider: 'rapidapi-asos',
           query: opts.query ?? 'women shirts',
           gender: opts.gender ?? 'women',
           category: opts.category ?? 'tops',

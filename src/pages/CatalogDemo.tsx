@@ -8,12 +8,12 @@ import { Link } from 'react-router-dom';
 
 export default function CatalogDemo() {
   const { items, loading, error, fetchCatalog } = useExternalCatalog();
-  const [provider, setProvider] = useState<CatalogProvider>('mock');
+  const [provider, setProvider] = useState<CatalogProvider>('rapidapi-asos');
   const [query, setQuery] = useState('women shirts');
 
   useEffect(() => {
     document.title = 'Catalog Demo - External Fashion API';
-    fetchCatalog({ provider: 'mock', query: 'women shirts', category: 'tops', limit: 12 });
+    fetchCatalog({ provider: 'rapidapi-asos', query: 'women shirts', category: 'tops', limit: 12 });
   }, [fetchCatalog]);
 
   const onSearch = () => fetchCatalog({ provider, query, category: 'tops', limit: 12 });
@@ -24,22 +24,17 @@ export default function CatalogDemo() {
       <main className="container mx-auto px-4 py-24">
         <div className="flex items-end gap-3 mb-6">
           <div className="flex-1">
-            <label className="block text-sm mb-1">Query</label>
-            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="e.g. women shirts" />
+            <label className="block text-sm mb-1">Search Query</label>
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="e.g., women dresses"
+              className="w-full"
+            />
           </div>
-          <div>
-            <label className="block text-sm mb-1">Provider</label>
-            <select
-              value={provider}
-              onChange={(e) => setProvider(e.target.value as CatalogProvider)}
-              className="h-10 rounded-md border bg-transparent px-3"
-            >
-              <option value="mock">Mock (no API key)</option>
-              <option value="rapidapi-asos">ASOS (RapidAPI)</option>
-              <option value="shopify">Shopify Storefront</option>
-            </select>
-          </div>
-          <Button onClick={onSearch} disabled={loading}>Search</Button>
+          <Button onClick={onSearch} disabled={loading}>
+            {loading ? 'Searching...' : 'Search'}
+          </Button>
           <Link to="/" className="text-netflix-accent underline">Back to Home</Link>
         </div>
 
