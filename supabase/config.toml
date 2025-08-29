@@ -28,3 +28,7 @@ cors = true
 [functions.fashion-items]
 verify_jwt = false
 cors = true
+
+[functions.catalog-proxy]
+verify_jwt = false
+cors = true

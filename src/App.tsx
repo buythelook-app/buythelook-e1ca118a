@@ -34,6 +34,7 @@ import { StyleGuide } from './components/StyleGuide';
 import { DeveloperTools } from './components/DeveloperTools';
 import { LookSuggestions } from './components/LookSuggestions';
 import { LookDetail } from './components/LookDetail';
+import CatalogDemo from './pages/CatalogDemo';
 
 // Create QueryClient instance with error handling
 const queryClient = new QueryClient({
@@ -100,6 +101,7 @@ function App() {
             <Route path="/agent-simulation" element={<AgentSimulationPage />} />
             <Route path="/agent-training" element={<AgentTrainingPage />} />
             <Route path="/ai-image-analysis" element={<AIImageAnalysisPage />} />
+            <Route path="/catalog-demo" element={<CatalogDemo />} />
           </Routes>
           <Toaster />
         </Router>
