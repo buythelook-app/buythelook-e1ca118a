@@ -81,18 +81,22 @@ export function usePersonalizedLooks() {
       }
       
       // Fetch from RapidAPI for each occasion
+      console.log('🚀 [usePersonalizedLooks] Starting RapidAPI fetch for occasions:', occasions);
       const rapidApiPromises = occasions.map(async (occasion) => {
         const query = `women ${occasion.toLowerCase()}`;
         const category = occasion === 'Work' ? 'dresses' : occasion === 'Evening' ? 'dresses' : 'tops';
         
+        console.log(`📡 [usePersonalizedLooks] Calling RapidAPI for ${occasion}:`, { query, category });
         const catalogResult = await fetchCatalog({
           query,
           gender: 'women',
           category,
           limit: 6
         });
+        console.log(`📦 [usePersonalizedLooks] RapidAPI result for ${occasion}:`, catalogResult);
         
         if (catalogResult.success && catalogResult.items) {
+          console.log(`✅ [usePersonalizedLooks] RapidAPI SUCCESS for ${occasion}:`, catalogResult.items.length, 'items');
           // Convert CatalogItem to DashboardItem format
           const dashboardItems: DashboardItem[] = catalogResult.items.map((item, index) => ({
             id: `rapidapi-${occasion}-${item.id}`,
@@ -110,9 +114,11 @@ export function usePersonalizedLooks() {
             affiliate_link: item.link
           }));
           
+          console.log(`🎯 [usePersonalizedLooks] Converted ${dashboardItems.length} items for ${occasion}:`, dashboardItems.map(i => ({ id: i.id, name: i.name, source: 'RapidAPI' })));
           return { occasion, items: dashboardItems };
         }
         
+        console.log(`❌ [usePersonalizedLooks] RapidAPI FAILED for ${occasion}:`, catalogResult.error);
         return { occasion, items: [] };
       });
       
@@ -120,7 +126,9 @@ export function usePersonalizedLooks() {
       const rapidApiResults = await Promise.all(rapidApiPromises);
       
       // Also fetch from database as fallback
+      console.log('💾 [usePersonalizedLooks] Fetching database fallback data...');
       const databaseData = await fetchDashboardItems();
+      console.log('💾 [usePersonalizedLooks] Database data:', Object.keys(databaseData).map(k => ({ occasion: k, count: databaseData[k].length })));
       
       // Merge RapidAPI data with database data
       const mergedData: { [key: string]: DashboardItem[] } = {};
@@ -132,11 +140,16 @@ export function usePersonalizedLooks() {
         // Prioritize RapidAPI items, fallback to database items if needed
         mergedData[occasion] = rapidApiItems.length > 0 ? rapidApiItems : databaseItems;
         
-        console.log(`📋 [usePersonalizedLooks] ${occasion} merged items:`, {
+        console.log(`📋 [usePersonalizedLooks] ${occasion} FINAL DATA SOURCE:`, {
           rapidApiCount: rapidApiItems.length,
           databaseCount: databaseItems.length,
           totalUsed: mergedData[occasion].length,
-          source: rapidApiItems.length > 0 ? 'RapidAPI' : 'Database'
+          source: rapidApiItems.length > 0 ? '🌐 RapidAPI (LIVE)' : '💾 Database (FALLBACK)',
+          sampleItem: mergedData[occasion][0] ? { 
+            id: mergedData[occasion][0].id, 
+            name: mergedData[occasion][0].name,
+            isFromRapidAPI: mergedData[occasion][0].id.startsWith('rapidapi-')
+          } : 'No items'
         });
       });
       

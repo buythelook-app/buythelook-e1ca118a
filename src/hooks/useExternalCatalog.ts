@@ -26,22 +26,35 @@ export function useExternalCatalog() {
     category?: string;
     limit?: number;
   } = {}) => {
+    console.log('🔧 [useExternalCatalog] Starting catalog fetch with params:', opts);
     setLoading(true);
     setError(null);
     try {
+      const requestBody = {
+        provider: 'rapidapi-asos',
+        query: opts.query ?? 'women shirts',
+        gender: opts.gender ?? 'women',
+        category: opts.category ?? 'tops',
+        limit: opts.limit ?? 12,
+      };
+      console.log('📡 [useExternalCatalog] Calling catalog-proxy edge function with:', requestBody);
+      
       const { data, error } = await supabase.functions.invoke('catalog-proxy', {
-        body: {
-          provider: 'rapidapi-asos',
-          query: opts.query ?? 'women shirts',
-          gender: opts.gender ?? 'women',
-          category: opts.category ?? 'tops',
-          limit: opts.limit ?? 12,
-        }
+        body: requestBody
       });
 
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Failed to load catalog');
+      console.log('📨 [useExternalCatalog] Edge function response:', { data, error });
+      
+      if (error) {
+        console.error('❌ [useExternalCatalog] Edge function error:', error);
+        throw error;
+      }
+      if (!data?.success) {
+        console.error('❌ [useExternalCatalog] API error:', data?.error);
+        throw new Error(data?.error || 'Failed to load catalog');
+      }
 
+      console.log('✅ [useExternalCatalog] SUCCESS! Got', data.items?.length || 0, 'items from RapidAPI');
       setItems((data.items || []) as CatalogItem[]);
       return { success: true, items: (data.items || []) as CatalogItem[] };
     } catch (e: any) {
