@@ -36,6 +36,7 @@ import { LookSuggestions } from './components/LookSuggestions';
 import { LookDetail } from './components/LookDetail';
 import CatalogDemo from './pages/CatalogDemo';
 import TestApi from './pages/TestApi';
+import AgentHealthPage from './pages/AgentHealth';
 
 // Create QueryClient instance with error handling
 const queryClient = new QueryClient({
@@ -104,6 +105,7 @@ function App() {
             <Route path="/ai-image-analysis" element={<AIImageAnalysisPage />} />
             <Route path="/catalog-demo" element={<CatalogDemo />} />
             <Route path="/test-api" element={<TestApi />} />
+            <Route path="/agent-health" element={<AgentHealthPage />} />
           </Routes>
           <Toaster />
         </Router>
