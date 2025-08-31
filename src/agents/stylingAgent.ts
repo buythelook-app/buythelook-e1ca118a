@@ -20,7 +20,8 @@ type ZaraClothItem = {
   id: string;
   product_name: string;
   price: number;
-  colour: string;
+  colour: string | null;
+  color?: string | null;
   description?: string | null;
   size: string[];
   materials?: any[] | null;
@@ -374,8 +375,8 @@ class StylingAgentClass implements Agent {
         return false;
       }
       
-      const itemColor = (item.colour || '').toLowerCase();
-      const itemName = (item.product_name || '').toLowerCase();
+      const itemColor = String(item.colour || item.color || '').toLowerCase();
+      const itemName = String(item.product_name || '').toLowerCase();
       
       // Check if item matches style colors (higher priority)
       const matchesStyleColor = styleColors.some(styleColor => 
@@ -442,10 +443,10 @@ class StylingAgentClass implements Agent {
     const styleColors = ColorCoordinationService.getColorsForStyle(userStyle);
     
     const filtered = shoes.filter(shoe => {
-      const shoeColor = (shoe.colour || shoe.color || '').toLowerCase();
-      const shoeName = (shoe.name || '').toLowerCase();
-      const shoeDesc = (shoe.description || '').toLowerCase();
-      const shoeBrand = (shoe.brand || '').toLowerCase();
+      const shoeColor = String(shoe.colour || shoe.color || '').toLowerCase();
+      const shoeName = String(shoe.name || '').toLowerCase();
+      const shoeDesc = String(shoe.description || '').toLowerCase();
+      const shoeBrand = String(shoe.brand || '').toLowerCase();
       
       // MINIMALIST STYLE FILTERING - Very strict criteria
       if (userStyle === 'minimalist') {
