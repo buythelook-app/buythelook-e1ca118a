@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { LookCanvas } from "@/components/LookCanvas";
 import { agentCrew } from "@/agents/crew";
 import { HomeButton } from "@/components/HomeButton";
+import { AutoTrainerController } from "@/components/AutoTrainerController";
 
 interface TrainingSession {
   id: string;
@@ -109,7 +110,12 @@ export default function AgentTrainingPage() {
     <>
       <HomeButton />
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <h1 className="text-3xl font-bold mb-8">Agent Training Center</h1>
+        <h1 className="text-3xl font-bold mb-8">מרכז אילוף סטיילסטית AI</h1>
+        
+        {/* Auto Training Controller */}
+        <div className="mb-8 flex justify-center">
+          <AutoTrainerController />
+        </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Agent Controls */}
