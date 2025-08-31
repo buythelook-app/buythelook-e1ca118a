@@ -91,6 +91,7 @@ export default function AgentTrainingPage() {
   console.log('🔍 [AgentTraining] Current session outfit data:', currentSession?.outfitData);
   console.log('🔍 [AgentTraining] First look:', firstLook);
   console.log('🔍 [AgentTraining] First look items:', firstLook?.items);
+  console.log('🔍 [AgentTraining] Full data structure:', JSON.stringify(currentSession?.outfitData, null, 2));
   
   const canvasItems = firstLook?.items ? firstLook.items.map((item: any, idx: number) => {
     console.log(`🔍 [AgentTraining] Processing item ${idx}:`, {
