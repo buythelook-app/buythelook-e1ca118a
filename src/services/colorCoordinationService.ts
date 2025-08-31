@@ -206,9 +206,25 @@ export class ColorCoordinationService {
     return Math.max(score, 0);
   }
   
-  private static normalizeColor(color: string): string {
-    const normalized = color.toLowerCase().trim();
-    
+  private static normalizeColor(color: any): string {
+    const raw = color ?? '';
+    let normalized: string;
+
+    if (typeof raw === 'string') {
+      normalized = raw.toLowerCase().trim();
+    } else if (Array.isArray(raw)) {
+      normalized = raw
+        .map(v => (typeof v === 'string' ? v : ''))
+        .join(' ')
+        .toLowerCase()
+        .trim();
+    } else if (typeof raw === 'object' && raw) {
+      const val = (raw as any).name || (raw as any).color || (raw as any).value || (raw as any).hex || (raw as any).label || '';
+      normalized = String(val).toLowerCase().trim();
+    } else {
+      normalized = String(raw).toLowerCase().trim();
+    }
+
     // Map common color variations
     const colorMap: Record<string, string> = {
       'negro': 'black',
@@ -234,7 +250,7 @@ export class ColorCoordinationService {
       'camel': 'tan',
       'crema': 'cream'
     };
-    
+
     return colorMap[normalized] || normalized;
   }
   
@@ -282,7 +298,26 @@ export class ColorCoordinationService {
   }
   
   private static extractColorFromItem(item: any): string {
-    return item.colour || item.color || item.product_name?.toLowerCase() || 'unknown';
+    const raw = item?.colour ?? item?.color ?? item?.product_name ?? 'unknown';
+
+    if (typeof raw === 'string') return raw.toLowerCase();
+    if (Array.isArray(raw)) {
+      const joined = raw
+        .map(v => (typeof v === 'string' ? v : ''))
+        .filter(Boolean)
+        .join(' ');
+      return joined ? joined.toLowerCase() : 'unknown';
+    }
+    if (typeof raw === 'object' && raw) {
+      const val = (raw as any).name || (raw as any).color || (raw as any).value || (raw as any).hex || (raw as any).label;
+      if (typeof val === 'string') return val.toLowerCase();
+    }
+
+    try {
+      return String(raw).toLowerCase();
+    } catch {
+      return 'unknown';
+    }
   }
   
   private static extractFabricFromItem(item: any): string {

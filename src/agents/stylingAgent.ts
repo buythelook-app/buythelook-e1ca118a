@@ -380,9 +380,9 @@ class StylingAgentClass implements Agent {
       
       // Check if item matches style colors (higher priority)
       const matchesStyleColor = styleColors.some(styleColor => 
-        itemColor.includes(styleColor.toLowerCase()) ||
-        itemName.includes(styleColor.toLowerCase()) ||
-        ColorCoordinationService.areColorsCompatible(itemColor, styleColor)
+        itemColor.includes(String(styleColor).toLowerCase()) ||
+        itemName.includes(String(styleColor).toLowerCase()) ||
+        ColorCoordinationService.areColorsCompatible(itemColor, String(styleColor))
       );
       
       // For minimalist style, be more strict about colors and simplicity
@@ -398,9 +398,9 @@ class StylingAgentClass implements Agent {
       
       // Check mood colors (secondary priority)
       const matchesMoodColor = moodColors.some(moodColor => 
-        itemColor.includes(moodColor.toLowerCase()) ||
-        itemName.includes(moodColor.toLowerCase()) ||
-        ColorCoordinationService.areColorsCompatible(itemColor, moodColor)
+        itemColor.includes(String(moodColor).toLowerCase()) ||
+        itemName.includes(String(moodColor).toLowerCase()) ||
+        ColorCoordinationService.areColorsCompatible(itemColor, String(moodColor))
       );
       
       const neutralColors = ['black', 'white', 'gray', 'beige', 'brown'];
