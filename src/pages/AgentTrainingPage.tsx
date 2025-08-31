@@ -85,26 +85,13 @@ export default function AgentTrainingPage() {
     setRating(null);
   };
 
-  const canvasItems = currentSession?.outfitData ? [
-    {
-      id: currentSession.outfitData.top?.id || "top-1",
-      image: currentSession.outfitData.top?.image || "/placeholder.svg",
-      type: "top" as const,
-      name: currentSession.outfitData.top?.name || "Top Item"
-    },
-    {
-      id: currentSession.outfitData.bottom?.id || "bottom-1", 
-      image: currentSession.outfitData.bottom?.image || "/placeholder.svg",
-      type: "bottom" as const,
-      name: currentSession.outfitData.bottom?.name || "Bottom Item"
-    },
-    {
-      id: currentSession.outfitData.shoes?.id || "shoes-1",
-      image: currentSession.outfitData.shoes?.image || "/placeholder.svg", 
-      type: "shoes" as const,
-      name: currentSession.outfitData.shoes?.name || "Shoes"
-    }
-  ] : [];
+  const firstLook = currentSession?.outfitData?.looks?.[0];
+  const canvasItems = firstLook?.items ? firstLook.items.map((item: any, idx: number) => ({
+    id: item.id || `${item.type || 'item'}-${idx}`,
+    image: item.image || "/placeholder.svg",
+    type: (item.type || 'item'),
+    name: item.name || "Item"
+  })) : [];
 
   return (
     <>
@@ -205,12 +192,12 @@ export default function AgentTrainingPage() {
                     <LookCanvas items={canvasItems} width={250} height={400} />
                   </div>
                   
-                  {currentSession.outfitData.description && (
+                  {(firstLook?.description || currentSession.outfitData?.reasoning) && (
                     <p className="text-sm text-gray-600 mb-2">
-                      {currentSession.outfitData.description}
+                      {firstLook?.description || currentSession.outfitData.reasoning}
                     </p>
                   )}
-                  
+
                   {currentSession.outfitData.recommendations && (
                     <div>
                       <h4 className="font-medium mb-2">Recommendations:</h4>
