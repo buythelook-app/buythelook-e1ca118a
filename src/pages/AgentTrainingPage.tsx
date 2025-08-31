@@ -86,12 +86,30 @@ export default function AgentTrainingPage() {
   };
 
   const firstLook = currentSession?.outfitData?.looks?.[0];
-  const canvasItems = firstLook?.items ? firstLook.items.map((item: any, idx: number) => ({
-    id: item.id || `${item.type || 'item'}-${idx}`,
-    image: item.image || "/placeholder.svg",
-    type: (item.type || 'item'),
-    name: item.name || "Item"
-  })) : [];
+  
+  // DEBUG: Log the outfit data structure
+  console.log('🔍 [AgentTraining] Current session outfit data:', currentSession?.outfitData);
+  console.log('🔍 [AgentTraining] First look:', firstLook);
+  console.log('🔍 [AgentTraining] First look items:', firstLook?.items);
+  
+  const canvasItems = firstLook?.items ? firstLook.items.map((item: any, idx: number) => {
+    console.log(`🔍 [AgentTraining] Processing item ${idx}:`, {
+      id: item.id,
+      name: item.name || item.product_name,
+      type: item.type,
+      image: item.image,
+      hasImage: !!item.image
+    });
+    
+    return {
+      id: item.id || `${item.type || 'item'}-${idx}`,
+      image: item.image || "/placeholder.svg",
+      type: (item.type || 'item'),
+      name: item.name || item.product_name || "Item"
+    };
+  }) : [];
+  
+  console.log('🔍 [AgentTraining] Canvas items prepared:', canvasItems);
 
   return (
     <>
@@ -188,6 +206,34 @@ export default function AgentTrainingPage() {
                   <CardTitle>Generated Outfit</CardTitle>
                 </CardHeader>
                 <CardContent>
+                  {/* Style Profile & Body Structure Info */}
+                  <div className="mb-4 space-y-2">
+                    {currentSession.outfitData?.styleProfile && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium">סגנון:</span>
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                          {currentSession.outfitData.styleProfile}
+                        </span>
+                      </div>
+                    )}
+                    {currentSession.outfitData?.bodyStructure && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium">מבנה גוף:</span>
+                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded">
+                          {currentSession.outfitData.bodyStructure}
+                        </span>
+                      </div>
+                    )}
+                    {currentSession.outfitData?.score && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium">ציון הסטיילסטית:</span>
+                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded">
+                          {currentSession.outfitData.score}/100
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex justify-center mb-4">
                     <LookCanvas items={canvasItems} width={250} height={400} />
                   </div>
