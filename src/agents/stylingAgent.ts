@@ -493,15 +493,15 @@ class StylingAgentClass implements Agent {
       
       // For other styles, use regular mood/color filtering
       const matchesMoodColor = moodColors.some(moodColor => 
-        shoeColor.includes(moodColor.toLowerCase()) ||
-        shoeName.includes(moodColor.toLowerCase()) ||
-        ColorCoordinationService.areColorsCompatible(shoeColor, moodColor)
+        shoeColor.includes(String(moodColor).toLowerCase()) ||
+        shoeName.includes(String(moodColor).toLowerCase()) ||
+        ColorCoordinationService.areColorsCompatible(shoeColor, String(moodColor))
       );
       
       const matchesStyleColor = styleColors.some(styleColor => 
-        shoeColor.includes(styleColor.toLowerCase()) ||
-        shoeName.includes(styleColor.toLowerCase()) ||
-        ColorCoordinationService.areColorsCompatible(shoeColor, styleColor)
+        shoeColor.includes(String(styleColor).toLowerCase()) ||
+        shoeName.includes(String(styleColor).toLowerCase()) ||
+        ColorCoordinationService.areColorsCompatible(shoeColor, String(styleColor))
       );
       
       const neutralColors = ['black', 'white', 'brown', 'beige', 'gray'];
@@ -1710,7 +1710,7 @@ class StylingAgentClass implements Agent {
     let score = 50; // Base score
     
     const dressName = (dress.product_name || '').toLowerCase();
-    const dressColor = (dress.colour || '').toLowerCase();
+    const dressColor = String(dress.colour || "").toLowerCase();
     
     // Event appropriateness (30 points max)
     if (eventType === 'evening' || eventType === 'formal') {
@@ -1766,8 +1766,8 @@ class StylingAgentClass implements Agent {
     
     const dressName = (dress.product_name || '').toLowerCase();
     const shoeName = (shoe.name || '').toLowerCase();
-    const dressColor = (dress.colour || '').toLowerCase();
-    const shoeColor = (shoe.colour || shoe.color || '').toLowerCase();
+    const dressColor = String(dress.colour || "").toLowerCase();
+    const shoeColor = String(shoe.colour || shoe.color || "").toLowerCase();
     
     // Color coordination (30 points max)
     if (ColorCoordinationService.areColorsCompatible(dressColor, shoeColor)) {

@@ -879,7 +879,7 @@ function selectShoeForOccasion(shoes: any[], occasion: string): any | null {
       const desc = (shoe.description || '').toLowerCase();
       const family = (shoe.product_family || '').toLowerCase();
       const subfamily = (shoe.product_subfamily || '').toLowerCase();
-      const color = (shoe.colour || shoe.color || '').toLowerCase();
+      const color = String(shoe.colour || shoe.color || '').toLowerCase();
       const brand = (shoe.brand || '').toLowerCase();
       const text = `${name} ${desc} ${family} ${subfamily}`;
 
