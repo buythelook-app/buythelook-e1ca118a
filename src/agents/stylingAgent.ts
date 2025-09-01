@@ -541,10 +541,28 @@ class StylingAgentClass implements Agent {
     const eventType = request.event || 'casual';
     debugInfo.outfit_logic.event_type = eventType;
 
-    // Event-specific clothing filtering (e.g., Work = modest/business)
-    const clothingForEvent = (eventType === 'work' || eventType === 'business')
-      ? (filterWorkAppropriateItems(allClothing as any) as unknown as ZaraClothItem[])
-      : allClothing;
+    // Event-specific clothing filtering
+    const clothingForEvent: ZaraClothItem[] = (() => {
+      if (eventType === 'work' || eventType === 'business') {
+        return filterWorkAppropriateItems(allClothing as any) as unknown as ZaraClothItem[];
+      }
+      if (eventType === 'casual' || eventType === 'weekend') {
+        const isCasualItem = (item: ZaraClothItem) => {
+          const name = (item.product_name || '').toLowerCase();
+          const family = (item.product_family || '').toLowerCase();
+          const sub = (item.product_subfamily || '').toLowerCase();
+          const desc = (item.description || '').toLowerCase();
+          const text = `${name} ${family} ${sub} ${desc}`;
+          const formalKeywords = ['blazer','suit','tailor','formal','business','dress shirt','oxford','pencil','tux','pleat-front'];
+          const allowedCasual = ['t-shirt','tee','top','sweater','hoodie','cardigan','jeans','shorts','skirt','joggers','chino','cargo','denim','knit'];
+          const isFormal = formalKeywords.some(k => text.includes(k));
+          const isAllowed = allowedCasual.some(k => text.includes(k));
+          return isAllowed && !isFormal;
+        };
+        return (allClothing as ZaraClothItem[]).filter(isCasualItem);
+      }
+      return allClothing;
+    })();
 
     const categorizedItems = this.categorizeClothingItems(clothingForEvent, debugInfo);
     const categorizedShoes = this.categorizeShoesByType(allShoes);
@@ -1201,8 +1219,7 @@ class StylingAgentClass implements Agent {
       selectedShoes = [
         ...categorizedShoes.sneakers,
         ...categorizedShoes.flats,
-        ...categorizedShoes.sandals,
-        ...categorizedShoes.other
+        ...categorizedShoes.sandals
       ];
     }
     
