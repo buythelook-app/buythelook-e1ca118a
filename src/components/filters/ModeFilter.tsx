@@ -4,7 +4,7 @@ import { Mode } from "./StyleFilterButton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { type Mood } from "./MoodFilter";
 import { useToast } from "@/hooks/use-toast";
-import { filterWorkAppropriateItems } from "./WorkAppropriateFilter";
+import { stateManager, type Event } from "@/utils/stateManager";
 
 const MOODS_TO_MODES: Record<Mood, Mode> = {
   mystery: "Casual",
@@ -56,28 +56,30 @@ export const ModeFilter = ({ selectedMode, setSelectedMode }: ModeFilterProps) =
   const handleMoodSelect = (mood: Mood) => {
     const suggestedMode = MOODS_TO_MODES[mood];
     setSelectedMode(suggestedMode);
-    try {
-      localStorage.setItem('current-mood', mood);
-      const event = modeToEventMap[suggestedMode];
-      localStorage.setItem('current-event', event);
-    } catch {}
+    
+    // Use state manager for consistent state handling
+    const event = modeToEventMap[suggestedMode] as Event;
+    stateManager.setMood(mood);
+    stateManager.setModeAndEvent(suggestedMode, event);
+    
     toast({
       title: "Mode Updated",
-      description: `Mood: ${mood} → Event context: ${modeToEventMap[suggestedMode]} (${suggestedMode})`,
+      description: `Mood: ${mood} → Event context: ${event} (${suggestedMode})`,
     });
   };
+
   const handleModeSelect = (mode: Mode) => {
     setSelectedMode(mode);
-    try {
-      const event = modeToEventMap[mode];
-      localStorage.setItem('current-event', event);
-    } catch {}
+    
+    // Use state manager for consistent state handling
+    const event = modeToEventMap[mode] as Event;
+    stateManager.setModeAndEvent(mode, event);
 
     toast({
       title: `${mode} Mode Selected`,
       description: mode === "Work"
         ? "Context set to work. Filtering for professional, modest items."
-        : `Context set to ${modeToEventMap[mode]}.`,
+        : `Context set to ${event}.`,
     });
   };
   return (
