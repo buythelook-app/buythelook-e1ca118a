@@ -3,6 +3,10 @@ import { Agent } from './index';
 import { ColorCoordinationService } from '../services/colorCoordinationService';
 import { filterWorkAppropriateItems } from '@/components/filters/WorkAppropriateFilter';
 
+// Cross-canvas tracking to prevent duplicates between canvases
+let crossCanvasUsedItems: Set<string> = new Set();
+let crossCanvasUsedShoes: Set<string> = new Set();
+
 export interface StylingResult {
   looks: Look[];
   reasoning: string;
@@ -196,6 +200,17 @@ class StylingAgentClass implements Agent {
       
       // Fetch from dual sources - CLOTHING FROM zara_cloth, SHOES FROM shoes TABLE ONLY
       const { supabase } = await import('../lib/supabaseClient');
+      
+      // Reset cross-canvas tracking periodically or on demand
+      const lastResetKey = 'stylingAgent-lastReset';
+      const lastReset = localStorage.getItem(lastResetKey);
+      const now = Date.now();
+      if (!lastReset || (now - parseInt(lastReset)) > 300000) { // 5 minutes
+        crossCanvasUsedItems.clear();
+        crossCanvasUsedShoes.clear();
+        localStorage.setItem(lastResetKey, now.toString());
+        console.log('🔄 [StylingAgent] Cross-canvas tracking reset');
+      }
       
       console.log(`🔍 [SHOES TABLE] Fetching shoes ONLY from "shoes" table...`);
       
@@ -572,6 +587,9 @@ class StylingAgentClass implements Agent {
     const looks: Look[] = [];
     const usedItemIds = new Set<string>();
     const usedShoeIds = new Set<string>();
+    
+    // Add cross-canvas duplicate prevention
+    console.log(`🚫 [DUPLICATE PREVENTION] Already used items: ${crossCanvasUsedItems.size}, shoes: ${crossCanvasUsedShoes.size}`);
     
     const appropriateShoes = this.selectShoesForEvent(categorizedShoes, eventType);
     
@@ -1216,10 +1234,12 @@ class StylingAgentClass implements Agent {
         ...categorizedShoes.flats
       ];
     } else {
+      // For casual/weekend - include more variety to prevent duplicates
       selectedShoes = [
         ...categorizedShoes.sneakers,
         ...categorizedShoes.flats,
-        ...categorizedShoes.sandals
+        ...categorizedShoes.sandals,
+        ...categorizedShoes.other.filter(shoe => !this.isWorkShoe(shoe)) // Exclude work shoes but include casual options
       ];
     }
     
@@ -1691,9 +1711,19 @@ class StylingAgentClass implements Agent {
   ): Array<{top: ZaraClothItem, bottom: ZaraClothItem, shoes: ShoeItem}> {
     const combinations = [];
     
-    for (const top of tops.slice(0, 5)) { // Limit to first 5 tops for performance
-      for (const bottom of bottoms.slice(0, 5)) { // Limit to first 5 bottoms
-        for (const shoe of shoes.slice(0, 3)) { // Limit to first 3 shoes
+    // Filter out items already used in other canvases
+    const availableTops = tops.filter(item => !crossCanvasUsedItems.has(item.id));
+    const availableBottoms = bottoms.filter(item => !crossCanvasUsedItems.has(item.id));
+    const availableShoes = shoes.filter(shoe => {
+      const shoeId = (shoe as any).id || shoe.product_id?.toString() || shoe.name;
+      return !crossCanvasUsedShoes.has(shoeId);
+    });
+    
+    console.log(`🚫 [DUPLICATE PREVENTION] Filtered - Tops: ${tops.length}→${availableTops.length}, Bottoms: ${bottoms.length}→${availableBottoms.length}, Shoes: ${shoes.length}→${availableShoes.length}`);
+    
+    for (const top of availableTops.slice(0, 5)) { // Limit to first 5 tops for performance
+      for (const bottom of availableBottoms.slice(0, 5)) { // Limit to first 5 bottoms
+        for (const shoe of availableShoes.slice(0, 3)) { // Limit to first 3 shoes
           const totalCost = top.price + bottom.price + (shoe.price || 0);
           
           // Skip if over budget
@@ -1714,6 +1744,12 @@ class StylingAgentClass implements Agent {
           
           if (topBottomCompatible && topShoeCompatible) {
             combinations.push({ top, bottom, shoes: shoe });
+            
+            // Mark items as used in cross-canvas tracking
+            crossCanvasUsedItems.add(top.id);
+            crossCanvasUsedItems.add(bottom.id);
+            const shoeId = (shoe as any).id || shoe.product_id?.toString() || shoe.name;
+            crossCanvasUsedShoes.add(shoeId);
           }
         }
       }
@@ -2054,6 +2090,15 @@ class StylingAgentClass implements Agent {
     };
     
     return { looks: [], reasoning: 'Legacy method - use run() instead', debugInfo };
+  }
+
+  /**
+   * Clear cross-canvas tracking to allow fresh combinations
+   */
+  static clearCrossCanvasTracking(): void {
+    crossCanvasUsedItems.clear();
+    crossCanvasUsedShoes.clear();
+    console.log('🔄 [StylingAgent] Cross-canvas tracking cleared');
   }
 }
 
