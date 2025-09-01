@@ -1,6 +1,7 @@
 import { Look } from '../types/lookTypes';
 import { Agent } from './index';
 import { ColorCoordinationService } from '../services/colorCoordinationService';
+import { filterWorkAppropriateItems } from '@/components/filters/WorkAppropriateFilter';
 
 export interface StylingResult {
   looks: Look[];
@@ -537,7 +538,15 @@ class StylingAgentClass implements Agent {
     console.log(`🎯 [ENHANCED COORDINATION] Creating outfits with shoes from "shoes" table only`);
     console.log(`📊 [DATA] Clothing: ${allClothing.length}, Shoes from "shoes" table: ${allShoes.length}, Budget: ${isUnlimited ? 'unlimited' : `$${budget}`}`);
     
-    const categorizedItems = this.categorizeClothingItems(allClothing, debugInfo);
+    const eventType = request.event || 'casual';
+    debugInfo.outfit_logic.event_type = eventType;
+
+    // Event-specific clothing filtering (e.g., Work = modest/business)
+    const clothingForEvent = (eventType === 'work' || eventType === 'business')
+      ? (filterWorkAppropriateItems(allClothing as any) as unknown as ZaraClothItem[])
+      : allClothing;
+
+    const categorizedItems = this.categorizeClothingItems(clothingForEvent, debugInfo);
     const categorizedShoes = this.categorizeShoesByType(allShoes);
     
     debugInfo.categorization.shoes_with_valid_images = allShoes.length;
@@ -545,9 +554,6 @@ class StylingAgentClass implements Agent {
     const looks: Look[] = [];
     const usedItemIds = new Set<string>();
     const usedShoeIds = new Set<string>();
-    
-    const eventType = request.event || 'casual';
-    debugInfo.outfit_logic.event_type = eventType;
     
     const appropriateShoes = this.selectShoesForEvent(categorizedShoes, eventType);
     
@@ -581,6 +587,18 @@ class StylingAgentClass implements Agent {
           isUnlimited
         );
       }
+    } else if (eventType === 'work' || eventType === 'business') {
+      await this.createCoordinatedWorkOutfits(
+        categorizedItems,
+        appropriateShoes,
+        looks,
+        usedItemIds,
+        usedShoeIds,
+        debugInfo,
+        request.mood,
+        budget,
+        isUnlimited
+      );
     } else {
       await this.createCoordinatedCasualOutfits(
         categorizedItems,
@@ -850,6 +868,110 @@ class StylingAgentClass implements Agent {
     debugInfo.outfit_logic.outfit_rules_applied.push('COORDINATED_FORMAL_PRIORITY_SHOES_TABLE');
   }
 
+  private async createCoordinatedWorkOutfits(
+    categorizedItems: any,
+    shoes: ShoeItem[],
+    looks: Look[],
+    usedItemIds: Set<string>,
+    usedShoeIds: Set<string>,
+    debugInfo: DebugInfo,
+    mood: string,
+    budget: number,
+    isUnlimited: boolean
+  ) {
+    console.log(`💼 [WORK] Creating work-appropriate outfits`);
+
+    const isWorkTop = (item: ZaraClothItem) => {
+      const name = (item.product_name || '').toLowerCase();
+      const family = (item.product_family || '').toLowerCase();
+      const sub = (item.product_subfamily || '').toLowerCase();
+      const text = `${name} ${family} ${sub}`;
+      const required = ['blouse','shirt','sweater','blazer','cardigan','turtleneck','button'];
+      const forbidden = ['tank','camisole','tube','crop','halter','strapless','sleeveless','mesh','sheer','transparent','backless','deep v','plunge','cut out'];
+      return required.some(k=>text.includes(k)) && !forbidden.some(k=>text.includes(k));
+    };
+
+    const isWorkBottom = (item: ZaraClothItem) => {
+      const name = (item.product_name || '').toLowerCase();
+      const family = (item.product_family || '').toLowerCase();
+      const sub = (item.product_subfamily || '').toLowerCase();
+      const text = `${name} ${family} ${sub}`;
+      const required = ['trousers','pants','midi','long skirt','pencil','slacks','tailored','chino'];
+      const forbidden = ['mini','short','revealing'];
+      return required.some(k=>text.includes(k)) && !forbidden.some(k=>text.includes(k));
+    };
+
+    const availableTops = (categorizedItems.tops as ZaraClothItem[])
+      .filter(item => !usedItemIds.has(item.id))
+      .filter(isWorkTop);
+    const availableBottoms = (categorizedItems.bottoms as ZaraClothItem[])
+      .filter(item => !usedItemIds.has(item.id))
+      .filter(isWorkBottom);
+    const availableShoes = shoes.filter(shoe => !usedShoeIds.has(shoe.name));
+
+    if (availableTops.length === 0 || availableBottoms.length === 0 || availableShoes.length === 0) {
+      console.log(`⚠️ [WORK] Insufficient items - tops: ${availableTops.length}, bottoms: ${availableBottoms.length}, shoes: ${availableShoes.length}`);
+      return;
+    }
+
+    const combinations = this.generateOutfitCombinations(availableTops, availableBottoms, availableShoes, mood, budget, isUnlimited);
+    const sorted = combinations
+      .map(c => ({ ...c, score: this.scoreOutfitCombination(c, mood) + (this.isWorkShoe(c.shoes) ? 10 : 0) }))
+      .sort((a,b) => b.score - a.score);
+
+    const maxWorkLooks = Math.min(3, Math.max(1, 4 - looks.length));
+    let added = 0;
+
+    for (const combo of sorted) {
+      if (added >= maxWorkLooks) break;
+      if (usedItemIds.has(combo.top.id) || usedItemIds.has(combo.bottom.id) || usedShoeIds.has(combo.shoes.name)) continue;
+
+      const lookItems = [
+        {
+          id: combo.top.id,
+          title: combo.top.product_name,
+          description: this.enhanceItemDescription(combo.top, 'top', mood),
+          image: this.normalizeImageField(combo.top.image, 'clothing'),
+          price: combo.top.price ? `$${combo.top.price}` : '0',
+          type: 'top'
+        },
+        {
+          id: combo.bottom.id,
+          title: combo.bottom.product_name,
+          description: this.enhanceItemDescription(combo.bottom, 'bottom', mood),
+          image: this.normalizeImageField(combo.bottom.image, 'clothing'),
+          price: combo.bottom.price ? `$${combo.bottom.price}` : '0',
+          type: 'bottom'
+        },
+        {
+          id: combo.shoes.name,
+          title: combo.shoes.name,
+          description: this.enhanceItemDescription(combo.shoes, 'shoes', mood),
+          image: combo.shoes.image,
+          price: combo.shoes.price ? `$${combo.shoes.price}` : '0',
+          type: 'shoes'
+        }
+      ];
+
+      const look: Look = {
+        id: `work-look-${looks.length + added}`,
+        items: lookItems,
+        description: this.generateEnhancedLookDescription(combo.top, combo.bottom, combo.shoes, mood),
+        occasion: 'work',
+        style: 'classic',
+        mood: mood as any
+      };
+
+      looks.push(look);
+      usedItemIds.add(combo.top.id);
+      usedItemIds.add(combo.bottom.id);
+      usedShoeIds.add(combo.shoes.name);
+      added++;
+    }
+
+    debugInfo.outfit_logic.outfit_rules_applied.push('COORDINATED_WORK_STRICT');
+  }
+
   private async createCoordinatedJumpsuitOutfits(
     jumpsuits: ZaraClothItem[], 
     shoes: ShoeItem[], 
@@ -1091,6 +1213,11 @@ class StylingAgentClass implements Agent {
   private isLeatherBoot(shoe: ShoeItem): boolean {
     const searchText = `${shoe.name} ${shoe.description}`.toLowerCase();
     return searchText.includes('leather') || searchText.includes('suede');
+  }
+
+  private isWorkShoe(shoe: ShoeItem): boolean {
+    const text = `${shoe.name} ${shoe.description || ''} ${JSON.stringify(shoe.breadcrumbs || {})}`.toLowerCase();
+    return text.includes('loafer') || text.includes('oxford') || text.includes('derby') || text.includes('heel') || text.includes('pump') || (text.includes('boot') && (text.includes('leather') || text.includes('suede')));
   }
 
   private normalizeImageField(image: any, itemType: string = 'clothing'): string {
