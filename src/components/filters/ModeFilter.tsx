@@ -41,27 +41,45 @@ interface ModeFilterProps {
 export const ModeFilter = ({ selectedMode, setSelectedMode }: ModeFilterProps) => {
   const { toast } = useToast();
 
+  const modeToEventMap: Record<Mode, string> = {
+    All: 'casual',
+    Casual: 'casual',
+    Work: 'work',
+    Party: 'evening',
+    Date: 'evening',
+    Relaxing: 'weekend',
+    Travel: 'casual',
+    Shopping: 'casual',
+    Sport: 'casual',
+  };
+
   const handleMoodSelect = (mood: Mood) => {
     const suggestedMode = MOODS_TO_MODES[mood];
     setSelectedMode(suggestedMode);
+    try {
+      localStorage.setItem('current-mood', mood);
+      const event = modeToEventMap[suggestedMode];
+      localStorage.setItem('current-event', event);
+    } catch {}
     toast({
       title: "Mode Updated",
-      description: `Based on your mood, we suggest ${suggestedMode} style`,
+      description: `Mood: ${mood} → Event context: ${modeToEventMap[suggestedMode]} (${suggestedMode})`,
     });
   };
-
   const handleModeSelect = (mode: Mode) => {
     setSelectedMode(mode);
-    
-    // Show toast for work mode to inform about appropriate clothing
-    if (mode === "Work") {
-      toast({
-        title: "Work Mode Selected",
-        description: "Filtering for professional, modest clothing appropriate for the workplace",
-      });
-    }
-  };
+    try {
+      const event = modeToEventMap[mode];
+      localStorage.setItem('current-event', event);
+    } catch {}
 
+    toast({
+      title: `${mode} Mode Selected`,
+      description: mode === "Work"
+        ? "Context set to work. Filtering for professional, modest items."
+        : `Context set to ${modeToEventMap[mode]}.`,
+    });
+  };
   return (
     <>
       <DropdownMenuLabel>Mode</DropdownMenuLabel>
