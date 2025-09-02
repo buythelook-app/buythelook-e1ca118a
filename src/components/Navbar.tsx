@@ -111,12 +111,6 @@ export const Navbar = () => {
           )}
         </div>
         <div className="flex items-center space-x-6">
-          {/* כפתור סטיילסטית AI */}
-          <Link to="/agent-training" className="hover:text-netflix-accent flex items-center">
-            <Sparkles className="h-5 w-5 text-white mr-1" />
-            <span className="text-white text-sm">אילוף סטיילסטית</span>
-          </Link>
-          
           {/* תמיד הצג את העגלה */}
           <Link to="/cart" className="hover:text-netflix-accent relative">
             <ShoppingCart className="h-5 w-5 text-white" />
