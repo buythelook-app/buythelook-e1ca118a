@@ -198,8 +198,8 @@ class StylingAgentClass implements Agent {
       
       console.log(`🎭 [ENHANCED LOGIC] Event: ${currentEvent}, Style: ${style}, Mood: ${currentMood}, Budget: ${isUnlimited ? 'unlimited' : budget}`);
       
-      // Fetch from dual sources - CLOTHING FROM zara_cloth, SHOES FROM shoes TABLE ONLY
-      const { supabase } = await import('../lib/supabaseClient');
+      // **NEW: שימוש באותו מקור נתונים כמו העמוד הראשי**
+      console.log('🌐 [StylingAgent] משתמש באותו מקור נתונים כמו העמוד הראשי');
       
       // Reset cross-canvas tracking periodically or on demand
       const lastResetKey = 'stylingAgent-lastReset';
@@ -212,7 +212,27 @@ class StylingAgentClass implements Agent {
         console.log('🔄 [StylingAgent] Cross-canvas tracking reset');
       }
       
-      console.log(`🔍 [SHOES TABLE] Fetching shoes ONLY from "shoes" table...`);
+      // קודם נסה לקבל נתונים מלוגיקת העמוד הראשי
+      console.log('📡 [StylingAgent] מביא נתונים מלוגיקת העמוד הראשי (RapidAPI + Database)...');
+      const { fetchDashboardItems } = await import('../services/lookService');
+      const homepageData = await fetchDashboardItems();
+      let useHomepageData = false;
+      
+      if (homepageData && Object.keys(homepageData).length > 0) {
+        console.log('✅ [StylingAgent] SUCCESS - קיבל נתונים מלוגיקת העמוד הראשי');
+        useHomepageData = true;
+      } else {
+        console.log('⚠️ [StylingAgent] נתוני העמוד הראשי נכשלו, חזרה ל-Supabase fallback');
+      }
+      
+      // אם יש נתוני העמוד הראשי, השתמש בהם
+      if (useHomepageData) {
+        return this.processHomepageData(homepageData, userId, debugInfo);
+      }
+      
+      // אחרת, המשך עם השיטה הישנה (Supabase fallback)
+      const { supabase } = await import('../lib/supabaseClient');
+      console.log(`🔍 [FALLBACK] Using Supabase fallback - fetching from both tables...`);
       
       // Fetch clothing from zara_cloth table with budget filter
       let clothingQuery = supabase
@@ -2090,6 +2110,47 @@ class StylingAgentClass implements Agent {
     };
     
     return { looks: [], reasoning: 'Legacy method - use run() instead', debugInfo };
+  }
+
+  /**
+   * מעבד נתוני העמוד הראשי לפורמט של StylingAgent
+   */
+  private processHomepageData(homepageData: any, userId: string, debugInfo: any): any {
+    console.log('🔄 [StylingAgent] מעבד נתוני העמוד הראשי');
+    
+    // איחוד כל הפריטים מכל האירועים
+    let allItems: any[] = [];
+    Object.values(homepageData).forEach((occasionItems: any) => {
+      if (Array.isArray(occasionItems)) {
+        allItems.push(...occasionItems);
+      }
+    });
+    
+    console.log(`✅ [StylingAgent] עובד עם ${allItems.length} פריטים מהעמוד הראשי`);
+    
+    return {
+      success: true,
+      data: {
+        looks: [this.createLookFromHomepageItems(allItems.slice(0, 3))],
+        reasoning: 'נתונים מהעמוד הראשי (RapidAPI + Database)',
+        debugInfo
+      }
+    };
+  }
+
+  private createLookFromHomepageItems(items: any[]): any {
+    return {
+      id: `homepage-look-${Date.now()}`,
+      items: items.map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        image: item.image,
+        price: item.price
+      })),
+      style: 'modern',
+      occasion: 'general'
+    };
   }
 
   /**

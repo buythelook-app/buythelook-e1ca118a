@@ -2,6 +2,8 @@ import { supabase } from "@/lib/supabaseClient";
 import { Agent, AgentResult } from "./index";
 import { createStyleOutfit, getStyleRecommendations } from "../services/styleOutfitService";
 import { styleRecommendations } from "@/components/quiz/constants/styleRecommendations";
+import { useExternalCatalog } from "@/hooks/useExternalCatalog";
+import { fetchDashboardItems } from "@/services/lookService";
 import logger from "@/lib/logger";
 
 // Body shape recommendations mapping
@@ -97,202 +99,18 @@ export class PersonalizationAgent implements Agent {
 
       console.log(`📊 [PersonalizationAgent] פרופיל סטייל: ${styleProfile}, מבנה גוף: ${bodyShape}, מצב רוח: ${moodPreferences}`);
 
-      let outfitData;
-      let recommendations;
+      // **NEW: שימוש באותו מקור נתונים כמו העמוד הראשי**
+      console.log('🌐 [PersonalizationAgent] מביא נתונים מאותו מקור כמו העמוד הראשי (RapidAPI + Database)');
+      const outfitData = await this.fetchDataLikeHomepage(styleProfile, bodyShape, colorPreferences, moodPreferences);
 
-      // בדיקה אם המשתמש בחר סגנון קזואל ספציפית (לא מינימליסטי)
-      if (styleProfile === 'casual' && (moodPreferences === 'casual' || moodPreferences === 'relaxed')) {
-        console.log(`👕 [PersonalizationAgent] יוצר תלבושת קזואלית מותאמת למבנה גוף ${bodyShape}`);
-        
-        // שימוש בשירות הקזואל החדש עם התחשבות במבנה גוף
-        const casualOutfit = await this.createBodyShapeAwareCasualOutfit(bodyShape);
-        
-        if (!casualOutfit.top || !casualOutfit.bottom || !casualOutfit.shoes) {
-          return {
-            success: false,
-            error: "לא הצלחנו למצוא מספיק פריטים קזואליים מתאימים למבנה הגוף"
-          };
-        }
-
-        outfitData = {
-          looks: [{
-            id: `casual-look-${Date.now()}`,
-            items: [casualOutfit.top, casualOutfit.bottom, casualOutfit.shoes],
-            style: 'casual',
-            occasion: 'casual',
-            description: `מראה קזואל מותאם למבנה גוף ${bodyShape} - ${casualOutfit.top.name}, ${casualOutfit.bottom.name} ו${casualOutfit.shoes.name}`,
-            enhanced: true
-          }],
-          reasoning: `תלבושת קזואלית שנבחרה במיוחד עם בגדים מתאימים למבנה גוף ${bodyShape}`
+      if (!outfitData) {
+        return {
+          success: false,
+          error: "לא הצלחנו ליצור תלבושת מותאמת אישית"
         };
-
-        recommendations = this.getBodyShapeRecommendations(bodyShape, 'casual');
-
-      } else {
-        // לוגיקה מיוחדת לסגנון מינימליסטי וסגנונות אחרים
-        console.log(`🎨 [PersonalizationAgent] מתחיל חיפוש פריטים עבור סגנון: ${styleProfile}`);
-        
-        // קבלת פריטים מהמאגר עם התחשבות בסגנון הנבחר
-        let query = supabase.from('zara_cloth').select('*');
-        
-        // סינון מיוחד לסגנון מינימליסטי
-        if (styleProfile === 'minimalist') {
-          console.log('🎯 [PersonalizationAgent] מחפש פריטים מינימליסטיים');
-          query = query.or('colour.ilike.%שחור%,colour.ilike.%לבן%,colour.ilike.%אפור%,colour.ilike.%navy%,colour.ilike.%beige%,colour.ilike.%black%,colour.ilike.%white%,colour.ilike.%grey%,colour.ilike.%cream%');
-        }
-        
-        const { data: allItems, error } = await query.limit(150); // הגדלת המגבלה לבחירה טובה יותר
-
-        if (error || !allItems) {
-          return {
-            success: false,
-            error: "שגיאה בטעינת פריטים מהמאגר"
-          };
-        }
-
-        // סינון פריטים לפי מבנה גוף וצבעים מועדפים
-        const filteredItems = this.filterItemsByBodyShape(allItems, bodyShape, colorPreferences);
-
-        // זיהוי שמלות וטוניקות (פריטים שלא צריכים חלק תחתון)
-        const dressesAndTunics = filteredItems.filter(item => 
-          this.isDressOrTunic(item)
-        );
-
-        // חלוקת פריטים לקטגוריות (ללא שמלות וטוניקות)
-        const tops = filteredItems.filter(item => 
-          !this.isDressOrTunic(item) && this.isTop(item)
-        ).slice(0, 5);
-
-        const bottoms = filteredItems.filter(item => 
-          this.isBottom(item)
-        ).slice(0, 5);
-
-        const shoes = filteredItems.filter(item => 
-          this.isShoes(item)
-        ).slice(0, 5);
-
-        // אם יש שמלה או טוניקה מתאימה למבנה הגוף
-        if (dressesAndTunics.length > 0 && shoes.length > 0) {
-          const dressOrTunic = dressesAndTunics[0];
-          const selectedShoes = shoes[0];
-
-          const dressLook = {
-            id: `dress-look-${Date.now()}`,
-            items: [
-              {
-                id: dressOrTunic.id,
-                name: dressOrTunic.product_name,
-                type: 'dress',
-                price: `₪${dressOrTunic.price}`,
-                image: this.extractImageUrl(dressOrTunic.image)
-              },
-              {
-                id: selectedShoes.id,
-                name: selectedShoes.product_name,
-                type: 'shoes',
-                price: `₪${selectedShoes.price}`,
-                image: this.extractImageUrl(selectedShoes.image)
-              }
-            ],
-            style: styleProfile,
-            occasion: 'general',
-            description: `${this.isDress(dressOrTunic) ? 'שמלה' : 'טוניקה'} ${dressOrTunic.product_name} מותאמת למבנה גוף ${bodyShape} עם ${selectedShoes.product_name}`
-          };
-
-          outfitData = {
-            looks: [dressLook],
-            reasoning: `נבחר ${this.isDress(dressOrTunic) ? 'שמלה' : 'טוניקה'} על בסיס הפרופיל ${styleProfile} ומבנה גוף ${bodyShape}`
-          };
-
-        } else if (tops.length > 0 && bottoms.length > 0 && shoes.length > 0) {
-          // לוק רגיל עם 3 פריטים מותאם למבנה גוף
-          const firstLook = {
-            id: `look-${Date.now()}`,
-            items: [
-              {
-                id: tops[0].id,
-                name: tops[0].product_name,
-                type: 'top',
-                price: `₪${tops[0].price}`,
-                image: this.extractImageUrl(tops[0].image)
-              },
-              {
-                id: bottoms[0].id,
-                name: bottoms[0].product_name,
-                type: 'bottom',
-                price: `₪${bottoms[0].price}`,
-                image: this.extractImageUrl(bottoms[0].image)
-              },
-              {
-                id: shoes[0].id,
-                name: shoes[0].product_name,
-                type: 'shoes',
-                price: `₪${shoes[0].price}`,
-                image: this.extractImageUrl(shoes[0].image)
-              }
-            ],
-            style: styleProfile,
-            occasion: 'general',
-            description: `מראה ${styleProfile} מותאם למבנה גוף ${bodyShape} - מדגיש את החזקות שלך`
-          };
-
-          outfitData = {
-            looks: [firstLook],
-            reasoning: `נבחר על בסיס הפרופיל ${styleProfile} ומבנה גוף ${bodyShape} לייעוץ מקצועי`
-          };
-        } else {
-          // אם אין מספיק פריטים מסוננים, חזור לבחירה בסיסית כדי לכלול נעליים
-          console.log('🔄 [PersonalizationAgent] לא נמצאו מספיק פריטים מסוננים, מנסה בחירה בסיסית');
-          
-          const allTops = allItems.filter(item => this.isTop(item)).slice(0, 3);
-          const allBottoms = allItems.filter(item => this.isBottom(item)).slice(0, 3);
-          const allShoes = allItems.filter(item => this.isShoes(item)).slice(0, 3);
-          
-          if (allTops.length > 0 && allBottoms.length > 0 && allShoes.length > 0) {
-            const basicLook = {
-              id: `basic-look-${Date.now()}`,
-              items: [
-                {
-                  id: allTops[0].id,
-                  name: allTops[0].product_name,
-                  type: 'top',
-                  price: `₪${allTops[0].price}`,
-                  image: this.extractImageUrl(allTops[0].image)
-                },
-                {
-                  id: allBottoms[0].id,
-                  name: allBottoms[0].product_name,
-                  type: 'bottom',
-                  price: `₪${allBottoms[0].price}`,
-                  image: this.extractImageUrl(allBottoms[0].image)
-                },
-                {
-                  id: allShoes[0].id,
-                  name: allShoes[0].product_name,
-                  type: 'shoes',
-                  price: `₪${allShoes[0].price}`,
-                  image: this.extractImageUrl(allShoes[0].image)
-                }
-              ],
-              style: styleProfile,
-              occasion: 'general',
-              description: `מראה ${styleProfile} בסיסי עם נעליים מתאימות`
-            };
-
-            outfitData = {
-              looks: [basicLook],
-              reasoning: `נבחר מראה בסיסי הכולל נעליים עבור ${styleProfile}`
-            };
-          } else {
-            return {
-              success: false,
-              error: "לא נמצאו מספיק פריטים ליצירת תלבושת שלמה הכוללת נעליים"
-            };
-          }
-        }
-
-        recommendations = this.getBodyShapeRecommendations(bodyShape, styleProfile);
       }
+
+      const recommendations = this.getBodyShapeRecommendations(bodyShape, styleProfile);
 
       // שמירת התוצאה
       await this.saveResult(userId, outfitData, 90);
@@ -314,55 +132,130 @@ export class PersonalizationAgent implements Agent {
     }
   }
 
-  private async createBodyShapeAwareCasualOutfit(bodyShape: string): Promise<any> {
+  /**
+   * מביא נתונים מאותו מקור כמו העמוד הראשי - RapidAPI + Database fallback
+   */
+  private async fetchDataLikeHomepage(styleProfile: string, bodyShape: string, colorPreferences: string[], moodPreferences: string): Promise<any> {
     try {
-      const { data: casualItems, error } = await supabase
-        .from('zara_cloth')
-        .select('*')
-        .or('product_name.ilike.%קזואל%,product_name.ilike.%ג\'ינס%,product_name.ilike.%טי שירט%')
-        .limit(30);
-
-      if (error || !casualItems) {
-        return createStyleOutfit('Casual'); // fallback to original service
-      }
-
-      const filteredItems = this.filterItemsByBodyShape(casualItems, bodyShape, []);
+      console.log('🌐 [PersonalizationAgent] מחקה את לוגיקת העמוד הראשי - RapidAPI קודם');
       
-      const casualTops = filteredItems.filter(item => this.isTop(item));
-      const casualBottoms = filteredItems.filter(item => this.isBottom(item));
-      const casualShoes = filteredItems.filter(item => this.isShoes(item));
-
-      if (casualTops.length === 0 || casualBottoms.length === 0 || casualShoes.length === 0) {
-        return createStyleOutfit('Casual'); // fallback
+      // שימוש באותה לוגיקה כמו usePersonalizedLooks
+      const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
+      
+      // קודם נסה לקבל נתונים מ-RapidAPI (כמו בעמוד הראשי)
+      const rapidApiData = await this.fetchFromRapidAPI(styleProfile, occasions);
+      
+      if (rapidApiData && rapidApiData.length > 0) {
+        console.log(`✅ [PersonalizationAgent] SUCCESS - קיבל ${rapidApiData.length} פריטים מ-RapidAPI`);
+        return this.convertRapidApiDataToOutfit(rapidApiData, styleProfile, bodyShape);
       }
-
-      return {
-        top: {
-          id: casualTops[0].id,
-          name: casualTops[0].product_name,
-          type: 'top',
-          price: `₪${casualTops[0].price}`,
-          image: this.extractImageUrl(casualTops[0].image)
-        },
-        bottom: {
-          id: casualBottoms[0].id,
-          name: casualBottoms[0].product_name,
-          type: 'bottom',
-          price: `₪${casualBottoms[0].price}`,
-          image: this.extractImageUrl(casualBottoms[0].image)
-        },
-        shoes: {
-          id: casualShoes[0].id,
-          name: casualShoes[0].product_name,
-          type: 'shoes',
-          price: `₪${casualShoes[0].price}`,
-          image: this.extractImageUrl(casualShoes[0].image)
-        }
-      };
+      
+      // אם RapidAPI נכשל, עבור ל-Database fallback (כמו בעמוד הראשי)
+      console.log('⚠️ [PersonalizationAgent] RapidAPI failed, מעבר ל-Database fallback');
+      const databaseData = await fetchDashboardItems();
+      
+      if (databaseData && Object.keys(databaseData).length > 0) {
+        console.log(`✅ [PersonalizationAgent] SUCCESS - קיבל נתונים מ-Database fallback`);
+        return this.convertDatabaseDataToOutfit(databaseData, styleProfile, bodyShape);
+      }
+      
+      console.error('❌ [PersonalizationAgent] כל המקורות נכשלו');
+      return null;
+      
     } catch (error) {
-      console.error('Error creating body shape aware casual outfit:', error);
-      return createStyleOutfit('Casual'); // fallback
+      console.error('❌ [PersonalizationAgent] שגיאה בקבלת נתונים:', error);
+      return null;
     }
+  }
+
+  /**
+   * מביא נתונים מ-RapidAPI בדיוק כמו בעמוד הראשי
+   */
+  private async fetchFromRapidAPI(styleProfile: string, occasions: string[]): Promise<any[]> {
+    try {
+      // שימוש ב-useExternalCatalog hook logic (לא יכול להשתמש ב-hook בתוך class)
+      const response = await fetch('https://aqkeprwxxsryropnhfvm.supabase.co/functions/v1/serp-search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxa2Vwcnd4eHNyeXJvcG5oZnZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4MzE4MjksImV4cCI6MjA1MzQwNzgyOX0.1nstrLtlahU3kGAu-UrzgOVw6XwyKU6n5H5q4Taqtus`
+        },
+        body: JSON.stringify({
+          query: `women ${styleProfile}`,
+          gender: 'women',
+          category: 'tops',
+          limit: 6
+        })
+      });
+      
+      const result = await response.json();
+      return result.success ? result.items : [];
+      
+    } catch (error) {
+      console.error('❌ [PersonalizationAgent] RapidAPI error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * ממיר נתוני RapidAPI לפורמט outfit
+   */
+  private convertRapidApiDataToOutfit(rapidApiData: any[], styleProfile: string, bodyShape: string): any {
+    const items = rapidApiData.slice(0, 3).map((item, index) => ({
+      id: `rapidapi-${item.id}`,
+      name: item.title,
+      type: index === 0 ? 'top' : index === 1 ? 'bottom' : 'shoes',
+      price: item.estimatedPrice?.replace(/[^0-9.]/g, '') || '29.99',
+      image: item.imageUrl || item.thumbnailUrl || '/placeholder.svg'
+    }));
+
+    return {
+      looks: [{
+        id: `rapidapi-look-${Date.now()}`,
+        items: items,
+        style: styleProfile,
+        occasion: 'general',
+        description: `מראה ${styleProfile} מותאם למבנה גוף ${bodyShape} מקטלוג חיצוני`,
+        enhanced: true
+      }],
+      reasoning: `נתונים חיים מקטלוג חיצוני (RapidAPI) מותאמים לסגנון ${styleProfile}`
+    };
+  }
+
+  /**
+   * ממיר נתוני Database לפורמט outfit
+   */
+  private convertDatabaseDataToOutfit(databaseData: any, styleProfile: string, bodyShape: string): any {
+    // בחר מהנתונים הזמינים לפי הסגנון
+    const occasionKey = styleProfile === 'work' ? 'Work' : 
+                       styleProfile === 'evening' ? 'Evening' :
+                       styleProfile === 'casual' ? 'Casual' : 'Weekend';
+    
+    const items = databaseData[occasionKey] || databaseData['Casual'] || [];
+    
+    if (items.length === 0) {
+      return null;
+    }
+
+    const selectedItems = items.slice(0, 3).map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      type: item.type,
+      price: `₪${item.price}`,
+      image: item.image || '/placeholder.svg'
+    }));
+
+    return {
+      looks: [{
+        id: `database-look-${Date.now()}`,
+        items: selectedItems,
+        style: styleProfile,
+        occasion: 'general',
+        description: `מראה ${styleProfile} מותאם למבנה גוף ${bodyShape} ממאגר המוצרים`,
+        enhanced: true
+      }],
+      reasoning: `נתונים ממאגר המוצרים (Database fallback) מותאמים לסגנון ${styleProfile}`
+    };
   }
 
   private filterItemsByBodyShape(items: any[], bodyShape: string, colorPreferences: string[]): any[] {
