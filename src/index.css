@@ -70,18 +70,18 @@
     --radius: 0.5rem;
   }
 
-  /* Sophisticated color palette inspired by premium fashion sites */
+  /* Sophisticated color palette - gender-neutral blue theme */
   :root {
-    --fashion-primary: 263 88% 59%;      /* Deep purple for elegance */
-    --fashion-accent: 268 91% 67%;       /* Vibrant purple accent */
-    --fashion-neutral-dark: 224 71% 4%;   /* Rich dark background */
+    --fashion-primary: 214 88% 52%;      /* Deep blue for elegance */
+    --fashion-accent: 220 91% 60%;       /* Vibrant blue accent */
+    --fashion-neutral-dark: 220 39% 11%;  /* Rich dark blue background */
     --fashion-neutral-mid: 215 25% 27%;   /* Medium neutral */
     --fashion-neutral-light: 213 27% 84%; /* Light neutral */
     --fashion-glass: 0 0% 100% / 0.1;     /* Glass effect */
-    --fashion-glow: 268 91% 67% / 0.3;    /* Glow effect */
+    --fashion-glow: 220 91% 60% / 0.3;    /* Blue glow effect */
     
     /* Gradient definitions */
-    --gradient-hero: linear-gradient(135deg, hsl(263 88% 59%), hsl(268 91% 67%));
+    --gradient-hero: linear-gradient(135deg, hsl(214 88% 52%), hsl(220 91% 60%));
     --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
     --gradient-overlay: linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.1));
   }
@@ -107,7 +107,10 @@
 }
 
 .fashion-hero-text {
-  @apply bg-gradient-to-r from-fashion-primary to-fashion-accent bg-clip-text text-transparent;
+  background: linear-gradient(135deg, hsl(var(--fashion-primary)), hsl(var(--fashion-accent)));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
 }
 
 .fashion-glow {
