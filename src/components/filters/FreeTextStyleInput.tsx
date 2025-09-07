@@ -124,7 +124,7 @@ export const FreeTextStyleInput = ({ onStyleAnalyzed }: FreeTextStyleInputProps)
         </div>
         <div className="space-y-6">
           <Textarea
-            placeholder="למשל: 'אני מחפשת משהו אלגנטי לעבודה שלא יעלה יותר מדי' או 'אני רוצה משהו צעיר וטרנדי למסיבה'"
+            placeholder="e.g., 'I'm looking for something elegant for work that won't cost too much' or 'I want something young and trendy for a party'"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             className="resize-none bg-white border-2 border-blue-200 text-gray-900 placeholder:text-gray-400 rounded-2xl p-4 min-h-[100px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
