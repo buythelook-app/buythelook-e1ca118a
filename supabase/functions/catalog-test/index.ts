@@ -13,144 +13,104 @@ serve(async (req) => {
   }
 
   try {
-    console.log('[catalog-test] Starting ASOS API test');
+    console.log('[catalog-test] Start');
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing Supabase credentials');
-    }
-
+    if (!supabaseUrl || !supabaseServiceKey) throw new Error('Missing Supabase credentials');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get RapidAPI key
-    const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
-    if (!rapidApiKey) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Missing RAPIDAPI_KEY secret' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
+    const RAPIDAPI_HOST = Deno.env.get('RAPIDAPI_HOST') || 'asos-scraper.p.rapidapi.com';
+    const RAPIDAPI_BASE_URL = Deno.env.get('RAPIDAPI_BASE_URL') || 'https://asos-scraper.p.rapidapi.com';
+    if (!RAPIDAPI_KEY) {
+      return new Response(JSON.stringify({ success: false, error: 'Missing RAPIDAPI_KEY secret' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // Test ASOS API call
-    const url = new URL('https://asos2.p.rapidapi.com/products/v2/list');
-    url.searchParams.set('store', 'ROW');
-    url.searchParams.set('offset', '0');
-    url.searchParams.set('categoryId', '4209'); // Women tops
-    url.searchParams.set('limit', '5'); // Just get 5 items for testing
-    url.searchParams.set('q', 'women shirt');
+    const body = await req.json().catch(() => ({}));
+    const urls: string[] = Array.isArray(body?.urls) && body.urls.length
+      ? body.urls
+      : [
+          'https://www.asos.com/dk/asos-design/asos-design-sort-ttsdidende-t-shirt-med-rund-hals/prd/2023921724?colourWayId=2023921725'
+        ];
 
-    console.log('[catalog-test] Calling ASOS API:', url.toString());
+    const endpoint = `${RAPIDAPI_BASE_URL}/api/ecommerce/asos-scraper/products`;
+    console.log('[catalog-test] Fetching from:', endpoint, 'urls:', urls);
 
-    const resp = await fetch(url.toString(), {
-      method: 'GET',
+    const resp = await fetch(endpoint, {
+      method: 'POST',
       headers: {
-        'x-rapidapi-key': rapidApiKey,
-        'x-rapidapi-host': 'asos2.p.rapidapi.com',
+        'x-rapidapi-key': RAPIDAPI_KEY,
+        'x-rapidapi-host': RAPIDAPI_HOST,
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify(urls.map((url) => ({ url }))),
     });
 
     if (!resp.ok) {
       const text = await resp.text();
-      console.error('[catalog-test] ASOS error:', resp.status, text);
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: `ASOS API error: ${resp.status}`,
-        details: text
-      }), {
+      console.error('[catalog-test] RapidAPI error:', resp.status, text);
+      return new Response(JSON.stringify({ success: false, error: `RapidAPI error: ${resp.status}`, details: text }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const data = await resp.json();
-    console.log('[catalog-test] ASOS response received, products count:', data?.products?.length || 0);
+    const scraped = await resp.json();
+    const products = Array.isArray(scraped) ? scraped : [];
 
-    const products = (data?.products || []) as any[];
-    
-    if (products.length === 0) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'No products returned from ASOS API',
-        asos_response: data
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Transform and save to catalog_items
-    const catalogItems = products.map((p) => ({
-      source_product_id: String(p.id),
+    // Map to catalog_items schema
+    const catalogItems = products.map((p: any, i: number) => ({
+      source_product_id: String(p.id || `scraped-${i}`),
       source: 'ASOS',
-      title: p.name,
-      price: p.price?.current?.value || null,
-      currency: p.price?.currency || 'GBP',
-      brand: p.brandName || 'ASOS',
-      category: 'tops',
-      gender: 'women',
-      color: p.colour || null,
-      images: p.imageUrl ? [p.imageUrl] : [],
-      sizes: p.variants?.map((v: any) => v.size).filter(Boolean) || [],
-      url: p.url,
-      available: p.isInStock !== false,
-      materials: p.productType || null,
+      title: p.name || p.title || 'ASOS Product',
+      price: typeof p.price === 'number' ? p.price : Number(p.current_price) || null,
+      currency: p.currency || 'GBP',
+      brand: p.brand || 'ASOS',
+      category: p.category || 'clothing',
+      gender: p.gender || null,
+      color: p.color || null,
+      images: p.image ? [p.image] : p.images || [],
+      sizes: p.sizes || [],
+      url: p.url || urls[i] || null,
+      available: p.available ?? true,
+      materials: p.materials || null,
     }));
 
-    console.log('[catalog-test] Saving', catalogItems.length, 'items to catalog_items table');
-
-    // Insert to catalog_items table
-    const { data: insertData, error: insertError } = await supabase
+    const { data: inserted, error: insertError } = await supabase
       .from('catalog_items')
       .insert(catalogItems)
       .select();
 
     if (insertError) {
       console.error('[catalog-test] Insert error:', insertError);
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Failed to save to database',
-        db_error: insertError,
-        items_attempted: catalogItems
-      }), {
+      return new Response(JSON.stringify({ success: false, error: 'DB insert failed', details: insertError }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log('[catalog-test] Successfully saved', insertData?.length || 0, 'items');
-
-    // Verify data was saved by reading back
-    const { data: verifyData, error: verifyError } = await supabase
+    const { data: latest } = await supabase
       .from('catalog_items')
       .select('*')
       .eq('source', 'ASOS')
       .order('created_at', { ascending: false })
       .limit(10);
 
-    if (verifyError) {
-      console.error('[catalog-test] Verify error:', verifyError);
-    }
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: `Successfully processed ${products.length} ASOS products`,
-      saved_items: insertData?.length || 0,
-      latest_items_in_db: verifyData?.length || 0,
-      sample_saved_item: insertData?.[0] || null,
-      latest_items: verifyData || []
+    return new Response(JSON.stringify({
+      success: true,
+      saved_items: inserted?.length || 0,
+      sample_saved_item: inserted?.[0] || null,
+      latest_items: latest || [],
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-
   } catch (err: any) {
     console.error('[catalog-test] Unexpected error:', err?.message || err);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: err?.message || 'Unexpected error',
-      stack: err?.stack
-    }), {
+    return new Response(JSON.stringify({ success: false, error: err?.message || 'Unexpected error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

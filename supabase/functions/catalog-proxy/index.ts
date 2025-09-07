@@ -95,11 +95,14 @@ serve(async (req) => {
         );
       }
 
-      const response = await fetch('https://asos-scraper.p.rapidapi.com/api/ecommerce/asos-scraper/products', {
+      const baseUrl = Deno.env.get('RAPIDAPI_BASE_URL') || 'https://asos-scraper.p.rapidapi.com';
+      const rapidApiHost = Deno.env.get('RAPIDAPI_HOST') || 'asos-scraper.p.rapidapi.com';
+
+      const response = await fetch(`${baseUrl}/api/ecommerce/asos-scraper/products`, {
         method: 'POST',
         headers: {
           'x-rapidapi-key': rapidApiKey,
-          'x-rapidapi-host': 'asos-scraper.p.rapidapi.com',
+          'x-rapidapi-host': rapidApiHost,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(urls.map(url => ({ url })))
