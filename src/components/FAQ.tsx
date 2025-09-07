@@ -31,9 +31,9 @@ const faqs = [
 
 export const FAQ = () => {
   return (
-    <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
+    <div className="min-h-screen bg-gradient-to-br from-fashion-neutral-dark to-black text-white p-6">
       <div className="container max-w-2xl mx-auto">
-        <h1 className="text-2xl font-display font-semibold mb-8">Frequently Asked Questions</h1>
+        <h1 className="text-3xl font-bold fashion-hero-text mb-8">Frequently Asked Questions</h1>
         
         <Accordion type="single" collapsible className="space-y-4">
           {faqs.map((faq, index) => (

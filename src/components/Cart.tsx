@@ -214,19 +214,19 @@ export const Cart = () => {
   };
 
   return (
-    <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
+    <div className="min-h-screen bg-gradient-to-br from-fashion-neutral-dark to-black text-white p-6">
       <div className="container mx-auto">
         <Button 
           variant="ghost" 
           onClick={() => navigate(-1)}
-          className="mb-6"
+          className="mb-6 text-white hover:bg-white/10"
         >
           ← Back
         </Button>
 
-        <h1 className="text-2xl font-semibold mb-6">Shopping Cart</h1>
+        <h1 className="text-3xl font-bold fashion-hero-text mb-6">Shopping Cart</h1>
         
-        <div className="bg-netflix-card rounded-lg p-6">
+        <div className="bg-fashion-glass rounded-xl p-6 backdrop-blur-xl border border-white/20">
           {looks.length === 0 && items.length === 0 ? (
             <p className="text-center text-gray-400">Your cart is empty</p>
           ) : (

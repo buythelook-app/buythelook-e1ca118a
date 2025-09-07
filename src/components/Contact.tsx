@@ -16,9 +16,9 @@ export const Contact = () => {
   };
 
   return (
-    <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
+    <div className="min-h-screen bg-gradient-to-br from-fashion-neutral-dark to-black text-white p-6">
       <div className="container max-w-md mx-auto">
-        <h1 className="text-2xl font-display font-semibold mb-8">Contact Us</h1>
+        <h1 className="text-3xl font-bold fashion-hero-text mb-8">Contact Us</h1>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">

@@ -38,11 +38,11 @@ export const Auth = () => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 flex items-center justify-center p-4 overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-fashion-neutral-dark to-black flex items-center justify-center p-4 overflow-hidden">
         <AnimatedBackground />
         {authError && (
           <div className="absolute top-4 left-0 right-0 mx-auto w-full max-w-md px-4 z-50">
-            <Alert variant="destructive" className="bg-red-900/80 text-white border-red-700">
+            <Alert variant="destructive" className="bg-destructive/80 text-destructive-foreground border-destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{authError}</AlertDescription>
             </Alert>

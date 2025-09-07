@@ -10,19 +10,19 @@ export const MyList = () => {
   const { favorites } = useFavoritesStore();
 
   return (
-    <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
+    <div className="min-h-screen bg-gradient-to-br from-fashion-neutral-dark to-black text-white p-6">
       <div className="container mx-auto">
         <Button 
           variant="ghost" 
           onClick={() => navigate(-1)}
-          className="mb-6"
+          className="mb-6 text-white hover:bg-white/10"
         >
           ← Back
         </Button>
 
         <div className="flex items-center gap-2 mb-6">
-          <Heart className="text-netflix-accent" />
-          <h1 className="text-2xl font-semibold">My List</h1>
+          <Heart className="text-fashion-primary" />
+          <h1 className="text-3xl font-bold fashion-hero-text">My List</h1>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -36,7 +36,7 @@ export const MyList = () => {
 
         {favorites.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-netflix-text/60">No favorites yet</p>
+            <p className="text-white/60">No favorites yet</p>
           </div>
         )}
       </div>
