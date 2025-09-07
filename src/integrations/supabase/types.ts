@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -78,6 +78,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      catalog_items: {
+        Row: {
+          available: boolean | null
+          brand: string | null
+          category: string | null
+          color: string | null
+          created_at: string
+          currency: string | null
+          gender: string | null
+          id: string
+          images: Json | null
+          materials: string | null
+          price: number | null
+          sizes: Json | null
+          source: string
+          source_product_id: string
+          title: string | null
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          available?: boolean | null
+          brand?: string | null
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          currency?: string | null
+          gender?: string | null
+          id?: string
+          images?: Json | null
+          materials?: string | null
+          price?: number | null
+          sizes?: Json | null
+          source: string
+          source_product_id: string
+          title?: string | null
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          available?: boolean | null
+          brand?: string | null
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          currency?: string | null
+          gender?: string | null
+          id?: string
+          images?: Json | null
+          materials?: string | null
+          price?: number | null
+          sizes?: Json | null
+          source?: string
+          source_product_id?: string
+          title?: string | null
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
       }
       click_events: {
         Row: {
@@ -458,7 +518,90 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      zara_cloth_view: {
+        Row: {
+          availability: boolean | null
+          care: Json | null
+          category_id: number | null
+          colour: string | null
+          colour_code: number | null
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          dimension: string | null
+          id: string | null
+          image: string | null
+          low_on_stock: boolean | null
+          materials: string[] | null
+          materials_description: string | null
+          price: number | null
+          product_family: string | null
+          product_family_en: string | null
+          product_id: number | null
+          product_name: string | null
+          product_subfamily: string | null
+          section: string | null
+          size: string[] | null
+          sku: string | null
+          url: string | null
+          you_may_also_like: Json | null
+        }
+        Insert: {
+          availability?: never
+          care?: never
+          category_id?: never
+          colour?: never
+          colour_code?: never
+          created_at?: string | null
+          currency?: string | null
+          description?: never
+          dimension?: never
+          id?: string | null
+          image?: never
+          low_on_stock?: never
+          materials?: never
+          materials_description?: never
+          price?: never
+          product_family?: never
+          product_family_en?: never
+          product_id?: never
+          product_name?: never
+          product_subfamily?: never
+          section?: never
+          size?: never
+          sku?: never
+          url?: string | null
+          you_may_also_like?: never
+        }
+        Update: {
+          availability?: never
+          care?: never
+          category_id?: never
+          colour?: never
+          colour_code?: never
+          created_at?: string | null
+          currency?: string | null
+          description?: never
+          dimension?: never
+          id?: string | null
+          image?: never
+          low_on_stock?: never
+          materials?: never
+          materials_description?: never
+          price?: never
+          product_family?: never
+          product_family_en?: never
+          product_id?: never
+          product_name?: never
+          product_subfamily?: never
+          section?: never
+          size?: never
+          sku?: never
+          url?: string | null
+          you_may_also_like?: never
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
