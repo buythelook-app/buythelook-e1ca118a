@@ -27,7 +27,7 @@ export const HeroSection = () => {
             ease: "easeInOut"
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-blue-50/70 to-blue-100/60"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-fashion-neutral-dark/80 via-blue-900/70 to-indigo-900/60"></div>
       </div>
 
       {/* Animated overlay elements */}
