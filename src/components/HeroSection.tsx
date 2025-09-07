@@ -3,19 +3,30 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Sparkles, TrendingUp, Heart, ArrowRight } from "lucide-react";
+import fashionHeroBg from "@/assets/fashion-hero-bg.jpg";
 
 export const HeroSection = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-fashion-neutral-dark via-blue-900 to-indigo-900 flex items-center justify-center overflow-hidden pt-20">
-      {/* Sophisticated background elements */}
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+      {/* Dynamic fashion background */}
+      <div className="absolute inset-0">
+        <img 
+          src={fashionHeroBg} 
+          alt="Fashion background" 
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-fashion-neutral-dark/80 via-blue-900/70 to-indigo-900/60"></div>
+      </div>
+
+      {/* Animated overlay elements */}
       <div className="absolute inset-0">
         <motion.div
-          className="absolute top-1/4 left-1/3 w-96 h-96 bg-fashion-accent/20 rounded-full blur-3xl"
+          className="absolute top-1/4 left-1/3 w-96 h-96 bg-fashion-accent/15 rounded-full blur-3xl"
           animate={{
             scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
+            opacity: [0.2, 0.4, 0.2],
           }}
           transition={{
             duration: 8,
@@ -24,10 +35,10 @@ export const HeroSection = () => {
           }}
         />
         <motion.div
-          className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-fashion-primary/20 rounded-full blur-3xl"
+          className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-fashion-primary/15 rounded-full blur-3xl"
           animate={{
             scale: [1.2, 1, 1.2],
-            opacity: [0.2, 0.4, 0.2],
+            opacity: [0.1, 0.3, 0.1],
           }}
           transition={{
             duration: 10,
