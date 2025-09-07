@@ -92,12 +92,36 @@ export const FreeTextStyleInput = ({ onStyleAnalyzed }: FreeTextStyleInputProps)
       
       const analyzedFilters = await analyzeStyleRequest(inputText);
       
+      // Save the analyzed style as quiz data for the suggestions page
+      const styleAnalysisData = {
+        analysis: {
+          styleProfile: analyzedFilters.style,
+          mood: analyzedFilters.mood,
+          eventType: analyzedFilters.eventType,
+          budget: analyzedFilters.budget
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      // Store the style analysis so LookSuggestions can use it
+      localStorage.setItem('styleAnalysis', JSON.stringify(styleAnalysisData));
+      localStorage.setItem('current-mood', analyzedFilters.mood);
+      localStorage.setItem('selected-event', analyzedFilters.eventType);
+      localStorage.setItem('outfit-budget', JSON.stringify({ budget: analyzedFilters.budget === 'low' ? 200 : analyzedFilters.budget === 'high' ? 800 : 500 }));
+      
       toast({
         title: "Analysis complete!",
-        description: "Finding the best matching items for you",
+        description: "Redirecting to your personalized outfit suggestions",
       });
       
+      // Apply filters locally first
       onStyleAnalyzed(analyzedFilters);
+      
+      // Navigate to suggestions page after a short delay
+      setTimeout(() => {
+        window.location.href = '/suggestions';
+      }, 1000);
+      
       setInputText("");
     } catch (error) {
       toast({
