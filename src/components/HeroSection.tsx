@@ -11,11 +11,21 @@ export const HeroSection = () => {
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Dynamic fashion background */}
-      <div className="absolute inset-0">
-        <img 
+      <div className="absolute inset-0 overflow-hidden">
+        <motion.img 
           src={fashionHeroBg} 
           alt="Fashion background" 
           className="w-full h-full object-cover"
+          animate={{
+            scale: [1, 1.1, 1],
+            x: [0, -20, 0],
+            y: [0, -10, 0],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-br from-fashion-neutral-dark/80 via-blue-900/70 to-indigo-900/60"></div>
       </div>
