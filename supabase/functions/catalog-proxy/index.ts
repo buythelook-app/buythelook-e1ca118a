@@ -80,10 +80,10 @@ serve(async (req) => {
     }
 
     if (provider === 'rapidapi-asos-scraper') {
-      const rapidApiKey = Deno.env.get('RAPIDAPI_ASOS_SCRAPER_KEY');
+      const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
       if (!rapidApiKey) {
         return new Response(
-          JSON.stringify({ success: false, error: 'Missing RAPIDAPI_ASOS_SCRAPER_KEY secret. Please add it in Supabase > Settings > Functions.' }),
+          JSON.stringify({ success: false, error: 'Missing RAPIDAPI_KEY secret. Please add it in Supabase > Settings > Functions.' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
