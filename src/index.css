@@ -103,7 +103,7 @@
 }
 
 .text-fashion-primary {
-  @apply text-fashion-primary;
+  color: hsl(var(--fashion-primary));
 }
 
 .fashion-hero-text {
