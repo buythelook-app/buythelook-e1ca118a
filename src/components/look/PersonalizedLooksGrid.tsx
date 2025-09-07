@@ -50,7 +50,7 @@ export const PersonalizedLooksGrid = memo(({
         {occasions.map((occasion) => (
           <div key={occasion} className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-netflix-accent">{occasion}</h3>
+              <h3 className="text-xl font-semibold text-blue-700">{occasion}</h3>
             </div>
             <div className="bg-netflix-card rounded-lg p-6 min-h-[400px] flex items-center justify-center">
               <div className="text-center space-y-2">
@@ -93,7 +93,7 @@ export const PersonalizedLooksGrid = memo(({
           return (
             <div key={occasion} className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-netflix-accent">{occasion}</h3>
+                <h3 className="text-xl font-semibold text-blue-700">{occasion}</h3>
               </div>
               <div className="bg-netflix-card rounded-lg p-6 min-h-[400px] flex items-center justify-center">
                 <p className="text-netflix-text">No items available for this occasion</p>
@@ -125,7 +125,7 @@ export const PersonalizedLooksGrid = memo(({
         return (
           <div key={occasion} className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-netflix-accent">{occasion}</h3>
+              <h3 className="text-xl font-semibold text-blue-700">{occasion}</h3>
               <Button
                 variant="ghost"
                 size="sm"
