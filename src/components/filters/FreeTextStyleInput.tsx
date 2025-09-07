@@ -116,24 +116,24 @@ export const FreeTextStyleInput = ({ onStyleAnalyzed }: FreeTextStyleInputProps)
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="bg-fashion-glass rounded-3xl p-8 border border-white/20 backdrop-blur-xl"
+        className="bg-white/95 rounded-3xl p-8 border border-gray-200 shadow-lg"
       >
         <div className="flex items-center gap-3 mb-6">
-          <Sparkles className="w-6 h-6 text-fashion-accent" />
-          <h2 className="text-xl font-semibold text-white">What's your style mood today?</h2>
+          <Sparkles className="w-6 h-6 text-blue-600" />
+          <h2 className="text-xl font-semibold text-gray-900">What's your style mood today?</h2>
         </div>
         <div className="space-y-6">
           <Textarea
             placeholder="e.g., 'I'm looking for something elegant for work that won't cost too much' or 'I want something young and trendy for a party'"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            className="resize-none bg-white/5 border-white/20 text-white placeholder:text-white/50 backdrop-blur-sm rounded-2xl p-4 min-h-[100px] focus:ring-2 focus:ring-fashion-accent/50 focus:border-fashion-accent/50"
+            className="resize-none bg-gray-50 border-gray-300 text-gray-900 placeholder:text-gray-500 rounded-2xl p-4 min-h-[100px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             rows={3}
           />
           <Button
             onClick={handleAnalyze}
             disabled={isAnalyzing}
-            className="w-full bg-gradient-to-r from-fashion-primary to-fashion-accent hover:from-fashion-primary/90 hover:to-fashion-accent/90 text-white font-medium py-4 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl border-0"
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-4 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl border-0"
           >
             {isAnalyzing ? (
               <motion.div

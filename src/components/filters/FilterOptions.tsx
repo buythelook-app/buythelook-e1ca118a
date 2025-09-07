@@ -125,7 +125,7 @@ export const FilterOptions = () => {
 
       <Button 
         onClick={() => navigate('/suggestions')}
-        className="bg-netflix-accent hover:bg-netflix-accent/80 w-full"
+        className="bg-blue-600 hover:bg-blue-700 w-full text-white"
       >
         View All Suggestions
       </Button>
