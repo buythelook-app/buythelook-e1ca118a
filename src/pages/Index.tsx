@@ -3,17 +3,19 @@ import { HeroSection } from "@/components/HeroSection";
 import { Navbar } from "@/components/Navbar";
 import { FilterOptions } from "@/components/filters/FilterOptions";
 import { MoodFilter } from "@/components/filters/MoodFilter";
+import { FreeTextStyleInput } from "@/components/filters/FreeTextStyleInput";
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "@/components/Cart";
 import { toast as sonnerToast } from "sonner";
 import { StyleProfileDisplay } from "@/components/look/StyleProfileDisplay";
 import { PersonalizedLooksGrid } from "@/components/look/PersonalizedLooksGrid";
 import { usePersonalizedLooks } from "@/hooks/usePersonalizedLooks";
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 
 const Index = () => {
   const navigate = useNavigate();
   const { addLook } = useCartStore();
+  const [appliedFilters, setAppliedFilters] = useState<any>(null);
   
   const {
     selectedMood,
@@ -51,6 +53,13 @@ const Index = () => {
     sonnerToast.success(`${look.title} added to cart`);
   }, [addLook]);
 
+  const handleStyleAnalyzed = useCallback((filters: any) => {
+    setAppliedFilters(filters);
+    // Apply the mood from AI analysis
+    handleMoodSelect(filters.mood);
+    sonnerToast.success(`מחפש פריטים ב${filters.style} ל${filters.eventType}`);
+  }, [handleMoodSelect]);
+
   // For when no style is defined
   const renderNoStyleContent = useMemo(() => (
     <div className="min-h-screen bg-netflix-background">
@@ -82,6 +91,8 @@ const Index = () => {
         <HeroSection />
       </div>
       <main className="container mx-auto px-4 py-8">
+        <FreeTextStyleInput onStyleAnalyzed={handleStyleAnalyzed} />
+        
         <div className="mb-8">
           <MoodFilter selectedMood={selectedMood} onMoodSelect={handleMoodSelect} />
         </div>
