@@ -36,34 +36,40 @@ export default function RecommendationTest() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-16">
-      <h1 className="text-3xl font-bold mb-8">בדיקת המלצות וניהול ציונים</h1>
-      
-      <Tabs defaultValue="recommendations" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="recommendations">המלצות</TabsTrigger>
-          <TabsTrigger value="visualizer">הדמייה</TabsTrigger>
-          <TabsTrigger value="scoring">ניהול ציונים</TabsTrigger>
-        </TabsList>
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background">
+      <div className="container mx-auto px-4 py-16">
+        <div className="bg-fashion-glass rounded-2xl p-8 mb-8">
+          <h1 className="text-3xl font-bold mb-2 fashion-hero-text">בדיקת המלצות וניהול ציונים</h1>
+        </div>
         
-        <TabsContent value="recommendations" className="space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold mb-4">הפעלת המלצות ידנית</h2>
-            <RunRecommendationButton />
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="visualizer" className="space-y-6">
-          <AgentOutfitVisualizer />
-        </TabsContent>
-        
-        <TabsContent value="scoring" className="space-y-6">
-          <ItemScoreManager 
-            items={testItems}
-            onScoreUpdate={handleScoreUpdate}
-          />
-        </TabsContent>
-      </Tabs>
+        <Tabs defaultValue="recommendations" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 bg-fashion-glass">
+            <TabsTrigger value="recommendations">המלצות</TabsTrigger>
+            <TabsTrigger value="visualizer">הדמייה</TabsTrigger>
+            <TabsTrigger value="scoring">ניהול ציונים</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="recommendations" className="space-y-6">
+            <div className="bg-fashion-glass rounded-xl p-6">
+              <h2 className="text-xl font-semibold mb-4">הפעלת המלצות ידנית</h2>
+              <RunRecommendationButton />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="visualizer" className="space-y-6">
+            <AgentOutfitVisualizer />
+          </TabsContent>
+          
+          <TabsContent value="scoring" className="space-y-6">
+            <div className="bg-fashion-glass rounded-xl p-6">
+              <ItemScoreManager 
+                items={testItems}
+                onScoreUpdate={handleScoreUpdate}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

@@ -189,27 +189,28 @@ const FeedbackManagementPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6" dir="rtl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">ניהול פידבק ולמידה</h1>
-        <p className="text-muted-foreground mt-2">
-          נהל פידבק משתמשים ותוצאות סוכנים לשיפור המערכת
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background">
+      <div className="container mx-auto p-6" dir="rtl">
+        <div className="mb-6 bg-fashion-glass rounded-2xl p-6">
+          <h1 className="text-3xl font-bold fashion-hero-text">ניהול פידבק ולמידה</h1>
+          <p className="text-muted-foreground mt-2">
+            נהל פידבק משתמשים ותוצאות סוכנים לשיפור המערכת
+          </p>
+        </div>
 
-      <div className="mb-6 flex gap-4">
-        <Button onClick={fetchData} variant="outline">
-          <RefreshCw className="w-4 h-4 ml-2" />
-          רענן נתונים
-        </Button>
-        
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="destructive">
-              <Trash2 className="w-4 h-4 ml-2" />
-              איפוס כל הנתונים
-            </Button>
-          </AlertDialogTrigger>
+        <div className="mb-6 flex gap-4">
+          <Button onClick={fetchData} variant="outline" className="bg-fashion-glass hover:bg-accent/20">
+            <RefreshCw className="w-4 h-4 ml-2" />
+            רענן נתונים
+          </Button>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="bg-destructive/80 hover:bg-destructive">
+                <Trash2 className="w-4 h-4 ml-2" />
+                איפוס כל הנתונים
+              </Button>
+            </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
@@ -227,21 +228,21 @@ const FeedbackManagementPage = () => {
         </AlertDialog>
       </div>
 
-      <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="feedback">פידבק משתמשים</TabsTrigger>
-          <TabsTrigger value="agents">תוצאות סוכנים</TabsTrigger>
-          <TabsTrigger value="analytics">אנליטיקה</TabsTrigger>
-        </TabsList>
+        <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+          <TabsList className="grid w-full grid-cols-3 bg-fashion-glass">
+            <TabsTrigger value="feedback">פידבק משתמשים</TabsTrigger>
+            <TabsTrigger value="agents">תוצאות סוכנים</TabsTrigger>
+            <TabsTrigger value="analytics">אנליטיקה</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="feedback" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>רשומות סוכנים ({feedbackData.length})</CardTitle>
-              <CardDescription>
-                כל הרשומות שנוצרו על ידי הסוכנים השונים
-              </CardDescription>
-            </CardHeader>
+          <TabsContent value="feedback" className="space-y-4">
+            <Card className="bg-fashion-glass">
+              <CardHeader>
+                <CardTitle>רשומות סוכנים ({feedbackData.length})</CardTitle>
+                <CardDescription>
+                  כל הרשומות שנוצרו על ידי הסוכנים השונים
+                </CardDescription>
+              </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {feedbackData.map((feedback) => (
@@ -314,14 +315,14 @@ const FeedbackManagementPage = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="agents" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>תוצאות סוכנים ({agentRuns.length})</CardTitle>
-              <CardDescription>
-                כל הריצות וההערכות של הסוכנים השונים
-              </CardDescription>
-            </CardHeader>
+          <TabsContent value="agents" className="space-y-4">
+            <Card className="bg-fashion-glass">
+              <CardHeader>
+                <CardTitle>תוצאות סוכנים ({agentRuns.length})</CardTitle>
+                <CardDescription>
+                  כל הריצות וההערכות של הסוכנים השונים
+                </CardDescription>
+              </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {agentRuns.map((run) => (
@@ -366,12 +367,12 @@ const FeedbackManagementPage = () => {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">כלל הפידבק</CardTitle>
-                <Eye className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card className="bg-fashion-glass">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">כלל הפידבק</CardTitle>
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{feedbackData.length}</div>
                 <p className="text-xs text-muted-foreground">
@@ -380,11 +381,11 @@ const FeedbackManagementPage = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">פידבק לאימון</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
+              <Card className="bg-fashion-glass">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">פידבק לאימון</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
                   {feedbackData.filter(f => f.score > 50).length}
@@ -395,11 +396,11 @@ const FeedbackManagementPage = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">ריצות סוכנים</CardTitle>
-                <RefreshCw className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
+              <Card className="bg-fashion-glass">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">ריצות סוכנים</CardTitle>
+                  <RefreshCw className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{agentRuns.length}</div>
                 <p className="text-xs text-muted-foreground">
@@ -408,11 +409,11 @@ const FeedbackManagementPage = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">ציון ממוצע</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
+              <Card className="bg-fashion-glass">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">ציון ממוצע</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
                   {agentRuns.length > 0 
@@ -427,11 +428,11 @@ const FeedbackManagementPage = () => {
             </Card>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>פיצול סוגי פידבק</CardTitle>
-              </CardHeader>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="bg-fashion-glass">
+                <CardHeader>
+                  <CardTitle>פיצול סוגי פידבק</CardTitle>
+                </CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   {['success', 'failed', 'learning_data'].map(type => {
@@ -451,35 +452,36 @@ const FeedbackManagementPage = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>ביצועי סוכנים</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {Array.from(new Set(agentRuns.map(r => r.agent_name))).map(agentName => {
-                    const agentRuns_filtered = agentRuns.filter(r => r.agent_name === agentName);
-                    const avgScore = agentRuns_filtered.length > 0 
-                      ? (agentRuns_filtered.reduce((sum, run) => sum + run.score, 0) / agentRuns_filtered.length).toFixed(1)
-                      : '0';
-                    return (
-                      <div key={agentName} className="flex justify-between items-center">
-                        <span>{agentName}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">
-                            {agentRuns_filtered.length} ריצות
-                          </span>
-                          <span className="text-sm">ציון: {avgScore}</span>
+              <Card className="bg-fashion-glass">
+                <CardHeader>
+                  <CardTitle>ביצועי סוכנים</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {Array.from(new Set(agentRuns.map(r => r.agent_name))).map(agentName => {
+                      const agentRuns_filtered = agentRuns.filter(r => r.agent_name === agentName);
+                      const avgScore = agentRuns_filtered.length > 0 
+                        ? (agentRuns_filtered.reduce((sum, run) => sum + run.score, 0) / agentRuns_filtered.length).toFixed(1)
+                        : '0';
+                      return (
+                        <div key={agentName} className="flex justify-between items-center">
+                          <span>{agentName}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">
+                              {agentRuns_filtered.length} ריצות
+                            </span>
+                            <span className="text-sm">ציון: {avgScore}</span>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };

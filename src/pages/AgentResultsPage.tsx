@@ -123,21 +123,23 @@ export default function AgentResultsPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Fashion Agent Results</h1>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setShowImagePath(!showImagePath)}
-            title="הצג/הסתר נתיבי תמונות"
-          >
-            <Info className="h-4 w-4 mr-1" />
-            {showImagePath ? "Hide Paths" : "Show Paths"}
-          </Button>
-          <Button variant="outline" onClick={() => navigate(-1)}>Back</Button>
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-6 bg-fashion-glass rounded-2xl p-6">
+          <h1 className="text-3xl font-bold fashion-hero-text">Fashion Agent Results</h1>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowImagePath(!showImagePath)}
+              title="הצג/הסתר נתיבי תמונות"
+              className="bg-fashion-glass hover:bg-accent/20"
+            >
+              <Info className="h-4 w-4 mr-1" />
+              {showImagePath ? "Hide Paths" : "Show Paths"}
+            </Button>
+            <Button variant="outline" onClick={() => navigate(-1)} className="bg-fashion-glass hover:bg-accent/20">Back</Button>
+          </div>
         </div>
-      </div>
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
@@ -160,8 +162,8 @@ export default function AgentResultsPage() {
             const lookItems = getLookItems(result.output);
             
             return (
-              <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <CardHeader className="bg-gray-50">
+              <Card key={index} className="overflow-hidden bg-fashion-glass fashion-card-hover">
+                <CardHeader className="bg-accent/10">
                   <CardTitle className="flex justify-between items-center">
                     <span>{formatAgentName(result.agent)}</span>
                     {result.output.score !== undefined && (
@@ -201,8 +203,8 @@ export default function AgentResultsPage() {
                     </div>
                   )}
                 </CardContent>
-                <CardFooter className="bg-gray-50 flex justify-between">
-                  <div className="text-sm text-gray-500">
+                <CardFooter className="bg-accent/10 flex justify-between">
+                  <div className="text-sm text-muted-foreground">
                     {result.output.top && <span className="mr-2">Top: {result.output.top.product_name || result.output.top.id}</span>}
                     {result.output.bottom && <span className="mr-2">Bottom: {result.output.bottom.product_name || result.output.bottom.id}</span>}
                     {result.output.shoes && <span>Shoes: {result.output.shoes.product_name || result.output.shoes.id}</span>}
@@ -213,6 +215,7 @@ export default function AgentResultsPage() {
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

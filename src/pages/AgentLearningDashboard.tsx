@@ -228,35 +228,36 @@ const AgentLearningDashboard = () => {
   }
 
   return (
-    <div className="container mx-auto p-6" dir="rtl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Brain className="w-8 h-8" />
-          לוח בקרה למידה וביצועים
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          מעקב אחר ביצועי הסוכנים ותהליכי הלמידה של המערכת
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background">
+      <div className="container mx-auto p-6" dir="rtl">
+        <div className="mb-6 bg-fashion-glass rounded-2xl p-6">
+          <h1 className="text-3xl font-bold flex items-center gap-2 fashion-hero-text">
+            <Brain className="w-8 h-8" />
+            לוח בקרה למידה וביצועים
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            מעקב אחר ביצועי הסוכנים ותהליכי הלמידה של המערכת
+          </p>
+        </div>
 
-      <div className="mb-6">
-        <Button onClick={triggerLearningUpdate} className="ml-4">
-          <Brain className="w-4 h-4 ml-2" />
-          Update Learning
-        </Button>
-        <Button onClick={fetchDashboardData} variant="outline">
-          <Activity className="w-4 h-4 ml-2" />
-          רענן נתונים
-        </Button>
-      </div>
+        <div className="mb-6 flex gap-4">
+          <Button onClick={triggerLearningUpdate} className="bg-gradient-to-r from-primary to-accent text-primary-foreground hover:scale-105 transition-all duration-300">
+            <Brain className="w-4 h-4 ml-2" />
+            Update Learning
+          </Button>
+          <Button onClick={fetchDashboardData} variant="outline" className="bg-fashion-glass hover:bg-accent/20">
+            <Activity className="w-4 h-4 ml-2" />
+            רענן נתונים
+          </Button>
+        </div>
 
-      {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">משתמשים פעילים</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
+        {/* Key Metrics */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+          <Card className="bg-fashion-glass">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">משתמשים פעילים</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics?.totalUsers || 0}</div>
             <p className="text-xs text-muted-foreground">
@@ -265,11 +266,11 @@ const AgentLearningDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">תלבושות מוצלחות</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
+          <Card className="bg-fashion-glass">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">תלבושות מוצלחות</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics?.successfulOutfits || 0}</div>
             <p className="text-xs text-muted-foreground">
@@ -278,11 +279,11 @@ const AgentLearningDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">נקודות למידה</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
+          <Card className="bg-fashion-glass">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">נקודות למידה</CardTitle>
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics?.learningDataPoints || 0}</div>
             <p className="text-xs text-muted-foreground">
@@ -291,11 +292,11 @@ const AgentLearningDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">מעורבות ממוצעת</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
+          <Card className="bg-fashion-glass">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">מעורבות ממוצעת</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {metrics?.averageEngagement.toFixed(1) || 0}%
@@ -304,21 +305,21 @@ const AgentLearningDashboard = () => {
               שיעור הצלחה כללי
             </p>
           </CardContent>
-        </Card>
-      </div>
+          </Card>
+        </div>
 
-      <Tabs defaultValue="performance" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="performance">ביצועי סוכנים</TabsTrigger>
-          <TabsTrigger value="insights">תובנות למידה</TabsTrigger>
-          <TabsTrigger value="trends">מגמות שיפור</TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="performance" className="space-y-4">
+          <TabsList className="bg-fashion-glass">
+            <TabsTrigger value="performance">ביצועי סוכנים</TabsTrigger>
+            <TabsTrigger value="insights">תובנות למידה</TabsTrigger>
+            <TabsTrigger value="trends">מגמות שיפור</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="performance" className="space-y-4">
-          <div className="grid gap-4">
-            {agentPerformances.map((agent) => (
-              <Card key={agent.agentName}>
-                <CardHeader>
+          <TabsContent value="performance" className="space-y-4">
+            <div className="grid gap-4">
+              {agentPerformances.map((agent) => (
+                <Card key={agent.agentName} className="bg-fashion-glass">
+                  <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-lg">{agent.agentName}</CardTitle>
@@ -355,16 +356,16 @@ const AgentLearningDashboard = () => {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
 
-        <TabsContent value="insights" className="space-y-4">
-          <div className="grid gap-4">
-            {learningInsights.map((insight, index) => (
-              <Card key={index}>
-                <CardHeader>
+          <TabsContent value="insights" className="space-y-4">
+            <div className="grid gap-4">
+              {learningInsights.map((insight, index) => (
+                <Card key={index} className="bg-fashion-glass">
+                  <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{insight.category}</CardTitle>
                     <Badge variant={insight.confidence > 80 ? "default" : "secondary"}>
@@ -389,19 +390,19 @@ const AgentLearningDashboard = () => {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
 
-        <TabsContent value="trends" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>מגמות שיפור בשבועות האחרונים</CardTitle>
-              <CardDescription>
-                מעקב אחר שיפור ביצועי המערכת לאורך זמן
-              </CardDescription>
-            </CardHeader>
+          <TabsContent value="trends" className="space-y-4">
+            <Card className="bg-fashion-glass">
+              <CardHeader>
+                <CardTitle>מגמות שיפור בשבועות האחרונים</CardTitle>
+                <CardDescription>
+                  מעקב אחר שיפור ביצועי המערכת לאורך זמן
+                </CardDescription>
+              </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div>
@@ -431,9 +432,10 @@ const AgentLearningDashboard = () => {
                 </div>
               </div>
             </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };

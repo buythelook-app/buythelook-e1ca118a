@@ -113,10 +113,12 @@ export default function AgentTrainingPage() {
   console.log('🔍 [AgentTraining] Canvas items prepared:', canvasItems);
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background">
       <HomeButton />
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <h1 className="text-3xl font-bold mb-8">מרכז אילוף סטיילסטית AI</h1>
+        <div className="mb-8 bg-fashion-glass rounded-2xl p-6">
+          <h1 className="text-3xl font-bold fashion-hero-text">מרכז אילוף סטיילסטית AI</h1>
+        </div>
         
         {/* Auto Training Controller */}
         <div className="mb-8 flex justify-center">
@@ -126,7 +128,7 @@ export default function AgentTrainingPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Agent Controls */}
           <div className="space-y-6">
-            <Card>
+            <Card className="bg-fashion-glass">
               <CardHeader>
                 <CardTitle>Run Agent Session</CardTitle>
               </CardHeader>
@@ -143,7 +145,7 @@ export default function AgentTrainingPage() {
 
             {/* Current Session Feedback */}
             {currentSession && (
-              <Card>
+              <Card className="bg-fashion-glass">
                 <CardHeader>
                   <CardTitle>Provide Feedback</CardTitle>
                 </CardHeader>
@@ -202,7 +204,7 @@ export default function AgentTrainingPage() {
           {/* Outfit Display */}
           <div className="space-y-6">
             {currentSession && (
-              <Card>
+              <Card className="bg-fashion-glass">
                 <CardHeader>
                   <CardTitle>Generated Outfit</CardTitle>
                 </CardHeader>
@@ -263,7 +265,7 @@ export default function AgentTrainingPage() {
 
         {/* Training History */}
         {sessions.length > 0 && (
-          <Card className="mt-8">
+          <Card className="mt-8 bg-fashion-glass">
             <CardHeader>
               <CardTitle>Training History</CardTitle>
             </CardHeader>
@@ -303,6 +305,6 @@ export default function AgentTrainingPage() {
           </Card>
         )}
       </div>
-    </>
+    </div>
   );
 }

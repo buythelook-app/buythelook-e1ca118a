@@ -41,16 +41,16 @@ export default function TestApi() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background p-6">
       <div className="max-w-6xl mx-auto">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">RapidAPI Test Page</h1>
+        <header className="mb-8 bg-fashion-glass rounded-2xl p-6">
+          <h1 className="text-3xl font-bold mb-2 fashion-hero-text">RapidAPI Test Page</h1>
           <p className="text-muted-foreground">
             This page fetches ONLY RapidAPI ASOS data through our Supabase Edge Function (catalog-proxy).
           </p>
         </header>
 
-        <section className="mb-6 space-y-4">
+        <section className="mb-6 space-y-4 bg-fashion-glass rounded-xl p-6">
           <div className="flex gap-4 items-end">
             <div className="flex-1">
               <label className="block text-sm font-medium mb-2">Test Query</label>
@@ -58,11 +58,11 @@ export default function TestApi() {
                 type="text"
                 value={testQuery}
                 onChange={(e) => setTestQuery(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-md"
+                className="w-full px-3 py-2 border border-border rounded-md bg-background/50"
                 placeholder="e.g., women dresses, men shirts, women tops"
               />
             </div>
-            <Button onClick={handleTestFetch} disabled={loading}>
+            <Button onClick={handleTestFetch} disabled={loading} className="bg-gradient-to-r from-primary to-accent text-primary-foreground hover:scale-105 transition-all duration-300">
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -95,7 +95,7 @@ export default function TestApi() {
         {items.length > 0 ? (
           <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {items.map((item) => (
-              <Card key={item.id} className="overflow-hidden">
+              <Card key={item.id} className="overflow-hidden bg-fashion-glass fashion-card-hover">
                 <div className="aspect-square relative">
                   <img
                     src={item.imageUrl || item.thumbnailUrl || '/placeholder.svg'}
@@ -106,7 +106,7 @@ export default function TestApi() {
                       e.currentTarget.src = '/placeholder.svg';
                     }}
                   />
-                  <Badge className="absolute top-2 left-2">
+                  <Badge className="absolute top-2 left-2 bg-primary/80">
                     RapidAPI
                   </Badge>
                 </div>
@@ -132,7 +132,7 @@ export default function TestApi() {
                         href={item.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block w-full text-center bg-primary text-primary-foreground py-2 rounded-md text-sm hover:bg-primary/90 transition-colors"
+                        className="block w-full text-center bg-gradient-to-r from-primary to-accent text-primary-foreground py-2 rounded-md text-sm hover:scale-105 transition-all duration-300"
                       >
                         View on ASOS
                       </a>
@@ -143,7 +143,7 @@ export default function TestApi() {
             ))}
           </main>
         ) : !loading && (
-          <div className="text-center py-12">
+          <div className="text-center py-12 bg-fashion-glass rounded-xl">
             <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">
               Click "Test RapidAPI" to fetch clothing items from ASOS

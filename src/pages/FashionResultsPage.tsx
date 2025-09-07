@@ -58,28 +58,30 @@ export default function FashionResultsPage() {
 
   if (!params.eventType || !params.style || !params.budget) {
     return (
-      <div className="min-h-screen bg-netflix-background">
+      <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background">
         <Navbar />
         <div className="container mx-auto px-4 py-8 text-center">
-          <h2 className="text-2xl font-bold mb-4">Complete Your Style Quiz First</h2>
-          <p className="text-muted-foreground mb-6">
-            We need your style preferences to show personalized recommendations.
-          </p>
-          <Button onClick={() => navigate('/quiz')}>
-            Take Style Quiz
-          </Button>
+          <div className="bg-fashion-glass rounded-2xl p-8 max-w-md mx-auto">
+            <h2 className="text-2xl font-bold mb-4 fashion-hero-text">Complete Your Style Quiz First</h2>
+            <p className="text-muted-foreground mb-6">
+              We need your style preferences to show personalized recommendations.
+            </p>
+            <Button onClick={() => navigate('/quiz')} className="bg-gradient-to-r from-primary to-accent text-primary-foreground hover:scale-105 transition-all duration-300 fashion-glow">
+              Take Style Quiz
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-netflix-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background">
       <Navbar />
       
       {/* Header Section */}
       <motion.div 
-        className="bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white py-12"
+        className="bg-gradient-to-r from-primary via-accent to-primary text-primary-foreground py-12"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}

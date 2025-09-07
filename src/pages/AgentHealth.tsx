@@ -28,27 +28,28 @@ export default function AgentHealthPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">בדיקת בריאות אייג'נטים</h1>
-        <p className="text-muted-foreground">מריץ כל אייג'נט לפי תפקידו וגם את הזרימה המתואמת</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-6 bg-fashion-glass rounded-2xl p-6">
+          <h1 className="text-2xl font-bold fashion-hero-text">בדיקת בריאות אייג'נטים</h1>
+          <p className="text-muted-foreground">מריץ כל אייג'נט לפי תפקידו וגם את הזרימה המתואמת</p>
+        </div>
 
-      <div className="flex gap-3 mb-8">
-        <Button onClick={runCheck} disabled={loading} className="flex items-center gap-2">
-          <Play className="h-4 w-4" />
-          {loading ? "מריץ..." : "הרץ בדיקה"}
-        </Button>
-        {report && (
-          <Badge variant={report.overallOk ? "default" : "destructive"}>
-            {report.overallOk ? "תקין" : "בעיות זוהו"}
-          </Badge>
-        )}
-      </div>
+        <div className="flex gap-3 mb-8">
+          <Button onClick={runCheck} disabled={loading} className="flex items-center gap-2 bg-gradient-to-r from-primary to-accent text-primary-foreground hover:scale-105 transition-all duration-300">
+            <Play className="h-4 w-4" />
+            {loading ? "מריץ..." : "הרץ בדיקה"}
+          </Button>
+          {report && (
+            <Badge variant={report.overallOk ? "default" : "destructive"}>
+              {report.overallOk ? "תקין" : "בעיות זוהו"}
+            </Badge>
+          )}
+        </div>
 
       {report && (
         <div className="grid gap-6">
-          <Card>
+          <Card className="bg-fashion-glass">
             <CardHeader>
               <CardTitle>תוצאות לפי אייג'נט</CardTitle>
             </CardHeader>
@@ -82,7 +83,7 @@ export default function AgentHealthPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-fashion-glass">
             <CardHeader>
               <CardTitle>הרצה מתואמת (AgentCrew)</CardTitle>
             </CardHeader>
@@ -112,7 +113,7 @@ export default function AgentHealthPage() {
       )}
 
       {!report && !loading && (
-        <Card className="mt-6">
+        <Card className="mt-6 bg-fashion-glass">
           <CardContent className="py-8 text-center text-muted-foreground">
             לחץ על "הרץ בדיקה" כדי להפיק דו"ח בריאות מפורט לכל האייג'נטים
           </CardContent>
@@ -121,6 +122,7 @@ export default function AgentHealthPage() {
 
       <Separator className="my-8" />
       <p className="text-xs text-muted-foreground">ID משתמש לבדיקה: health-check-user • {new Date().toLocaleString()}</p>
+      </div>
     </div>
   );
 }

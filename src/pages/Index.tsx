@@ -62,19 +62,21 @@ const Index = () => {
 
   // For when no style is defined
   const renderNoStyleContent = useMemo(() => (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background">
       <Navbar />
       <div className="container mx-auto px-4 py-16 text-center">
-        <h2 className="text-2xl font-bold mb-4 text-gray-900">Complete Your Style Quiz</h2>
-        <p className="text-gray-600 mb-8">
-          Take our style quiz to get personalized look suggestions that match your style.
-        </p>
-        <button
-          onClick={() => navigate('/quiz')}
-          className="bg-netflix-accent text-white px-6 py-3 rounded-lg hover:bg-netflix-accent/90 transition-colors"
-        >
-          Take Style Quiz
-        </button>
+        <div className="bg-fashion-glass rounded-2xl p-8 max-w-md mx-auto">
+          <h2 className="text-2xl font-bold mb-4 fashion-hero-text">Complete Your Style Quiz</h2>
+          <p className="text-muted-foreground mb-8">
+            Take our style quiz to get personalized look suggestions that match your style.
+          </p>
+          <button
+            onClick={() => navigate('/quiz')}
+            className="bg-gradient-to-r from-primary to-accent text-primary-foreground px-8 py-3 rounded-2xl hover:scale-105 transition-all duration-300 fashion-glow"
+          >
+            Take Style Quiz
+          </button>
+        </div>
       </div>
     </div>
   ), [navigate]);
@@ -85,12 +87,12 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background">
       <Navbar />
       <div>
         <HeroSection />
       </div>
-      <main className="container mx-auto px-4 py-8 bg-white text-gray-900">
+      <main className="container mx-auto px-4 py-8">
         <FreeTextStyleInput onStyleAnalyzed={handleStyleAnalyzed} />
         
         <div className="mb-8">
@@ -100,9 +102,9 @@ const Index = () => {
         <section className="py-8">
           <div className="container mx-auto px-4">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-              <h2 className="text-3xl font-semibold relative text-blue-700">
+              <h2 className="text-3xl font-semibold relative fashion-hero-text">
                 Personalized Looks
-                <span className="absolute -bottom-2 left-0 w-24 h-1 bg-blue-600 rounded-full"></span>
+                <span className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-primary to-accent rounded-full"></span>
               </h2>
               <StyleProfileDisplay styleProfile={userStyle?.analysis?.styleProfile} />
             </div>
