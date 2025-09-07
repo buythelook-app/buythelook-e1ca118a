@@ -62,10 +62,10 @@ const Index = () => {
 
   // For when no style is defined
   const renderNoStyleContent = useMemo(() => (
-    <div className="min-h-screen bg-netflix-background">
+    <div className="min-h-screen bg-white">
       <Navbar />
       <div className="container mx-auto px-4 py-16 text-center">
-        <h2 className="text-2xl font-bold mb-4">Complete Your Style Quiz</h2>
+        <h2 className="text-2xl font-bold mb-4 text-gray-900">Complete Your Style Quiz</h2>
         <p className="text-gray-600 mb-8">
           Take our style quiz to get personalized look suggestions that match your style.
         </p>
@@ -85,12 +85,12 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-netflix-background">
+    <div className="min-h-screen bg-white">
       <Navbar />
       <div>
         <HeroSection />
       </div>
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 bg-white text-gray-900">
         <FreeTextStyleInput onStyleAnalyzed={handleStyleAnalyzed} />
         
         <div className="mb-8">
@@ -100,9 +100,9 @@ const Index = () => {
         <section className="py-8">
           <div className="container mx-auto px-4">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-              <h2 className="text-3xl font-display font-semibold relative">
+              <h2 className="text-3xl font-display font-semibold relative text-gray-900">
                 Personalized Looks
-                <span className="absolute -bottom-2 left-0 w-24 h-1 bg-netflix-accent rounded-full"></span>
+                <span className="absolute -bottom-2 left-0 w-24 h-1 bg-blue-600 rounded-full"></span>
               </h2>
               <StyleProfileDisplay styleProfile={userStyle?.analysis?.styleProfile} />
             </div>
