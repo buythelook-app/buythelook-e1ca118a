@@ -32,3 +32,7 @@ cors = true
 [functions.catalog-proxy]
 verify_jwt = false
 cors = true
+
+[functions.catalog-test]
+verify_jwt = false
+cors = true
