@@ -39,7 +39,7 @@ export const StyleProfileDisplay = ({ styleProfile }: StyleProfileDisplayProps) 
   
   return (
     <div className="mt-4 md:mt-0 px-4 py-2 bg-gray-100 rounded-full text-gray-700">
-      מבוסס על העדפת הסגנון שלך - {displayStyle}
+      Based on your {displayStyle} style preference
     </div>
   );
 };

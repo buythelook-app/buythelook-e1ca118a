@@ -101,7 +101,7 @@ const Index = () => {
           <div className="container mx-auto px-4">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
               <h2 className="text-3xl font-display font-semibold relative text-gray-900">
-                לוקים מותאמים אישית
+                Personalized Looks
                 <span className="absolute -bottom-2 left-0 w-24 h-1 bg-blue-600 rounded-full"></span>
               </h2>
               <StyleProfileDisplay styleProfile={userStyle?.analysis?.styleProfile} />
