@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-type Provider = 'rapidapi-asos';
+type Provider = 'rapidapi-asos' | 'rapidapi-asos-scraper';
 
 type RequestBody = {
   provider?: Provider;
@@ -14,6 +14,7 @@ type RequestBody = {
   gender?: 'women' | 'men';
   category?: string;
   limit?: number;
+  urls?: string[];
 };
 
 serve(async (req) => {
@@ -22,9 +23,9 @@ serve(async (req) => {
   }
 
   try {
-    const { provider = 'rapidapi-asos', query = 'women shirts', gender = 'women', category = 'tops', limit = 12 } = (await req.json()) as RequestBody;
+    const { provider = 'rapidapi-asos', query = 'women shirts', gender = 'women', category = 'tops', limit = 12, urls } = (await req.json()) as RequestBody;
 
-    console.log('[catalog-proxy] provider:', provider, 'query:', query, 'gender:', gender, 'category:', category, 'limit:', limit);
+    console.log('[catalog-proxy] provider:', provider, 'query:', query, 'gender:', gender, 'category:', category, 'limit:', limit, 'urls:', urls);
 
     if (provider === 'rapidapi-asos') {
       const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
@@ -78,6 +79,60 @@ serve(async (req) => {
       });
     }
 
+    if (provider === 'rapidapi-asos-scraper') {
+      const rapidApiKey = Deno.env.get('RAPIDAPI_ASOS_SCRAPER_KEY');
+      if (!rapidApiKey) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Missing RAPIDAPI_ASOS_SCRAPER_KEY secret. Please add it in Supabase > Settings > Functions.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!urls || urls.length === 0) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'URLs array is required for rapidapi-asos-scraper provider' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const response = await fetch('https://asos-scraper.p.rapidapi.com/api/ecommerce/asos-scraper/products', {
+        method: 'POST',
+        headers: {
+          'x-rapidapi-key': rapidApiKey,
+          'x-rapidapi-host': 'asos-scraper.p.rapidapi.com',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(urls.map(url => ({ url })))
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('[catalog-proxy] ASOS Scraper error:', response.status, text);
+        return new Response(JSON.stringify({ success: false, error: `ASOS Scraper API error: ${response.status}` }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const data = await response.json();
+      console.log('[catalog-proxy] ASOS Scraper response:', data);
+      
+      // Transform the response data to match our standard format
+      const items = Array.isArray(data) ? data.map((product, index) => ({
+        id: product.id || `scraped-${index}`,
+        title: product.name || product.title || 'ASOS Product',
+        imageUrl: product.image || product.imageUrl,
+        thumbnailUrl: product.image || product.imageUrl,
+        source: 'ASOS',
+        link: urls[index] || '#',
+        estimatedPrice: product.price || product.current_price || null,
+        category: product.category || 'clothing',
+      })) : [];
+
+      return new Response(JSON.stringify({ success: true, items, totalResults: items.length }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60' },
+      });
+    }
 
     return new Response(JSON.stringify({ success: false, error: `Unsupported provider: ${provider}` }), {
       status: 400,
