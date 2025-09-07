@@ -29,7 +29,7 @@ export const BodyShapeStep = ({ value, onChange }: BodyShapeStepProps) => {
             const emoji = bodyShapeEmojis[shape];
             return (
               <div key={shape} className={`flex items-center space-x-2 p-2 rounded-md border transition-all ${
-                value === shape ? "border-netflix-accent bg-netflix-accent/10" : "border-gray-200 hover:border-netflix-accent/50"
+                value === shape ? "border-blue-600 bg-blue-50" : "border-gray-200 hover:border-blue-400"
               }`}>
                 <RadioGroupItem value={shape} id={shape} className="w-4 h-4" />
                 <span className="text-lg">{emoji}</span>

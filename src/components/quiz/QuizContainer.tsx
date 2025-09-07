@@ -14,7 +14,7 @@ export const QuizContainer = ({ children }: QuizContainerProps) => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-netflix-background text-netflix-text py-6">
+    <div className="min-h-screen bg-white text-gray-800 py-6">
       <div className="container max-w-6xl mx-auto px-4">
         <Button 
           variant="ghost" 
@@ -28,14 +28,14 @@ export const QuizContainer = ({ children }: QuizContainerProps) => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar for answers summary */}
           <div className="lg:col-span-1">
-            <div className="bg-netflix-card rounded-lg p-4 sticky top-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-4 sticky top-6">
               {children.summary}
             </div>
           </div>
           
           {/* Main quiz content */}
           <div className="lg:col-span-3">
-            <div className="bg-netflix-card rounded-lg p-6 h-[calc(100vh-12rem)] max-h-[650px] min-h-[450px] flex flex-col">
+            <div className="bg-white border border-gray-200 rounded-lg p-6 h-[calc(100vh-12rem)] max-h-[650px] min-h-[450px] flex flex-col">
               {children.content}
             </div>
           </div>
