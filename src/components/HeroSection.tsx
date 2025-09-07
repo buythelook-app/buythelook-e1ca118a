@@ -8,7 +8,7 @@ export const HeroSection = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-fashion-neutral-dark via-purple-900 to-indigo-900 flex items-center justify-center overflow-hidden">
+    <div className="relative min-h-screen bg-gradient-to-br from-fashion-neutral-dark via-blue-900 to-indigo-900 flex items-center justify-center overflow-hidden pt-20">
       {/* Sophisticated background elements */}
       <div className="absolute inset-0">
         <motion.div
