@@ -214,12 +214,12 @@ export const Cart = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-fashion-neutral-dark to-black text-white p-6">
+    <div className="min-h-screen bg-white text-gray-900 p-6">
       <div className="container mx-auto">
         <Button 
           variant="ghost" 
           onClick={() => navigate(-1)}
-          className="mb-6 text-white hover:bg-white/10"
+          className="mb-6 text-gray-700 hover:bg-gray-100"
         >
           ← Back
         </Button>
