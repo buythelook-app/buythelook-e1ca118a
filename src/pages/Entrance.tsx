@@ -15,16 +15,22 @@ export const Entrance = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-netflix-accent/20 via-netflix-background to-netflix-card flex items-center justify-center">
-      <div className="text-center space-y-8 animate-fade-in bg-netflix-card/30 p-12 rounded-2xl backdrop-blur-sm">
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background flex items-center justify-center">
+      <div className="text-center space-y-8 animate-fadeIn bg-fashion-glass p-12 rounded-2xl backdrop-blur-xl border border-white/20">
         <img
           src="/lovable-uploads/37542411-4b25-4f10-9cc8-782a286409a1.png"
           alt="Buy the Look Logo"
-          className="w-64 mx-auto mb-8 drop-shadow-2xl hover:scale-105 transition-transform duration-300"
+          className="w-64 mx-auto mb-8 drop-shadow-2xl hover:scale-105 transition-transform duration-300 fashion-glow"
         />
-        <p className="text-netflix-text text-xl font-light tracking-wide">
-          Your Personal Style Journey Begins
-        </p>
+        <div>
+          <h1 className="text-3xl font-bold mb-4 fashion-hero-text">
+            Your Personal Style Journey Begins
+          </h1>
+          <p className="text-muted-foreground text-lg font-light tracking-wide">
+            Discover outfits that match your unique style
+          </p>
+        </div>
+        <div className="w-16 h-1 bg-gradient-to-r from-primary to-accent rounded-full mx-auto"></div>
       </div>
     </div>
   );
