@@ -19,6 +19,15 @@ export default {
     },
     extend: {
       colors: {
+        fashion: {
+          primary: "hsl(var(--fashion-primary))",
+          accent: "hsl(var(--fashion-accent))",
+          "neutral-dark": "hsl(var(--fashion-neutral-dark))",
+          "neutral-mid": "hsl(var(--fashion-neutral-mid))",
+          "neutral-light": "hsl(var(--fashion-neutral-light))",
+          glass: "hsl(var(--fashion-glass))",
+          glow: "hsl(var(--fashion-glow))",
+        },
         netflix: {
           background: "#0A0F1C",
           card: "#141B2D",

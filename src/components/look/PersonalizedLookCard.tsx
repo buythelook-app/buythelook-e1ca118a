@@ -31,18 +31,18 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
   
   return (
     <div 
-      className="bg-netflix-card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow"
+      className="bg-fashion-glass rounded-3xl p-6 border border-white/20 backdrop-blur-xl shadow-lg fashion-card-hover"
     >
       <div className="flex justify-between items-start mb-4">
-        <h3 className="text-xl font-semibold">{look.title}</h3>
-        <span className="text-sm text-netflix-accent">{look.occasion}</span>
+        <h3 className="text-xl font-semibold text-white">{look.title}</h3>
+        <span className="text-sm text-fashion-accent bg-fashion-accent/10 px-3 py-1 rounded-full">{look.occasion}</span>
       </div>
-      <div className="mb-4 bg-white rounded-lg overflow-hidden relative group">
+      <div className="mb-4 bg-white/5 rounded-2xl overflow-hidden relative group backdrop-blur-sm">
         {customCanvas || <LookCanvas items={look.items} width={300} height={480} />}
         {onShuffle && (
           <button
             onClick={() => onShuffle(look.occasion)}
-            className="absolute bottom-4 right-4 bg-netflix-accent text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute bottom-4 right-4 bg-fashion-accent text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110"
             title="Try different combination"
           >
             <Shuffle className="w-4 h-4" />
@@ -50,12 +50,12 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
         )}
       </div>
       <div className="flex justify-between items-center">
-        <p className="text-netflix-accent font-semibold">{look.price}</p>
-        <div className="flex space-x-2">
+        <p className="text-fashion-accent font-semibold text-lg">{look.price}</p>
+        <div className="flex space-x-3">
           <TryMeButton items={avatarItems} />
           <button
             onClick={() => onAddToCart(look)}
-            className="bg-netflix-accent text-white p-2 rounded-lg hover:bg-netflix-accent/90 transition-colors"
+            className="bg-fashion-accent text-white p-3 rounded-2xl hover:bg-fashion-accent/90 transition-all duration-300 hover:scale-105"
             title="Add to cart"
           >
             <ShoppingCart className="w-4 h-4" />
@@ -68,7 +68,7 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
               }));
               navigate(`/look/${look.id}`);
             }}
-            className="bg-netflix-accent text-white px-4 py-2 rounded-lg hover:bg-netflix-accent/90 transition-colors text-sm flex items-center gap-2"
+            className="bg-gradient-to-r from-fashion-primary to-fashion-accent text-white px-6 py-3 rounded-2xl hover:from-fashion-primary/90 hover:to-fashion-accent/90 transition-all duration-300 text-sm font-medium"
           >
             View Details
           </button>

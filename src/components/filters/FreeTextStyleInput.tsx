@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
 
 interface FreeTextStyleInputProps {
   onStyleAnalyzed: (filters: {
@@ -111,29 +111,45 @@ export const FreeTextStyleInput = ({ onStyleAnalyzed }: FreeTextStyleInputProps)
   };
 
   return (
-    <Card className="bg-netflix-card border-netflix-border mb-6">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-netflix-accent">
-          <Sparkles className="w-5 h-5" />
-          Tell us what you're looking for
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Textarea
-          placeholder="e.g., 'I'm looking for something elegant for work that won't cost too much' or 'I want something young and trendy for a party'"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          className="resize-none bg-netflix-background border-netflix-border text-netflix-text placeholder:text-netflix-text/60"
-          rows={3}
-        />
-        <Button 
-          onClick={handleAnalyze}
-          disabled={isAnalyzing}
-          className="w-full bg-netflix-accent hover:bg-netflix-accent/90 text-white"
-        >
-          {isAnalyzing ? "Analyzing..." : "Search for me"}
-        </Button>
-      </CardContent>
-    </Card>
+    <div className="mb-12 max-w-2xl mx-auto">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="bg-fashion-glass rounded-3xl p-8 border border-white/20 backdrop-blur-xl"
+      >
+        <div className="flex items-center gap-3 mb-6">
+          <Sparkles className="w-6 h-6 text-fashion-accent" />
+          <h2 className="text-xl font-semibold text-white">What's your style mood today?</h2>
+        </div>
+        <div className="space-y-6">
+          <Textarea
+            placeholder="e.g., 'I'm looking for something elegant for work that won't cost too much' or 'I want something young and trendy for a party'"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            className="resize-none bg-white/5 border-white/20 text-white placeholder:text-white/50 backdrop-blur-sm rounded-2xl p-4 min-h-[100px] focus:ring-2 focus:ring-fashion-accent/50 focus:border-fashion-accent/50"
+            rows={3}
+          />
+          <Button
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+            className="w-full bg-gradient-to-r from-fashion-primary to-fashion-accent hover:from-fashion-primary/90 hover:to-fashion-accent/90 text-white font-medium py-4 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl border-0"
+          >
+            {isAnalyzing ? (
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                className="mr-2"
+              >
+                <Sparkles className="w-5 h-5" />
+              </motion.div>
+            ) : (
+              <Sparkles className="mr-2 w-5 h-5" />
+            )}
+            {isAnalyzing ? "Finding your perfect style..." : "Find my style"}
+          </Button>
+        </div>
+      </motion.div>
+    </div>
   );
 };

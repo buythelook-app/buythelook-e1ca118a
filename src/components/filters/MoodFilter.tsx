@@ -53,7 +53,11 @@ export const MoodFilter = ({ selectedMood, onMoodSelect }: MoodFilterProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full" onClick={() => setIsOpen(true)}>
+        <Button 
+          variant="outline" 
+          className="w-full bg-fashion-glass border-white/20 text-white hover:bg-white/10 backdrop-blur-xl rounded-2xl"
+          onClick={() => setIsOpen(true)}
+        >
           {selectedMood ? (
             <>
               <span className="mr-2 text-lg">{moodIcons[selectedMood]}</span>
@@ -67,16 +71,20 @@ export const MoodFilter = ({ selectedMood, onMoodSelect }: MoodFilterProps) => {
           )}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl bg-fashion-glass border-white/20 text-white backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle>How are you feeling today?</DialogTitle>
+          <DialogTitle className="text-white text-2xl font-semibold">How are you feeling today?</DialogTitle>
         </DialogHeader>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
           {(Object.keys(moodIcons) as Mood[]).map((mood) => (
             <Button
               key={mood}
               variant={selectedMood === mood ? "default" : "outline"}
-              className="p-4 h-auto hover:bg-netflix-accent/10 transition-colors"
+              className={`p-4 h-auto transition-all duration-300 rounded-2xl ${
+                selectedMood === mood 
+                  ? "bg-fashion-accent text-white border-fashion-accent" 
+                  : "bg-white/5 border-white/20 text-white hover:bg-fashion-accent/20"
+              }`}
               onClick={() => handleMoodSelect(mood)}
             >
               <span className="mr-2 text-lg">{moodIcons[mood]}</span>

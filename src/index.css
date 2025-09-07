@@ -70,14 +70,20 @@
     --radius: 0.5rem;
   }
 
-  /* Netflix-inspired theme colors */
+  /* Sophisticated color palette inspired by premium fashion sites */
   :root {
-    --netflix-red: 357 92% 47%;
-    --netflix-black: 0 0% 8%;
-    --netflix-dark-gray: 0 0% 18%;
-    --netflix-medium-gray: 0 0% 30%;
-    --netflix-light-gray: 0 0% 45%;
-    --netflix-white: 0 0% 100%;
+    --fashion-primary: 263 88% 59%;      /* Deep purple for elegance */
+    --fashion-accent: 268 91% 67%;       /* Vibrant purple accent */
+    --fashion-neutral-dark: 224 71% 4%;   /* Rich dark background */
+    --fashion-neutral-mid: 215 25% 27%;   /* Medium neutral */
+    --fashion-neutral-light: 213 27% 84%; /* Light neutral */
+    --fashion-glass: 0 0% 100% / 0.1;     /* Glass effect */
+    --fashion-glow: 268 91% 67% / 0.3;    /* Glow effect */
+    
+    /* Gradient definitions */
+    --gradient-hero: linear-gradient(135deg, hsl(263 88% 59%), hsl(268 91% 67%));
+    --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+    --gradient-overlay: linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.1));
   }
 }
 
@@ -91,13 +97,25 @@
   }
 }
 
-/* Netflix-inspired components */
-.bg-netflix-card {
-  @apply bg-[#181818] border-[#404040];
+/* Fashion-inspired components */
+.bg-fashion-glass {
+  @apply bg-white/10 backdrop-blur-xl border border-white/20;
 }
 
-.text-netflix-text {
-  @apply text-[#e5e5e5];
+.text-fashion-primary {
+  @apply text-fashion-primary;
+}
+
+.fashion-hero-text {
+  @apply bg-gradient-to-r from-fashion-primary to-fashion-accent bg-clip-text text-transparent;
+}
+
+.fashion-glow {
+  box-shadow: 0 20px 60px hsl(var(--fashion-glow));
+}
+
+.fashion-card-hover {
+  @apply transition-all duration-300 hover:scale-105 hover:shadow-2xl;
 }
 
 /* Custom animation for remarks */
