@@ -129,13 +129,13 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
 
 
   return (
-    <div className="space-y-6 bg-fashion-glass p-6 rounded-xl shadow-xl backdrop-blur-xl border border-white/20">
+    <div className="space-y-6 bg-netflix-card p-6 rounded-lg shadow-lg">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h2 className="text-xl font-semibold fashion-hero-text">Items in this Look</h2>
+        <h2 className="text-xl font-semibold">Items in this Look</h2>
         <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
           <Button
             onClick={handleAddToCart}
-            className="bg-accent hover:bg-accent/80 w-full md:w-auto"
+            className="bg-netflix-accent hover:bg-netflix-accent/80 w-full md:w-auto"
             disabled={selectedItems.length === 0}
           >
             Add Selected to Cart
@@ -143,7 +143,7 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
           <Button
             onClick={handleAddCompleteLook}
             variant="outline"
-            className="border-accent text-accent hover:bg-accent/10 w-full md:w-auto"
+            className="border-netflix-accent text-netflix-accent hover:bg-netflix-accent/10 w-full md:w-auto"
           >
             Buy the Look
           </Button>
@@ -154,7 +154,7 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
         {look.items.map((item) => (
           <div 
             key={item.id}
-            className="flex flex-col md:flex-row items-start gap-4 p-6 rounded-lg group relative hover:bg-accent/10 transition-colors border border-white/10 backdrop-blur-sm"
+            className="flex flex-col md:flex-row items-start gap-4 p-6 rounded-lg group relative hover:bg-netflix-card/80 transition-colors border border-gray-700"
           >
             <div className="flex items-center gap-4">
               <Checkbox
@@ -176,11 +176,11 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
                 >
                   {item.title}
                 </label>
-                <p className="text-accent text-lg font-semibold">{item.price}</p>
+                <p className="text-netflix-accent text-lg font-semibold">{item.price}</p>
               </div>
-              <p className="text-muted-foreground text-sm">{item.description || `${item.type || 'Item'} for your collection`}</p>
+              <p className="text-gray-400 text-sm">{item.description || `${item.type || 'Item'} for your collection`}</p>
               <div className="flex items-center gap-4 mt-3">
-                <span className="text-sm text-muted-foreground">Size:</span>
+                <span className="text-sm text-gray-400">Size:</span>
                 <Select
                   value={selectedSizes[item.id] || ""}
                   onValueChange={(value) => handleSizeSelect(item.id, value)}
@@ -198,7 +198,7 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
                 </Select>
               </div>
               {item.type && (
-                <p className="text-sm text-muted-foreground mt-2">Type: {item.type}</p>
+                <p className="text-sm text-gray-400 mt-2">Type: {item.type}</p>
               )}
               <div className="flex items-center gap-2 mt-3">
                 <AffiliateLink item={item} />
