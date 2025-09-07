@@ -77,8 +77,8 @@ export const FreeTextStyleInput = ({ onStyleAnalyzed }: FreeTextStyleInputProps)
   const handleAnalyze = async () => {
     if (!inputText.trim()) {
       toast({
-        title: "נא להכניס תיאור",
-        description: "אנא כתוב מה אתה מחפש כדי שנוכל לעזור לך",
+        title: "Please enter a description",
+        description: "Please write what you're looking for so we can help you",
         variant: "destructive",
       });
       return;
@@ -93,16 +93,16 @@ export const FreeTextStyleInput = ({ onStyleAnalyzed }: FreeTextStyleInputProps)
       const analyzedFilters = await analyzeStyleRequest(inputText);
       
       toast({
-        title: "ניתוח הושלם!",
-        description: "מחפש עבורך את הפריטים המתאימים ביותר",
+        title: "Analysis complete!",
+        description: "Finding the best matching items for you",
       });
       
       onStyleAnalyzed(analyzedFilters);
       setInputText("");
     } catch (error) {
       toast({
-        title: "שגיאה בניתוח",
-        description: "נסה שוב או השתמש בפילטרים הרגילים",
+        title: "Analysis error",
+        description: "Try again or use the regular filters",
         variant: "destructive",
       });
     } finally {
@@ -115,12 +115,12 @@ export const FreeTextStyleInput = ({ onStyleAnalyzed }: FreeTextStyleInputProps)
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-netflix-accent">
           <Sparkles className="w-5 h-5" />
-          ספר לנו מה אתה מחפש
+          Tell us what you're looking for
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <Textarea
-          placeholder="למשל: 'אני מחפש משהו אלגנטי לעבודה שלא יעלה יותר מדי' או 'רוצה משהו צעיר וטרנדי למסיבה'"
+          placeholder="e.g., 'I'm looking for something elegant for work that won't cost too much' or 'I want something young and trendy for a party'"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           className="resize-none bg-netflix-background border-netflix-border text-netflix-text placeholder:text-netflix-text/60"
@@ -131,7 +131,7 @@ export const FreeTextStyleInput = ({ onStyleAnalyzed }: FreeTextStyleInputProps)
           disabled={isAnalyzing}
           className="w-full bg-netflix-accent hover:bg-netflix-accent/90 text-white"
         >
-          {isAnalyzing ? "מנתח..." : "חפש עבורי"}
+          {isAnalyzing ? "Analyzing..." : "Search for me"}
         </Button>
       </CardContent>
     </Card>
