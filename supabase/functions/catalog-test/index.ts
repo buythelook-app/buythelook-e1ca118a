@@ -23,6 +23,12 @@ serve(async (req) => {
     const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
     const RAPIDAPI_HOST = Deno.env.get('RAPIDAPI_HOST') || 'asos-scraper.p.rapidapi.com';
     const RAPIDAPI_BASE_URL = Deno.env.get('RAPIDAPI_BASE_URL') || 'https://asos-scraper.p.rapidapi.com';
+    
+    // Diagnostic logging
+    console.log('[catalog-test] RAPIDAPI_KEY set?', Boolean(!!RAPIDAPI_KEY));
+    console.log('[catalog-test] RAPIDAPI_HOST:', RAPIDAPI_HOST);
+    console.log('[catalog-test] RAPIDAPI_BASE_URL:', RAPIDAPI_BASE_URL);
+    
     if (!RAPIDAPI_KEY) {
       return new Response(JSON.stringify({ success: false, error: 'Missing RAPIDAPI_KEY secret' }), {
         status: 400,
