@@ -38,7 +38,7 @@ export const Auth = () => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-white flex items-center justify-center p-4 overflow-hidden">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 overflow-hidden">
         <AnimatedBackground />
         {authError && (
           <div className="absolute top-4 left-0 right-0 mx-auto w-full max-w-md px-4 z-50">
