@@ -41,7 +41,7 @@ export const AuthForm = ({ isSignIn, onToggleAuthMode }: AuthFormProps) => {
         >
           <Button
             variant="link"
-            className="text-netflix-accent mt-2"
+            className="text-fashion-primary mt-2"
             onClick={onToggleAuthMode}
           >
             {isSignIn ? "Create an account" : "Sign in"}

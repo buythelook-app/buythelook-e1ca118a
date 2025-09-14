@@ -13,7 +13,7 @@ export const AIButton = ({ isLoading, onClick }: AIButtonProps) => {
       isLoading={isLoading}
       onClick={onClick}
       icon={<Bot className="mr-2 h-4 w-4" />}
-      className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 border-transparent"
+      className="bg-fashion-primary text-white hover:bg-fashion-accent border-transparent"
     >
       AI-Powered Sign In
     </SocialAuthButton>
