@@ -38,6 +38,7 @@ import CatalogDemo from './pages/CatalogDemo';
 import TestApi from './pages/TestApi';
 import AgentHealthPage from './pages/AgentHealth';
 import ApiTest from './pages/ApiTest';
+import { ProductLinks } from './pages/ProductLinks';
 
 // Create QueryClient instance with error handling
 const queryClient = new QueryClient({
@@ -79,6 +80,7 @@ function App() {
             <Route path="/cart" element={<Cart />} />
             <Route path="/my-list" element={<MyList />} />
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/product-links" element={<ProductLinks />} />
             <Route path="/suggestions" element={<LookSuggestions />} />
             
             {/* User account */}

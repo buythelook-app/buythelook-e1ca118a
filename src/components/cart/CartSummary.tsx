@@ -21,8 +21,8 @@ export const CartSummary = ({ total, onClearCart }: CartSummaryProps) => {
         </Button>
         <Button 
           variant="outline" 
-          onClick={() => navigate("/checkout")}
-          className="bg-netflix-accent text-white hover:bg-netflix-accent/90"
+          onClick={() => navigate("/product-links")}
+          className="bg-blue-600 text-white hover:bg-blue-700 border-0"
         >
           Go to Purchase
         </Button>
