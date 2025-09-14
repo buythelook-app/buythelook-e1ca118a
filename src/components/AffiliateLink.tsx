@@ -61,7 +61,7 @@ export const AffiliateLink = ({ item, className, children }: AffiliateLinkProps)
       {children || (
         <>
           <ExternalLink className="h-4 w-4" />
-          לרכישה
+          Buy Now
         </>
       )}
     </Button>

@@ -73,7 +73,7 @@ export const LookItem = ({ item }: LookItemProps) => {
           size="sm"
         >
           <ExternalLink className="h-4 w-4" />
-          לרכישה
+          Buy Now
         </Button>
         <Button
           variant="ghost"
