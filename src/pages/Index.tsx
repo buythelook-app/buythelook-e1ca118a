@@ -87,7 +87,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background/95 via-accent/5 to-primary/5">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div>
         <HeroSection />
