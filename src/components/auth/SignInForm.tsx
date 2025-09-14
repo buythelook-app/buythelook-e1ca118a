@@ -115,7 +115,7 @@ export const SignInForm = () => {
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-netflix-accent">Sign In</h1>
+        <h1 className="text-3xl font-bold text-fashion-primary">Sign In</h1>
         <p className="text-muted-foreground mt-2">Welcome back to Buy the Look</p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -149,7 +149,7 @@ export const SignInForm = () => {
         </div>
         <Button 
           type="submit" 
-          className="w-full bg-netflix-accent hover:bg-netflix-accent/90"
+          className="w-full bg-fashion-primary hover:bg-fashion-accent"
           disabled={isSubmitting}
         >
           {isSubmitting ? "Signing in..." : "Sign In"}
@@ -160,7 +160,7 @@ export const SignInForm = () => {
         <Button
           variant="link"
           size="sm"
-          className="text-netflix-accent"
+          className="text-fashion-primary"
           onClick={handleForgotPassword}
           disabled={isRecoveringPassword}
         >

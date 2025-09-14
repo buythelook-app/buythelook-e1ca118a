@@ -70,7 +70,7 @@ export const SignUpForm = () => {
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-netflix-accent">Create Account</h1>
+        <h1 className="text-3xl font-bold text-fashion-primary">Create Account</h1>
         <p className="text-muted-foreground mt-2">Join Buy the Look today</p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -123,7 +123,7 @@ export const SignUpForm = () => {
         </Button>
         <Button 
           type="submit" 
-          className="w-full bg-netflix-accent hover:bg-netflix-accent/90"
+          className="w-full bg-fashion-primary hover:bg-fashion-accent"
           disabled={isSubmitting}
         >
           {isSubmitting ? "Creating Account..." : "Create Account"}
