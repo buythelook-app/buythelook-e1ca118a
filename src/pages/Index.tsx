@@ -62,7 +62,7 @@ const Index = () => {
 
   // For when no style is defined
   const renderNoStyleContent = useMemo(() => (
-    <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background">
+    <div className="min-h-screen bg-gradient-to-br from-background/95 via-accent/5 to-primary/5">
       <Navbar />
       <div className="container mx-auto px-4 py-16 text-center">
         <div className="bg-fashion-glass rounded-2xl p-8 max-w-md mx-auto">
@@ -87,7 +87,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background">
+    <div className="min-h-screen bg-gradient-to-br from-background/95 via-accent/5 to-primary/5">
       <Navbar />
       <div>
         <HeroSection />
