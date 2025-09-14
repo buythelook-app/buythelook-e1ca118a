@@ -82,7 +82,30 @@ export const useGoogleAuth = ({
             stack: error.stack
           }
         });
-        throw error;
+        
+        // Handle specific OAuth errors
+        if (error.message.includes('oauth_provider_not_supported')) {
+          toast({
+            title: "Google Auth Not Configured",
+            description: "Google authentication is not properly configured. Please contact the administrator.",
+            variant: "destructive",
+          });
+        } else if (error.message.includes('signin_url_error')) {
+          toast({
+            title: "Configuration Error",
+            description: "Authentication URLs are not properly configured. Please contact the administrator.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Google Sign-in Error",
+            description: error.message || "Failed to start Google authentication",
+            variant: "destructive",
+          });
+        }
+        
+        resetLoadingState();
+        return;
       }
       
       logger.info("Google sign-in initiated:", { 
