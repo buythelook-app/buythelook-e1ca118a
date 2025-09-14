@@ -44,8 +44,8 @@ export const LookDetail = () => {
 
   if (!look) {
     return (
-      <div className="min-h-screen bg-netflix-background flex items-center justify-center">
-        <div className="animate-pulse">Loading look details...</div>
+      <div className="min-h-screen bg-gradient-to-br from-background/95 via-accent/5 to-primary/5 flex items-center justify-center">
+        <div className="animate-pulse text-gray-600">Loading look details...</div>
       </div>
     );
   }
@@ -59,29 +59,29 @@ export const LookDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-background/95 via-accent/5 to-primary/5 text-gray-900 p-4 md:p-6">
       <div className="container mx-auto max-w-7xl">
         <Button 
           variant="ghost" 
           onClick={() => navigate('/home')}
-          className="mb-4 md:mb-6 text-white"
+          className="mb-4 md:mb-6 text-blue-700 hover:text-blue-800 hover:bg-blue-50"
         >
           ← Back
         </Button>
 
         <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-[#1E1E1E] p-8 rounded-xl shadow-xl">
+            <div className="bg-white rounded-xl shadow-lg border border-blue-100 p-8">
               <div className="flex flex-col gap-4">
                 <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-semibold">{look.title}</h2>
+                  <h2 className="text-2xl font-semibold text-gray-900">{look.title}</h2>
                   {userStyle && (
-                    <span className="bg-netflix-accent/20 text-netflix-accent px-3 py-1 rounded-full text-sm">
+                    <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
                       {userStyle} style
                     </span>
                   )}
                 </div>
-                <p className="text-gray-400">{look.description}</p>
+                <p className="text-gray-600">{look.description}</p>
                 <div className="relative aspect-[3/4] w-full bg-white rounded-lg overflow-hidden">
                   <LookCanvas 
                     items={look.items.map((item: any) => ({
