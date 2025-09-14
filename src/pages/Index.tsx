@@ -92,13 +92,15 @@ const Index = () => {
       <div>
         <HeroSection />
       </div>
-      <main className="container mx-auto px-4 py-8">
-        <FreeTextStyleInput onStyleAnalyzed={handleStyleAnalyzed} />
-        
-        <div className="mb-8">
-          <MoodFilter selectedMood={selectedMood} onMoodSelect={handleMoodSelect} />
+      <main className="container mx-auto px-4 py-8 bg-gray-50">
+        <div className="bg-gray-50 py-6">
+          <FreeTextStyleInput onStyleAnalyzed={handleStyleAnalyzed} />
+          
+          <div className="mb-8">
+            <MoodFilter selectedMood={selectedMood} onMoodSelect={handleMoodSelect} />
+          </div>
+          <FilterOptions />
         </div>
-        <FilterOptions />
         <section className="py-8">
           <div className="container mx-auto px-4">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
