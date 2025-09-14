@@ -214,7 +214,7 @@ export const Cart = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 p-6">
+    <div className="min-h-screen bg-gray-50 text-gray-900 p-6">
       <div className="container mx-auto">
         <Button 
           variant="ghost" 
