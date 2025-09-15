@@ -87,13 +87,13 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50/80 via-indigo-50/60 to-slate-100/90">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div>
         <HeroSection />
       </div>
-      <main className="container mx-auto px-4 py-8 bg-gradient-to-br from-blue-50/30 via-white/50 to-indigo-50/40">
-        <div className="bg-white/40 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg">
+      <main className="container mx-auto px-4 py-8 bg-gray-50">
+        <div className="bg-gradient-to-br from-blue-50/80 via-indigo-50/60 to-slate-100/90 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg">
           <FreeTextStyleInput onStyleAnalyzed={handleStyleAnalyzed} />
           
           <div className="mb-8">
