@@ -116,7 +116,7 @@ export const Navbar = () => {
             <ShoppingCart className="h-5 w-5 text-white" />
             {totalCartItems > 0 && (
               <Badge 
-                className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-netflix-accent text-[10px]"
+                className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-fashion-primary text-[10px]"
               >
                 {cartDisplayCount}
               </Badge>
