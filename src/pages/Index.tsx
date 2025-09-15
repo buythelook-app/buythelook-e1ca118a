@@ -93,7 +93,7 @@ const Index = () => {
         <HeroSection />
       </div>
       <main className="container mx-auto px-4 py-8 bg-gray-50">
-        <div className="bg-gradient-to-br from-blue-50/80 via-indigo-50/60 to-slate-100/90 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg">
+        <div className="bg-gradient-to-br from-blue-100/90 via-indigo-100/80 to-slate-200/95 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg">
           <FreeTextStyleInput onStyleAnalyzed={handleStyleAnalyzed} />
           
           <div className="mb-8">
