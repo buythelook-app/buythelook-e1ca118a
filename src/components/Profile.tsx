@@ -141,11 +141,11 @@ export const Profile = () => {
 
   return (
     <div>
-      <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
+      <div className="min-h-screen bg-fashion-background text-fashion-text p-6">
         <div className="container max-w-3xl mx-auto">
-          <Card className="bg-netflix-card border-netflix-accent">
+          <Card className="bg-fashion-card border-fashion-primary">
             <CardHeader>
-              <CardTitle className="text-2xl font-display font-bold text-netflix-accent">
+              <CardTitle className="text-2xl font-display font-bold text-fashion-primary">
                 Buy The Look
               </CardTitle>
               <div className="flex items-center gap-4 mt-4">
@@ -161,24 +161,24 @@ export const Profile = () => {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="profile" className="space-y-6">
-                <TabsList className="grid grid-cols-5 gap-4 bg-netflix-background p-2">
-                  <TabsTrigger value="profile" className="data-[state=active]:bg-netflix-accent">
+                <TabsList className="grid grid-cols-5 gap-4 bg-fashion-background p-2">
+                  <TabsTrigger value="profile" className="data-[state=active]:bg-fashion-primary">
                     <User className="mr-2 h-4 w-4" />
                     My Profile
                   </TabsTrigger>
-                  <TabsTrigger value="orders" className="data-[state=active]:bg-netflix-accent">
+                  <TabsTrigger value="orders" className="data-[state=active]:bg-fashion-primary">
                     <Package className="mr-2 h-4 w-4" />
                     My Orders
                   </TabsTrigger>
-                  <TabsTrigger value="payments" className="data-[state=active]:bg-netflix-accent">
+                  <TabsTrigger value="payments" className="data-[state=active]:bg-fashion-primary">
                     <CreditCard className="mr-2 h-4 w-4" />
                     Payment Methods
                   </TabsTrigger>
-                  <TabsTrigger value="settings" className="data-[state=active]:bg-netflix-accent">
+                  <TabsTrigger value="settings" className="data-[state=active]:bg-fashion-primary">
                     <Settings className="mr-2 h-4 w-4" />
                     Settings
                   </TabsTrigger>
-                  <TabsTrigger value="looks" className="data-[state=active]:bg-netflix-accent">
+                  <TabsTrigger value="looks" className="data-[state=active]:bg-fashion-primary">
                     <Shirt className="mr-2 h-4 w-4" />
                     My Looks
                   </TabsTrigger>
@@ -194,7 +194,7 @@ export const Profile = () => {
                           <Input 
                             id="firstName" 
                             placeholder="First Name" 
-                            className="bg-netflix-background"
+                            className="bg-fashion-background"
                             value={formData.firstName}
                             onChange={handleInputChange}
                           />
@@ -204,7 +204,7 @@ export const Profile = () => {
                           <Input 
                             id="lastName" 
                             placeholder="Last Name" 
-                            className="bg-netflix-background"
+                            className="bg-fashion-background"
                             value={formData.lastName}
                             onChange={handleInputChange}
                           />
@@ -218,7 +218,7 @@ export const Profile = () => {
                           type="email" 
                           value={userEmail}
                           readOnly
-                          className="bg-netflix-background opacity-50"
+                          className="bg-fashion-background opacity-50"
                         />
                       </div>
 
@@ -228,13 +228,13 @@ export const Profile = () => {
                           id="phone" 
                           type="tel" 
                           placeholder="Phone Number" 
-                          className="bg-netflix-background"
+                          className="bg-fashion-background"
                           value={formData.phone}
                           onChange={handleInputChange}
                         />
                       </div>
 
-                      <Button type="submit" className="w-full bg-netflix-accent hover:bg-netflix-accent/90">
+                      <Button type="submit" className="w-full bg-fashion-primary hover:bg-fashion-primary/90">
                         Save Changes
                       </Button>
                     </form>
@@ -243,7 +243,7 @@ export const Profile = () => {
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Style Quiz Results</h3>
                     {quizData ? (
-                      <Card className="bg-netflix-background">
+                      <Card className="bg-fashion-background">
                         <CardContent className="p-4">
                           <div className="grid grid-cols-2 gap-4">
                             <div>
@@ -274,12 +274,12 @@ export const Profile = () => {
                         </CardContent>
                       </Card>
                     ) : (
-                      <Card className="bg-netflix-background">
+                      <Card className="bg-fashion-background">
                         <CardContent className="p-4">
                           <p className="text-center text-gray-400">No quiz results yet</p>
                           <Button 
                             onClick={() => navigate('/quiz')}
-                            className="w-full mt-4 bg-netflix-accent hover:bg-netflix-accent/90"
+                            className="w-full mt-4 bg-fashion-primary hover:bg-fashion-primary/90"
                           >
                             Take Style Quiz
                           </Button>
@@ -290,7 +290,7 @@ export const Profile = () => {
 
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">My Credits</h3>
-                    <Card className="bg-netflix-background">
+                    <Card className="bg-fashion-background">
                       <CardContent className="p-4">
                         <p className="text-2xl font-bold">0 Points</p>
                         <p className="text-sm text-gray-400">Available Credits</p>
@@ -305,14 +305,14 @@ export const Profile = () => {
                       mockOrders.map((order) => (
                         <div 
                           key={order.id}
-                          className="bg-netflix-background p-4 rounded-lg flex justify-between items-center"
+                          className="bg-fashion-background p-4 rounded-lg flex justify-between items-center"
                         >
                           <div>
                             <p className="font-medium">Order #{order.id}</p>
                             <p className="text-sm text-gray-400">{order.date}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-netflix-accent">${order.total}</p>
+                            <p className="text-fashion-primary">${order.total}</p>
                             <p className="text-sm">{order.status}</p>
                           </div>
                         </div>
@@ -334,13 +334,13 @@ export const Profile = () => {
                     ) : (
                       <div className="flex flex-col gap-4">
                         <button
-                          className="flex items-center gap-2 bg-netflix-background hover:bg-netflix-background/80 text-netflix-text px-6 py-3 rounded-lg transition-colors w-full"
+                          className="flex items-center gap-2 bg-fashion-background hover:bg-fashion-background/80 text-fashion-text px-6 py-3 rounded-lg transition-colors w-full"
                           onClick={() => setShowCreditCardForm(true)}
                         >
                           <CreditCard className="w-6 h-6" />
                           <span>Credit Card</span>
                         </button>
-                        <button className="flex items-center gap-2 bg-netflix-background hover:bg-netflix-background/80 text-netflix-text px-6 py-3 rounded-lg transition-colors w-full">
+                        <button className="flex items-center gap-2 bg-fashion-background hover:bg-fashion-background/80 text-fashion-text px-6 py-3 rounded-lg transition-colors w-full">
                           <Apple className="w-6 h-6" />
                           <span>Apple Pay</span>
                         </button>
@@ -348,7 +348,7 @@ export const Profile = () => {
                     )}
                     {!showCreditCardForm && (
                       <Button
-                        className="w-full bg-netflix-accent hover:bg-netflix-accent/90 mt-4"
+                        className="w-full bg-fashion-primary hover:bg-fashion-primary/90 mt-4"
                         onClick={() => setShowCreditCardForm(true)}
                       >
                         Add New Payment Method
