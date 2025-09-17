@@ -2,6 +2,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQuizContext } from "./QuizContext";
 
 interface QuizContainerProps {
   children: {
@@ -12,18 +13,24 @@ interface QuizContainerProps {
 
 export const QuizContainer = ({ children }: QuizContainerProps) => {
   const navigate = useNavigate();
+  const { step } = useQuizContext();
+  
+  // Hide back button for style comparison steps (8-13)
+  const shouldShowBackButton = step < 8;
 
   return (
     <div className="min-h-screen bg-white text-gray-800 py-6">
       <div className="container max-w-6xl mx-auto px-4">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate(-1)}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
+        {shouldShowBackButton && (
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(-1)}
+            className="mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar for answers summary */}
