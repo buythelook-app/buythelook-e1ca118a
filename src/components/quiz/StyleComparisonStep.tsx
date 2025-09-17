@@ -102,7 +102,7 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
         <div className="flex flex-col space-y-2">
           <div 
             className={`relative cursor-pointer group flex-1 ${
-              isSelected(style1.name) ? 'ring-2 ring-netflix-accent' : ''
+              isSelected(style1.name) ? 'ring-2 ring-fashion-primary' : ''
             }`}
             onClick={() => handleStyleSelect(style1.name)}
           >
@@ -114,8 +114,8 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
               }`}
             />
             {isSelected(style1.name) && (
-              <div className="absolute inset-0 bg-netflix-accent/20 rounded-lg flex items-center justify-center">
-                <div className="bg-netflix-accent text-white px-2 py-1 rounded-full text-xs">
+              <div className="absolute inset-0 bg-fashion-primary/20 rounded-lg flex items-center justify-center">
+                <div className="bg-fashion-primary text-white px-2 py-1 rounded-full text-xs">
                   Current Preference
                 </div>
               </div>
@@ -126,7 +126,7 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
         <div className="flex flex-col space-y-2">
           <div 
             className={`relative cursor-pointer group flex-1 ${
-              isSelected(style2.name) ? 'ring-2 ring-netflix-accent' : ''
+              isSelected(style2.name) ? 'ring-2 ring-fashion-primary' : ''
             }`}
             onClick={() => handleStyleSelect(style2.name)}
           >
@@ -138,8 +138,8 @@ export const StyleComparisonStep = ({ style1, style2, onSelect }: StyleCompariso
               }`}
             />
             {isSelected(style2.name) && (
-              <div className="absolute inset-0 bg-netflix-accent/20 rounded-lg flex items-center justify-center">
-                <div className="bg-netflix-accent text-white px-2 py-1 rounded-full text-xs">
+              <div className="absolute inset-0 bg-fashion-primary/20 rounded-lg flex items-center justify-center">
+                <div className="bg-fashion-primary text-white px-2 py-1 rounded-full text-xs">
                   Current Preference
                 </div>
               </div>

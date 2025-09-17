@@ -77,7 +77,7 @@ export const PhotoUploadStep = ({ photo, onPhotoChange }: PhotoUploadStepProps) 
       <div className="flex-1 flex flex-col items-center justify-center space-y-4">
         <div className="w-full max-w-xs">
           <Label htmlFor="photo" className="cursor-pointer">
-            <div className={`border-2 border-dashed ${isUploading ? 'border-gray-400' : 'border-netflix-accent'} rounded-lg p-8 text-center hover:bg-netflix-card transition-colors`}>
+            <div className={`border-2 border-dashed ${isUploading ? 'border-gray-400' : 'border-fashion-primary'} rounded-lg p-8 text-center hover:bg-fashion-card transition-colors`}>
               <Upload className="mx-auto mb-4" />
               <p>{isUploading ? 'Uploading...' : 'Click to upload or drag and drop'}</p>
               <p className="text-sm text-gray-400">PNG, JPG up to 10MB</p>
@@ -86,7 +86,7 @@ export const PhotoUploadStep = ({ photo, onPhotoChange }: PhotoUploadStepProps) 
                 <div className="w-full mt-4">
                   <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-netflix-accent transition-all duration-300 ease-in-out" 
+                      className="h-full bg-fashion-primary transition-all duration-300 ease-in-out" 
                       style={{ width: `${uploadProgress}%` }}
                     ></div>
                   </div>
@@ -106,7 +106,7 @@ export const PhotoUploadStep = ({ photo, onPhotoChange }: PhotoUploadStepProps) 
         </div>
         {photo && !isUploading && (
           <div className="text-center">
-            <p className="text-netflix-accent">Photo uploaded: {photo.name}</p>
+            <p className="text-fashion-primary">Photo uploaded: {photo.name}</p>
             <img 
               src={URL.createObjectURL(photo)} 
               alt="Preview" 
