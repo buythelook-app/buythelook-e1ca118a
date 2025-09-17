@@ -178,7 +178,7 @@ export const MeasurementsStep = ({
               type="button" 
               variant={skipHeight ? "default" : "outline"}
               onClick={handleSkipHeight}
-              className={`mt-2 ${skipHeight ? "bg-fashion-primary hover:bg-fashion-primary/80" : ""}`}
+              className={`mt-2 transition-all duration-150 ${skipHeight ? "bg-fashion-primary hover:bg-fashion-primary/80" : ""}`}
             >
               {skipHeight ? "Add my height" : "Prefer not to answer"}
             </Button>
@@ -206,7 +206,7 @@ export const MeasurementsStep = ({
                 // Allow any input including empty string
                 onWeightChange(value === "" ? "" : value);
               }}
-              className="w-full"
+              className="w-full transition-all duration-150"
               disabled={weight === "prefer_not_to_answer"}
               inputMode="numeric"
               min="0"
@@ -221,7 +221,7 @@ export const MeasurementsStep = ({
             type="button" 
             variant={weight === "prefer_not_to_answer" ? "default" : "outline"}
             onClick={handleSkipWeight}
-            className={`mt-2 ${weight === "prefer_not_to_answer" ? "bg-fashion-primary hover:bg-fashion-primary/80" : ""}`}
+            className={`mt-2 transition-all duration-150 ${weight === "prefer_not_to_answer" ? "bg-fashion-primary hover:bg-fashion-primary/80" : ""}`}
           >
             {weight === "prefer_not_to_answer" ? "Add my weight" : "Prefer not to answer"}
           </Button>
@@ -252,7 +252,7 @@ export const MeasurementsStep = ({
                 onWaistChange(Math.round(parseFloat(value) * 2.54).toString());
               }
             }}
-            className="w-full mt-1"
+            className="w-full mt-1 transition-all duration-150"
             disabled={waist === "prefer_not_to_answer"}
             inputMode="numeric"
             min="0"
@@ -261,7 +261,7 @@ export const MeasurementsStep = ({
             type="button" 
             variant={waist === "prefer_not_to_answer" ? "default" : "outline"}
             onClick={handleSkipWaist}
-            className={`mt-2 w-full ${waist === "prefer_not_to_answer" ? "bg-fashion-primary hover:bg-fashion-primary/80" : ""}`}
+            className={`mt-2 w-full transition-all duration-150 ${waist === "prefer_not_to_answer" ? "bg-fashion-primary hover:bg-fashion-primary/80" : ""}`}
           >
             {waist === "prefer_not_to_answer" ? "Add my waist measurement" : "Prefer not to answer"}
           </Button>
@@ -284,7 +284,7 @@ export const MeasurementsStep = ({
                 onChestChange(Math.round(parseFloat(value) * 2.54).toString());
               }
             }}
-            className="w-full mt-1"
+            className="w-full mt-1 transition-all duration-150"
             disabled={chest === "prefer_not_to_answer"}
             inputMode="numeric"
             min="0"
@@ -293,7 +293,7 @@ export const MeasurementsStep = ({
             type="button" 
             variant={chest === "prefer_not_to_answer" ? "default" : "outline"}
             onClick={handleSkipChest}
-            className={`mt-2 w-full ${chest === "prefer_not_to_answer" ? "bg-fashion-primary hover:bg-fashion-primary/80" : ""}`}
+            className={`mt-2 w-full transition-all duration-150 ${chest === "prefer_not_to_answer" ? "bg-fashion-primary hover:bg-fashion-primary/80" : ""}`}
           >
             {chest === "prefer_not_to_answer" ? "Add my chest measurement" : "Prefer not to answer"}
           </Button>
