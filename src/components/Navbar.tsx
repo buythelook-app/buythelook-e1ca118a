@@ -14,6 +14,7 @@ import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useCartStore } from "./Cart";
 import { Badge } from "./ui/badge";
 import { supabase } from "@/lib/supabase";
+import { FairyAssistant } from "./FairyAssistant";
 
 export const Navbar = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -165,6 +166,12 @@ export const Navbar = () => {
       <ShippingAddress 
         isOpen={showShippingAddress} 
         onClose={() => setShowShippingAddress(false)} 
+      />
+      
+      {/* Dynamic Fairy Assistant */}
+      <FairyAssistant 
+        isAuthenticated={isAuthenticated}
+        firstName={firstName}
       />
     </nav>
   );
