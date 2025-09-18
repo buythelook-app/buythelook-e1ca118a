@@ -129,7 +129,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
         <div className="relative">
           {/* Fairy Image - using only the fairy */}
           <div className={`
-            w-16 h-16 rounded-full bg-gradient-to-br from-fashion-primary to-fashion-accent 
+            w-24 h-24 rounded-full bg-gradient-to-br from-fashion-primary to-fashion-accent 
             flex items-center justify-center shadow-lg transform transition-all duration-300
             ${isExpanded ? 'shadow-xl scale-110' : 'hover:scale-105'}
             border-2 border-white/20
@@ -137,7 +137,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
             <img 
               src="/lovable-uploads/fairy-only.png" 
               alt="Fashion Fairy Assistant" 
-              className="w-12 h-12 object-contain"
+              className="w-20 h-20 object-contain"
             />
           </div>
           
