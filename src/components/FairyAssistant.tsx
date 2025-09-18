@@ -106,7 +106,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
 
   const getUserGreeting = () => {
     const hour = new Date().getHours();
-    const timeGreeting = hour < 12 ? 'בוקר טוב' : hour < 18 ? 'צהריים טובים' : 'ערב טוב';
+    const timeGreeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
     return firstName ? `${timeGreeting}, ${firstName}!` : `${timeGreeting}!`;
   };
 
@@ -137,7 +137,8 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
             <img 
               src="/lovable-uploads/36f503f4-5335-485a-84dd-293fee3fc453.png" 
               alt="Fashion Fairy Assistant" 
-              className="w-12 h-12 object-contain filter brightness-110"
+              className="w-12 h-12 object-cover object-center filter brightness-110 scale-150"
+              style={{ objectPosition: '30% 50%' }}
             />
           </div>
           
@@ -189,7 +190,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
                   onClick={() => handleActionClick('sign_up')}
                   className="text-xs bg-fashion-primary hover:bg-fashion-primary/90"
                 >
-                  הרשמה
+                  Sign Up
                 </Button>
               )}
               
@@ -200,7 +201,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
                   onClick={() => handleActionClick('start_quiz')}
                   className="text-xs border-fashion-primary text-fashion-primary hover:bg-fashion-primary hover:text-white"
                 >
-                  שאלון סטיילינג
+                  Styling Quiz
                 </Button>
               )}
             </div>
@@ -228,7 +229,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-gray-800 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-fashion-primary" />
-                    עוזרת האופנה שלך
+                    Your Fashion Assistant
                   </h3>
                   <Button
                     variant="ghost"
@@ -244,7 +245,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
               
               <div className="p-4 space-y-4">
                 <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-gray-700">מה אני יכולה לעזור לך?</h4>
+                  <h4 className="text-sm font-medium text-gray-700">How can I help you?</h4>
                   <div className="space-y-2">
                     <Button
                       variant="outline"
@@ -252,7 +253,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
                       onClick={() => handleActionClick('start_quiz')}
                       className="w-full justify-start text-xs"
                     >
-                      🎯 התחלת שאלון סטיילינג
+                      🎯 Start Styling Quiz
                     </Button>
                     <Button
                       variant="outline"
@@ -260,7 +261,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
                       onClick={() => handleActionClick('view_looks')}
                       className="w-full justify-start text-xs"
                     >
-                      👗 צפייה בהמלצות תלבושות
+                      👗 View Outfit Recommendations
                     </Button>
                     {!isAuthenticated && (
                       <Button
@@ -269,7 +270,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
                         onClick={() => handleActionClick('sign_up')}
                         className="w-full justify-start text-xs"
                       >
-                        ✨ הרשמה לחשבון
+                        ✨ Sign Up for Account
                       </Button>
                     )}
                   </div>
@@ -277,7 +278,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
                 
                 <div className="pt-2 border-t border-gray-100">
                   <p className="text-xs text-gray-500">
-                    אני כאן כדי להנחות אותך ולעזור לך למצוא את הסטיילינג המושלם עבורך!
+                    I'm here to guide you and help you find the perfect styling for you!
                   </p>
                 </div>
               </div>

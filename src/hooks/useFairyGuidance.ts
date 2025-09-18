@@ -20,57 +20,57 @@ export const useFairyGuidance = () => {
   const guidanceMap: Record<string, GuidanceMessage> = {
     // Home page guidance
     'home_welcome': {
-      message: "ברוכה הבאה! אני עוזרת האופנה שלך. בואי נתחיל ביצירת הפרופיל הסטיילינג שלך כדי שאוכל להמליץ לך על תלבושות מותאמות אישית!",
+      message: "Welcome! I'm your fashion assistant. Let's start by creating your styling profile so I can recommend personalized outfits for you!",
       duration: 10000,
       actions: ['start_quiz']
     },
     'home_returning_user': {
-      message: "שמחה לראות אותך שוב! האם את רוצה לעדכן את הפרופיל שלך או לצפות בהמלצות חדשות?",
+      message: "Great to see you again! Would you like to update your profile or view new recommendations?",
       duration: 8000,
       actions: ['view_looks', 'start_quiz']
     },
     'home_no_quiz': {
-      message: "כדי שאוכל להמליץ לך על תלבושות מותאמות אישית, בואי נתחיל בשאלון הסטיילינג המהיר שלנו!",
+      message: "To give you personalized outfit recommendations, let's start with our quick styling quiz!",
       duration: 8000,
       actions: ['start_quiz']
     },
 
     // Quiz guidance
     'quiz_start': {
-      message: "מעולה! השאלון יעזור לי להכיר אותך טוב יותר ולהתאים לך המלצות מדויקות. בואי נתחיל!",
+      message: "Excellent! This quiz will help me get to know you better and provide accurate recommendations. Let's begin!",
       duration: 6000
     },
     'quiz_progress': {
-      message: "את מתקדמת מצוין! עוד כמה שאלות ונוכל להתחיל ליצור עבורך המלצות מותאמות אישית.",
+      message: "You're doing great! Just a few more questions and we can start creating personalized recommendations for you.",
       duration: 5000
     },
 
     // Results guidance
     'results_ready': {
-      message: "הנה ההמלצות שלך! כל תלבושת נבחרה במיוחד עבורך בהתבסס על הסגנון והצבעים שאת אוהבת.",
+      message: "Here are your recommendations! Each outfit was specially selected for you based on your style and color preferences.",
       duration: 8000,
       actions: ['save_looks', 'view_more']
     },
 
     // Filter guidance
     'filters_help': {
-      message: "את יכולה לחדד את החיפוש שלך באמצעות הפילטרים. לדוגמה, בחרי אירוע מסוים או תקציב כדי לקבל המלצות מותאמות!",
+      message: "You can refine your search using filters. For example, choose a specific event or budget to get tailored recommendations!",
       duration: 7000
     },
 
     // Cart guidance
     'cart_help': {
-      message: "מצאת משהו שאת אוהבת? הוסיפי לעגלה ותוכלי לראות איך כל התלבושת נראית יחד!",
+      message: "Found something you love? Add it to your cart and see how the complete outfit looks together!",
       duration: 6000
     },
 
     // Idle messages
     'idle_home': {
-      message: "האם את צריכה עזרה במשהו? אני כאן כדי לעזור לך למצוא את הסטיילינג המושלם!",
+      message: "Do you need help with anything? I'm here to help you find the perfect styling!",
       duration: 6000
     },
     'idle_quiz': {
-      message: "קחי את הזמן שלך, אין צורך למהר. כל תשובה עוזרת לי להכיר אותך טוב יותר!",
+      message: "Take your time, no need to rush. Every answer helps me get to know you better!",
       duration: 5000
     }
   };
