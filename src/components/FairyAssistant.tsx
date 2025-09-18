@@ -120,7 +120,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
           isFloating ? 'animate-bounce' : ''
         }`}
         style={{
-          top: '250px',
+          top: '300px',
           left: '20px',
           transform: isExpanded ? 'scale(1.1)' : 'scale(1)',
         }}
@@ -160,7 +160,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
             isExpanded ? 'left-24' : 'left-24'
           }`}
           style={{
-            top: '240px',
+            top: '290px',
             maxWidth: '300px',
           }}
         >
@@ -220,7 +220,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
           onClick={() => setIsExpanded(false)}
         >
           <div 
-            className="absolute top-64 left-24 w-80 max-h-96 overflow-y-auto"
+            className="absolute top-80 left-24 w-80 max-h-96 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <Card className="bg-white border border-fashion-primary/20 shadow-2xl">
