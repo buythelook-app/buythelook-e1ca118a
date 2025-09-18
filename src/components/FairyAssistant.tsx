@@ -127,7 +127,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
         onClick={handleFairyClick}
       >
         <div className="relative">
-          {/* Fairy Image - using the logo */}
+          {/* Fairy Image - using only the fairy */}
           <div className={`
             w-16 h-16 rounded-full bg-gradient-to-br from-fashion-primary to-fashion-accent 
             flex items-center justify-center shadow-lg transform transition-all duration-300
@@ -135,10 +135,9 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
             border-2 border-white/20
           `}>
             <img 
-              src="/lovable-uploads/36f503f4-5335-485a-84dd-293fee3fc453.png" 
+              src="/lovable-uploads/fairy-only.png" 
               alt="Fashion Fairy Assistant" 
-              className="w-12 h-12 object-cover object-center filter brightness-110 scale-150"
-              style={{ objectPosition: '30% 50%' }}
+              className="w-12 h-12 object-contain"
             />
           </div>
           
