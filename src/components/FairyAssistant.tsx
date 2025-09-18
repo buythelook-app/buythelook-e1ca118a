@@ -120,7 +120,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
           isFloating ? 'animate-bounce' : ''
         }`}
         style={{
-          top: '120px',
+          top: '180px',
           left: '20px',
           transform: isExpanded ? 'scale(1.1)' : 'scale(1)',
         }}
@@ -129,7 +129,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
         <div className="relative">
           {/* Fairy Image - using only the fairy */}
           <div className={`
-            w-20 h-20 rounded-full bg-gradient-to-br from-fashion-primary to-fashion-accent 
+            w-14 h-14 rounded-full bg-gradient-to-br from-fashion-primary to-fashion-accent 
             flex items-center justify-center shadow-lg transform transition-all duration-300
             ${isExpanded ? 'shadow-xl scale-110' : 'hover:scale-105'}
             border-2 border-white/20
@@ -137,7 +137,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
             <img 
               src="/lovable-uploads/fairy-only.png" 
               alt="Fashion Fairy Assistant" 
-              className="w-24 h-24 object-contain"
+              className="w-16 h-16 object-contain"
             />
           </div>
           
@@ -160,7 +160,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
             isExpanded ? 'left-24' : 'left-24'
           }`}
           style={{
-            top: '110px',
+            top: '170px',
             maxWidth: '300px',
           }}
         >
@@ -220,7 +220,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
           onClick={() => setIsExpanded(false)}
         >
           <div 
-            className="absolute top-32 left-24 w-80 max-h-96 overflow-y-auto"
+            className="absolute top-48 left-24 w-80 max-h-96 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <Card className="bg-white border border-fashion-primary/20 shadow-2xl">
