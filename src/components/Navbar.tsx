@@ -14,6 +14,7 @@ import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useCartStore } from "./Cart";
 import { Badge } from "./ui/badge";
 import { supabase } from "@/lib/supabase";
+import { FashionAssistant } from "./FashionAssistant";
 
 export const Navbar = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -96,8 +97,10 @@ export const Navbar = () => {
   console.log("Current firstName:", firstName);
 
   return (
-    <nav className="fixed top-0 w-full z-50 px-4 py-1">
-      <div className="w-full flex items-center justify-between">
+    <>
+      <FashionAssistant />
+      <nav className="fixed top-0 w-full z-50 px-4 py-1">
+        <div className="w-full flex items-center justify-between">
         <div className="flex items-center">
           <Link to="/" className="block">
             <img 
@@ -162,10 +165,11 @@ export const Navbar = () => {
         </div>
       </div>
 
-      <ShippingAddress 
-        isOpen={showShippingAddress} 
-        onClose={() => setShowShippingAddress(false)} 
-      />
-    </nav>
+        <ShippingAddress 
+          isOpen={showShippingAddress} 
+          onClose={() => setShowShippingAddress(false)} 
+        />
+      </nav>
+    </>
   );
 };
