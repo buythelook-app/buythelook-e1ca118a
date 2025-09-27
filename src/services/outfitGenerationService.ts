@@ -355,12 +355,19 @@ export async function findMatchingClothingItems(colors: Record<string, string>):
       
       if (!categoryPattern) continue;
       
-      // Search for items with matching color and category
+      // Search for items with matching color and category - exclude beauty products
       const { data: items, error } = await supabase
         .from('zara_cloth')
         .select('*')
         .or(`product_name.ilike.%${categoryPattern}%,description.ilike.%${categoryPattern}%,product_family.ilike.%${categoryPattern}%`)
         .or(`colour.ilike.%${colorName}%,description.ilike.%${colorName}%`)
+        .not('product_family', 'ilike', '%maquillaje%')
+        .not('product_family', 'ilike', '%cologne%')
+        .not('product_family', 'ilike', '%perfume%')
+        .not('product_family', 'ilike', '%borlas%')
+        .not('product_family', 'ilike', '%esmalte%')
+        .not('product_subfamily', 'ilike', '%cosm%')
+        .not('product_subfamily', 'ilike', '%perfu%')
         .limit(5);
       
       if (error) {

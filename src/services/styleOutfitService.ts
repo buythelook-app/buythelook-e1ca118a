@@ -59,7 +59,15 @@ export async function findStyleItems(
     let query = supabase
       .from('zara_cloth')
       .select('*')
-      .or(familyQueries.join(','));
+      .or(familyQueries.join(','))
+      // סינון מוצרי יופי וקוסמטיקה
+      .not('product_family', 'ilike', '%maquillaje%')
+      .not('product_family', 'ilike', '%cologne%')
+      .not('product_family', 'ilike', '%perfume%')
+      .not('product_family', 'ilike', '%borlas%')
+      .not('product_family', 'ilike', '%esmalte%')
+      .not('product_subfamily', 'ilike', '%cosm%')
+      .not('product_subfamily', 'ilike', '%perfu%');
 
     // סינון נוסף לפי צבעים של הסגנון אם יש
     const styleColors = targetItems.flatMap(item => item.colors);

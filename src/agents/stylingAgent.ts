@@ -234,11 +234,22 @@ class StylingAgentClass implements Agent {
       const { supabase } = await import('../lib/supabaseClient');
       console.log(`🔍 [FALLBACK] Using Supabase fallback - fetching from both tables...`);
       
-      // Fetch clothing from zara_cloth table with budget filter
+      // Fetch clothing from zara_cloth table with budget filter and proper clothing filtering
       let clothingQuery = supabase
         .from('zara_cloth')
         .select('*')
-        .eq('availability', true);
+        .eq('availability', true)
+        .not('image', 'is', null)
+        // סינון מוצרי יופי וקוסמטיקה
+        .not('product_family', 'ilike', '%maquillaje%')
+        .not('product_family', 'ilike', '%cologne%')
+        .not('product_family', 'ilike', '%perfume%')
+        .not('product_family', 'ilike', '%borlas%')
+        .not('product_family', 'ilike', '%esmalte%')
+        .not('product_subfamily', 'ilike', '%cosm%')
+        .not('product_subfamily', 'ilike', '%perfu%')
+        // העדפה לפריטי בגדים אמיתיים
+        .in('product_family', ['VESTIDO', 'CAMISA', 'PANTALON', 'FALDA', 'TOPS Y OTRAS P.', 'BERMUDA', 'BLASIER', 'CHALECO', 'CAMISETA', 'JERSEY', 'MONO', 'CAZADORA', 'ABRIGO']);
         
       // 🆕 FETCH SHOES ONLY FROM "SHOES" TABLE
       let shoesQuery = supabase

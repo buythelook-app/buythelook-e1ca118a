@@ -206,7 +206,7 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
     
     console.log(`🚨 [createAdvancedOutfit] CRITICAL DEBUG - FETCHING CLOTHING FROM ZARA_CLOTH TABLE (NO SHOES IN THIS QUERY)`);
     
-    // קבלת פריטי לבוש מהמאגר zara_cloth (ללא נעליים - נטפל בהן בנפרד)
+    // קבלת פריטי לבוש מהמאגר zara_cloth (ללא נעליים ומוצרי יופי)
     const { data: allClothingItems, error: clothingError } = await supabase
       .from('zara_cloth')
       .select('*')
@@ -218,6 +218,16 @@ async function createAdvancedOutfit(styleProfile: string, eventType: string, col
       .not('product_subfamily', 'ilike', '%shoe%')
       .not('product_subfamily', 'ilike', '%sandal%')
       .not('product_subfamily', 'ilike', '%boot%')
+      // סינון מוצרי יופי וקוסמטיקה
+      .not('product_family', 'ilike', '%maquillaje%')
+      .not('product_family', 'ilike', '%cologne%')
+      .not('product_family', 'ilike', '%perfume%')
+      .not('product_family', 'ilike', '%borlas%')
+      .not('product_family', 'ilike', '%esmalte%')
+      .not('product_subfamily', 'ilike', '%cosm%')
+      .not('product_subfamily', 'ilike', '%perfu%')
+      // העדפה לפריטי בגדים אמיתיים
+      .in('product_family', ['VESTIDO', 'CAMISA', 'PANTALON', 'FALDA', 'TOPS Y OTRAS P.', 'BERMUDA', 'BLASIER', 'CHALECO', 'CAMISETA', 'JERSEY', 'MONO', 'CAZADORA', 'ABRIGO'])
       .order('price', { ascending: true })
       .limit(1000);
 
