@@ -33,6 +33,18 @@ export const ProfileFetcherTool = {
       const { data: productData, error: productError } = await supabase
         .from('zara_cloth')
         .select('product_name, price, colour, description, size, materials, availability')
+        .not('image', 'is', null)
+        .neq('availability', false)
+        // סינון מוצרי יופי וקוסמטיקה לחלוטין
+        .not('product_family', 'ilike', '%maquillaje%')
+        .not('product_family', 'ilike', '%cologne%')
+        .not('product_family', 'ilike', '%perfume%')
+        .not('product_family', 'ilike', '%borlas%')
+        .not('product_family', 'ilike', '%esmalte%')
+        .not('product_subfamily', 'ilike', '%cosm%')
+        .not('product_subfamily', 'ilike', '%perfu%')
+        // העדפה לפריטי בגדים אמיתיים
+        .in('product_family', ['VESTIDO', 'CAMISA', 'PANTALON', 'FALDA', 'TOPS Y OTRAS P.', 'BERMUDA', 'BLASIER', 'CHALECO', 'CAMISETA', 'JERSEY', 'MONO', 'CAZADORA', 'ABRIGO'])
         .limit(50);
 
       if (productError) {

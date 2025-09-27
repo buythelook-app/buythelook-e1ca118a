@@ -586,6 +586,8 @@ async function debugShoesInDatabase(occasion: string): Promise<{ totalShoes: num
       .from('zara_cloth')
       .select('id, product_name, product_family, product_subfamily, colour, price, image, availability')
       .or('product_family.ilike.%shoe%,product_family.ilike.%sandal%,product_family.ilike.%boot%,product_subfamily.ilike.%shoe%,product_subfamily.ilike.%sandal%,product_subfamily.ilike.%boot%')
+      .not('image', 'is', null)
+      .neq('availability', false)
       .limit(200);
 
     if (error) {
@@ -734,6 +736,7 @@ async function getMatchingShoesFromZara(occasion: string, usedColors: string[]):
       .select('*')
       .or('product_family.ilike.%shoe%,product_family.ilike.%sandal%,product_family.ilike.%boot%,product_subfamily.ilike.%shoe%,product_subfamily.ilike.%sandal%,product_subfamily.ilike.%boot%')
       .not('image', 'is', null)
+      .neq('availability', false)
       .neq('availability', false);
     
     console.log(`🔍 [getMatchingShoesFromZara] STEP 2: Executing database query...`);
