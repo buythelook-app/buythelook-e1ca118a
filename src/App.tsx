@@ -7,6 +7,7 @@ import { DeveloperNav } from "@/components/DeveloperNav";
 import { ErrorBoundary } from "@/utils/errorBoundary";
 import AgentResultsPage from './pages/AgentResultsPage';
 import FeedbackManagementPage from './pages/FeedbackManagementPage';
+import ValidationDashboard from './pages/ValidationDashboard';
 import AgentLearningDashboard from './pages/AgentLearningDashboard';
 import CronStatusPage from './pages/CronStatusPage';
 import AgentDebugPage from './pages/AgentDebugPage';
@@ -110,6 +111,7 @@ function App() {
             <Route path="/test-api" element={<TestApi />} />
             <Route path="/api-test" element={<ApiTest />} />
             <Route path="/agent-health" element={<AgentHealthPage />} />
+            <Route path="/validation-dashboard" element={<ValidationDashboard />} />
           </Routes>
           <Toaster />
         </Router>
