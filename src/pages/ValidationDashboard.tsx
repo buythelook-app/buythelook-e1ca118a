@@ -5,12 +5,15 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, CheckCircle, Play, RefreshCw, TrendingUp } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { AlertCircle, CheckCircle, Play, RefreshCw, TrendingUp, Eye, Star, ThumbsUp, ThumbsDown, Save, ArrowRight } from 'lucide-react';
 import { ValidationRunner } from '@/agents/validationRunner';
 import { runValidationApi, getValidationStatsApi } from './api/validation/run';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
 interface ValidationMetrics {
   bodyShapeAccuracy: number;
   styleAlignment: number;
@@ -34,13 +37,37 @@ interface ValidationResult {
 
 export default function ValidationDashboard() {
   const [isRunning, setIsRunning] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const [results, setResults] = useState<ValidationResult[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedResult, setSelectedResult] = useState<ValidationResult | null>(null);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [currentOutfitIndex, setCurrentOutfitIndex] = useState(0);
+  const [manualRating, setManualRating] = useState({
+    overall_rating: 3,
+    like_dislike: null as boolean | null,
+    body_shape_fit: 3,
+    style_alignment: 3,
+    occasion_match: 3,
+    color_coordination: 3,
+    value_for_money: 3,
+    creativity: 3,
+    must_include_met: [] as string[],
+    should_avoid_violated: [] as string[],
+    feedback_notes: "",
+    what_works: "",
+    what_missing: "",
+    improvements: ""
+  });
   const { toast } = useToast();
 
   useEffect(() => {
     loadLatestResults();
+    // Get current user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user?.id || null);
+    });
   }, []);
 
   const loadLatestResults = async () => {
@@ -170,6 +197,103 @@ export default function ValidationDashboard() {
     if (score >= 80) return <Badge variant="default" className="bg-green-100 text-green-800">מעולה</Badge>;
     if (score >= 60) return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">טוב</Badge>;
     return <Badge variant="destructive">דורש שיפור</Badge>;
+  };
+
+  const handleViewAndRate = (result: ValidationResult) => {
+    setSelectedResult(result);
+    setCurrentOutfitIndex(0);
+    setShowRatingModal(true);
+    setManualRating({
+      overall_rating: 3,
+      like_dislike: null,
+      body_shape_fit: 3,
+      style_alignment: 3,
+      occasion_match: 3,
+      color_coordination: 3,
+      value_for_money: 3,
+      creativity: 3,
+      must_include_met: [],
+      should_avoid_violated: [],
+      feedback_notes: "",
+      what_works: "",
+      what_missing: "",
+      improvements: ""
+    });
+  };
+
+  const handleSaveRating = async () => {
+    if (!selectedResult || !userId) {
+      toast({
+        title: "שגיאה",
+        description: "חייב להיות מחובר כדי לשמור דירוג",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from("manual_outfit_ratings").insert({
+        test_case_name: selectedResult.test_case_name,
+        run_timestamp: selectedResult.run_timestamp || new Date().toISOString(),
+        outfit_index: currentOutfitIndex,
+        user_id: userId,
+        ...manualRating
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "הדירוג נשמר בהצלחה!",
+        description: "הדירוג שלך נשמר והסוכנים ילמדו ממנו"
+      });
+    } catch (error) {
+      console.error('Error saving rating:', error);
+      toast({
+        title: "שגיאה",
+        description: "שגיאה בשמירת הדירוג",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleNextOutfit = () => {
+    if (!selectedResult?.actual_output) return;
+    const outfits = Array.isArray(selectedResult.actual_output) 
+      ? selectedResult.actual_output 
+      : [selectedResult.actual_output];
+    
+    if (currentOutfitIndex < outfits.length - 1) {
+      setCurrentOutfitIndex(currentOutfitIndex + 1);
+    } else {
+      const currentIndex = results.findIndex(r => r.test_case_name === selectedResult.test_case_name);
+      if (currentIndex < results.length - 1) {
+        handleViewAndRate(results[currentIndex + 1]);
+      } else {
+        toast({
+          title: "סיימת!",
+          description: "סיימת לדרג את כל התוצאות"
+        });
+        setShowRatingModal(false);
+      }
+    }
+  };
+
+  const renderStarRating = (value: number, onChange: (value: number) => void) => {
+    return (
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            onClick={() => onChange(star)}
+            className="transition-colors"
+          >
+            <Star
+              className={`w-6 h-6 ${star <= value ? "fill-yellow-400 text-yellow-400" : "text-muted"}`}
+            />
+          </button>
+        ))}
+      </div>
+    );
   };
 
   if (loading) {
@@ -396,7 +520,17 @@ export default function ValidationDashboard() {
                     <Card key={result.test_case_name} className="p-4">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-semibold">{result.test_case_name}</h4>
-                        {getScoreBadge(result.metrics?.overallQuality || 0)}
+                        <div className="flex gap-2">
+                          {getScoreBadge(result.metrics?.overallQuality || 0)}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewAndRate(result)}
+                          >
+                            <Eye className="w-4 h-4 ml-2" />
+                            הצג המלצות ודרג
+                          </Button>
+                        </div>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                         <div>
@@ -436,6 +570,283 @@ export default function ValidationDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Rating Modal */}
+      <Dialog open={showRatingModal} onOpenChange={setShowRatingModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>דירוג ידני של המלצות - {selectedResult?.test_case_name}</DialogTitle>
+            <DialogDescription>
+              צפה בהמלצות הסוכנים ודרג אותן כדי לשפר את המערכת
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedResult && (
+            <div className="space-y-6">
+              {/* A. Input Details */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>פרטי הקלט</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>מבנה גוף</Label>
+                    <p className="text-sm text-muted-foreground">{selectedResult.input_data?.bodyShape}</p>
+                  </div>
+                  <div>
+                    <Label>סגנון מועדף</Label>
+                    <p className="text-sm text-muted-foreground">{selectedResult.input_data?.stylePreference}</p>
+                  </div>
+                  <div>
+                    <Label>אירוע</Label>
+                    <p className="text-sm text-muted-foreground">{selectedResult.input_data?.occasion}</p>
+                  </div>
+                  <div>
+                    <Label>מצב רוח</Label>
+                    <p className="text-sm text-muted-foreground">{selectedResult.input_data?.mood}</p>
+                  </div>
+                  <div>
+                    <Label>תקציב</Label>
+                    <p className="text-sm text-muted-foreground">₪{selectedResult.input_data?.budget}</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* B. Outfits from Agents */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>הלוק שהסוכנים יצרו ({currentOutfitIndex + 1})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {selectedResult.actual_output && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label>תיאור הלוק</Label>
+                        <p className="text-sm">{(selectedResult.actual_output as any)?.description || 'אין תיאור'}</p>
+                      </div>
+                      
+                      {(selectedResult.actual_output as any)?.items && (
+                        <div>
+                          <Label>פריטים בלוק</Label>
+                          <div className="space-y-2 mt-2">
+                            {Object.entries((selectedResult.actual_output as any).items || {}).map(([type, item]: [string, any]) => (
+                              <div key={type} className="border rounded-lg p-3">
+                                <p className="font-semibold">{type}</p>
+                                {item && (
+                                  <>
+                                    <p className="text-sm">שם: {item.product_name || item.name || 'לא זמין'}</p>
+                                    <p className="text-sm">מחיר: {item.price || 'לא זמין'}</p>
+                                    <p className="text-sm">צבע: {item.color || item.colour || 'לא זמין'}</p>
+                                    {item.image && (
+                                      <img src={item.image} alt={type} className="w-20 h-20 object-cover mt-2" />
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div>
+                        <Label>ציון איכות אוטומטי</Label>
+                        <p className="text-2xl font-bold">
+                          {selectedResult.metrics?.overallQuality 
+                            ? (selectedResult.metrics.overallQuality).toFixed(0) + '%'
+                            : 'לא זמין'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* C. Manual Rating System */}
+              <Card className="bg-primary/5">
+                <CardHeader>
+                  <CardTitle>🌟 מערכת דירוג ידנית</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Overall Rating */}
+                  <div>
+                    <Label>דירוג כללי (1-5 כוכבים)</Label>
+                    {renderStarRating(manualRating.overall_rating, (value) => 
+                      setManualRating({...manualRating, overall_rating: value})
+                    )}
+                  </div>
+
+                  {/* Like/Dislike */}
+                  <div>
+                    <Label>לייק/דיסלייק</Label>
+                    <div className="flex gap-4 mt-2">
+                      <Button
+                        variant={manualRating.like_dislike === true ? "default" : "outline"}
+                        onClick={() => setManualRating({...manualRating, like_dislike: true})}
+                      >
+                        <ThumbsUp className="w-4 h-4 ml-2" />
+                        אהבתי
+                      </Button>
+                      <Button
+                        variant={manualRating.like_dislike === false ? "default" : "outline"}
+                        onClick={() => setManualRating({...manualRating, like_dislike: false})}
+                      >
+                        <ThumbsDown className="w-4 h-4 ml-2" />
+                        לא אהבתי
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Detailed Criteria */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold">📊 דירוג מפורט לפי קריטריונים</h4>
+                    
+                    {[
+                      { key: 'body_shape_fit', label: '✅ התאמה למבנה גוף' },
+                      { key: 'style_alignment', label: '👗 התאמה לסגנון' },
+                      { key: 'occasion_match', label: '🎯 התאמה לאירוע' },
+                      { key: 'color_coordination', label: '🎨 קואורדינציה של צבעים' },
+                      { key: 'value_for_money', label: '💰 שווי תמורה' },
+                      { key: 'creativity', label: '🎭 יצירתיות' }
+                    ].map(({ key, label }) => (
+                      <div key={key}>
+                        <Label>{label}</Label>
+                        <div className="flex items-center gap-4 mt-2">
+                          <Slider
+                            value={[manualRating[key as keyof typeof manualRating] as number]}
+                            onValueChange={([value]) => 
+                              setManualRating({...manualRating, [key]: value})
+                            }
+                            min={1}
+                            max={5}
+                            step={1}
+                            className="flex-1"
+                          />
+                          <span className="w-8 text-center font-bold">
+                            {manualRating[key as keyof typeof manualRating]}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Free Text Feedback */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold">📝 הערות חופשיות</h4>
+                    
+                    <div>
+                      <Label>מה טוב בלוק הזה?</Label>
+                      <Textarea
+                        value={manualRating.what_works}
+                        onChange={(e) => setManualRating({...manualRating, what_works: e.target.value})}
+                        placeholder="תאר את מה שעובד טוב..."
+                      />
+                    </div>
+
+                    <div>
+                      <Label>מה חסר?</Label>
+                      <Textarea
+                        value={manualRating.what_missing}
+                        onChange={(e) => setManualRating({...manualRating, what_missing: e.target.value})}
+                        placeholder="תאר מה חסר..."
+                      />
+                    </div>
+
+                    <div>
+                      <Label>מה לשפר?</Label>
+                      <Textarea
+                        value={manualRating.improvements}
+                        onChange={(e) => setManualRating({...manualRating, improvements: e.target.value})}
+                        placeholder="הצעות לשיפור..."
+                      />
+                    </div>
+
+                    <div>
+                      <Label>הערות כלליות</Label>
+                      <Textarea
+                        value={manualRating.feedback_notes}
+                        onChange={(e) => setManualRating({...manualRating, feedback_notes: e.target.value})}
+                        placeholder="הערות נוספות..."
+                      />
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 pt-4">
+                    <Button onClick={handleSaveRating} className="flex-1">
+                      <Save className="w-4 h-4 ml-2" />
+                      שמור דירוג
+                    </Button>
+                    <Button onClick={handleNextOutfit} variant="outline" className="flex-1">
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                      הבא
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* D. Expected Criteria */}
+              {selectedResult.expected_criteria && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>קריטריונים מצופים</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {(selectedResult.expected_criteria as any)?.must_include && (
+                      <div>
+                        <Label>✅ Must Include</Label>
+                        <p className="text-sm text-muted-foreground">
+                          {JSON.stringify((selectedResult.expected_criteria as any).must_include)}
+                        </p>
+                      </div>
+                    )}
+                    {(selectedResult.expected_criteria as any)?.should_avoid && (
+                      <div>
+                        <Label>❌ Should Avoid</Label>
+                        <p className="text-sm text-muted-foreground">
+                          {JSON.stringify((selectedResult.expected_criteria as any).should_avoid)}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* E. Comparison Analysis */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>ניתוח השוואה</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <Label>ציון אוטומטי</Label>
+                      <p className="text-2xl font-bold">
+                        {selectedResult.metrics?.overallQuality 
+                          ? (selectedResult.metrics.overallQuality).toFixed(0) + '%'
+                          : '-'}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <Label>הדירוג שלי</Label>
+                      <p className="text-2xl font-bold">
+                        {(manualRating.overall_rating * 20).toFixed(0)}%
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <Label>פער</Label>
+                      <p className="text-2xl font-bold">
+                        {selectedResult.metrics?.overallQuality 
+                          ? ((manualRating.overall_rating * 20) - selectedResult.metrics.overallQuality).toFixed(0) + '%'
+                          : '-'}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

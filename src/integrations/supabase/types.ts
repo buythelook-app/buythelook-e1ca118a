@@ -279,6 +279,78 @@ export type Database = {
         }
         Relationships: []
       }
+      manual_outfit_ratings: {
+        Row: {
+          body_shape_fit: number | null
+          color_coordination: number | null
+          created_at: string | null
+          creativity: number | null
+          feedback_notes: string | null
+          id: string
+          improvements: string | null
+          like_dislike: boolean | null
+          must_include_met: string[] | null
+          occasion_match: number | null
+          outfit_index: number
+          overall_rating: number | null
+          run_timestamp: string
+          should_avoid_violated: string[] | null
+          style_alignment: number | null
+          test_case_name: string
+          updated_at: string | null
+          user_id: string | null
+          value_for_money: number | null
+          what_missing: string | null
+          what_works: string | null
+        }
+        Insert: {
+          body_shape_fit?: number | null
+          color_coordination?: number | null
+          created_at?: string | null
+          creativity?: number | null
+          feedback_notes?: string | null
+          id?: string
+          improvements?: string | null
+          like_dislike?: boolean | null
+          must_include_met?: string[] | null
+          occasion_match?: number | null
+          outfit_index: number
+          overall_rating?: number | null
+          run_timestamp: string
+          should_avoid_violated?: string[] | null
+          style_alignment?: number | null
+          test_case_name: string
+          updated_at?: string | null
+          user_id?: string | null
+          value_for_money?: number | null
+          what_missing?: string | null
+          what_works?: string | null
+        }
+        Update: {
+          body_shape_fit?: number | null
+          color_coordination?: number | null
+          created_at?: string | null
+          creativity?: number | null
+          feedback_notes?: string | null
+          id?: string
+          improvements?: string | null
+          like_dislike?: boolean | null
+          must_include_met?: string[] | null
+          occasion_match?: number | null
+          outfit_index?: number
+          overall_rating?: number | null
+          run_timestamp?: string
+          should_avoid_violated?: string[] | null
+          style_alignment?: number | null
+          test_case_name?: string
+          updated_at?: string | null
+          user_id?: string | null
+          value_for_money?: number | null
+          what_missing?: string | null
+          what_works?: string | null
+        }
+        Relationships: []
+      }
       outfit_logs: {
         Row: {
           bottom_id: string
