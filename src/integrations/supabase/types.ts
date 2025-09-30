@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_clicks: {
+        Row: {
+          click_type: string | null
+          created_at: string | null
+          id: string
+          item_id: string
+          retailer: string
+          user_id: string
+        }
+        Insert: {
+          click_type?: string | null
+          created_at?: string | null
+          id?: string
+          item_id: string
+          retailer: string
+          user_id: string
+        }
+        Update: {
+          click_type?: string | null
+          created_at?: string | null
+          id?: string
+          item_id?: string
+          retailer?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       agent_runs: {
         Row: {
           agent_name: string
@@ -43,6 +70,33 @@ export type Database = {
           score?: number
           status?: string
           timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      analytics_events: {
+        Row: {
+          created_at: string | null
+          event: string
+          id: string
+          properties: Json | null
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event: string
+          id?: string
+          properties?: Json | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event?: string
+          id?: string
+          properties?: Json | null
+          session_id?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -252,6 +306,36 @@ export type Database = {
         }
         Relationships: []
       }
+      product_cache: {
+        Row: {
+          cache_key: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          product_data: Json
+          product_id: string
+          retailer: string
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          product_data: Json
+          product_id: string
+          retailer: string
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          product_data?: Json
+          product_id?: string
+          retailer?: string
+        }
+        Relationships: []
+      }
       recommendation_test_cases: {
         Row: {
           budget: number
@@ -432,11 +516,133 @@ export type Database = {
         }
         Relationships: []
       }
+      user_interactions: {
+        Row: {
+          created_at: string | null
+          feedback: Json | null
+          id: string
+          interaction_type: string
+          item_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          feedback?: Json | null
+          id?: string
+          interaction_type: string
+          item_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          feedback?: Json | null
+          id?: string
+          interaction_type?: string
+          item_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          body_type: string | null
+          brand_preferences: string[] | null
+          color_preferences: string[] | null
+          consent_settings: Json | null
+          created_at: string | null
+          email: string | null
+          id: string
+          interaction_history: Json | null
+          price_sensitivity: number | null
+          push_token: string | null
+          size_preferences: Json | null
+          style_vector: number[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          body_type?: string | null
+          brand_preferences?: string[] | null
+          color_preferences?: string[] | null
+          consent_settings?: Json | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          interaction_history?: Json | null
+          price_sensitivity?: number | null
+          push_token?: string | null
+          size_preferences?: Json | null
+          style_vector?: number[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          body_type?: string | null
+          brand_preferences?: string[] | null
+          color_preferences?: string[] | null
+          consent_settings?: Json | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          interaction_history?: Json | null
+          price_sensitivity?: number | null
+          push_token?: string | null
+          size_preferences?: Json | null
+          style_vector?: number[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      validation_dataset: {
+        Row: {
+          actual_output: Json | null
+          agent_version: string | null
+          created_at: string | null
+          expected_criteria: Json
+          id: string
+          input_data: Json
+          metrics: Json | null
+          run_timestamp: string | null
+          test_case_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          actual_output?: Json | null
+          agent_version?: string | null
+          created_at?: string | null
+          expected_criteria: Json
+          id?: string
+          input_data: Json
+          metrics?: Json | null
+          run_timestamp?: string | null
+          test_case_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          actual_output?: Json | null
+          agent_version?: string | null
+          created_at?: string | null
+          expected_criteria?: Json
+          id?: string
+          input_data?: Json
+          metrics?: Json | null
+          run_timestamp?: string | null
+          test_case_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       zara_cloth: {
         Row: {
           availability: boolean | null
+          brand: string | null
           care: Json | null
+          care_info: string | null
+          category: string | null
           category_id: number | null
+          category_path: string | null
+          color: string | null
           colour: string
           colour_code: number | null
           created_at: string
@@ -445,6 +651,7 @@ export type Database = {
           dimension: string | null
           id: string
           image: Json | null
+          images: Json | null
           low_on_stock: boolean | null
           materials: Json[] | null
           materials_description: string | null
@@ -454,16 +661,26 @@ export type Database = {
           product_id: number | null
           product_name: string
           product_subfamily: string | null
+          product_url: string | null
+          scrape_type: string | null
+          scraped_category: string | null
           section: string | null
           size: string[]
           sku: string | null
+          stock_status: string | null
+          updated_at: string | null
           url: string | null
           you_may_also_like: Json | null
         }
         Insert: {
           availability?: boolean | null
+          brand?: string | null
           care?: Json | null
+          care_info?: string | null
+          category?: string | null
           category_id?: number | null
+          category_path?: string | null
+          color?: string | null
           colour: string
           colour_code?: number | null
           created_at?: string
@@ -472,6 +689,7 @@ export type Database = {
           dimension?: string | null
           id?: string
           image?: Json | null
+          images?: Json | null
           low_on_stock?: boolean | null
           materials?: Json[] | null
           materials_description?: string | null
@@ -481,16 +699,26 @@ export type Database = {
           product_id?: number | null
           product_name: string
           product_subfamily?: string | null
+          product_url?: string | null
+          scrape_type?: string | null
+          scraped_category?: string | null
           section?: string | null
           size: string[]
           sku?: string | null
+          stock_status?: string | null
+          updated_at?: string | null
           url?: string | null
           you_may_also_like?: Json | null
         }
         Update: {
           availability?: boolean | null
+          brand?: string | null
           care?: Json | null
+          care_info?: string | null
+          category?: string | null
           category_id?: number | null
+          category_path?: string | null
+          color?: string | null
           colour?: string
           colour_code?: number | null
           created_at?: string
@@ -499,6 +727,7 @@ export type Database = {
           dimension?: string | null
           id?: string
           image?: Json | null
+          images?: Json | null
           low_on_stock?: boolean | null
           materials?: Json[] | null
           materials_description?: string | null
@@ -508,9 +737,14 @@ export type Database = {
           product_id?: number | null
           product_name?: string
           product_subfamily?: string | null
+          product_url?: string | null
+          scrape_type?: string | null
+          scraped_category?: string | null
           section?: string | null
           size?: string[]
           sku?: string | null
+          stock_status?: string | null
+          updated_at?: string | null
           url?: string | null
           you_may_also_like?: Json | null
         }
@@ -518,6 +752,72 @@ export type Database = {
       }
     }
     Views: {
+      products: {
+        Row: {
+          brand: string | null
+          care_info: string | null
+          category: string | null
+          category_path: string | null
+          color: string | null
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          id: string | null
+          images: Json | null
+          materials: Json[] | null
+          name: string | null
+          price: number | null
+          product_url: string | null
+          scrape_type: string | null
+          scraped_category: string | null
+          size: string[] | null
+          stock_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          brand?: string | null
+          care_info?: never
+          category?: string | null
+          category_path?: string | null
+          color?: never
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          id?: string | null
+          images?: never
+          materials?: Json[] | null
+          name?: string | null
+          price?: number | null
+          product_url?: never
+          scrape_type?: string | null
+          scraped_category?: string | null
+          size?: string[] | null
+          stock_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          brand?: string | null
+          care_info?: never
+          category?: string | null
+          category_path?: string | null
+          color?: never
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          id?: string | null
+          images?: never
+          materials?: Json[] | null
+          name?: string | null
+          price?: number | null
+          product_url?: never
+          scrape_type?: string | null
+          scraped_category?: string | null
+          size?: string[] | null
+          stock_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       zara_cloth_view: {
         Row: {
           availability: boolean | null
@@ -604,7 +904,247 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      upsert_zara_product: {
+        Args: {
+          _brand: string
+          _category: string
+          _category_path: string
+          _color: string
+          _currency: string
+          _description: string
+          _id: string
+          _images: Json
+          _materials: string
+          _price: number
+          _product_name: string
+          _product_url: string
+          _scrape_type: string
+          _scraped_category: string
+          _size: string[]
+          _stock_status: string
+        }
+        Returns: undefined
+      }
+      upsert_zara_product_correct: {
+        Args: {
+          p_availability?: boolean
+          p_brand?: string
+          p_care?: Json
+          p_care_info?: string
+          p_category?: string
+          p_category_id?: number
+          p_category_path?: string
+          p_color?: string
+          p_colour?: string
+          p_colour_code?: number
+          p_currency?: string
+          p_description?: string
+          p_dimension?: string
+          p_id?: string
+          p_image?: Json
+          p_images?: Json
+          p_low_on_stock?: boolean
+          p_materials?: Json[]
+          p_materials_description?: string
+          p_price?: number
+          p_product_family?: string
+          p_product_family_en?: string
+          p_product_id?: number
+          p_product_name?: string
+          p_product_subfamily?: string
+          p_product_url?: string
+          p_scrape_type?: string
+          p_scraped_category?: string
+          p_section?: string
+          p_size?: string[]
+          p_sku?: string
+          p_stock_status?: string
+          p_url?: string
+          p_you_may_also_like?: Json
+        }
+        Returns: string
+      }
+      upsert_zara_product_final: {
+        Args: {
+          p_availability?: boolean
+          p_brand?: string
+          p_care?: Json
+          p_care_info?: string
+          p_category?: string
+          p_category_id?: number
+          p_category_path?: string
+          p_color?: string
+          p_colour?: string
+          p_colour_code?: number
+          p_currency?: string
+          p_description?: string
+          p_dimension?: string
+          p_id?: string
+          p_image?: Json
+          p_images?: Json
+          p_low_on_stock?: boolean
+          p_materials?: Json[]
+          p_materials_description?: string
+          p_price?: number
+          p_product_family?: string
+          p_product_family_en?: string
+          p_product_id?: number
+          p_product_name?: string
+          p_product_subfamily?: string
+          p_product_url?: string
+          p_scrape_type?: string
+          p_scraped_category?: string
+          p_section?: string
+          p_size?: string[]
+          p_sku?: string
+          p_stock_status?: string
+          p_url?: string
+          p_you_may_also_like?: Json
+        }
+        Returns: string
+      }
+      upsert_zara_product_text: {
+        Args: {
+          _brand: string
+          _category: string
+          _category_path: string
+          _color: string
+          _currency: string
+          _description: string
+          _id: string
+          _images: Json
+          _materials: string
+          _price: number
+          _product_name: string
+          _product_url: string
+          _scrape_type: string
+          _scraped_category: string
+          _size: string[]
+          _stock_status: string
+        }
+        Returns: undefined
+      }
+      upsert_zara_product_v2: {
+        Args: {
+          _brand: string
+          _category: string
+          _category_path: string
+          _color: string
+          _currency: string
+          _description: string
+          _id: string
+          _images: Json
+          _materials_arr: string[]
+          _materials_str: string
+          _price: number
+          _product_name: string
+          _product_url: string
+          _scrape_type: string
+          _scraped_category: string
+          _size: string[]
+          _stock_status: string
+        }
+        Returns: undefined
+      }
+      upsert_zara_product_v3: {
+        Args: {
+          _brand: string
+          _category: string
+          _category_path: string
+          _color: string
+          _currency: string
+          _description: string
+          _id: string
+          _images: Json
+          _materials: string[]
+          _price: number
+          _product_name: string
+          _product_url: string
+          _scrape_type: string
+          _scraped_category: string
+          _size: string[]
+          _stock_status: string
+        }
+        Returns: undefined
+      }
+      upsert_zara_product_v4: {
+        Args: {
+          p_availability?: boolean
+          p_brand?: string
+          p_care?: Json
+          p_care_info?: string
+          p_category?: string
+          p_category_id?: number
+          p_category_path?: string
+          p_color?: string
+          p_colour?: string
+          p_colour_code?: number
+          p_currency?: string
+          p_description?: string
+          p_dimension?: string
+          p_id?: string
+          p_image?: string
+          p_images?: Json
+          p_low_on_stock?: boolean
+          p_materials?: Json
+          p_materials_description?: string
+          p_price?: number
+          p_product_family?: string
+          p_product_family_en?: string
+          p_product_id?: number
+          p_product_name?: string
+          p_product_subfamily?: string
+          p_product_url?: string
+          p_scrape_type?: string
+          p_scraped_category?: string
+          p_section?: string
+          p_size?: string
+          p_sku?: string
+          p_stock_status?: string
+          p_url?: string
+          p_you_may_also_like?: Json
+        }
+        Returns: undefined
+      }
+      upsert_zara_product_v6: {
+        Args: {
+          p_availability?: boolean
+          p_brand?: string
+          p_care?: Json
+          p_care_info?: string
+          p_category?: string
+          p_category_id?: number
+          p_category_path?: string
+          p_color?: string
+          p_colour?: string
+          p_colour_code?: number
+          p_currency?: string
+          p_description?: string
+          p_dimension?: string
+          p_id?: string
+          p_image?: Json
+          p_images?: Json
+          p_low_on_stock?: boolean
+          p_materials?: Json[]
+          p_materials_description?: string
+          p_price?: number
+          p_product_family?: string
+          p_product_family_en?: string
+          p_product_id?: number
+          p_product_name?: string
+          p_product_subfamily?: string
+          p_product_url?: string
+          p_scrape_type?: string
+          p_scraped_category?: string
+          p_section?: string
+          p_size?: string[]
+          p_sku?: string
+          p_stock_status?: string
+          p_url?: string
+          p_you_may_also_like?: Json
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

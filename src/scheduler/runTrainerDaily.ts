@@ -34,7 +34,7 @@ export const startValidationScheduler = (): (() => void) => {
         logger.info("Initial validation cycle completed successfully", {
           context: "ValidationScheduler",
           data: {
-            userScores: result.data.userScores,
+            metrics: result.data.metrics,
             summary: result.data.summary
           }
         });
@@ -62,7 +62,7 @@ export const startValidationScheduler = (): (() => void) => {
           logger.info("Scheduled validation cycle completed", {
             context: "ValidationScheduler",
             data: {
-              userScores: result.data.userScores,
+              metrics: result.data.metrics,
               summary: result.data.summary
             }
           });
@@ -105,7 +105,7 @@ export const runManualValidation = async () => {
       logger.info("Manual validation cycle completed successfully", {
         context: "ValidationScheduler",
         data: {
-          userScores: result.data.userScores,
+          metrics: result.data.metrics,
           summary: result.data.summary
         }
       });
