@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, CheckCircle, Play, RefreshCw, TrendingUp } from 'lucide-react';
 import { ValidationRunner } from '@/agents/validationRunner';
+import { runValidationApi, getValidationStatsApi } from './api/validation/run';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -133,13 +134,12 @@ export default function ValidationDashboard() {
     });
 
     try {
-      const runner = new ValidationRunner();
-      const result = await runner.runFullValidation();
+      const result = await runValidationApi();
       
       if (result.success) {
         toast({
           title: "הולידציה הושלמה",
-          description: `נבדקו ${result.data?.summary.totalTests} מקרי בוחן בהצלחה`,
+          description: `נבדקו ${result.data?.summary?.totalTests || 'מספר'} מקרי בוחן בהצלחה`,
         });
         await loadLatestResults();
       } else {
