@@ -627,22 +627,41 @@ export default function ValidationDashboard() {
                       
                       {(selectedResult.actual_output as any)?.items && (
                         <div>
-                          <Label>פריטים בלוק</Label>
-                          <div className="space-y-2 mt-2">
+                          <Label className="text-lg font-semibold">פריטים בלוק</Label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                             {Object.entries((selectedResult.actual_output as any).items || {}).map(([type, item]: [string, any]) => (
-                              <div key={type} className="border rounded-lg p-3">
-                                <p className="font-semibold">{type}</p>
-                                {item && (
-                                  <>
-                                    <p className="text-sm">שם: {item.product_name || item.name || 'לא זמין'}</p>
-                                    <p className="text-sm">מחיר: {item.price || 'לא זמין'}</p>
-                                    <p className="text-sm">צבע: {item.color || item.colour || 'לא זמין'}</p>
-                                    {item.image && (
-                                      <img src={item.image} alt={type} className="w-20 h-20 object-cover mt-2" />
-                                    )}
-                                  </>
+                              <Card key={type} className="overflow-hidden">
+                                {item?.image && (
+                                  <div className="aspect-[3/4] relative bg-muted overflow-hidden">
+                                    <img 
+                                      src={item.image} 
+                                      alt={type} 
+                                      className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300" 
+                                    />
+                                  </div>
                                 )}
-                              </div>
+                                <CardContent className="p-4">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Badge variant="secondary">{type}</Badge>
+                                  </div>
+                                  {item && (
+                                    <div className="space-y-1 text-sm">
+                                      <p className="font-semibold line-clamp-2">{item.product_name || item.name || 'לא זמין'}</p>
+                                      <p className="text-lg font-bold text-primary">{item.price || 'לא זמין'}</p>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-muted-foreground">צבע:</span>
+                                        <span className="font-medium">{item.color || item.colour || 'לא זמין'}</span>
+                                      </div>
+                                      {item.category && (
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-muted-foreground">קטגוריה:</span>
+                                          <span className="text-xs">{item.category}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </CardContent>
+                              </Card>
                             ))}
                           </div>
                         </div>
