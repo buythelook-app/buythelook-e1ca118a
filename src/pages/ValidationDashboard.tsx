@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { AlertCircle, CheckCircle, Play, RefreshCw, TrendingUp, Eye, Star, ThumbsUp, ThumbsDown, Save, ArrowRight } from 'lucide-react';
+import { AlertCircle, CheckCircle, Play, RefreshCw, TrendingUp, Eye, Star, ThumbsUp, ThumbsDown, Save, ArrowRight, List } from 'lucide-react';
 import { ValidationRunner } from '@/agents/validationRunner';
 import { runValidationApi, getValidationStatsApi } from './api/validation/run';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,6 +44,8 @@ export default function ValidationDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedResult, setSelectedResult] = useState<ValidationResult | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showExistingRatings, setShowExistingRatings] = useState(false);
+  const [existingRatings, setExistingRatings] = useState<any[]>([]);
   const [currentOutfitIndex, setCurrentOutfitIndex] = useState(0);
   const [manualRating, setManualRating] = useState({
     overall_rating: 3,
@@ -204,6 +206,7 @@ export default function ValidationDashboard() {
     setSelectedResult(result);
     setCurrentOutfitIndex(0);
     setShowRatingModal(true);
+    setShowExistingRatings(false);
     setManualRating({
       overall_rating: 3,
       like_dislike: null,
@@ -222,8 +225,52 @@ export default function ValidationDashboard() {
     });
   };
 
+  const handleViewExistingRatings = async (result: ValidationResult) => {
+    setSelectedResult(result);
+    try {
+      console.log('📊 [ValidationDashboard] טוען דירוגים קיימים עבור:', result.test_case_name);
+      
+      const { data, error } = await supabase
+        .from('manual_outfit_ratings')
+        .select('*')
+        .eq('test_case_name', result.test_case_name)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ [ValidationDashboard] שגיאה בטעינת דירוגים:', error);
+        throw error;
+      }
+
+      console.log('✅ [ValidationDashboard] נטענו דירוגים:', data?.length || 0);
+      setExistingRatings(data || []);
+      setShowExistingRatings(true);
+      
+      if (!data || data.length === 0) {
+        toast({
+          title: "אין דירוגים",
+          description: "עדיין לא נשמרו דירוגים למקרה בוחן זה"
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "שגיאה",
+        description: error.message || "שגיאה בטעינת דירוגים",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleSaveRating = async () => {
-    if (!selectedResult || !userId) {
+    if (!selectedResult) {
+      toast({
+        title: "שגיאה",
+        description: "לא נבחר תוצאת ולידציה",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!userId) {
       toast({
         title: "שגיאה",
         description: "חייב להיות מחובר כדי לשמור דירוג",
@@ -233,25 +280,61 @@ export default function ValidationDashboard() {
     }
 
     try {
-      const { error } = await supabase.from("manual_outfit_ratings").insert({
+      // המרת ISO string ל-timestamp
+      const timestampValue = selectedResult.run_timestamp 
+        ? new Date(selectedResult.run_timestamp).toISOString().replace('T', ' ').replace('Z', '')
+        : new Date().toISOString().replace('T', ' ').replace('Z', '');
+
+      const ratingData = {
         test_case_name: selectedResult.test_case_name,
-        run_timestamp: selectedResult.run_timestamp || new Date().toISOString(),
+        run_timestamp: timestampValue,
         outfit_index: currentOutfitIndex,
         user_id: userId,
         ...manualRating
-      });
+      };
 
-      if (error) throw error;
+      console.log('💾 [ValidationDashboard] שומר דירוג:', ratingData);
+
+      const { data, error } = await supabase
+        .from("manual_outfit_ratings")
+        .insert(ratingData)
+        .select();
+
+      if (error) {
+        console.error('❌ [ValidationDashboard] שגיאה בשמירת דירוג:', error);
+        throw error;
+      }
+
+      console.log('✅ [ValidationDashboard] דירוג נשמר בהצלחה:', data);
 
       toast({
         title: "הדירוג נשמר בהצלחה!",
-        description: "הדירוג שלך נשמר והסוכנים ילמדו ממנו"
+        description: `דירוג ללוק ${currentOutfitIndex + 1} נשמר והסוכנים ילמדו ממנו`
       });
-    } catch (error) {
-      console.error('Error saving rating:', error);
+
+      // איפוס הדירוג לאחר שמירה מוצלחת
+      setManualRating({
+        overall_rating: 3,
+        like_dislike: null,
+        body_shape_fit: 3,
+        style_alignment: 3,
+        occasion_match: 3,
+        color_coordination: 3,
+        value_for_money: 3,
+        creativity: 3,
+        must_include_met: [],
+        should_avoid_violated: [],
+        feedback_notes: "",
+        what_works: "",
+        what_missing: "",
+        improvements: ""
+      });
+
+    } catch (error: any) {
+      console.error('❌ [ValidationDashboard] Error saving rating:', error);
       toast({
-        title: "שגיאה",
-        description: "שגיאה בשמירת הדירוג",
+        title: "שגיאה בשמירת דירוג",
+        description: error.message || "שגיאה לא ידועה",
         variant: "destructive"
       });
     }
@@ -530,6 +613,14 @@ export default function ValidationDashboard() {
                           >
                             <Eye className="w-4 h-4 ml-2" />
                             הצג המלצות ודרג
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewExistingRatings(result)}
+                          >
+                            <List className="w-4 h-4 ml-2" />
+                            דירוגים קיימים
                           </Button>
                         </div>
                       </div>
@@ -863,6 +954,126 @@ export default function ValidationDashboard() {
               </Card>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Existing Ratings Modal */}
+      <Dialog open={showExistingRatings} onOpenChange={setShowExistingRatings}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>דירוגים קיימים - {selectedResult?.test_case_name}</DialogTitle>
+            <DialogDescription>
+              {existingRatings.length} דירוגים נמצאו עבור מקרה בוחן זה
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {existingRatings.map((rating, index) => (
+              <Card key={rating.id}>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-lg">דירוג #{index + 1}</CardTitle>
+                    <div className="text-sm text-muted-foreground">
+                      {new Date(rating.created_at).toLocaleDateString('he-IL')} | 
+                      {new Date(rating.created_at).toLocaleTimeString('he-IL')}
+                    </div>
+                  </div>
+                  <CardDescription>לוק #{rating.outfit_index + 1}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Overall Rating */}
+                  <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Label>דירוג כולל:</Label>
+                      <div className="flex">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-5 h-5 ${star <= rating.overall_rating ? "fill-yellow-400 text-yellow-400" : "text-muted"}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    {rating.like_dislike !== null && (
+                      <div className="flex items-center gap-2">
+                        {rating.like_dislike ? (
+                          <>
+                            <ThumbsUp className="w-5 h-5 text-green-600" />
+                            <span className="text-sm text-green-600">אהבתי</span>
+                          </>
+                        ) : (
+                          <>
+                            <ThumbsDown className="w-5 h-5 text-red-600" />
+                            <span className="text-sm text-red-600">לא אהבתי</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Detailed Ratings */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {[
+                      { key: 'body_shape_fit', label: 'התאמה למבנה גוף' },
+                      { key: 'style_alignment', label: 'התאמה לסגנון' },
+                      { key: 'occasion_match', label: 'התאמה לאירוע' },
+                      { key: 'color_coordination', label: 'קואורדינציה של צבעים' },
+                      { key: 'value_for_money', label: 'תמורה למחיר' },
+                      { key: 'creativity', label: 'יצירתיות' }
+                    ].map(({ key, label }) => (
+                      <div key={key} className="space-y-1">
+                        <Label className="text-xs">{label}</Label>
+                        <div className="flex">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`w-4 h-4 ${star <= rating[key] ? "fill-yellow-400 text-yellow-400" : "text-muted"}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Text Feedback */}
+                  {(rating.feedback_notes || rating.what_works || rating.what_missing || rating.improvements) && (
+                    <div className="space-y-2 pt-2 border-t">
+                      {rating.what_works && (
+                        <div>
+                          <Label className="text-xs font-semibold">✅ מה עובד:</Label>
+                          <p className="text-sm text-muted-foreground">{rating.what_works}</p>
+                        </div>
+                      )}
+                      {rating.what_missing && (
+                        <div>
+                          <Label className="text-xs font-semibold">❌ מה חסר:</Label>
+                          <p className="text-sm text-muted-foreground">{rating.what_missing}</p>
+                        </div>
+                      )}
+                      {rating.improvements && (
+                        <div>
+                          <Label className="text-xs font-semibold">💡 שיפורים:</Label>
+                          <p className="text-sm text-muted-foreground">{rating.improvements}</p>
+                        </div>
+                      )}
+                      {rating.feedback_notes && (
+                        <div>
+                          <Label className="text-xs font-semibold">📝 הערות:</Label>
+                          <p className="text-sm text-muted-foreground">{rating.feedback_notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+            
+            {existingRatings.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                אין דירוגים קיימים למקרה בוחן זה
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
