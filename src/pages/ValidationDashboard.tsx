@@ -14,6 +14,7 @@ import { ValidationRunner } from '@/agents/validationRunner';
 import { runValidationApi, getValidationStatsApi } from './api/validation/run';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { LookImage } from '@/components/look/LookImage';
 interface ValidationMetrics {
   bodyShapeAccuracy: number;
   styleAlignment: number;
@@ -632,13 +633,11 @@ export default function ValidationDashboard() {
                             {Object.entries((selectedResult.actual_output as any).items || {}).map(([type, item]: [string, any]) => (
                               <Card key={type} className="overflow-hidden">
                                 {item?.image && (
-                                  <div className="aspect-[3/4] relative bg-muted overflow-hidden">
-                                    <img 
-                                      src={item.image} 
-                                      alt={type} 
-                                      className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300" 
-                                    />
-                                  </div>
+                                  <LookImage 
+                                    image={item.image} 
+                                    title={item.product_name || item.name || type}
+                                    type={type}
+                                  />
                                 )}
                                 <CardContent className="p-4">
                                   <div className="flex items-center gap-2 mb-2">
