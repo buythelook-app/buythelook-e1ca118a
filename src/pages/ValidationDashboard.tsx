@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { ExternalLink } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { AlertCircle, CheckCircle, Play, RefreshCw, TrendingUp, Eye, Star, ThumbsUp, ThumbsDown, Save, ArrowRight, List } from 'lucide-react';
 import { ValidationRunner } from '@/agents/validationRunner';
@@ -731,8 +732,19 @@ export default function ValidationDashboard() {
                                 fullItem: item
                               });
                               
+                              const itemUrl = item.url || item.product_url;
+                              
                               return (
-                                <Card key={type} className="overflow-hidden">
+                                <Card 
+                                  key={type} 
+                                  className={`overflow-hidden transition-all ${itemUrl ? 'cursor-pointer hover:shadow-lg hover:scale-[1.02]' : ''}`}
+                                  onClick={() => {
+                                    if (itemUrl) {
+                                      window.open(itemUrl, '_blank', 'noopener,noreferrer');
+                                      console.log(`🔗 [ValidationDashboard] פותח לינק לפריט: ${itemUrl}`);
+                                    }
+                                  }}
+                                >
                                   <LookImage 
                                     image={item.image} 
                                     title={item.product_name || item.name || type}
@@ -741,6 +753,12 @@ export default function ValidationDashboard() {
                                   <CardContent className="p-4">
                                     <div className="flex items-center gap-2 mb-2">
                                       <Badge variant="secondary">{type}</Badge>
+                                      {itemUrl && (
+                                        <Badge variant="outline" className="text-xs">
+                                          <ExternalLink className="h-3 w-3 mr-1" />
+                                          לחץ לצפייה
+                                        </Badge>
+                                      )}
                                     </div>
                                     {item && (
                                       <div className="space-y-1 text-sm">
