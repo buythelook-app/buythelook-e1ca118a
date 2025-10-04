@@ -5,12 +5,14 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Info } from "lucide-react";
+import { Loader2, Info, ThumbsUp, ThumbsDown, Star } from "lucide-react";
 import { LookCanvas } from "@/components/LookCanvas";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { extractZaraImageUrl } from "@/utils/imageUtils";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 // Types for agent results
 interface AgentOutfit {
@@ -46,6 +48,9 @@ export default function AgentResultsPage() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const [showImagePath, setShowImagePath] = useState<boolean>(false);
+  const [ratings, setRatings] = useState<Record<string, number>>({});
+  const [feedback, setFeedback] = useState<Record<string, string>>({});
+  const [likes, setLikes] = useState<Record<string, boolean | null>>({});
 
   useEffect(() => {
     const fetchTrainerAgentResults = async () => {
@@ -122,6 +127,49 @@ export default function AgentResultsPage() {
     return lookItems;
   };
 
+  const handleRating = (agentName: string, rating: number) => {
+    setRatings(prev => ({ ...prev, [agentName]: rating }));
+  };
+
+  const handleLike = (agentName: string, isLiked: boolean) => {
+    setLikes(prev => ({ ...prev, [agentName]: isLiked }));
+  };
+
+  const handleFeedbackChange = (agentName: string, text: string) => {
+    setFeedback(prev => ({ ...prev, [agentName]: text }));
+  };
+
+  const submitFeedback = async (agentName: string, outfitData: any) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    const feedbackData = {
+      user_id: user?.id,
+      feedback_type: 'agent_outfit_rating',
+      feedback_text: feedback[agentName] || '',
+      agent_notes: JSON.stringify({
+        agent: agentName,
+        rating: ratings[agentName],
+        liked: likes[agentName],
+        outfit: outfitData,
+        timestamp: new Date().toISOString()
+      })
+    };
+
+    const { error } = await (supabase as any)
+      .from('user_feedback')
+      .insert(feedbackData);
+
+    if (error) {
+      toast.error("נכשל בשמירת הפידבק");
+      console.error(error);
+    } else {
+      toast.success("הפידבק נשמר! האייגנטים ילמדו מזה.");
+      setFeedback(prev => ({ ...prev, [agentName]: '' }));
+      setRatings(prev => ({ ...prev, [agentName]: 0 }));
+      setLikes(prev => ({ ...prev, [agentName]: null }));
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background">
       <div className="container mx-auto px-4 py-8">
@@ -173,30 +221,107 @@ export default function AgentResultsPage() {
                     )}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-4">
+                <CardContent className="p-4 space-y-4">
                   {lookItems.length > 0 ? (
-                    <div className="bg-white rounded-md overflow-hidden">
-                      <LookCanvas items={lookItems} width={300} height={480} />
-                      {showImagePath && (
-                        <div className="bg-gray-50 p-2 text-xs text-gray-500 mt-2 rounded">
-                          <p className="font-semibold mb-1">Database Image Paths:</p>
-                          {lookItems.map((item, i) => (
-                            <div key={i} className="truncate">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="cursor-help">{item.type}: {item.image}</span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="max-w-xs break-all">{item.image}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          ))}
+                    <>
+                      <div className="bg-white rounded-md overflow-hidden">
+                        <LookCanvas items={lookItems} width={300} height={480} />
+                        {showImagePath && (
+                          <div className="bg-gray-50 p-2 text-xs text-gray-500 mt-2 rounded">
+                            <p className="font-semibold mb-1">Database Image Paths:</p>
+                            {lookItems.map((item, i) => (
+                              <div key={i} className="truncate">
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="cursor-help">{item.type}: {item.image}</span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs break-all">{item.image}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Rating & Feedback Section */}
+                      <div className="space-y-3 pt-4 border-t border-fashion-primary/20">
+                        {/* Star Rating */}
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">דירוג:</Label>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                onClick={() => handleRating(result.agent, star)}
+                                className="transition-transform hover:scale-110"
+                              >
+                                <Star
+                                  className={`w-5 h-5 ${
+                                    star <= (ratings[result.agent] || 0)
+                                      ? 'fill-fashion-accent text-fashion-accent'
+                                      : 'text-muted-foreground hover:text-fashion-accent/50'
+                                  }`}
+                                />
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      )}
-                    </div>
+
+                        {/* Like/Dislike */}
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">אהבתי/לא אהבתי:</Label>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant={likes[result.agent] === true ? "default" : "outline"}
+                              onClick={() => handleLike(result.agent, true)}
+                              className={likes[result.agent] === true 
+                                ? "bg-gradient-to-r from-fashion-primary to-fashion-accent" 
+                                : "border-fashion-primary/20 hover:bg-fashion-primary/10"}
+                            >
+                              <ThumbsUp className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={likes[result.agent] === false ? "default" : "outline"}
+                              onClick={() => handleLike(result.agent, false)}
+                              className={likes[result.agent] === false 
+                                ? "bg-red-500 hover:bg-red-600" 
+                                : "border-fashion-primary/20 hover:bg-red-50"}
+                            >
+                              <ThumbsDown className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Feedback Text */}
+                        <div className="space-y-2">
+                          <Label htmlFor={`feedback-${result.agent}`} className="text-sm font-medium">
+                            הערות נוספות:
+                          </Label>
+                          <Textarea
+                            id={`feedback-${result.agent}`}
+                            placeholder="מה דעתך על הלוק הזה? הפידבק שלך עוזר לאייגנטים ללמוד..."
+                            value={feedback[result.agent] || ''}
+                            onChange={(e) => handleFeedbackChange(result.agent, e.target.value)}
+                            className="border-fashion-primary/20 focus:border-fashion-primary"
+                            rows={3}
+                          />
+                        </div>
+
+                        <Button
+                          onClick={() => submitFeedback(result.agent, result.output)}
+                          disabled={!ratings[result.agent] && likes[result.agent] === null && !feedback[result.agent]}
+                          className="w-full bg-gradient-to-r from-fashion-primary to-fashion-accent hover:opacity-90 disabled:opacity-50"
+                        >
+                          שלח פידבק
+                        </Button>
+                      </div>
+                    </>
                   ) : (
                     <div className="flex justify-center items-center h-64 bg-gray-100 rounded-md">
                       <p className="text-gray-500">No outfit items available</p>
