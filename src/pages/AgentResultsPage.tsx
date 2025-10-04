@@ -142,8 +142,13 @@ export default function AgentResultsPage() {
   const submitFeedback = async (agentName: string, outfitData: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     
+    if (!user) {
+      toast.error("עליך להתחבר כדי לשלוח פידבק");
+      return;
+    }
+    
     const feedbackData = {
-      user_id: user?.id,
+      user_id: user.id,
       feedback_type: 'agent_outfit_rating',
       feedback_text: feedback[agentName] || '',
       agent_notes: JSON.stringify({
@@ -160,8 +165,8 @@ export default function AgentResultsPage() {
       .insert(feedbackData);
 
     if (error) {
-      toast.error("נכשל בשמירת הפידבק");
-      console.error(error);
+      console.error('Error saving feedback:', error);
+      toast.error("נכשל בשמירת הפידבק: " + error.message);
     } else {
       toast.success("הפידבק נשמר! האייגנטים ילמדו מזה.");
       setFeedback(prev => ({ ...prev, [agentName]: '' }));
