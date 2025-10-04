@@ -1,7 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { HomeButton } from "./HomeButton";
+import { Package, TrendingUp, CheckCircle, Clock, Truck } from "lucide-react";
+import { Badge } from "./ui/badge";
 
 const mockOrders = [
   { id: 1, date: "2024-01-01", total: 150, status: "Delivered" },
@@ -15,48 +18,113 @@ const orderStats = [
   { month: "Mar", orders: 3 },
 ];
 
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case "Delivered":
+      return <CheckCircle className="h-4 w-4" />;
+    case "Processing":
+      return <Clock className="h-4 w-4" />;
+    case "Shipped":
+      return <Truck className="h-4 w-4" />;
+    default:
+      return <Package className="h-4 w-4" />;
+  }
+};
+
+const getStatusVariant = (status: string): "default" | "secondary" | "success" => {
+  switch (status) {
+    case "Delivered":
+      return "success";
+    case "Processing":
+      return "secondary";
+    case "Shipped":
+      return "default";
+    default:
+      return "default";
+  }
+};
+
 export const Orders = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-netflix-background text-netflix-text p-6">
-      <div className="container mx-auto">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate(-1)}
-          className="mb-6"
-        >
-          ← Back
-        </Button>
+    <div className="min-h-screen bg-background p-6">
+      <div className="container max-w-6xl mx-auto">
+        <div className="mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(-1)}
+            className="mb-4"
+          >
+            ← Back
+          </Button>
 
-        <h1 className="text-2xl font-semibold mb-6">My Orders</h1>
-
-        <div className="bg-netflix-card p-4 rounded-lg mb-8">
-          <h2 className="text-lg font-medium mb-4">Order Statistics</h2>
-          <BarChart width={600} height={300} data={orderStats}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="orders" fill="#E50914" />
-          </BarChart>
+          <h1 className="text-3xl font-bold text-foreground">My Orders</h1>
+          <p className="text-muted-foreground mt-2">Track and manage your orders</p>
         </div>
 
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Order Statistics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={orderStats}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis 
+                  dataKey="month" 
+                  className="text-muted-foreground"
+                />
+                <YAxis className="text-muted-foreground" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '0.5rem'
+                  }}
+                />
+                <Bar 
+                  dataKey="orders" 
+                  fill="hsl(var(--primary))"
+                  radius={[8, 8, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
         <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-foreground mb-4">Recent Orders</h2>
           {mockOrders.map((order) => (
-            <div 
+            <Card 
               key={order.id}
-              className="bg-netflix-card p-4 rounded-lg flex justify-between items-center"
+              className="hover:shadow-lg transition-shadow"
             >
-              <div>
-                <p className="font-medium">Order #{order.id}</p>
-                <p className="text-sm text-gray-400">{order.date}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-netflix-accent">${order.total}</p>
-                <p className="text-sm">{order.status}</p>
-              </div>
-            </div>
+              <CardContent className="p-6">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-5 w-5 text-primary" />
+                      <p className="font-semibold text-lg">Order #{order.id}</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{order.date}</p>
+                  </div>
+                  <div className="text-right space-y-2">
+                    <p className="text-2xl font-bold text-primary">${order.total}</p>
+                    <Badge 
+                      variant={getStatusVariant(order.status)}
+                      className="flex items-center gap-1"
+                    >
+                      {getStatusIcon(order.status)}
+                      {order.status}
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>
