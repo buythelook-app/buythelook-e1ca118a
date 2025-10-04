@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ExternalLink } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
-import { AlertCircle, CheckCircle, Play, RefreshCw, TrendingUp, Eye, Star, ThumbsUp, ThumbsDown, Save, ArrowRight, List } from 'lucide-react';
+import { AlertCircle, CheckCircle, Play, RefreshCw, TrendingUp, Eye, Star, ThumbsUp, ThumbsDown, Save, ArrowRight, List, ShoppingCart } from 'lucide-react';
 import { ValidationRunner } from '@/agents/validationRunner';
 import { runValidationApi, getValidationStatsApi } from './api/validation/run';
 import { supabase } from '@/integrations/supabase/client';
@@ -65,6 +65,61 @@ export default function ValidationDashboard() {
     improvements: ""
   });
   const { toast } = useToast();
+
+  const handleBuyTheLook = async () => {
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Please log in to add items to cart",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!selectedResult?.actual_output) {
+      return;
+    }
+
+    try {
+      const items = (selectedResult.actual_output as any)?.items || {};
+      const itemsToAdd = Object.values(items).filter((item: any) => item?.id);
+
+      if (itemsToAdd.length === 0) {
+        toast({
+          title: "No items found",
+          description: "This look has no items to add",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Add all items to cart
+      const cartPromises = itemsToAdd.map((item: any) => 
+        supabase.from('cart_items').insert({
+          user_id: userId,
+          item_id: item.id,
+          quantity: 1
+        })
+      );
+
+      await Promise.all(cartPromises);
+
+      toast({
+        title: "Items added to cart",
+        description: `${itemsToAdd.length} items have been added to your shopping cart`,
+        duration: 3000
+      });
+
+      console.log(`🛒 [ValidationDashboard] הוספו ${itemsToAdd.length} פריטים לעגלה`);
+    } catch (error) {
+      console.error('Error adding items to cart:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add items to cart",
+        variant: "destructive"
+      });
+    }
+  };
 
   useEffect(() => {
     loadLatestResults();
@@ -707,8 +762,16 @@ export default function ValidationDashboard() {
 
               {/* B. Outfits from Agents */}
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>הלוק שהסוכנים יצרו ({currentOutfitIndex + 1})</CardTitle>
+                  <Button 
+                    onClick={handleBuyTheLook}
+                    className="gap-2"
+                    variant="default"
+                  >
+                    <ShoppingCart className="h-4 w-4" />
+                    Buy the Look
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   {selectedResult.actual_output && (
