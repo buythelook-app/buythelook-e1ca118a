@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { AuthFlowState } from "./types";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";

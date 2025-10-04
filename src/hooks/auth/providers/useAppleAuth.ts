@@ -1,5 +1,5 @@
 
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { Browser } from "@capacitor/browser";
 import { useToast } from "@/hooks/use-toast";
 import logger from "@/lib/logger";
