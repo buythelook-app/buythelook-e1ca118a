@@ -722,34 +722,22 @@ export default function ValidationDashboard() {
                           <Label className="text-lg font-semibold">פריטים בלוק</Label>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                             {Object.entries((selectedResult.actual_output as any).items || {}).map(([type, item]: [string, any]) => {
+                              if (!item) return null;
+                              
                               console.log(`🔍 [ValidationDashboard] פריט ${type}:`, {
                                 name: item?.product_name || item?.name,
                                 image: item?.image,
                                 imageType: typeof item?.image,
-                                isArray: Array.isArray(item?.image)
+                                fullItem: item
                               });
-                              
-                              // Extract image URL properly
-                              let imageUrl = '';
-                              if (item?.image) {
-                                if (typeof item.image === 'string') {
-                                  imageUrl = item.image;
-                                } else if (Array.isArray(item.image) && item.image.length > 0) {
-                                  imageUrl = item.image[0];
-                                } else if (typeof item.image === 'object' && item.image.url) {
-                                  imageUrl = item.image.url;
-                                }
-                              }
                               
                               return (
                                 <Card key={type} className="overflow-hidden">
-                                  {imageUrl && (
-                                    <LookImage 
-                                      image={imageUrl} 
-                                      title={item.product_name || item.name || type}
-                                      type={type}
-                                    />
-                                  )}
+                                  <LookImage 
+                                    image={item.image} 
+                                    title={item.product_name || item.name || type}
+                                    type={type}
+                                  />
                                   <CardContent className="p-4">
                                     <div className="flex items-center gap-2 mb-2">
                                       <Badge variant="secondary">{type}</Badge>
