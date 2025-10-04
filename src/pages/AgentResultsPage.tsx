@@ -142,13 +142,8 @@ export default function AgentResultsPage() {
   const submitFeedback = async (agentName: string, outfitData: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     
-    if (!user) {
-      toast.error("עליך להתחבר כדי לשלוח פידבק");
-      return;
-    }
-    
     const feedbackData = {
-      user_id: user.id,
+      user_id: user?.id || null, // Allow null for admin/development use
       feedback_type: 'agent_outfit_rating',
       feedback_text: feedback[agentName] || '',
       agent_notes: JSON.stringify({
