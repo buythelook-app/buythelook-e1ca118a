@@ -13,6 +13,7 @@ import CronStatusPage from './pages/CronStatusPage';
 import AgentDebugPage from './pages/AgentDebugPage';
 import Index from './pages/Index';
 import { Auth } from './pages/Auth';
+import AuthCallback from './pages/AuthCallback';
 import { Entrance } from './pages/Entrance';
 import { PasswordRecovery } from './pages/PasswordRecovery';
 import OutfitGenerationPage from './pages/OutfitGenerationPage';
@@ -72,6 +73,7 @@ function App() {
             
             {/* Authentication */}
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/password-recovery" element={<PasswordRecovery />} />
             
             {/* User features */}
