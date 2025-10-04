@@ -35,13 +35,13 @@ export const RefreshItemsButton: React.FC = () => {
         window.location.reload();
       }, 500);
 
-      toast.success('מרענן את מאגר הפריטים...', {
-        description: 'הנתונים החדשים ייטענו תוך שניות ספורות'
+      toast.success('Refreshing items database...', {
+        description: 'New data will load in a few seconds'
       });
       
     } catch (error) {
       console.error('Error refreshing items:', error);
-      toast.error('שגיאה ברענון הנתונים');
+      toast.error('Error refreshing data');
       setIsRefreshing(false);
     }
   };
@@ -55,7 +55,7 @@ export const RefreshItemsButton: React.FC = () => {
       className="gap-2"
     >
       <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-      {isRefreshing ? 'מרענן...' : 'רענן פריטים'}
+      {isRefreshing ? 'Refreshing...' : 'Refresh Items'}
     </Button>
   );
 };

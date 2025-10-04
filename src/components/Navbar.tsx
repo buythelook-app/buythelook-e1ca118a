@@ -15,7 +15,6 @@ import { useCartStore } from "./Cart";
 import { Badge } from "./ui/badge";
 import { supabase } from "@/lib/supabase";
 import { FairyAssistant } from "./FairyAssistant";
-import { RefreshItemsButton } from "./RefreshItemsButton";
 
 export const Navbar = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -113,7 +112,6 @@ export const Navbar = () => {
           )}
         </div>
         <div className="flex items-center space-x-6">
-          <RefreshItemsButton />
           {/* תמיד הצג את העגלה */}
           <Link to="/cart" className="hover:text-netflix-accent relative">
             <ShoppingCart className="h-5 w-5 text-white" />

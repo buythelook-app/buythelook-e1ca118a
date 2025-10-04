@@ -11,6 +11,7 @@ import { StyleProfileDisplay } from "@/components/look/StyleProfileDisplay";
 import { PersonalizedLooksGrid } from "@/components/look/PersonalizedLooksGrid";
 import { usePersonalizedLooks } from "@/hooks/usePersonalizedLooks";
 import { memo, useCallback, useMemo, useState } from "react";
+import { RefreshItemsButton } from "@/components/RefreshItemsButton";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -122,6 +123,10 @@ const Index = () => {
               resetError={resetError}
               userStyleProfile={userStyle?.analysis?.styleProfile}
             />
+            
+            <div className="mt-8 flex justify-center">
+              <RefreshItemsButton />
+            </div>
           </div>
         </section>
       </main>
