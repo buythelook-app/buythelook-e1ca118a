@@ -163,7 +163,12 @@ export default function AgentResultsPage() {
       console.error('Error saving feedback:', error);
       toast.error("נכשל בשמירת הפידבק: " + error.message);
     } else {
-      toast.success("הפידבק נשמר! האייגנטים ילמדו מזה.");
+      toast.success("הפידבק נשמר! מעבר ללוק הבא...");
+      
+      // Remove this agent's result from the list
+      setResults(prev => prev.filter(result => result.agent !== agentName));
+      
+      // Clear feedback state for this agent
       setFeedback(prev => ({ ...prev, [agentName]: '' }));
       setRatings(prev => ({ ...prev, [agentName]: 0 }));
       setLikes(prev => ({ ...prev, [agentName]: null }));
