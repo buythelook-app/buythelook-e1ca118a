@@ -83,8 +83,31 @@ export function usePersonalizedLooks() {
       // Fetch from RapidAPI for each occasion
       console.log('🚀 [usePersonalizedLooks] Starting RapidAPI fetch for occasions:', occasions);
       const rapidApiPromises = occasions.map(async (occasion) => {
-        const query = `women ${occasion.toLowerCase()}`;
-        const category = occasion === 'Work' ? 'dresses' : occasion === 'Evening' ? 'dresses' : 'tops';
+        // Map occasion to appropriate search terms and categories
+        let query = '';
+        let category = 'tops';
+        
+        switch(occasion) {
+          case 'Work':
+            query = 'women workwear professional';
+            category = 'dresses';
+            break;
+          case 'Evening':
+            query = 'women evening party elegant';
+            category = 'dresses';
+            break;
+          case 'Casual':
+            query = 'women casual everyday comfortable';
+            category = 'tops';
+            break;
+          case 'Weekend':
+            query = 'women weekend relaxed sporty';
+            category = 'activewear';
+            break;
+          default:
+            query = `women ${occasion.toLowerCase()}`;
+            category = 'tops';
+        }
         
         console.log(`📡 [usePersonalizedLooks] Calling RapidAPI for ${occasion}:`, { query, category });
         const catalogResult = await fetchCatalog({
