@@ -106,9 +106,15 @@ export const useCartStore = create<CartStore>((set, get) => {
     },
     addLook: async (look) => {
       set(state => {
+        // Generate a unique identifier for this look instance
+        const uniqueLook = {
+          ...look,
+          id: `${look.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        };
+        
         const newState = { 
           ...state,
-          looks: [...state.looks, look]
+          looks: [...state.looks, uniqueLook]
         };
         saveToStorage(newState);
         return newState;
@@ -116,16 +122,21 @@ export const useCartStore = create<CartStore>((set, get) => {
       toast.success('Look added to cart');
     },
     removeLook: async (lookId) => {
-      const look = get().looks.find(l => l.id === lookId);
-      if (look) {
-        for (const item of look.items) {
-          await get().removeItem(item.id);
-        }
-      }
       set(state => {
+        // Find the index of the look to remove (only remove the first occurrence)
+        const lookIndex = state.looks.findIndex(l => l.id === lookId);
+        
+        if (lookIndex === -1) {
+          return state;
+        }
+        
+        // Create a new looks array without the specific look instance
+        const newLooks = [...state.looks];
+        newLooks.splice(lookIndex, 1);
+        
         const newState = {
           ...state,
-          looks: state.looks.filter(l => l.id !== lookId)
+          looks: newLooks
         };
         saveToStorage(newState);
         return newState;
@@ -231,9 +242,9 @@ export const Cart = () => {
             <p className="text-center text-gray-400">Your cart is empty</p>
           ) : (
             <div className="space-y-8">
-              {looks.map((look) => (
+              {looks.map((look, index) => (
                 <LookCartItem
-                  key={`look-${look.id}`}
+                  key={`look-${look.id}-${index}`}
                   {...look}
                   onRemoveLook={handleRemoveLook}
                   onRemoveItem={handleRemoveItemFromLook}
