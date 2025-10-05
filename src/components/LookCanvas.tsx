@@ -31,7 +31,12 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     
     // If it's an array, take the first item
     if (Array.isArray(image) && image.length > 0) {
-      return typeof image[0] === 'string' ? image[0] : image[0]?.url || '';
+      const firstItem = image[0];
+      // Check if first item is a string
+      if (typeof firstItem === 'string') return firstItem;
+      // Check if first item is an object with url property
+      if (typeof firstItem === 'object' && firstItem?.url) return firstItem.url;
+      return '';
     }
     
     // If it's an object with url property
