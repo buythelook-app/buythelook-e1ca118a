@@ -136,28 +136,31 @@ export function usePersonalizedLooks() {
           limit: 2
         }) : { success: true, items: [] };
         
-        // Fetch shoes DIRECTLY FROM ZARA_CLOTH - more reliable and variety
+        // Fetch shoes DIRECTLY FROM ZARA_CLOTH - תיקון סינון
         console.log(`👟 [usePersonalizedLooks] Fetching shoes for ${occasion} from zara_cloth table`);
         const { data: zaraShoes, error: shoesError } = await supabase
           .from('zara_cloth')
           .select('*')
-          .ilike('category', '%shoes%')
-          .not('images', 'is', null)
+          .or('product_family.ilike.%shoe%,product_family.ilike.%sandal%,product_family.ilike.%boot%,product_subfamily.ilike.%shoe%,product_subfamily.ilike.%sandal%,product_subfamily.ilike.%boot%')
+          .not('image', 'is', null)
+          .neq('availability', false)
           .limit(20);
         
         if (shoesError) {
           console.error(`❌ [usePersonalizedLooks] Error fetching shoes:`, shoesError);
         }
         
+        console.log(`👟 [usePersonalizedLooks] Found ${zaraShoes?.length || 0} shoes for ${occasion}`);
+        
         const shoesResult = {
           success: !shoesError,
           items: (zaraShoes || []).map(shoe => ({
             id: `zara-shoes-${shoe.id}-${occasion}`,
             title: shoe.product_name,
-            image: typeof shoe.images === 'string' ? shoe.images : JSON.stringify(shoe.images),
+            image: typeof shoe.image === 'string' ? shoe.image : JSON.stringify(shoe.image),
             price: shoe.price,
             type: 'shoes' as const,
-            category: shoe.category || 'shoes',
+            category: shoe.category || shoe.product_family || 'shoes',
             season: shoe.section || 'all',
             formality: occasion === 'Work' ? 'professional' : occasion === 'Evening' ? 'elegant' : 'casual',
             style: shoe.product_family_en || shoe.product_family || 'casual',
