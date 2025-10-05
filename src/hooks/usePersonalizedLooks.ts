@@ -135,12 +135,12 @@ export function usePersonalizedLooks() {
           limit: 2
         }) : { success: true, items: [] };
         
-        // Fetch shoes - CRITICAL for proper matching
+        // Fetch shoes - CRITICAL for proper matching - increased limit for variety
         const shoesResult = await fetchCatalog({
           query: `women ${shoesStyle}`,
           gender: 'women',
           category: 'shoes',
-          limit: 2
+          limit: 10
         });
         
         console.log(`📦 [usePersonalizedLooks] ${occasion} results:`, {
