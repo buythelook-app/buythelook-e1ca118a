@@ -89,8 +89,9 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       
       img.onerror = (error) => {
         clearTimeout(timeout);
-        console.error(`❌ [LookCanvas] ${itemType} image loading failed: ${imageUrl}`, error);
-        reject(new Error(`Failed to load ${itemType} image: ${imageUrl}`));
+        const displayUrl = typeof imageUrl === 'string' ? imageUrl.substring(0, 100) : String(imageUrl).substring(0, 100);
+        console.error(`❌ [LookCanvas] ${itemType} image loading failed: ${displayUrl}`, error);
+        reject(new Error(`Failed to load ${itemType} image`));
       };
       
       img.src = imageUrl;
