@@ -165,6 +165,10 @@ export default function AgentResultsPage() {
     } else {
       toast.success("הפידבק נשמר! מעבר ללוק הבא...");
       
+      // Trigger learning process
+      const { feedbackProcessingService } = await import('@/services/feedbackProcessingService');
+      await feedbackProcessingService.processFeedback(user?.id || null);
+      
       // Remove this agent's result from the list
       setResults(prev => prev.filter(result => result.agent !== agentName));
       

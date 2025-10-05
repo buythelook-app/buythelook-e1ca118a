@@ -34,7 +34,20 @@ export class FeedbackLearningAgent {
     try {
       console.log(`🔍 [FeedbackLearning] מנתח דפוסי פידבק עבור: ${userId}`);
       
-      // שליפת כל נתוני הפידבק למשתמש
+      // שליפת כל נתוני הפידבק למשתמש מ-agent_runs (שם נשמר הפידבק)
+      const { data: agentFeedback, error: agentError } = await supabase
+        .from('agent_runs')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'feedback')
+        .order('timestamp', { ascending: false })
+        .limit(50);
+      
+      if (agentError) {
+        console.error('❌ שגיאה בשליפת פידבק אייגנטים:', agentError);
+      }
+      
+      // שליפת כל נתוני הפידבק למשתמש מ-outfit_logs
       const { data: outfitFeedback, error: outfitError } = await supabase
         .from('outfit_logs')
         .select('*')
@@ -44,11 +57,12 @@ export class FeedbackLearningAgent {
       
       if (outfitError) {
         console.error('❌ שגיאה בשליפת פידבק תלבושות:', outfitError);
-        return null;
       }
       
       // שליפת נתוני למידה קיימים
       const learningData = await learningAgent.getLearningDataForAgents(userId);
+      
+      console.log(`📊 [FeedbackLearning] נמצאו ${agentFeedback?.length || 0} פידבקים חדשים`);
       
       // ניתוח דפוסים
       const preferredColors = this.extractColorPreferences(outfitFeedback || []);
