@@ -6,6 +6,7 @@ import { toast as sonnerToast } from "sonner";
 import type { Mood } from "@/components/filters/MoodFilter";
 import { DashboardItem } from "@/types/lookTypes";
 import { useExternalCatalog } from "./useExternalCatalog";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface LookItem {
   id: string;
@@ -135,13 +136,34 @@ export function usePersonalizedLooks() {
           limit: 2
         }) : { success: true, items: [] };
         
-        // Fetch shoes - CRITICAL for proper matching - increased limit for variety
-        const shoesResult = await fetchCatalog({
-          query: `women ${shoesStyle}`,
-          gender: 'women',
-          category: 'shoes',
-          limit: 10
-        });
+        // Fetch shoes DIRECTLY FROM ZARA_CLOTH - more reliable and variety
+        console.log(`👟 [usePersonalizedLooks] Fetching shoes for ${occasion} from zara_cloth table`);
+        const { data: zaraShoes, error: shoesError } = await supabase
+          .from('zara_cloth')
+          .select('*')
+          .ilike('category', '%shoes%')
+          .not('images', 'is', null)
+          .limit(20);
+        
+        if (shoesError) {
+          console.error(`❌ [usePersonalizedLooks] Error fetching shoes:`, shoesError);
+        }
+        
+        const shoesResult = {
+          success: !shoesError,
+          items: (zaraShoes || []).map(shoe => ({
+            id: `zara-shoes-${shoe.id}-${occasion}`,
+            title: shoe.product_name,
+            image: typeof shoe.images === 'string' ? shoe.images : JSON.stringify(shoe.images),
+            price: shoe.price,
+            type: 'shoes' as const,
+            category: shoe.category || 'shoes',
+            season: shoe.section || 'all',
+            formality: occasion === 'Work' ? 'professional' : occasion === 'Evening' ? 'elegant' : 'casual',
+            style: shoe.product_family_en || shoe.product_family || 'casual',
+            affiliate_link: shoe.url || shoe.product_url || ''
+          }))
+        };
         
         console.log(`📦 [usePersonalizedLooks] ${occasion} results:`, {
           tops: topsResult.items?.length || 0,
@@ -210,21 +232,21 @@ export function usePersonalizedLooks() {
           });
         }
         
-        // Add shoes - ALWAYS as type 'shoes'
+        // Add shoes - ALWAYS as type 'shoes' - now from Zara DB
         if (shoesResult.success && shoesResult.items) {
           shoesResult.items.forEach(item => {
             allItems.push({
-              id: `rapidapi-${occasion}-shoes-${item.id}`,
+              id: item.id,
               name: item.title,
               type: 'shoes',
-              image: item.imageUrl || item.thumbnailUrl || '/placeholder.svg',
-              price: item.estimatedPrice?.replace(/[^0-9.]/g, '') || '29.99',
+              image: item.image,
+              price: item.price?.toString() || '29.99',
               color: 'mixed',
-              category: 'shoes',
-              season: 'all',
-              formality: occasion === 'Work' ? 'formal' : occasion === 'Evening' ? 'formal' : 'casual',
-              style: shoesStyle,
-              affiliate_link: item.link
+              category: item.category || 'shoes',
+              season: item.season || 'all',
+              formality: item.formality || 'casual',
+              style: item.style || shoesStyle,
+              affiliate_link: item.affiliate_link || ''
             });
           });
         }
