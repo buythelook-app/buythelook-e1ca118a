@@ -80,68 +80,168 @@ export function usePersonalizedLooks() {
         clearOutfitCache();
       }
       
-      // Fetch from RapidAPI for each occasion
+      // Fetch from RapidAPI for each occasion - separate queries for tops, bottoms, shoes
       console.log('🚀 [usePersonalizedLooks] Starting RapidAPI fetch for occasions:', occasions);
       const rapidApiPromises = occasions.map(async (occasion) => {
-        // Map occasion to appropriate search terms and categories
-        let query = '';
-        let category = 'tops';
+        // Map occasion to appropriate search terms
+        let baseQuery = '';
+        let shoesStyle = '';
         
         switch(occasion) {
           case 'Work':
-            query = 'women workwear professional';
-            category = 'dresses';
+            baseQuery = 'women professional workwear';
+            shoesStyle = 'professional heels pumps';
             break;
           case 'Evening':
-            query = 'women evening party elegant';
-            category = 'dresses';
+            baseQuery = 'women evening party elegant';
+            shoesStyle = 'elegant heels sandals';
             break;
           case 'Casual':
-            query = 'women casual everyday comfortable';
-            category = 'tops';
+            baseQuery = 'women casual everyday comfortable';
+            shoesStyle = 'casual sneakers flats';
             break;
           case 'Weekend':
-            query = 'women weekend relaxed sporty';
-            category = 'activewear';
+            baseQuery = 'women weekend relaxed';
+            shoesStyle = 'sporty sneakers comfortable';
             break;
           default:
-            query = `women ${occasion.toLowerCase()}`;
-            category = 'tops';
+            baseQuery = `women ${occasion.toLowerCase()}`;
+            shoesStyle = 'casual shoes';
         }
         
-        console.log(`📡 [usePersonalizedLooks] Calling RapidAPI for ${occasion}:`, { query, category });
-        const catalogResult = await fetchCatalog({
-          query,
+        console.log(`📡 [usePersonalizedLooks] Fetching for ${occasion}: tops, bottoms, shoes separately`);
+        
+        // Fetch tops
+        const topsResult = await fetchCatalog({
+          query: `${baseQuery} tops shirts blouses`,
           gender: 'women',
-          category,
-          limit: 6
+          category: 'tops',
+          limit: 3
         });
-        console.log(`📦 [usePersonalizedLooks] RapidAPI result for ${occasion}:`, catalogResult);
         
-        if (catalogResult.success && catalogResult.items) {
-          console.log(`✅ [usePersonalizedLooks] RapidAPI SUCCESS for ${occasion}:`, catalogResult.items.length, 'items');
-          // Convert CatalogItem to DashboardItem format
-          const dashboardItems: DashboardItem[] = catalogResult.items.map((item, index) => ({
-            id: `rapidapi-${occasion}-${item.id}`,
-            name: item.title,
-            type: (occasion === 'Work' || occasion === 'Evening') ? 'dress' : 
-                  (index % 3 === 0 ? 'top' : index % 3 === 1 ? 'bottom' : 'shoes') as any,
-            image: item.imageUrl || item.thumbnailUrl || '/placeholder.svg',
-            price: item.estimatedPrice?.replace(/[^0-9.]/g, '') || '29.99',
-            brand: item.source || 'ASOS',
-            color: 'mixed',
-            category: item.category || 'clothing',
-            season: 'all',
-            formality: occasion === 'Work' ? 'formal' : occasion === 'Evening' ? 'formal' : 'casual',
-            style: 'modern',
-            affiliate_link: item.link
-          }));
-          
-          console.log(`🎯 [usePersonalizedLooks] Converted ${dashboardItems.length} items for ${occasion}:`, dashboardItems.map(i => ({ id: i.id, name: i.name, source: 'RapidAPI' })));
-          return { occasion, items: dashboardItems };
+        // Fetch bottoms (not for Evening/Work if they use dresses)
+        const bottomsResult = (occasion === 'Work' || occasion === 'Evening') ? { success: true, items: [] } : await fetchCatalog({
+          query: `${baseQuery} pants skirts`,
+          gender: 'women',
+          category: 'bottoms',
+          limit: 2
+        });
+        
+        // Fetch dresses (for Work/Evening)
+        const dressesResult = (occasion === 'Work' || occasion === 'Evening') ? await fetchCatalog({
+          query: `${baseQuery} dresses`,
+          gender: 'women',
+          category: 'dresses',
+          limit: 2
+        }) : { success: true, items: [] };
+        
+        // Fetch shoes - CRITICAL for proper matching
+        const shoesResult = await fetchCatalog({
+          query: `women ${shoesStyle}`,
+          gender: 'women',
+          category: 'shoes',
+          limit: 2
+        });
+        
+        console.log(`📦 [usePersonalizedLooks] ${occasion} results:`, {
+          tops: topsResult.items?.length || 0,
+          bottoms: bottomsResult.items?.length || 0,
+          dresses: dressesResult.items?.length || 0,
+          shoes: shoesResult.items?.length || 0
+        });
+        
+        // Combine all items with proper typing
+        const allItems: DashboardItem[] = [];
+        
+        // Add tops
+        if (topsResult.success && topsResult.items) {
+          topsResult.items.forEach(item => {
+            allItems.push({
+              id: `rapidapi-${occasion}-top-${item.id}`,
+              name: item.title,
+              type: 'top',
+              image: item.imageUrl || item.thumbnailUrl || '/placeholder.svg',
+              price: item.estimatedPrice?.replace(/[^0-9.]/g, '') || '29.99',
+              color: 'mixed',
+              category: item.category || 'clothing',
+              season: 'all',
+              formality: occasion === 'Work' ? 'formal' : occasion === 'Evening' ? 'formal' : 'casual',
+              style: 'modern',
+              affiliate_link: item.link
+            });
+          });
         }
         
-        console.log(`❌ [usePersonalizedLooks] RapidAPI FAILED for ${occasion}:`, catalogResult.error);
+        // Add bottoms
+        if (bottomsResult.success && bottomsResult.items) {
+          bottomsResult.items.forEach(item => {
+            allItems.push({
+              id: `rapidapi-${occasion}-bottom-${item.id}`,
+              name: item.title,
+              type: 'bottom',
+              image: item.imageUrl || item.thumbnailUrl || '/placeholder.svg',
+              price: item.estimatedPrice?.replace(/[^0-9.]/g, '') || '29.99',
+              color: 'mixed',
+              category: item.category || 'clothing',
+              season: 'all',
+              formality: occasion === 'Work' ? 'formal' : occasion === 'Evening' ? 'formal' : 'casual',
+              style: 'modern',
+              affiliate_link: item.link
+            });
+          });
+        }
+        
+        // Add dresses
+        if (dressesResult.success && dressesResult.items) {
+          dressesResult.items.forEach(item => {
+            allItems.push({
+              id: `rapidapi-${occasion}-dress-${item.id}`,
+              name: item.title,
+              type: 'dress',
+              image: item.imageUrl || item.thumbnailUrl || '/placeholder.svg',
+              price: item.estimatedPrice?.replace(/[^0-9.]/g, '') || '29.99',
+              color: 'mixed',
+              category: item.category || 'clothing',
+              season: 'all',
+              formality: occasion === 'Work' ? 'formal' : occasion === 'Evening' ? 'formal' : 'casual',
+              style: 'modern',
+              affiliate_link: item.link
+            });
+          });
+        }
+        
+        // Add shoes - ALWAYS as type 'shoes'
+        if (shoesResult.success && shoesResult.items) {
+          shoesResult.items.forEach(item => {
+            allItems.push({
+              id: `rapidapi-${occasion}-shoes-${item.id}`,
+              name: item.title,
+              type: 'shoes',
+              image: item.imageUrl || item.thumbnailUrl || '/placeholder.svg',
+              price: item.estimatedPrice?.replace(/[^0-9.]/g, '') || '29.99',
+              color: 'mixed',
+              category: 'shoes',
+              season: 'all',
+              formality: occasion === 'Work' ? 'formal' : occasion === 'Evening' ? 'formal' : 'casual',
+              style: shoesStyle,
+              affiliate_link: item.link
+            });
+          });
+        }
+        
+        console.log(`✅ [usePersonalizedLooks] ${occasion} combined ${allItems.length} items with proper types:`, {
+          tops: allItems.filter(i => i.type === 'top').length,
+          bottoms: allItems.filter(i => i.type === 'bottom').length,
+          dresses: allItems.filter(i => i.type === 'dress').length,
+          shoes: allItems.filter(i => i.type === 'shoes').length
+        });
+        
+        if (allItems.length > 0) {
+          console.log(`🎯 [usePersonalizedLooks] Sample items for ${occasion}:`, allItems.map(i => ({ id: i.id, name: i.name, type: i.type })));
+          return { occasion, items: allItems };
+        }
+        
+        console.log(`❌ [usePersonalizedLooks] No items fetched for ${occasion}`);
         return { occasion, items: [] };
       });
       
