@@ -2,11 +2,12 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "./ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { HomeButton } from "./HomeButton";
+import { supabase } from "@/integrations/supabase/client";
 
 export const StyleGuide = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export const StyleGuide = () => {
     },
     stores: [] as string[],
   });
+  const [loading, setLoading] = useState(true);
 
   // This would typically come from a store or context
   const quizResults = {
@@ -33,12 +35,87 @@ export const StyleGuide = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Load user sizes from database
+  useEffect(() => {
+    const loadUserSizes = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('size_preferences')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (profile?.size_preferences) {
+          const sizePrefs = profile.size_preferences as any;
+          setPreferences(prev => ({
+            ...prev,
+            sizes: {
+              top: sizePrefs.top || "",
+              bottom: sizePrefs.bottom || "",
+              shoes: sizePrefs.shoes || ""
+            }
+          }));
+        }
+
+        setLoading(false);
+      } catch (error) {
+        console.error('Error loading sizes:', error);
+        setLoading(false);
+      }
+    };
+
+    loadUserSizes();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Preferences Saved",
-      description: "Your style preferences have been updated.",
-    });
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "Please log in to save preferences.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Upsert user profile with size preferences
+      const { error } = await supabase
+        .from('user_profiles')
+        .upsert({
+          user_id: user.id,
+          size_preferences: preferences.sizes
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) throw error;
+
+      // Dispatch event to notify other components
+      window.dispatchEvent(new Event('userSizesUpdated'));
+
+      toast({
+        title: "Preferences Saved",
+        description: "Your style preferences have been updated.",
+      });
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save preferences. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -114,33 +191,37 @@ export const StyleGuide = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-lg space-y-4">
                     <h2 className="font-medium text-white">Your Sizes</h2>
+                    <p className="text-sm text-white/60 mb-2">These sizes will be automatically filled when you view outfits</p>
                     <div className="space-y-2">
                       <Input
-                        placeholder="Top Size"
+                        placeholder="Top Size (e.g., S, M, L)"
                         value={preferences.sizes.top}
                         onChange={(e) => setPreferences({
                           ...preferences,
                           sizes: { ...preferences.sizes, top: e.target.value }
                         })}
                         className="bg-white/5 border-white/20 text-white placeholder-white/50"
+                        disabled={loading}
                       />
                       <Input
-                        placeholder="Bottom Size"
+                        placeholder="Bottom Size (e.g., S, M, L)"
                         value={preferences.sizes.bottom}
                         onChange={(e) => setPreferences({
                           ...preferences,
                           sizes: { ...preferences.sizes, bottom: e.target.value }
                         })}
                         className="bg-white/5 border-white/20 text-white placeholder-white/50"
+                        disabled={loading}
                       />
                       <Input
-                        placeholder="Shoe Size"
+                        placeholder="Shoe Size (e.g., 38, 39, 40)"
                         value={preferences.sizes.shoes}
                         onChange={(e) => setPreferences({
                           ...preferences,
                           sizes: { ...preferences.sizes, shoes: e.target.value }
                         })}
                         className="bg-white/5 border-white/20 text-white placeholder-white/50"
+                        disabled={loading}
                       />
                     </div>
                   </div>
@@ -169,8 +250,12 @@ export const StyleGuide = () => {
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full bg-gradient-to-r from-fashion-primary to-fashion-accent hover:opacity-90 text-white font-medium">
-                    Save Preferences
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gradient-to-r from-fashion-primary to-fashion-accent hover:opacity-90 text-white font-medium"
+                    disabled={loading}
+                  >
+                    {loading ? "Loading..." : "Save Preferences"}
                   </Button>
                 </form>
               </CardContent>

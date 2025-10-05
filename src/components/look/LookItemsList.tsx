@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
 import { useCartStore } from "../Cart";
@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { ExternalLink } from "lucide-react";
 import { AffiliateLink } from "../AffiliateLink";
+import { useUserSizes } from "@/hooks/useUserSizes";
 
 interface Item {
   id: string;
@@ -34,8 +35,32 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
   const { addLook, addItems } = useCartStore();
+  const { sizes: userSizes, isLoading: sizesLoading } = useUserSizes();
 
   const defaultSizes = ["XS", "S", "M", "L", "XL"];
+
+  // Auto-fill sizes from user profile when component mounts
+  useEffect(() => {
+    if (!sizesLoading && look.items) {
+      const autoSizes: Record<string, string> = {};
+      
+      look.items.forEach(item => {
+        const itemType = item.type?.toLowerCase();
+        
+        if (itemType === 'top' && userSizes.top) {
+          autoSizes[item.id] = userSizes.top;
+        } else if (itemType === 'bottom' && userSizes.bottom) {
+          autoSizes[item.id] = userSizes.bottom;
+        } else if (itemType === 'shoes' && userSizes.shoes) {
+          autoSizes[item.id] = userSizes.shoes;
+        }
+      });
+      
+      if (Object.keys(autoSizes).length > 0) {
+        setSelectedSizes(prev => ({ ...autoSizes, ...prev }));
+      }
+    }
+  }, [look.items, userSizes, sizesLoading]);
 
   const handleItemSelect = (itemId: string) => {
     setSelectedItems(prev => {
@@ -189,7 +214,7 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
                   onValueChange={(value) => handleSizeSelect(item.id, value)}
                 >
                   <SelectTrigger className="w-32 border-fashion-primary/20">
-                    <SelectValue placeholder="Select size" />
+                    <SelectValue placeholder={sizesLoading ? "Loading..." : "Select size"} />
                   </SelectTrigger>
                   <SelectContent>
                     {(item.sizes || defaultSizes).map((size) => (
@@ -199,6 +224,11 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
                     ))}
                   </SelectContent>
                 </Select>
+                {selectedSizes[item.id] && (
+                  <span className="text-xs text-fashion-primary">
+                    ✓ Auto-filled from profile
+                  </span>
+                )}
               </div>
               {item.type && (
                 <p className="text-sm text-muted-foreground mt-2">Type: {item.type}</p>
