@@ -110,40 +110,79 @@ export function usePersonalizedLooks() {
             shoesStyle = 'casual shoes';
         }
         
-        console.log(`📡 [usePersonalizedLooks] Fetching for ${occasion}: tops, bottoms, shoes separately`);
+        console.log(`📡 [usePersonalizedLooks] Fetching ALL items for ${occasion} from zara_cloth table`);
         
-        // Fetch tops
-        const topsResult = await fetchCatalog({
-          query: `${baseQuery} tops shirts blouses`,
-          gender: 'women',
-          category: 'tops',
-          limit: 3
-        });
+        // Fetch TOPS from zara_cloth
+        const { data: zaraTops, error: topsError } = await supabase
+          .from('zara_cloth')
+          .select('*')
+          .or('scraped_category.ilike.%top%,scraped_category.ilike.%shirt%,scraped_category.ilike.%blouse%,product_family.ilike.%top%,product_family.ilike.%shirt%')
+          .not('images', 'is', null)
+          .limit(50);
         
-        // Fetch bottoms (not for Evening/Work if they use dresses)
-        const bottomsResult = (occasion === 'Work' || occasion === 'Evening') ? { success: true, items: [] } : await fetchCatalog({
-          query: `${baseQuery} pants skirts`,
-          gender: 'women',
-          category: 'bottoms',
-          limit: 2
-        });
+        const topsResult = {
+          success: !topsError,
+          items: (zaraTops || []).map(item => ({
+            id: `zara-top-${item.id}-${occasion}`,
+            title: item.product_name,
+            imageUrl: typeof item.images === 'string' ? item.images : JSON.stringify(item.images),
+            thumbnailUrl: typeof item.images === 'string' ? item.images : JSON.stringify(item.images),
+            link: item.url || item.product_url || '',
+            estimatedPrice: item.price ? `₪${item.price}` : null,
+            category: 'tops'
+          }))
+        };
         
-        // Fetch dresses (for Work/Evening)
-        const dressesResult = (occasion === 'Work' || occasion === 'Evening') ? await fetchCatalog({
-          query: `${baseQuery} dresses`,
-          gender: 'women',
-          category: 'dresses',
-          limit: 2
-        }) : { success: true, items: [] };
+        // Fetch BOTTOMS from zara_cloth
+        const { data: zaraBottoms, error: bottomsError } = await supabase
+          .from('zara_cloth')
+          .select('*')
+          .or('scraped_category.ilike.%pant%,scraped_category.ilike.%skirt%,scraped_category.ilike.%trouser%,product_family.ilike.%pant%,product_family.ilike.%skirt%')
+          .not('images', 'is', null)
+          .limit(50);
         
-        // Fetch shoes DIRECTLY FROM ZARA_CLOTH - more reliable and variety
+        const bottomsResult = {
+          success: !bottomsError,
+          items: (zaraBottoms || []).map(item => ({
+            id: `zara-bottom-${item.id}-${occasion}`,
+            title: item.product_name,
+            imageUrl: typeof item.images === 'string' ? item.images : JSON.stringify(item.images),
+            thumbnailUrl: typeof item.images === 'string' ? item.images : JSON.stringify(item.images),
+            link: item.url || item.product_url || '',
+            estimatedPrice: item.price ? `₪${item.price}` : null,
+            category: 'bottoms'
+          }))
+        };
+        
+        // Fetch DRESSES from zara_cloth
+        const { data: zaraDresses, error: dressesError } = await supabase
+          .from('zara_cloth')
+          .select('*')
+          .or('scraped_category.ilike.%dress%,product_family.ilike.%dress%')
+          .not('images', 'is', null)
+          .limit(50);
+        
+        const dressesResult = {
+          success: !dressesError,
+          items: (zaraDresses || []).map(item => ({
+            id: `zara-dress-${item.id}-${occasion}`,
+            title: item.product_name,
+            imageUrl: typeof item.images === 'string' ? item.images : JSON.stringify(item.images),
+            thumbnailUrl: typeof item.images === 'string' ? item.images : JSON.stringify(item.images),
+            link: item.url || item.product_url || '',
+            estimatedPrice: item.price ? `₪${item.price}` : null,
+            category: 'dresses'
+          }))
+        };
+        
+        // Fetch SHOES from zara_cloth
         console.log(`👟 [usePersonalizedLooks] Fetching shoes for ${occasion} from zara_cloth table`);
         const { data: zaraShoes, error: shoesError } = await supabase
           .from('zara_cloth')
           .select('*')
-          .ilike('category', '%shoes%')
+          .or('scraped_category.ilike.%shoe%,product_family.ilike.%shoe%,scraped_category.ilike.%sandal%,scraped_category.ilike.%boot%,scraped_category.ilike.%sneaker%')
           .not('images', 'is', null)
-          .limit(20);
+          .limit(100);
         
         if (shoesError) {
           console.error(`❌ [usePersonalizedLooks] Error fetching shoes:`, shoesError);
