@@ -124,9 +124,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
     <>
       {/* Fairy Character */}
       <div 
-        className={`fixed z-50 transition-all duration-500 cursor-pointer ${
-          isFloating ? 'animate-bounce' : ''
-        }`}
+        className="fixed z-50 transition-all duration-500 cursor-pointer"
         style={{
           top: '100px',
           right: '20px',
