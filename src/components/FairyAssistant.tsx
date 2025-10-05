@@ -120,8 +120,8 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
           isFloating ? 'animate-bounce' : ''
         }`}
         style={{
-          top: '300px',
-          left: '20px',
+          top: '100px',
+          right: '20px',
           transform: isExpanded ? 'scale(1.1)' : 'scale(1)',
         }}
         onClick={handleFairyClick}
@@ -157,10 +157,10 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
       {showMessage && (
         <div 
           className={`fixed z-40 transition-all duration-300 ${
-            isExpanded ? 'left-24' : 'left-24'
+            isExpanded ? 'right-24' : 'right-24'
           }`}
           style={{
-            top: '290px',
+            top: '90px',
             maxWidth: '300px',
           }}
         >
@@ -208,7 +208,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
           
           {/* Speech bubble tail */}
           <div 
-            className="absolute top-6 -left-2 w-4 h-4 bg-white/95 border-l border-b border-fashion-primary/20 transform rotate-45"
+            className="absolute top-6 -right-2 w-4 h-4 bg-white/95 border-r border-b border-fashion-primary/20 transform rotate-45"
           />
         </div>
       )}
@@ -220,7 +220,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
           onClick={() => setIsExpanded(false)}
         >
           <div 
-            className="absolute top-80 left-24 w-80 max-h-96 overflow-y-auto"
+            className="absolute top-52 right-24 w-80 max-h-96 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <Card className="bg-white border border-fashion-primary/20 shadow-2xl">
