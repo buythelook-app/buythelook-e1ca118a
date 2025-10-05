@@ -15,6 +15,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentMessage, setCurrentMessage] = useState("");
   const [showMessage, setShowMessage] = useState(false);
+  const [userDismissed, setUserDismissed] = useState(false); // Track if user manually closed
   const location = useLocation();
   const navigate = useNavigate();
   const { getCurrentGuidance, markActionCompleted } = useFairyGuidance();
@@ -34,43 +35,50 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
 
   useEffect(() => {
     // Get contextual guidance based on current route and user state
-    const guidance = getCurrentGuidance(location.pathname, isAuthenticated);
-    if (guidance) {
-      setCurrentMessage(guidance.message);
-      setShowMessage(true);
-      
-      // Auto-hide message after reading time
-      const hideTimer = setTimeout(() => {
-        setShowMessage(false);
-      }, guidance.duration || 8000);
+    // Only show automatically if user hasn't dismissed
+    if (!userDismissed) {
+      const guidance = getCurrentGuidance(location.pathname, isAuthenticated);
+      if (guidance) {
+        setCurrentMessage(guidance.message);
+        setShowMessage(true);
+        
+        // Auto-hide message after reading time
+        const hideTimer = setTimeout(() => {
+          setShowMessage(false);
+        }, guidance.duration || 8000);
 
-      return () => clearTimeout(hideTimer);
+        return () => clearTimeout(hideTimer);
+      }
     }
-  }, [location.pathname, isAuthenticated, getCurrentGuidance]);
+  }, [location.pathname, isAuthenticated, getCurrentGuidance, userDismissed]);
 
   useEffect(() => {
     // Idle detection - show hints after inactivity
+    // Only if user hasn't dismissed
     const checkIdle = () => {
-      const now = Date.now();
-      if (now - lastInteraction > 30000) { // 30 seconds idle
-        const guidance = getCurrentGuidance(location.pathname, isAuthenticated, true);
-        if (guidance) {
-          setCurrentMessage(guidance.message);
-          setShowMessage(true);
+      if (!userDismissed) {
+        const now = Date.now();
+        if (now - lastInteraction > 30000) { // 30 seconds idle
+          const guidance = getCurrentGuidance(location.pathname, isAuthenticated, true);
+          if (guidance) {
+            setCurrentMessage(guidance.message);
+            setShowMessage(true);
+          }
         }
       }
     };
 
     const idleTimer = setInterval(checkIdle, 10000);
     return () => clearInterval(idleTimer);
-  }, [lastInteraction, location.pathname, isAuthenticated, getCurrentGuidance]);
+  }, [lastInteraction, location.pathname, isAuthenticated, getCurrentGuidance, userDismissed]);
 
   const handleFairyClick = () => {
     setIsExpanded(!isExpanded);
     setLastInteraction(Date.now());
     
     if (!isExpanded) {
-      // Show contextual help when expanded
+      // Show contextual help when expanded - and reset dismiss flag
+      setUserDismissed(false);
       const guidance = getCurrentGuidance(location.pathname, isAuthenticated);
       if (guidance) {
         setCurrentMessage(guidance.message);
@@ -174,7 +182,10 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowMessage(false)}
+                onClick={() => {
+                  setShowMessage(false);
+                  setUserDismissed(true); // Mark as dismissed by user
+                }}
                 className="h-6 w-6 p-0 hover:bg-gray-100"
               >
                 <X className="h-3 w-3" />
