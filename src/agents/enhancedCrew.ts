@@ -3,6 +3,7 @@ import { personalizationAgent, stylingAgent, validatorAgent, recommendationAgent
 import { learningAgent, LearningData } from "./learningAgent";
 import { OutfitResponse } from "../types/outfitTypes";
 import logger from "@/lib/logger";
+import { supabase } from "@/lib/supabaseClient";
 
 interface EnhancedGenerationContext {
   userId: string;
@@ -32,7 +33,7 @@ export class EnhancedAgentCrew {
   }
 
   /**
-   * מריץ את כל האייגנטים עם שילוב נתוני למידה מעמוד הבית
+   * מריץ את כל האייגנטים עם שילוב נתוני למידה מעמוד הבית + חוקי פידבק פעילים
    */
   async runWithLearning(context: EnhancedGenerationContext | string): Promise<OutfitResponse> {
     // טיפול בפורמט ישן וחדש
@@ -43,9 +44,30 @@ export class EnhancedAgentCrew {
     console.log(`🧠 [EnhancedAgentCrew] הקשר ליצירה:`, generationContext);
     
     try {
-      // שלב 0: חילוץ ושמירת נתוני למידה מעמוד הבית
+      // שלב 0א: טעינת חוקי למידה פעילים מ-agent_runs
+      console.log('🔍 [EnhancedAgentCrew] טוען חוקי למידה פעילים...');
+      const { data: activeLearningRules } = await supabase
+        .from('agent_runs')
+        .select('result')
+        .eq('user_id', userId)
+        .eq('agent_name', 'learning-rules')
+        .eq('status', 'active_rules')
+        .order('timestamp', { ascending: false })
+        .limit(1)
+        .single();
+      
+      const learningRules = (activeLearningRules?.result as any)?.rules || null;
+      if (learningRules) {
+        console.log('✅ [EnhancedAgentCrew] נטענו חוקי למידה פעילים:', {
+          dislikedItems: learningRules.dislikedItems?.length || 0,
+          mustAvoid: learningRules.mustAvoid?.length || 0,
+          preferredColors: learningRules.preferredColors?.length || 0
+        });
+      }
+      
+      // שלב 0ב: חילוץ ושמירת נתוני למידה מעמוד הבית
       if (generationContext.learningEnabled) {
-        console.log('🧠 [EnhancedAgentCrew] שלב 0: חילוץ נתוני למידה מעמוד הבית...');
+        console.log('🧠 [EnhancedAgentCrew] שלב 0ב: חילוץ נתוני למידה מעמוד הבית...');
         
         const learningData = await learningAgent.extractHomepageLearningData(userId);
         if (learningData) {
@@ -54,12 +76,13 @@ export class EnhancedAgentCrew {
         }
       }
       
-      // שלב 1: הרצת agent personalization עם נתוני למידה
-      console.log('🧠 [EnhancedAgentCrew] שלב 1: מריץ PersonalizationAgent עם נתוני למידה...');
+      // שלב 1: הרצת agent personalization עם נתוני למידה + חוקים פעילים
+      console.log('🧠 [EnhancedAgentCrew] שלב 1: מריץ PersonalizationAgent עם נתוני למידה וחוקים פעילים...');
       
       // טעינת נתוני למידה קיימים
       const existingLearningData = await learningAgent.getLearningDataForAgents(userId);
       
+      // הרצת personalization עם חוקי למידה
       const personalizationResult = await personalizationAgent.run(userId);
       
       if (!personalizationResult.success) {
@@ -69,16 +92,17 @@ export class EnhancedAgentCrew {
         };
       }
       
-      // שילוב נתוני למידה בהקשר
+      // שילוב נתוני למידה + חוקים פעילים בהקשר
       const enhancedPersonalizationData = {
         ...personalizationResult.data,
-        learningInsights: this.extractLearningInsights(existingLearningData)
+        learningInsights: this.extractLearningInsights(existingLearningData),
+        activeLearningRules: learningRules // הוספת חוקי למידה פעילים
       };
       
-      console.log('✅ [EnhancedAgentCrew] PersonalizationAgent הושלם עם נתוני למידה');
+      console.log('✅ [EnhancedAgentCrew] PersonalizationAgent הושלם עם נתוני למידה וחוקים פעילים');
       
-      // שלב 2: הרצת styling agent עם תובנות למידה
-      console.log('👗 [EnhancedAgentCrew] שלב 2: מריץ StylingAgent עם תובנות למידה...');
+      // שלב 2: הרצת styling agent עם תובנות למידה + סינון לפי חוקים פעילים
+      console.log('👗 [EnhancedAgentCrew] שלב 2: מריץ StylingAgent עם תובנות למידה וחוקים פעילים...');
       const stylingResult = await stylingAgent.run(userId);
       
       if (!stylingResult.success || !stylingResult.data?.looks?.length) {
@@ -88,8 +112,14 @@ export class EnhancedAgentCrew {
         };
       }
       
-      // שיפור תוצאות הסטיילינג על בסיס נתוני למידה
-      const enhancedLooks = this.enhanceLooksWithLearning(stylingResult.data.looks, existingLearningData);
+      // סינון ושיפור תוצאות הסטיילינג על בסיס נתוני למידה + חוקים פעילים
+      let enhancedLooks = this.enhanceLooksWithLearning(stylingResult.data.looks, existingLearningData);
+      
+      // יישום חוקי למידה פעילים - סינון פריטים שלא רצויים
+      if (learningRules) {
+        enhancedLooks = this.applyActiveLearningRules(enhancedLooks, learningRules);
+        console.log(`🔍 [EnhancedAgentCrew] יושמו חוקי למידה פעילים - נותרו ${enhancedLooks.length} לוקים`);
+      }
       
       console.log(`✅ [EnhancedAgentCrew] StylingAgent יצר ${enhancedLooks.length} לוקים משופרים`);
       
@@ -204,6 +234,42 @@ export class EnhancedAgentCrew {
     });
     
     return itemTypeCounts;
+  }
+  
+  /**
+   * מיישם חוקי למידה פעילים - מסנן לוקים שמכילים פריטים לא רצויים
+   */
+  private applyActiveLearningRules(looks: any[], rules: any): any[] {
+    if (!rules) return looks;
+    
+    const dislikedItems = new Set(rules.dislikedItems || []);
+    const mustAvoid = new Set(rules.mustAvoid || []);
+    
+    return looks.filter(look => {
+      // בדיקה אם הלוק מכיל פריטים שלא רצויים
+      const items = look.items || [];
+      
+      const hasDislikedItem = items.some((item: any) => 
+        dislikedItems.has(item.id) || mustAvoid.has(item.product_family) || mustAvoid.has(item.product_subfamily)
+      );
+      
+      if (hasDislikedItem) {
+        console.log(`❌ [EnhancedAgentCrew] מסנן לוק עם פריטים לא רצויים`);
+        return false;
+      }
+      
+      // בדיקה מיוחדת: מעיל לא יכול להיות פריט עליון
+      const topItem = items.find((item: any) => item.type === 'top');
+      if (topItem && (topItem.product_family?.toLowerCase().includes('coat') || 
+                      topItem.product_family?.toLowerCase().includes('jacket') ||
+                      topItem.product_subfamily?.toLowerCase().includes('coat') ||
+                      topItem.product_subfamily?.toLowerCase().includes('jacket'))) {
+        console.log(`❌ [EnhancedAgentCrew] מסנן לוק - מעיל כפריט עליון לא תקין`);
+        return false;
+      }
+      
+      return true;
+    });
   }
 }
 

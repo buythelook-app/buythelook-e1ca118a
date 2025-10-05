@@ -138,18 +138,42 @@ export class FeedbackLearningAgent {
   }
   
   /**
-   * מיישם תובנות למידה בחזרה לאייגנטים
+   * מיישם תובנות למידה בחזרה לאייגנטים - בצורה מיידית וקבועה
    */
   async applyLearningToAgents(userId: string, insights: LearningInsights): Promise<boolean> {
     try {
       console.log(`⚡ [FeedbackLearning] מיישם למידה לאייגנטים עבור: ${userId}`);
       
-      // שמירת הגדרות מותאמות אישית ב-localStorage
+      // שמירה ב-agent_runs כחוקי למידה פעילים
+      const { error: rulesError } = await supabase
+        .from('agent_runs')
+        .insert({
+          user_id: userId,
+          agent_name: 'learning-rules',
+          result: {
+            type: 'active_learning_rules',
+            insights,
+            appliedAt: new Date().toISOString(),
+            rules: {
+              dislikedItems: insights.itemCompatibilityMatrix.dislikedItems || [],
+              mustAvoid: insights.itemCompatibilityMatrix.mustAvoid || [],
+              preferredColors: Object.keys(insights.colorAffinityScore).filter(c => insights.colorAffinityScore[c] > 0.7),
+              occasionPreferences: insights.occasionSuitability
+            }
+          } as any,
+          score: 100,
+          status: 'active_rules'
+        });
+      
+      if (rulesError) {
+        console.error('❌ שגיאה בשמירת חוקי למידה:', rulesError);
+      }
+      
+      // גם שמירה ב-localStorage לגישה מהירה
       localStorage.setItem(`personalized-weights-${userId}`, JSON.stringify(insights.personalizedWeights));
       localStorage.setItem(`color-affinity-${userId}`, JSON.stringify(insights.colorAffinityScore));
       localStorage.setItem(`item-compatibility-${userId}`, JSON.stringify(insights.itemCompatibilityMatrix));
       
-      // עדכון הגדרות אייגנטים
       const agentConfig = {
         userId,
         learningApplied: true,
@@ -159,7 +183,7 @@ export class FeedbackLearningAgent {
       
       localStorage.setItem(`agent-learning-config-${userId}`, JSON.stringify(agentConfig));
       
-      console.log(`✅ [FeedbackLearning] למידה יושמה בהצלחה לאייגנטים`);
+      console.log(`✅ [FeedbackLearning] למידה יושמה בהצלחה לאייגנטים (DB + localStorage)`);
       return true;
       
     } catch (error) {
@@ -170,23 +194,41 @@ export class FeedbackLearningAgent {
   
   // Helper methods
   private extractColorPreferences(feedback: any[]): string[] {
-    // לוגיקה לחילוץ העדפות צבע מפידבק חיובי
     const likedItems = feedback.filter(f => f.user_liked === true);
-    // יש להרחיב ולהתבסס על נתוני צבע פריטים
-    return ['#2C3E50', '#E74C3C', '#3498DB']; // placeholder
+    const colors = new Set<string>();
+    
+    likedItems.forEach(f => {
+      if (f.result?.top?.colour) colors.add(f.result.top.colour);
+      if (f.result?.bottom?.colour) colors.add(f.result.bottom.colour);
+    });
+    
+    return Array.from(colors);
   }
   
   private extractDislikedItems(feedback: any[]): string[] {
-    return feedback
-      .filter(f => f.user_liked === false)
-      .map(f => [f.top_id, f.bottom_id, f.shoes_id])
-      .flat();
+    const disliked = feedback.filter(f => f.result?.userFeedback?.isLiked === false);
+    const items: string[] = [];
+    
+    disliked.forEach(f => {
+      if (f.result?.top?.id) items.push(f.result.top.id);
+      if (f.result?.bottom?.id) items.push(f.result.bottom.id);
+      if (f.result?.shoes?.id) items.push(f.result.shoes.id);
+      if (f.result?.coat?.id) items.push(f.result.coat.id);
+    });
+    
+    return [...new Set(items)];
   }
   
   private extractLikedCombinations(feedback: any[]): string[] {
     return feedback
-      .filter(f => f.user_liked === true)
-      .map(f => `${f.top_id}-${f.bottom_id}-${f.shoes_id}`);
+      .filter(f => f.result?.userFeedback?.isLiked === true)
+      .map(f => {
+        const top = f.result?.top?.id || '';
+        const bottom = f.result?.bottom?.id || '';
+        const shoes = f.result?.shoes?.id || '';
+        return `${top}-${bottom}-${shoes}`;
+      })
+      .filter(combo => combo.split('-').every(id => id));
   }
   
   private analyzeOccasionPreferences(learningData: LearningData[]): Record<string, number> {
@@ -228,8 +270,10 @@ export class FeedbackLearningAgent {
     const matrix: Record<string, string[]> = {};
     likedCombinations.forEach(combo => {
       const [top, bottom, shoes] = combo.split('-');
-      if (!matrix[top]) matrix[top] = [];
-      matrix[top].push(bottom, shoes);
+      if (top && bottom && shoes) {
+        if (!matrix[top]) matrix[top] = [];
+        matrix[top].push(bottom, shoes);
+      }
     });
     return matrix;
   }
