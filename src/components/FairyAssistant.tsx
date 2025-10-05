@@ -15,6 +15,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentMessage, setCurrentMessage] = useState("");
   const [showMessage, setShowMessage] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { getCurrentGuidance, markActionCompleted } = useFairyGuidance();
@@ -34,6 +35,8 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
 
   useEffect(() => {
     // Get contextual guidance based on current route and user state
+    if (isDismissed) return; // Don't show if user dismissed
+    
     const guidance = getCurrentGuidance(location.pathname, isAuthenticated);
     if (guidance) {
       setCurrentMessage(guidance.message);
@@ -46,10 +49,12 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
 
       return () => clearTimeout(hideTimer);
     }
-  }, [location.pathname, isAuthenticated, getCurrentGuidance]);
+  }, [location.pathname, isAuthenticated, getCurrentGuidance, isDismissed]);
 
   useEffect(() => {
     // Idle detection - show hints after inactivity
+    if (isDismissed) return; // Don't show if user dismissed
+    
     const checkIdle = () => {
       const now = Date.now();
       if (now - lastInteraction > 30000) { // 30 seconds idle
@@ -63,9 +68,10 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
 
     const idleTimer = setInterval(checkIdle, 10000);
     return () => clearInterval(idleTimer);
-  }, [lastInteraction, location.pathname, isAuthenticated, getCurrentGuidance]);
+  }, [lastInteraction, location.pathname, isAuthenticated, getCurrentGuidance, isDismissed]);
 
   const handleFairyClick = () => {
+    setIsDismissed(false); // Reset dismiss state when fairy is clicked
     setIsExpanded(!isExpanded);
     setLastInteraction(Date.now());
     
@@ -174,7 +180,10 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowMessage(false)}
+                onClick={() => {
+                  setShowMessage(false);
+                  setIsDismissed(true);
+                }}
                 className="h-6 w-6 p-0 hover:bg-gray-100"
               >
                 <X className="h-3 w-3" />
@@ -233,7 +242,10 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setIsExpanded(false)}
+                    onClick={() => {
+                      setIsExpanded(false);
+                      setIsDismissed(true);
+                    }}
                     className="h-6 w-6 p-0"
                   >
                     <X className="h-3 w-3" />
