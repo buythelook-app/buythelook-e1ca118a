@@ -15,7 +15,6 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentMessage, setCurrentMessage] = useState("");
   const [showMessage, setShowMessage] = useState(false);
-  const [userDismissed, setUserDismissed] = useState(false); // Track if user manually closed
   const location = useLocation();
   const navigate = useNavigate();
   const { getCurrentGuidance, markActionCompleted } = useFairyGuidance();
@@ -35,50 +34,43 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
 
   useEffect(() => {
     // Get contextual guidance based on current route and user state
-    // Only show automatically if user hasn't dismissed
-    if (!userDismissed) {
-      const guidance = getCurrentGuidance(location.pathname, isAuthenticated);
-      if (guidance) {
-        setCurrentMessage(guidance.message);
-        setShowMessage(true);
-        
-        // Auto-hide message after reading time
-        const hideTimer = setTimeout(() => {
-          setShowMessage(false);
-        }, guidance.duration || 8000);
+    const guidance = getCurrentGuidance(location.pathname, isAuthenticated);
+    if (guidance) {
+      setCurrentMessage(guidance.message);
+      setShowMessage(true);
+      
+      // Auto-hide message after reading time
+      const hideTimer = setTimeout(() => {
+        setShowMessage(false);
+      }, guidance.duration || 8000);
 
-        return () => clearTimeout(hideTimer);
-      }
+      return () => clearTimeout(hideTimer);
     }
-  }, [location.pathname, isAuthenticated, getCurrentGuidance, userDismissed]);
+  }, [location.pathname, isAuthenticated, getCurrentGuidance]);
 
   useEffect(() => {
     // Idle detection - show hints after inactivity
-    // Only if user hasn't dismissed
     const checkIdle = () => {
-      if (!userDismissed) {
-        const now = Date.now();
-        if (now - lastInteraction > 30000) { // 30 seconds idle
-          const guidance = getCurrentGuidance(location.pathname, isAuthenticated, true);
-          if (guidance) {
-            setCurrentMessage(guidance.message);
-            setShowMessage(true);
-          }
+      const now = Date.now();
+      if (now - lastInteraction > 30000) { // 30 seconds idle
+        const guidance = getCurrentGuidance(location.pathname, isAuthenticated, true);
+        if (guidance) {
+          setCurrentMessage(guidance.message);
+          setShowMessage(true);
         }
       }
     };
 
     const idleTimer = setInterval(checkIdle, 10000);
     return () => clearInterval(idleTimer);
-  }, [lastInteraction, location.pathname, isAuthenticated, getCurrentGuidance, userDismissed]);
+  }, [lastInteraction, location.pathname, isAuthenticated, getCurrentGuidance]);
 
   const handleFairyClick = () => {
     setIsExpanded(!isExpanded);
     setLastInteraction(Date.now());
     
     if (!isExpanded) {
-      // Show contextual help when expanded - and reset dismiss flag
-      setUserDismissed(false);
+      // Show contextual help when expanded
       const guidance = getCurrentGuidance(location.pathname, isAuthenticated);
       if (guidance) {
         setCurrentMessage(guidance.message);
@@ -124,10 +116,12 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
     <>
       {/* Fairy Character */}
       <div 
-        className="fixed z-50 transition-all duration-500 cursor-pointer"
+        className={`fixed z-50 transition-all duration-500 cursor-pointer ${
+          isFloating ? 'animate-bounce' : ''
+        }`}
         style={{
-          top: '120px',
-          right: '20px',
+          top: '300px',
+          left: '20px',
           transform: isExpanded ? 'scale(1.1)' : 'scale(1)',
         }}
         onClick={handleFairyClick}
@@ -163,10 +157,10 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
       {showMessage && (
         <div 
           className={`fixed z-40 transition-all duration-300 ${
-            isExpanded ? 'right-24' : 'right-24'
+            isExpanded ? 'left-24' : 'left-24'
           }`}
           style={{
-            top: '110px',
+            top: '290px',
             maxWidth: '300px',
           }}
         >
@@ -180,10 +174,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  setShowMessage(false);
-                  setUserDismissed(true); // Mark as dismissed by user
-                }}
+                onClick={() => setShowMessage(false)}
                 className="h-6 w-6 p-0 hover:bg-gray-100"
               >
                 <X className="h-3 w-3" />
@@ -217,7 +208,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
           
           {/* Speech bubble tail */}
           <div 
-            className="absolute top-6 -right-2 w-4 h-4 bg-white/95 border-r border-b border-fashion-primary/20 transform rotate-45"
+            className="absolute top-6 -left-2 w-4 h-4 bg-white/95 border-l border-b border-fashion-primary/20 transform rotate-45"
           />
         </div>
       )}
@@ -229,7 +220,7 @@ export const FairyAssistant = ({ isAuthenticated, firstName }: FairyAssistantPro
           onClick={() => setIsExpanded(false)}
         >
           <div 
-            className="absolute top-56 right-24 w-80 max-h-96 overflow-y-auto"
+            className="absolute top-80 left-24 w-80 max-h-96 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <Card className="bg-white border border-fashion-primary/20 shadow-2xl">
