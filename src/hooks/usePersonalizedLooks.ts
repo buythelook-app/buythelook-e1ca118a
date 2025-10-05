@@ -141,9 +141,8 @@ export function usePersonalizedLooks() {
         const { data: zaraShoes, error: shoesError } = await supabase
           .from('zara_cloth')
           .select('*')
-          .or('product_family.ilike.%shoe%,product_subfamily.ilike.%shoe%,product_subfamily.ilike.%sandal%,product_subfamily.ilike.%boot%')
+          .or('product_family.ilike.%shoe%,product_family.ilike.%sandal%,product_family.ilike.%boot%,product_subfamily.ilike.%shoe%,product_subfamily.ilike.%sandal%,product_subfamily.ilike.%boot%')
           .not('image', 'is', null)
-          .eq('availability', true)
           .limit(20);
         
         if (shoesError) {
@@ -152,18 +151,30 @@ export function usePersonalizedLooks() {
         
         const shoesResult = {
           success: !shoesError,
-          items: (zaraShoes || []).map(shoe => ({
-            id: `zara-shoes-${shoe.id}-${occasion}`,
-            title: shoe.product_name,
-            image: typeof shoe.image === 'string' ? shoe.image : JSON.stringify(shoe.image),
-            price: typeof shoe.price === 'string' ? shoe.price : String(shoe.price || ''),
-            type: 'shoes' as const,
-            category: typeof shoe.category === 'string' ? shoe.category : 'shoes',
-            season: typeof shoe.section === 'string' ? shoe.section : 'all',
-            formality: occasion === 'Work' ? 'professional' : occasion === 'Evening' ? 'elegant' : 'casual',
-            style: (typeof shoe.product_family_en === 'string' ? shoe.product_family_en : (typeof shoe.product_family === 'string' ? shoe.product_family : 'casual')),
-            affiliate_link: (typeof shoe.url === 'string' ? shoe.url : (typeof shoe.product_url === 'string' ? shoe.product_url : ''))
-          }))
+          items: (zaraShoes || []).map(shoe => {
+            // Handle image field - it's a JSONB array of URLs
+            let imageUrl = '';
+            if (shoe.image) {
+              if (Array.isArray(shoe.image) && shoe.image.length > 0) {
+                imageUrl = typeof shoe.image[0] === 'string' ? shoe.image[0] : '';
+              } else if (typeof shoe.image === 'string') {
+                imageUrl = shoe.image;
+              }
+            }
+            
+            return {
+              id: `zara-shoes-${shoe.id}-${occasion}`,
+              title: typeof shoe.product_name === 'string' ? shoe.product_name : 'Shoes',
+              image: imageUrl,
+              price: typeof shoe.price === 'number' ? String(shoe.price) : (typeof shoe.price === 'string' ? shoe.price : '29.99'),
+              type: 'shoes' as const,
+              category: typeof shoe.category === 'string' ? shoe.category : 'shoes',
+              season: typeof shoe.section === 'string' ? shoe.section : 'all',
+              formality: occasion === 'Work' ? 'professional' : occasion === 'Evening' ? 'elegant' : 'casual',
+              style: (typeof shoe.product_family_en === 'string' ? shoe.product_family_en : (typeof shoe.product_family === 'string' ? shoe.product_family : 'casual')),
+              affiliate_link: (typeof shoe.url === 'string' ? shoe.url : (typeof shoe.product_url === 'string' ? shoe.product_url : ''))
+            };
+          })
         };
         
         console.log(`📦 [usePersonalizedLooks] ${occasion} results:`, {
