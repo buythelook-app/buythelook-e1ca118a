@@ -10,13 +10,31 @@ import { toast as sonnerToast } from "sonner";
 import { StyleProfileDisplay } from "@/components/look/StyleProfileDisplay";
 import { PersonalizedLooksGrid } from "@/components/look/PersonalizedLooksGrid";
 import { usePersonalizedLooks } from "@/hooks/usePersonalizedLooks";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState, useEffect } from "react";
 import { RefreshItemsButton } from "@/components/RefreshItemsButton";
+import { useFeedbackTrigger } from "@/hooks/useFeedbackTrigger";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const navigate = useNavigate();
   const { addLook } = useCartStore();
   const [appliedFilters, setAppliedFilters] = useState<any>(null);
+  const [userId, setUserId] = useState<string | undefined>(undefined);
+  
+  // 🆕 קבלת userId מ-Supabase Auth
+  useEffect(() => {
+    const getUserId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+        console.log('✅ [Index] User ID set for feedback learning:', user.id);
+      }
+    };
+    getUserId();
+  }, []);
+  
+  // 🆕 הפעלת Learning Agent דרך Feedback Trigger
+  useFeedbackTrigger(userId);
   
   const {
     selectedMood,
