@@ -17,13 +17,14 @@ export function useFeedbackTrigger(userId: string | undefined) {
     // Listen for feedback events dispatched from outfit cards
     const handleFeedback = async (event: Event) => {
       const customEvent = event as CustomEvent;
-      const { lookId, liked, disliked, comment } = customEvent.detail;
+      const { lookId, liked, disliked, comment, lookData } = customEvent.detail;
       
       console.log('📝 [FeedbackTrigger] Feedback received:', {
         lookId,
         liked,
         disliked,
-        hasComment: !!comment
+        hasComment: !!comment,
+        hasLookData: !!lookData
       });
       
       try {
@@ -39,7 +40,8 @@ export function useFeedbackTrigger(userId: string | undefined) {
             is_liked: liked || false,
             is_disliked: disliked || false,
             comment: comment || null,
-            feedback_type: 'outfit_rating'
+            feedback_type: 'outfit_rating',
+            look_data: lookData || null // 🧠 Store the full look data for learning
           });
         
         if (saveError) {

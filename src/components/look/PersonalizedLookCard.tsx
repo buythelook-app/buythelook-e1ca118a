@@ -34,7 +34,8 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
         detail: { 
           lookId: look.id, 
           liked: true, 
-          disliked: false 
+          disliked: false,
+          lookData: look // 🧠 Include full look data for learning
         }
       }));
       toast.info('תודה! הלוק נשמר בהעדפות שלך');
@@ -48,7 +49,8 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
         lookId: look.id, 
         liked: false, 
         disliked: true,
-        comment: feedbackComment 
+        comment: feedbackComment,
+        lookData: look // 🧠 Include full look data for learning
       }
     }));
     

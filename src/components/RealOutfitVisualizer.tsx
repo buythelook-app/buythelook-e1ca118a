@@ -168,7 +168,8 @@ export function RealOutfitVisualizer() {
         detail: { 
           lookId: `${bodyShape}-${style}-${mood}`, 
           liked: true, 
-          disliked: false 
+          disliked: false,
+          lookData: { outfitItems, bodyShape, style, mood } // 🧠 Include outfit context
         }
       }));
       toast.info('תודה! הלוק נשמר בהעדפות שלך');
@@ -182,7 +183,8 @@ export function RealOutfitVisualizer() {
         lookId: `${bodyShape}-${style}-${mood}`, 
         liked: false, 
         disliked: true,
-        comment: feedbackComment 
+        comment: feedbackComment,
+        lookData: { outfitItems, bodyShape, style, mood } // 🧠 Include outfit context
       }
     }));
     
