@@ -24,6 +24,7 @@ export function AgentOutfitVisualizer() {
   const [error, setError] = useState<string | null>(null);
   const [showImagePath, setShowImagePath] = useState<boolean>(false);
   const [userFeedback, setUserFeedback] = useState<Record<string, { isLiked?: boolean, feedback?: string }>>({});
+  const [showFeedbackInput, setShowFeedbackInput] = useState<Record<string, boolean>>({});
 
   const fetchResults = async () => {
     try {
@@ -63,12 +64,34 @@ export function AgentOutfitVisualizer() {
       [agentName]: { ...prev[agentName], isLiked: liked }
     }));
     
-    // Dispatch feedback event for learning
+    // Show feedback input only for dislike
+    if (!liked) {
+      setShowFeedbackInput(prev => ({ ...prev, [agentName]: true }));
+    } else {
+      setShowFeedbackInput(prev => ({ ...prev, [agentName]: false }));
+      // Dispatch feedback event for learning immediately for likes
+      window.dispatchEvent(new CustomEvent('outfit-feedback', {
+        detail: { lookId: agentName, liked: true, disliked: false }
+      }));
+      toast.info('תודה! הלוק נשמר בהעדפות שלך');
+    }
+  };
+
+  const handleFeedbackSubmit = (agentName: string) => {
+    const feedback = userFeedback[agentName]?.feedback || '';
+    
+    // Dispatch feedback event with comment
     window.dispatchEvent(new CustomEvent('outfit-feedback', {
-      detail: { lookId: agentName, liked: liked, disliked: !liked }
+      detail: { 
+        lookId: agentName, 
+        liked: false, 
+        disliked: true,
+        comment: feedback 
+      }
     }));
     
-    toast.info(`${liked ? 'אהבת' : 'לא אהבת'} את הלוק של ${agentName}`);
+    setShowFeedbackInput(prev => ({ ...prev, [agentName]: false }));
+    toast.info('תודה על המשוב! נשתמש בו כדי לשפר את ההמלצות');
   };
 
   useEffect(() => {
@@ -223,6 +246,16 @@ export function AgentOutfitVisualizer() {
                   showImagePaths={showImagePath}
                   onLike={handleLike}
                   isLiked={userFeedback[formatAgentName(result.agent)]?.isLiked}
+                  showFeedbackInput={showFeedbackInput[formatAgentName(result.agent)]}
+                  feedbackValue={userFeedback[formatAgentName(result.agent)]?.feedback || ''}
+                  onFeedbackChange={(value) => {
+                    const name = formatAgentName(result.agent);
+                    setUserFeedback(prev => ({
+                      ...prev,
+                      [name]: { ...prev[name], feedback: value }
+                    }));
+                  }}
+                  onFeedbackSubmit={() => handleFeedbackSubmit(formatAgentName(result.agent))}
                 />
               );
             })}

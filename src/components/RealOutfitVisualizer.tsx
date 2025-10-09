@@ -56,6 +56,8 @@ export function RealOutfitVisualizer() {
   const [activeTab, setActiveTab] = useState<string>("top");
   const [showImagePath, setShowImagePath] = useState<boolean>(false);
   const [userLiked, setUserLiked] = useState<boolean | undefined>(undefined);
+  const [showFeedbackInput, setShowFeedbackInput] = useState<boolean>(false);
+  const [feedbackComment, setFeedbackComment] = useState<string>('');
 
   // טען מידע שמור
   useEffect(() => {
@@ -157,16 +159,36 @@ export function RealOutfitVisualizer() {
   const handleFeedback = (liked: boolean) => {
     setUserLiked(liked);
     
-    // Dispatch feedback event for learning
+    if (!liked) {
+      setShowFeedbackInput(true);
+    } else {
+      setShowFeedbackInput(false);
+      // Dispatch feedback event for learning immediately for likes
+      window.dispatchEvent(new CustomEvent('outfit-feedback', {
+        detail: { 
+          lookId: `${bodyShape}-${style}-${mood}`, 
+          liked: true, 
+          disliked: false 
+        }
+      }));
+      toast.info('תודה! הלוק נשמר בהעדפות שלך');
+    }
+  };
+
+  const handleFeedbackSubmit = () => {
+    // Dispatch feedback event with comment
     window.dispatchEvent(new CustomEvent('outfit-feedback', {
       detail: { 
         lookId: `${bodyShape}-${style}-${mood}`, 
-        liked: liked, 
-        disliked: !liked 
+        liked: false, 
+        disliked: true,
+        comment: feedbackComment 
       }
     }));
     
-    toast.info(liked ? 'תודה! הלוק נשמר בהעדפות שלך' : 'נשמע, ננסה להציע משהו אחר');
+    setShowFeedbackInput(false);
+    setFeedbackComment('');
+    toast.info('תודה על המשוב! נשתמש בו כדי לשפר את ההמלצות');
   };
 
   return (
@@ -368,6 +390,26 @@ export function RealOutfitVisualizer() {
                     לא מתאים לי
                   </Button>
                 </div>
+
+                {/* Feedback input for dislikes */}
+                {showFeedbackInput && (
+                  <div className="w-full space-y-2">
+                    <textarea
+                      value={feedbackComment}
+                      onChange={(e) => setFeedbackComment(e.target.value)}
+                      placeholder="מה לא מתאים? (למשל: הצבעים, הסגנון, הגזרה...)"
+                      className="w-full p-2 border rounded-md text-sm min-h-[80px] resize-none"
+                      dir="rtl"
+                    />
+                    <Button 
+                      size="sm"
+                      className="w-full" 
+                      onClick={handleFeedbackSubmit}
+                    >
+                      שלח משוב
+                    </Button>
+                  </div>
+                )}
 
                 <Button 
                   variant="outline" 

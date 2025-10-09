@@ -19,6 +19,10 @@ interface OutfitAgentCardProps {
   onLike?: (agentName: string, liked: boolean) => void;
   isLiked?: boolean;
   feedback?: string;
+  showFeedbackInput?: boolean;
+  feedbackValue?: string;
+  onFeedbackChange?: (value: string) => void;
+  onFeedbackSubmit?: () => void;
 }
 
 export function OutfitAgentCard({ 
@@ -31,7 +35,11 @@ export function OutfitAgentCard({
   onReject,
   onLike,
   isLiked,
-  feedback
+  feedback,
+  showFeedbackInput,
+  feedbackValue,
+  onFeedbackChange,
+  onFeedbackSubmit
 }: OutfitAgentCardProps) {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -137,6 +145,26 @@ export function OutfitAgentCard({
                 </div>
               )}
             </div>
+            
+            {/* Feedback input for dislikes */}
+            {showFeedbackInput && onFeedbackChange && onFeedbackSubmit && (
+              <div className="w-full space-y-2 mt-2">
+                <textarea
+                  value={feedbackValue || ''}
+                  onChange={(e) => onFeedbackChange(e.target.value)}
+                  placeholder="מה לא טוב בהתאמה? (צבעים, סגנון, גזרה...)"
+                  className="w-full p-2 border rounded-md text-sm min-h-[80px] resize-none"
+                  dir="rtl"
+                />
+                <Button 
+                  size="sm"
+                  className="w-full" 
+                  onClick={onFeedbackSubmit}
+                >
+                  שלח משוב
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </CardFooter>
