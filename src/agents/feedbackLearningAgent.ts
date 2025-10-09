@@ -34,20 +34,20 @@ export class FeedbackLearningAgent {
     try {
       console.log(`🔍 [FeedbackLearning] מנתח דפוסי פידבק עבור: ${userId}`);
       
-      // שליפת כל נתוני הפידבק למשתמש מ-agent_runs (שם נשמר הפידבק)
-      const { data: agentFeedback, error: agentError } = await supabase
-        .from('agent_runs')
+      // שליפת פידבק משתמש מטבלת user_feedback
+      const { data: userFeedback, error: feedbackError } = await supabase
+        .from('user_feedback')
         .select('*')
         .eq('user_id', userId)
-        .eq('status', 'feedback')
-        .order('timestamp', { ascending: false })
-        .limit(50);
+        .order('created_at', { ascending: false })
+        .limit(100);
       
-      if (agentError) {
-        console.error('❌ שגיאה בשליפת פידבק אייגנטים:', agentError);
+      if (feedbackError) {
+        console.error('❌ שגיאה בשליפת פידבק משתמשים:', feedbackError);
+        return null;
       }
       
-      // שליפת כל נתוני הפידבק למשתמש מ-outfit_logs
+      // שליפת כל נתוני הפידבק למשתמש מ-outfit_logs (לתאימות לאחור)
       const { data: outfitFeedback, error: outfitError } = await supabase
         .from('outfit_logs')
         .select('*')
@@ -62,12 +62,13 @@ export class FeedbackLearningAgent {
       // שליפת נתוני למידה קיימים
       const learningData = await learningAgent.getLearningDataForAgents(userId);
       
-      console.log(`📊 [FeedbackLearning] נמצאו ${agentFeedback?.length || 0} פידבקים חדשים`);
+      console.log(`📊 [FeedbackLearning] נמצאו ${userFeedback?.length || 0} פידבקים ישירים מהמשתמש`);
       
-      // ניתוח דפוסים
-      const preferredColors = this.extractColorPreferences(outfitFeedback || []);
-      const dislikedItems = this.extractDislikedItems(outfitFeedback || []);
-      const likedCombinations = this.extractLikedCombinations(outfitFeedback || []);
+      // ניתוח דפוסים מפידבק ישיר + היסטורי
+      const allFeedback = [...(userFeedback || []), ...(outfitFeedback || [])];
+      const preferredColors = this.extractColorPreferencesFromFeedback(userFeedback || [], outfitFeedback || []);
+      const dislikedItems = this.extractDislikedItemsFromFeedback(userFeedback || []);
+      const likedCombinations = this.extractLikedCombinationsFromFeedback(userFeedback || []);
       const occasionPreferences = this.analyzeOccasionPreferences(learningData);
       const styleEvolution = this.trackStyleEvolution(learningData);
       
@@ -192,11 +193,22 @@ export class FeedbackLearningAgent {
     }
   }
   
-  // Helper methods
-  private extractColorPreferences(feedback: any[]): string[] {
-    const likedItems = feedback.filter(f => f.user_liked === true);
+  // Helper methods - עדכון לעבוד עם טבלת user_feedback החדשה
+  private extractColorPreferencesFromFeedback(userFeedback: any[], outfitFeedback: any[]): string[] {
     const colors = new Set<string>();
     
+    // מפידבק ישיר של משתמש
+    userFeedback
+      .filter(f => f.is_liked === true)
+      .forEach(f => {
+        // נסה לחלץ צבעים מה-look_id או מנתונים נוספים
+        if (f.look_data?.colors) {
+          f.look_data.colors.forEach((c: string) => colors.add(c));
+        }
+      });
+    
+    // מפידבק היסטורי
+    const likedItems = outfitFeedback.filter(f => f.user_liked === true);
     likedItems.forEach(f => {
       if (f.result?.top?.colour) colors.add(f.result.top.colour);
       if (f.result?.bottom?.colour) colors.add(f.result.bottom.colour);
@@ -205,30 +217,30 @@ export class FeedbackLearningAgent {
     return Array.from(colors);
   }
   
-  private extractDislikedItems(feedback: any[]): string[] {
-    const disliked = feedback.filter(f => f.result?.userFeedback?.isLiked === false);
+  private extractDislikedItemsFromFeedback(userFeedback: any[]): string[] {
     const items: string[] = [];
     
-    disliked.forEach(f => {
-      if (f.result?.top?.id) items.push(f.result.top.id);
-      if (f.result?.bottom?.id) items.push(f.result.bottom.id);
-      if (f.result?.shoes?.id) items.push(f.result.shoes.id);
-      if (f.result?.coat?.id) items.push(f.result.coat.id);
-    });
+    // חלץ פריטים שהמשתמש סימן כ-disliked
+    userFeedback
+      .filter(f => f.is_disliked === true)
+      .forEach(f => {
+        if (f.look_id) {
+          items.push(f.look_id);
+        }
+        // אם יש comment עם מידע ספציפי על פריטים
+        if (f.comment) {
+          console.log(`💬 [FeedbackLearning] User comment on dislike: ${f.comment}`);
+        }
+      });
     
     return [...new Set(items)];
   }
   
-  private extractLikedCombinations(feedback: any[]): string[] {
-    return feedback
-      .filter(f => f.result?.userFeedback?.isLiked === true)
-      .map(f => {
-        const top = f.result?.top?.id || '';
-        const bottom = f.result?.bottom?.id || '';
-        const shoes = f.result?.shoes?.id || '';
-        return `${top}-${bottom}-${shoes}`;
-      })
-      .filter(combo => combo.split('-').every(id => id));
+  private extractLikedCombinationsFromFeedback(userFeedback: any[]): string[] {
+    return userFeedback
+      .filter(f => f.is_liked === true)
+      .map(f => f.look_id)
+      .filter(lookId => lookId);
   }
   
   private analyzeOccasionPreferences(learningData: LearningData[]): Record<string, number> {
