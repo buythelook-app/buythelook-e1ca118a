@@ -100,6 +100,22 @@ export function useOutfitGeneration() {
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id || 'anonymous-user';
       
+      // 🧠 Load learning insights from feedback
+      let learningInsights = null;
+      try {
+        const learningConfig = localStorage.getItem(`agent-learning-config-${userId}`);
+        if (learningConfig) {
+          const config = JSON.parse(learningConfig);
+          learningInsights = config.personalizedInsights;
+          logger.info("🎓 Applying learned insights from user feedback", {
+            context: "useOutfitGeneration",
+            data: { hasInsights: !!learningInsights }
+          });
+        }
+      } catch (e) {
+        logger.warn("Failed to load learning insights");
+      }
+      
       // Add work-appropriate filtering context
       const workModeContext = selectedMode === 'Work' ? {
         workAppropriate: true,
@@ -113,7 +129,7 @@ export function useOutfitGeneration() {
       const timestamp = Date.now();
       const previousCount = previousCombinations.size;
       
-      // Create context with randomization, exclusions, and work-appropriate filtering
+      // Create context with randomization, exclusions, learning insights, and work-appropriate filtering
       const generationContext = {
         userId,
         forceRefresh,
@@ -124,6 +140,7 @@ export function useOutfitGeneration() {
         excludeItems: Array.from(userPreferences.dislikedItems),
         preferredItems: Array.from(userPreferences.likedItems),
         attempt: previousCount + 1,
+        learningInsights, // 🧠 Apply learned preferences
         ...workModeContext
       };
       

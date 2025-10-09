@@ -35,7 +35,7 @@ export class FeedbackLearningAgent {
       console.log(`🔍 [FeedbackLearning] מנתח דפוסי פידבק עבור: ${userId}`);
       
       // שליפת פידבק משתמש מטבלת user_feedback
-      const { data: userFeedback, error: feedbackError } = await supabase
+      const { data: userFeedback, error: feedbackError } = await (supabase as any)
         .from('user_feedback')
         .select('*')
         .eq('user_id', userId)

@@ -31,7 +31,7 @@ export function useFeedbackTrigger(userId: string | undefined) {
         const { supabase } = await import('@/lib/supabaseClient');
         
         console.log('💾 [FeedbackTrigger] Saving feedback to database...');
-        const { error: saveError } = await supabase
+        const { error: saveError } = await (supabase as any)
           .from('user_feedback')
           .insert({
             user_id: userId,
