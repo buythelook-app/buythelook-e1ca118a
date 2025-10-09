@@ -388,84 +388,90 @@ export const GenerateOutfitTool = {
       console.log(`- Bottoms: ${categorizedItems.bottoms.length} → ${filteredBottoms.length} items`);
       console.log(`- Shoes: ${categorizedItems.shoes.length} → ${filteredShoes.length} items`);
 
+      // בדיקה שיש לפחות 3 קטגוריות עם פריטים
+      if (filteredTops.length === 0 || filteredBottoms.length === 0 || filteredShoes.length === 0) {
+        console.error(`❌ חסרים פריטים בקטגוריות חובה:
+          - Tops: ${filteredTops.length}
+          - Bottoms: ${filteredBottoms.length}  
+          - Shoes: ${filteredShoes.length}`);
+        
+        throw new Error(`לא ניתן ליצור תלבושת - חסרים פריטים בקטגוריות חובה (חלק עליון: ${filteredTops.length}, חלק תחתון: ${filteredBottoms.length}, נעליים: ${filteredShoes.length})`);
+      }
+
       if (filteredTops.length > 0 && filteredBottoms.length > 0 && filteredShoes.length > 0) {
-        // Select items and mark them as used
-        const selectedTop = filteredTops[0];
-        const selectedBottom = filteredBottoms[0];
-        const selectedShoes = filteredShoes[0];
+        // בחר מספר פריטים מכל קטגוריה (לא רק אחד)
+        const numOptions = Math.min(3, filteredTops.length, filteredBottoms.length, filteredShoes.length);
+        const outfitOptions = [];
         
-        console.log(`🎯 SELECTED ITEMS FOR ${occasion.toUpperCase()}:`);
-        console.log(`  TOP: "${selectedTop.product_name}" - ${selectedTop.description}`);
-        console.log(`  BOTTOM: "${selectedBottom.product_name}" - ${selectedBottom.description}`);
-        console.log(`  SHOES: "${selectedShoes.product_name}" - ${selectedShoes.description}`);
-        
-        // Add to used items tracker
-        usedItemIds.add(selectedTop.id);
-        usedItemIds.add(selectedBottom.id);
-        usedItemIds.add(selectedShoes.id);
-        
-        // Validate consistency before returning
-        if (!validateItemConsistency(selectedTop) || 
-            !validateItemConsistency(selectedBottom) || 
-            !validateItemConsistency(selectedShoes)) {
-          console.warn('Selected items failed consistency check, using fallback');
-          return {
-            success: true,
-            data: [
-              {
-                top: "#2C3E50",
-                bottom: "#BDC3C7",
-                shoes: "#7F8C8D", 
-                coat: "#34495E",
-                description: `${bodyRecommendations?.description || 'A stylish outfit'} - תלבושת מותאמת למבנה הגוף ${bodyStructure}`,
-                recommendations: bodyRecommendations?.recommendations || [
-                  "Choose fitted clothing that complements your body shape",
-                  "Focus on creating balanced proportions"
-                ],
-                occasion: occasion
-              }
-            ]
-          };
+        for (let i = 0; i < numOptions; i++) {
+          const selectedTop = filteredTops[i];
+          const selectedBottom = filteredBottoms[i];
+          const selectedShoes = filteredShoes[i];
+          
+          console.log(`🎯 SELECTED OUTFIT ${i+1} FOR ${occasion.toUpperCase()}:`);
+          console.log(`  TOP: "${selectedTop.product_name}" - ${selectedTop.description}`);
+          console.log(`  BOTTOM: "${selectedBottom.product_name}" - ${selectedBottom.description}`);
+          console.log(`  SHOES: "${selectedShoes.product_name}" - ${selectedShoes.description}`);
+          
+          // Add to used items tracker
+          usedItemIds.add(selectedTop.id);
+          usedItemIds.add(selectedBottom.id);
+          usedItemIds.add(selectedShoes.id);
+          
+          // Validate consistency before adding
+          if (!validateItemConsistency(selectedTop) || 
+              !validateItemConsistency(selectedBottom) || 
+              !validateItemConsistency(selectedShoes)) {
+            console.warn(`Outfit ${i+1} failed consistency check, skipping`);
+            continue;
+          }
+          
+          outfitOptions.push({
+            top: {
+              color: selectedTop?.colour || "#2C3E50",
+              product_name: selectedTop?.product_name || "Stylish top",
+              description: selectedTop?.description || "Stylish top piece",
+              price: selectedTop?.price?.toString() || "49.99",
+              image: GenerateOutfitTool.extractImageUrl(selectedTop?.image),
+              id: selectedTop?.id
+            },
+            bottom: {
+              color: selectedBottom?.colour || "#BDC3C7",
+              product_name: selectedBottom?.product_name || "Comfortable bottom",
+              description: selectedBottom?.description || "Comfortable bottom piece", 
+              price: selectedBottom?.price?.toString() || "59.99",
+              image: GenerateOutfitTool.extractImageUrl(selectedBottom?.image),
+              id: selectedBottom?.id
+            },
+            shoes: {
+              color: selectedShoes?.colour || "#7F8C8D",
+              product_name: selectedShoes?.product_name || "Stylish shoes",
+              description: selectedShoes?.description || "Stylish footwear",
+              price: selectedShoes?.price?.toString() || "69.99",
+              image: GenerateOutfitTool.extractImageUrl(selectedShoes?.image),
+              id: selectedShoes?.id
+            },
+            description: `${bodyRecommendations?.description || 'A stylish outfit'} - ${selectedTop?.product_name || 'top'} עם ${selectedBottom?.product_name || 'bottom'} שנבחרו במיוחד למבנה גוף ${bodyStructure} ל${occasion}`,
+            recommendations: [
+              ...(bodyRecommendations?.recommendations || []),
+              `${selectedTop?.product_name || 'הפריט העליון'} מתאים למבנה הגוף ${bodyStructure}`,
+              `${selectedBottom?.product_name || 'הפריט התחתון'} יוצר את הצללית האידיאלית עבורך`,
+              `מתאים לאירוע: ${occasion}`
+            ],
+            occasion: occasion
+          });
         }
+        
+        // בדיקה שיצרנו לפחות תלבושת אחת עם 3 קטגוריות
+        if (outfitOptions.length === 0) {
+          throw new Error('לא ניתן ליצור תלבושת תקינה עם 3 קטגוריות (חלק עליון, חלק תחתון, נעליים)');
+        }
+        
+        console.log(`✅ נוצרו ${outfitOptions.length} תלבושות עם 3 קטגוריות לפחות`);
         
         return {
           success: true,
-          data: [
-            {
-              top: {
-                color: selectedTop?.colour || "#2C3E50",
-                product_name: selectedTop?.product_name || "Stylish top",
-                description: selectedTop?.description || "Stylish top piece",
-                price: selectedTop?.price?.toString() || "49.99",
-                image: GenerateOutfitTool.extractImageUrl(selectedTop?.image),
-                id: selectedTop?.id
-              },
-              bottom: {
-                color: selectedBottom?.colour || "#BDC3C7",
-                product_name: selectedBottom?.product_name || "Comfortable bottom",
-                description: selectedBottom?.description || "Comfortable bottom piece", 
-                price: selectedBottom?.price?.toString() || "59.99",
-                image: GenerateOutfitTool.extractImageUrl(selectedBottom?.image),
-                id: selectedBottom?.id
-              },
-              shoes: {
-                color: selectedShoes?.colour || "#7F8C8D",
-                product_name: selectedShoes?.product_name || "Stylish shoes",
-                description: selectedShoes?.description || "Stylish footwear",
-                price: selectedShoes?.price?.toString() || "69.99",
-                image: GenerateOutfitTool.extractImageUrl(selectedShoes?.image),
-                id: selectedShoes?.id
-              },
-              description: `${bodyRecommendations?.description || 'A stylish outfit'} - ${selectedTop?.product_name || 'top'} עם ${selectedBottom?.product_name || 'bottom'} שנבחרו במיוחד למבנה גוף ${bodyStructure} ל${occasion}`,
-              recommendations: [
-                ...(bodyRecommendations?.recommendations || []),
-                `${selectedTop?.product_name || 'הפריט העליון'} מתאים למבנה הגוף ${bodyStructure}`,
-                `${selectedBottom?.product_name || 'הפריט התחתון'} יוצר את הצללית האידיאלית עבורך`,
-                `מתאים לאירוע: ${occasion}`
-              ],
-              occasion: occasion
-            }
-          ]
+          data: outfitOptions
         };
       }
 
