@@ -1,13 +1,27 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AgentOutfitVisualizer } from "@/components/AgentOutfitVisualizer";
 import { DemoOutfitGenerator } from "@/components/DemoOutfitGenerator";
 import { RealOutfitVisualizer } from "@/components/RealOutfitVisualizer";
+import { useFeedbackTrigger } from "@/hooks/useFeedbackTrigger";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function OutfitGenerationPage() {
   const [activeSection, setActiveSection] = useState<string>("real-outfits");
+  const [userId, setUserId] = useState<string | undefined>(undefined);
+
+  // Initialize feedback learning system
+  useFeedbackTrigger(userId);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id);
+    };
+    fetchUser();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-background">

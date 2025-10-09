@@ -1,10 +1,11 @@
 
-import { memo } from "react";
-import { Shuffle, ShoppingCart } from "lucide-react";
+import { memo, useState } from "react";
+import { Shuffle, ShoppingCart, ThumbsUp, ThumbsDown } from "lucide-react";
 import { LookCanvas } from "@/components/LookCanvas";
 import { TryMeButton } from "@/components/TryMeButton";
 import { useNavigate } from "react-router-dom";
 import { Look } from "@/hooks/usePersonalizedLooks";
+import { toast } from "sonner";
 
 interface LookCardProps {
   look: Look;
@@ -17,6 +18,22 @@ interface LookCardProps {
 // Use memo to prevent unnecessary re-renders
 export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userStyleProfile, customCanvas }: LookCardProps) => {
   const navigate = useNavigate();
+  const [userLiked, setUserLiked] = useState<boolean | undefined>(undefined);
+
+  const handleFeedback = (liked: boolean) => {
+    setUserLiked(liked);
+    
+    // Dispatch feedback event for learning
+    window.dispatchEvent(new CustomEvent('outfit-feedback', {
+      detail: { 
+        lookId: look.id, 
+        liked: liked, 
+        disliked: !liked 
+      }
+    }));
+    
+    toast.info(liked ? 'תודה! הלוק נשמר בהעדפות שלך' : 'נשמע, ננסה להציע משהו אחר');
+  };
   
   // Filter items for TryMe button - exclude cart items and only include valid avatar types
   const avatarItems = look.items.filter(item => 
@@ -49,29 +66,58 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
           </button>
         )}
       </div>
-      <div className="flex justify-between items-center">
-        <p className="text-fashion-accent font-semibold text-lg">{look.price}</p>
-        <div className="flex space-x-3">
-          <TryMeButton items={avatarItems} />
+      <div className="flex flex-col gap-3">
+        {/* Feedback buttons */}
+        <div className="flex justify-center gap-2">
           <button
-            onClick={() => onAddToCart(look)}
-            className="bg-fashion-accent text-white p-3 rounded-2xl hover:bg-fashion-accent/90 transition-all duration-300 hover:scale-105"
-            title="Add to cart"
+            onClick={() => handleFeedback(true)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 ${
+              userLiked === true 
+                ? 'bg-fashion-accent text-white' 
+                : 'bg-white/10 text-white/70 hover:bg-white/20'
+            }`}
           >
-            <ShoppingCart className="w-4 h-4" />
+            <ThumbsUp className="w-4 h-4" />
+            <span className="text-sm">אהבתי</span>
           </button>
           <button
-            onClick={() => {
-              localStorage.setItem(`look-${look.id}`, JSON.stringify({
-                ...look,
-                description: `A curated ${look.occasion.toLowerCase()} look that matches your ${userStyleProfile || 'personal'} style preference.`
-              }));
-              navigate(`/look/${look.id}`);
-            }}
-            className="bg-gradient-to-r from-fashion-primary to-fashion-accent text-white px-6 py-3 rounded-2xl hover:from-fashion-primary/90 hover:to-fashion-accent/90 transition-all duration-300 text-sm font-medium"
+            onClick={() => handleFeedback(false)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 ${
+              userLiked === false 
+                ? 'bg-fashion-accent text-white' 
+                : 'bg-white/10 text-white/70 hover:bg-white/20'
+            }`}
           >
-            View Details
+            <ThumbsDown className="w-4 h-4" />
+            <span className="text-sm">לא מתאים</span>
           </button>
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-between items-center">
+          <p className="text-fashion-accent font-semibold text-lg">{look.price}</p>
+          <div className="flex space-x-3">
+            <TryMeButton items={avatarItems} />
+            <button
+              onClick={() => onAddToCart(look)}
+              className="bg-fashion-accent text-white p-3 rounded-2xl hover:bg-fashion-accent/90 transition-all duration-300 hover:scale-105"
+              title="Add to cart"
+            >
+              <ShoppingCart className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => {
+                localStorage.setItem(`look-${look.id}`, JSON.stringify({
+                  ...look,
+                  description: `A curated ${look.occasion.toLowerCase()} look that matches your ${userStyleProfile || 'personal'} style preference.`
+                }));
+                navigate(`/look/${look.id}`);
+              }}
+              className="bg-gradient-to-r from-fashion-primary to-fashion-accent text-white px-6 py-3 rounded-2xl hover:from-fashion-primary/90 hover:to-fashion-accent/90 transition-all duration-300 text-sm font-medium"
+            >
+              View Details
+            </button>
+          </div>
         </div>
       </div>
     </div>

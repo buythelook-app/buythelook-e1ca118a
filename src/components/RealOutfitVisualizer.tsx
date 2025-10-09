@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { findMatchingClothingItems, generateOutfit, getOutfitColors } from "@/services/outfitGenerationService";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Info } from "lucide-react";
+import { Loader2, RefreshCw, Info, ThumbsUp, ThumbsDown } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
@@ -55,6 +55,7 @@ export function RealOutfitVisualizer() {
   const [description, setDescription] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("top");
   const [showImagePath, setShowImagePath] = useState<boolean>(false);
+  const [userLiked, setUserLiked] = useState<boolean | undefined>(undefined);
 
   // טען מידע שמור
   useEffect(() => {
@@ -151,6 +152,21 @@ export function RealOutfitVisualizer() {
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     console.warn(`Error loading image: ${e.currentTarget.src}`);
     e.currentTarget.src = 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158';
+  };
+
+  const handleFeedback = (liked: boolean) => {
+    setUserLiked(liked);
+    
+    // Dispatch feedback event for learning
+    window.dispatchEvent(new CustomEvent('outfit-feedback', {
+      detail: { 
+        lookId: `${bodyShape}-${style}-${mood}`, 
+        liked: liked, 
+        disliked: !liked 
+      }
+    }));
+    
+    toast.info(liked ? 'תודה! הלוק נשמר בהעדפות שלך' : 'נשמע, ננסה להציע משהו אחר');
   };
 
   return (
@@ -330,7 +346,29 @@ export function RealOutfitVisualizer() {
                   <p className="text-gray-500 text-center">צור תלבושת כדי לקבל טיפי סטיילינג</p>
                 )}
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex flex-col gap-2">
+                {/* Feedback buttons */}
+                <div className="flex justify-center gap-2 w-full mb-2">
+                  <Button
+                    variant={userLiked === true ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleFeedback(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <ThumbsUp className="h-4 w-4" />
+                    אהבתי את הלוק!
+                  </Button>
+                  <Button
+                    variant={userLiked === false ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleFeedback(false)}
+                    className="flex items-center gap-2"
+                  >
+                    <ThumbsDown className="h-4 w-4" />
+                    לא מתאים לי
+                  </Button>
+                </div>
+
                 <Button 
                   variant="outline" 
                   className="w-full" 

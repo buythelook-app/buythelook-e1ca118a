@@ -23,6 +23,7 @@ export function AgentOutfitVisualizer() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showImagePath, setShowImagePath] = useState<boolean>(false);
+  const [userFeedback, setUserFeedback] = useState<Record<string, { isLiked?: boolean, feedback?: string }>>({});
 
   const fetchResults = async () => {
     try {
@@ -54,6 +55,20 @@ export function AgentOutfitVisualizer() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLike = (agentName: string, liked: boolean) => {
+    setUserFeedback(prev => ({
+      ...prev,
+      [agentName]: { ...prev[agentName], isLiked: liked }
+    }));
+    
+    // Dispatch feedback event for learning
+    window.dispatchEvent(new CustomEvent('outfit-feedback', {
+      detail: { lookId: agentName, liked: liked, disliked: !liked }
+    }));
+    
+    toast.info(`${liked ? 'אהבת' : 'לא אהבת'} את הלוק של ${agentName}`);
   };
 
   useEffect(() => {
@@ -206,6 +221,8 @@ export function AgentOutfitVisualizer() {
                   items={lookItems}
                   details={details}
                   showImagePaths={showImagePath}
+                  onLike={handleLike}
+                  isLiked={userFeedback[formatAgentName(result.agent)]?.isLiked}
                 />
               );
             })}
