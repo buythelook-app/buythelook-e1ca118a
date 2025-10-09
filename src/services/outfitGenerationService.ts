@@ -237,12 +237,56 @@ const inspectImageStructure = (imageData: any): string => {
 };
 
 /**
+ * Extract shoe image without model (usually second-to-last image)
+ */
+function getShoeImageWithoutModel(imageData: any): string {
+  if (!imageData) return '/placeholder.svg';
+  
+  try {
+    let images: string[] = [];
+    
+    if (Array.isArray(imageData)) {
+      images = imageData;
+    } else if (typeof imageData === 'string') {
+      try {
+        const parsed = JSON.parse(imageData);
+        images = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        images = [imageData];
+      }
+    } else if (typeof imageData === 'object') {
+      if (imageData.image) {
+        images = Array.isArray(imageData.image) ? imageData.image : [imageData.image];
+      } else if (imageData.images) {
+        images = Array.isArray(imageData.images) ? imageData.images : [imageData.images];
+      }
+    }
+    
+    // For shoes, prefer second-to-last image (usually without model)
+    if (images.length >= 2) {
+      return images[images.length - 2];
+    }
+    
+    return images[0] || '/placeholder.svg';
+  } catch (error) {
+    console.error('Error extracting shoe image:', error);
+    return '/placeholder.svg';
+  }
+}
+
+/**
  * Extract the first image URL from the image JSON field
  * This function handles different JSON structures to find the first valid image URL
  * @param imageJson The image JSON data from the database
+ * @param itemType Optional item type for special handling (e.g., 'shoes')
  * @returns The first image URL or a placeholder
  */
-export function extractImageUrl(imageJson: any): string {
+export function extractImageUrl(imageJson: any, itemType?: string): string {
+  // For shoes, use special logic to get image without model
+  if (itemType === 'shoes' || itemType === 'נעליים') {
+    return getShoeImageWithoutModel(imageJson);
+  }
+  
   try {
     // Case 1: If imageJson is a string (direct URL)
     if (typeof imageJson === 'string') {
@@ -393,7 +437,7 @@ export async function findMatchingClothingItems(colors: Record<string, string>):
       
       // Map the results to the return format, extracting image URLs
       result[type] = items.map(item => {
-        const imageUrl = extractImageUrl(item.image);
+        const imageUrl = extractImageUrl(item.image, type); // Pass type for shoe logic
         
         logger.info(`Extracted image URL for ${item.product_name}:`, {
           context: "findMatchingClothingItems",
