@@ -584,34 +584,40 @@ export type Database = {
       }
       user_feedback: {
         Row: {
-          agent_notes: string | null
+          comment: string | null
           created_at: string
-          feedback_text: string | null
           feedback_type: string | null
-          id: number
-          outfit_id: string | null
-          used_for_training: boolean | null
-          user_id: string | null
+          id: string
+          is_disliked: boolean | null
+          is_liked: boolean | null
+          look_data: Json | null
+          look_id: string
+          updated_at: string
+          user_id: string
         }
         Insert: {
-          agent_notes?: string | null
+          comment?: string | null
           created_at?: string
-          feedback_text?: string | null
           feedback_type?: string | null
-          id?: number
-          outfit_id?: string | null
-          used_for_training?: boolean | null
-          user_id?: string | null
+          id?: string
+          is_disliked?: boolean | null
+          is_liked?: boolean | null
+          look_data?: Json | null
+          look_id: string
+          updated_at?: string
+          user_id: string
         }
         Update: {
-          agent_notes?: string | null
+          comment?: string | null
           created_at?: string
-          feedback_text?: string | null
           feedback_type?: string | null
-          id?: number
-          outfit_id?: string | null
-          used_for_training?: boolean | null
-          user_id?: string | null
+          id?: string
+          is_disliked?: boolean | null
+          is_liked?: boolean | null
+          look_data?: Json | null
+          look_id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
