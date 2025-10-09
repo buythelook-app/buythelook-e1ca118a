@@ -145,36 +145,73 @@ function filterItemsByBodyStructure(items: any[], bodyStructure: string): any[] 
 function detectItemType(item: any): 'top' | 'bottom' | 'shoes' | 'dress' | 'outerwear' {
   const productName = (item.product_name || '').toLowerCase();
   const productFamily = (item.product_family || '').toLowerCase();
+  const productFamilyEn = (item.product_family_en || '').toLowerCase();
   const description = (item.description || '').toLowerCase();
+  const subfamily = (item.product_subfamily || '').toLowerCase();
   
-  // More accurate detection logic
-  if (productName.includes('חולצ') || productName.includes('טופ') || productName.includes('בלוז') ||
-      productFamily.includes('shirt') || productFamily.includes('top') || productFamily.includes('blouse')) {
-    return 'top';
+  // ✅ חצאיות - PRIORITY CHECK (לפני הכל!)
+  if (productName.includes('חצאית') || 
+      productFamily.includes('skirt') || 
+      productFamilyEn.includes('skirt') ||
+      subfamily.includes('skirt')) {
+    console.log(`✅ Detected SKIRT as BOTTOM: ${item.product_name}`);
+    return 'bottom';
   }
   
-  if (productName.includes('מכנס') || productFamily.includes('trouser') || productFamily.includes('pant') ||
+  // ✅ מכנסיים ולגינסים
+  if (productName.includes('מכנס') || productName.includes('לגינס') ||
+      productFamily.includes('trouser') || productFamily.includes('pant') || productFamily.includes('legging') ||
+      productFamilyEn.includes('trouser') || productFamilyEn.includes('pant') || productFamilyEn.includes('legging') ||
+      subfamily.includes('trouser') || subfamily.includes('pant') || subfamily.includes('legging') ||
       description.includes('מכנס')) {
     return 'bottom';
   }
   
-  if (productName.includes('חצאית') || productFamily.includes('skirt')) {
-    return 'bottom';
-  }
-  
-  if (productName.includes('שמלה') || productFamily.includes('dress')) {
+  // ✅ שמלות
+  if (productName.includes('שמלה') || 
+      productFamily.includes('dress') || 
+      productFamilyEn.includes('dress') ||
+      subfamily.includes('dress')) {
     return 'dress';
   }
   
-  if (productName.includes('נעל') || productFamily.includes('shoe') || productFamily.includes('boot')) {
+  // ✅ נעליים
+  if (productName.includes('נעל') || 
+      productFamily.includes('shoe') || productFamily.includes('boot') || productFamily.includes('sandal') ||
+      productFamilyEn.includes('shoe') || productFamilyEn.includes('boot') || productFamilyEn.includes('sandal') ||
+      subfamily.includes('shoe') || subfamily.includes('boot') || subfamily.includes('sandal')) {
     return 'shoes';
   }
   
-  if (productName.includes('מעיל') || productName.includes('ז\'קט') || productFamily.includes('jacket') || productFamily.includes('coat')) {
+  // ✅ מעילים וז'קטים
+  if (productName.includes('מעיל') || productName.includes('ז\'קט') || 
+      productFamily.includes('jacket') || productFamily.includes('coat') || productFamily.includes('blazer') ||
+      productFamilyEn.includes('jacket') || productFamilyEn.includes('coat') || productFamilyEn.includes('blazer') ||
+      subfamily.includes('jacket') || subfamily.includes('coat') || subfamily.includes('blazer')) {
     return 'outerwear';
   }
   
-  // Default fallback based on common patterns
+  // ✅ חולצות (רק אחרי שבדקנו הכל!)
+  if (productName.includes('חולצ') || productName.includes('טופ') || productName.includes('בלוז') ||
+      productFamily.includes('shirt') || productFamily.includes('top') || productFamily.includes('blouse') ||
+      productFamilyEn.includes('shirt') || productFamilyEn.includes('top') || productFamilyEn.includes('blouse') ||
+      subfamily.includes('shirt') || subfamily.includes('top') || subfamily.includes('blouse')) {
+    return 'top';
+  }
+  
+  // ❌ אם לא זיהינו - לוג ובדיקה נוספת
+  console.warn(`⚠️ Undetected item type for: ${item.product_name} (family: ${productFamily}, subfamily: ${subfamily})`);
+  
+  // ניסיון אחרון - לפי product_subfamily
+  if (subfamily) {
+    if (subfamily.includes('top') || subfamily.includes('shirt') || subfamily.includes('blouse')) return 'top';
+    if (subfamily.includes('bottom') || subfamily.includes('trouser') || subfamily.includes('pant') || subfamily.includes('skirt')) return 'bottom';
+    if (subfamily.includes('shoe') || subfamily.includes('boot')) return 'shoes';
+    if (subfamily.includes('dress')) return 'dress';
+    if (subfamily.includes('jacket') || subfamily.includes('coat')) return 'outerwear';
+  }
+  
+  // Default fallback - רק אם באמת לא מצאנו כלום
   return 'top';
 }
 
