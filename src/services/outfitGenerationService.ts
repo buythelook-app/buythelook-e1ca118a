@@ -385,16 +385,16 @@ export async function findMatchingClothingItems(colors: Record<string, string>):
       // Convert hex color to color name for database search
       const colorName = getColorName(hexColor);
       
-      // Map item types to database categories (English/Spanish as data is in those languages)
+      // Map item types to database categories - data is in Spanish (ZARA catalog)
       let categoryPattern = '';
       if (type === 'top') {
-        categoryPattern = 'CAMISA|BLOUSE|TOP|SHIRT|CAMISETA';
+        categoryPattern = 'CAMISA|TOP|CAMISETA|BLASIER';
       } else if (type === 'bottom') {
-        categoryPattern = 'PANTALON|PANTS|JEAN|FALDA|SKIRT|BERMUDA';
+        categoryPattern = 'PANTALON|FALDA|BERMUDA';
       } else if (type === 'shoes') {
-        categoryPattern = 'ZAPATO|SHOE|SANDAL|BOOT|BOTA';
+        categoryPattern = 'ZAPATO|BOTA';
       } else if (type === 'coat') {
-        categoryPattern = 'CHAQUETA|JACKET|COAT|ABRIGO|CHALECO|BLAZER';
+        categoryPattern = 'CAZADORA|ABRIGO|CHALECO';
       }
       
       if (!categoryPattern) continue;
