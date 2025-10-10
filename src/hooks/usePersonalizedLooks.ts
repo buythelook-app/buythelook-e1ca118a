@@ -251,7 +251,7 @@ export function usePersonalizedLooks() {
       items: lookItems,
       price: `$${totalPrice.toFixed(2)}`,
       category: occasion,
-      occasion
+      occasion: occasion
     };
   }, [combinations]);
 

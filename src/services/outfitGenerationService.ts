@@ -237,9 +237,9 @@ const inspectImageStructure = (imageData: any): string => {
 };
 
 /**
- * Extract shoe image without model (usually second-to-last image)
+ * Extract image without model (usually second-to-last image) for any item type
  */
-function getShoeImageWithoutModel(imageData: any): string {
+function getImageWithoutModel(imageData: any): string {
   if (!imageData) return '/placeholder.svg';
   
   try {
@@ -262,106 +262,28 @@ function getShoeImageWithoutModel(imageData: any): string {
       }
     }
     
-    // For shoes, prefer second-to-last image (usually without model)
+    // For all items, prefer second-to-last image (usually without model)
     if (images.length >= 2) {
       return images[images.length - 2];
     }
     
     return images[0] || '/placeholder.svg';
   } catch (error) {
-    console.error('Error extracting shoe image:', error);
+    console.error('Error extracting image without model:', error);
     return '/placeholder.svg';
   }
 }
 
 /**
- * Extract the first image URL from the image JSON field
- * This function handles different JSON structures to find the first valid image URL
+ * Extract the image URL from the image JSON field
+ * For all items, prefer second-to-last image (usually without model)
  * @param imageJson The image JSON data from the database
- * @param itemType Optional item type for special handling (e.g., 'shoes')
- * @returns The first image URL or a placeholder
+ * @param itemType Optional item type (not used anymore - all items use same logic)
+ * @returns The image URL or a placeholder
  */
 export function extractImageUrl(imageJson: any, itemType?: string): string {
-  // For shoes, use special logic to get image without model
-  if (itemType === 'shoes' || itemType === 'נעליים') {
-    return getShoeImageWithoutModel(imageJson);
-  }
-  
-  try {
-    // Case 1: If imageJson is a string (direct URL)
-    if (typeof imageJson === 'string') {
-      return imageJson;
-    }
-    
-    // Case 2: If imageJson is null or undefined
-    if (!imageJson) {
-      return '/placeholder.svg';
-    }
-    
-    // Case 3: If imageJson is an array, take the first element
-    if (Array.isArray(imageJson)) {
-      if (imageJson.length > 0) {
-        // If first element is a string (URL), return it
-        if (typeof imageJson[0] === 'string') {
-          return imageJson[0];
-        }
-        // If first element is an object with a url property
-        if (typeof imageJson[0] === 'object' && imageJson[0] && imageJson[0].url) {
-          return imageJson[0].url;
-        }
-      }
-      return '/placeholder.svg';
-    }
-    
-    // Case 4: If imageJson is an object with urls array
-    if (typeof imageJson === 'object' && imageJson.urls && Array.isArray(imageJson.urls)) {
-      return imageJson.urls[0] || '/placeholder.svg';
-    }
-    
-    // Case 5: If imageJson is an object with url property
-    if (typeof imageJson === 'object' && imageJson.url) {
-      return imageJson.url;
-    }
-
-    // Case 6: If imageJson is an object with images array
-    if (typeof imageJson === 'object' && imageJson.images && Array.isArray(imageJson.images)) {
-      return imageJson.images[0] || '/placeholder.svg';
-    }
-    
-    // Case 7: Search for any string property that looks like a URL
-    if (typeof imageJson === 'object') {
-      for (const key of Object.keys(imageJson)) {
-        const value = imageJson[key];
-        if (typeof value === 'string' && 
-            (value.startsWith('http') || value.startsWith('/') || 
-             value.includes('image') || value.includes('.jpg') || 
-             value.includes('.png') || value.includes('.webp'))) {
-          return value;
-        }
-        
-        // Check for nested arrays of strings
-        if (Array.isArray(value) && value.length > 0) {
-          if (typeof value[0] === 'string') {
-            return value[0];
-          }
-        }
-      }
-    }
-    
-    // Log the structure for debugging
-    logger.debug("Unable to extract image URL, JSON structure:", {
-      context: "extractImageUrl",
-      data: JSON.stringify(imageJson).substring(0, 200) + '...'
-    });
-    
-    return '/placeholder.svg';
-  } catch (error) {
-    logger.error("Error extracting image URL", {
-      context: "extractImageUrl",
-      data: error
-    });
-    return '/placeholder.svg';
-  }
+  // Use the no-model logic for all items
+  return getImageWithoutModel(imageJson);
 }
 
 /**
