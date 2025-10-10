@@ -182,10 +182,17 @@ export function usePersonalizedLooks() {
 
     const tops = items.filter(item => item.type === 'top');
     const bottoms = items.filter(item => item.type === 'bottom');
-    const dresses = items.filter(item => item.type === 'dress');
     const shoes = items.filter(item => item.type === 'shoes');
-    const accessories = items.filter(item => item.type === 'accessory');
-    const outerwear = items.filter(item => item.type === 'outerwear');
+
+    // Ensure we have at least one item of each required type (top, bottom, shoes)
+    if (tops.length === 0 || bottoms.length === 0 || shoes.length === 0) {
+      console.log(`⚠️ [createLookFromItems] Missing required items for ${occasion}:`, {
+        tops: tops.length,
+        bottoms: bottoms.length,
+        shoes: shoes.length
+      });
+      return null;
+    }
 
     const lookItems: LookItem[] = [];
     let totalPrice = 0;
@@ -195,91 +202,48 @@ export function usePersonalizedLooks() {
 
     const getItemByIndex = (arr: DashboardItem[], idx: number) => arr[idx % arr.length];
 
-    if (dresses.length > 0) {
-      const dress = getItemByIndex(dresses, currentCombination);
-      if (dress) {
-        lookItems.push({
-          id: dress.id,
-          image: dress.image,
-          type: 'dress',
-          name: dress.name,
-          price: dress.price
-        });
-        totalPrice += parseFloat(dress.price || '0');
-      }
-    } else {
-      if (tops.length > 0) {
-        const top = getItemByIndex(tops, currentCombination);
-        if (top) {
-          lookItems.push({
-            id: top.id,
-            image: top.image,
-            type: 'top',
-            name: top.name,
-            price: top.price
-          });
-          totalPrice += parseFloat(top.price || '0');
-        }
-      }
-
-      if (bottoms.length > 0) {
-        const bottom = getItemByIndex(bottoms, currentCombination);
-        if (bottom) {
-          lookItems.push({
-            id: bottom.id,
-            image: bottom.image,
-            type: 'bottom',
-            name: bottom.name,
-            price: bottom.price
-          });
-          totalPrice += parseFloat(bottom.price || '0');
-        }
-      }
+    // Always add top, bottom, and shoes (3 items minimum)
+    const top = getItemByIndex(tops, currentCombination);
+    if (top) {
+      lookItems.push({
+        id: top.id,
+        image: top.image,
+        type: 'top',
+        name: top.name,
+        price: top.price
+      });
+      totalPrice += parseFloat(top.price || '0');
     }
 
-    if (shoes.length > 0) {
-      const shoe = getItemByIndex(shoes, currentCombination);
-      if (shoe) {
-        lookItems.push({
-          id: shoe.id,
-          image: shoe.image,
-          type: 'shoes',
-          name: shoe.name,
-          price: shoe.price
-        });
-        totalPrice += parseFloat(shoe.price || '0');
-      }
+    const bottom = getItemByIndex(bottoms, currentCombination);
+    if (bottom) {
+      lookItems.push({
+        id: bottom.id,
+        image: bottom.image,
+        type: 'bottom',
+        name: bottom.name,
+        price: bottom.price
+      });
+      totalPrice += parseFloat(bottom.price || '0');
     }
 
-    if (outerwear.length > 0 && Math.random() > 0.5) {
-      const coat = getItemByIndex(outerwear, currentCombination);
-      if (coat) {
-        lookItems.push({
-          id: coat.id,
-          image: coat.image,
-          type: 'outerwear',
-          name: coat.name,
-          price: coat.price
-        });
-        totalPrice += parseFloat(coat.price || '0');
-      }
+    const shoe = getItemByIndex(shoes, currentCombination);
+    if (shoe) {
+      lookItems.push({
+        id: shoe.id,
+        image: shoe.image,
+        type: 'shoes',
+        name: shoe.name,
+        price: shoe.price
+      });
+      totalPrice += parseFloat(shoe.price || '0');
     }
 
-    if (accessories.length > 0 && Math.random() > 0.6) {
-      const accessory = getItemByIndex(accessories, currentCombination);
-      if (accessory) {
-        lookItems.push({
-          id: accessory.id,
-          image: accessory.image,
-          type: 'accessory',
-          name: accessory.name,
-          price: accessory.price
-        });
-        totalPrice += parseFloat(accessory.price || '0');
-      }
+    // Ensure we have exactly 3 items
+    if (lookItems.length !== 3) {
+      console.log(`⚠️ [createLookFromItems] Created look with ${lookItems.length} items instead of 3 for ${occasion}`);
+      return null;
     }
-
-    if (lookItems.length === 0) return null;
 
     return {
       id: `${occasion}-look-${index}-${currentCombination}`,

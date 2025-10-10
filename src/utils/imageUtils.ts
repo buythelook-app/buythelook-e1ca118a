@@ -176,18 +176,45 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
 };
 
 /**
+ * Get shoe image without model - picks the second-to-last image from array
+ */
+export const getShoeImageWithoutModel = (imageData: ZaraImageData): string => {
+  try {
+    let imageUrls: string[] = [];
+    
+    // Extract array of URLs
+    if (Array.isArray(imageData)) {
+      imageUrls = imageData.filter(url => typeof url === 'string' && url.trim() !== '');
+    } else if (typeof imageData === 'string') {
+      try {
+        const parsed = JSON.parse(imageData);
+        if (Array.isArray(parsed)) {
+          imageUrls = parsed.filter(url => typeof url === 'string' && url.trim() !== '');
+        }
+      } catch {
+        imageUrls = [imageData];
+      }
+    }
+    
+    // If we have at least 2 images, return the second-to-last (typically no model)
+    if (imageUrls.length >= 2) {
+      const secondToLast = imageUrls[imageUrls.length - 2];
+      console.log(`👟 [ImageUtils] Selected second-to-last shoe image (no model): ${secondToLast}`);
+      return secondToLast;
+    }
+    
+    // Otherwise fallback to regular extraction
+    return extractZaraImageUrl(imageData);
+  } catch (error) {
+    console.error('❌ [ImageUtils] Error in getShoeImageWithoutModel:', error);
+    return extractZaraImageUrl(imageData);
+  }
+};
+
+/**
  * Specific function for shoes image extraction with enhanced fallbacks
  */
 export const extractShoesImageUrl = (imageData: ZaraImageData): string => {
-  const url = extractZaraImageUrl(imageData);
-  
-  // If we got a placeholder, it means we couldn't find any suitable image
-  if (url === '/placeholder.svg') {
-    console.log('👟 [ImageUtils] Using shoe placeholder due to no suitable images found');
-    // You could return a specific shoe placeholder here if you have one
-    return '/placeholder.svg';
-  }
-  
-  console.log(`👟 [ImageUtils] Selected shoe image: ${url}`);
-  return url;
+  // Use the special function to get shoe image without model
+  return getShoeImageWithoutModel(imageData);
 };
