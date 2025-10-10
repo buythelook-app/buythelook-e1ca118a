@@ -399,11 +399,17 @@ export async function findMatchingClothingItems(colors: Record<string, string>):
       
       if (!categoryPattern) continue;
       
-      // Search by product_family which contains category in English/Spanish
+      // Split pattern into individual terms for OR query
+      const terms = categoryPattern.split('|');
+      const orConditions = terms.map(term => 
+        `product_family.ilike.%${term}%,product_name.ilike.%${term}%`
+      ).join(',');
+      
+      // Search by product_family or product_name matching any of the category terms
       const { data: items, error } = await supabase
         .from('zara_cloth')
         .select('id, product_name, price, colour, image, product_family, product_subfamily')
-        .or(`product_family.ilike.%${categoryPattern}%,product_name.ilike.%${categoryPattern}%`)
+        .or(orConditions)
         .not('product_family', 'ilike', '%maquillaje%')
         .not('product_family', 'ilike', '%perfume%')
         .not('product_subfamily', 'ilike', '%cosm%')
