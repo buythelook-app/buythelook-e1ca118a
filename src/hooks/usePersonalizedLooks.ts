@@ -142,10 +142,31 @@ export function usePersonalizedLooks() {
 
       console.log('🎨 [usePersonalizedLooks] All items converted:', allItems.length);
 
-      // Distribute items across occasions
+      // Distribute items across occasions - ensure each has tops, bottoms, and shoes
+      const tops = allItems.filter(item => item.type === 'top');
+      const bottoms = allItems.filter(item => item.type === 'bottom');
+      const shoes = allItems.filter(item => item.type === 'shoes');
+      
       occasions.forEach((occasion, index) => {
-        const startIdx = index * 4;
-        outfitsByOccasion[occasion] = allItems.slice(startIdx, startIdx + 8);
+        // Distribute items evenly across occasions
+        const occasionItems: DashboardItem[] = [];
+        
+        // Add tops for this occasion
+        const topCount = Math.ceil(tops.length / occasions.length);
+        const topStartIdx = index * topCount;
+        occasionItems.push(...tops.slice(topStartIdx, topStartIdx + topCount));
+        
+        // Add bottoms for this occasion
+        const bottomCount = Math.ceil(bottoms.length / occasions.length);
+        const bottomStartIdx = index * bottomCount;
+        occasionItems.push(...bottoms.slice(bottomStartIdx, bottomStartIdx + bottomCount));
+        
+        // Add shoes for this occasion - important! All occasions need shoes
+        const shoeCount = Math.ceil(shoes.length / occasions.length);
+        const shoeStartIdx = index * shoeCount;
+        occasionItems.push(...shoes.slice(shoeStartIdx, shoeStartIdx + shoeCount));
+        
+        outfitsByOccasion[occasion] = occasionItems;
       });
 
       console.log('🎨 [usePersonalizedLooks] Final outfits by occasion:', outfitsByOccasion);
