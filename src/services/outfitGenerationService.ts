@@ -385,25 +385,25 @@ export async function findMatchingClothingItems(colors: Record<string, string>):
       // Convert hex color to color name for database search
       const colorName = getColorName(hexColor);
       
-      // Map item types to database categories
+      // Map item types to database categories (English/Spanish as data is in those languages)
       let categoryPattern = '';
       if (type === 'top') {
-        categoryPattern = 'חולצ|טופ|עליון';
+        categoryPattern = 'CAMISA|BLOUSE|TOP|SHIRT|CAMISETA';
       } else if (type === 'bottom') {
-        categoryPattern = 'מכנס|חצאית|תחתון';
+        categoryPattern = 'PANTALON|PANTS|JEAN|FALDA|SKIRT|BERMUDA';
       } else if (type === 'shoes') {
-        categoryPattern = 'נעל|סנדל';
+        categoryPattern = 'ZAPATO|SHOE|SANDAL|BOOT|BOTA';
       } else if (type === 'coat') {
-        categoryPattern = 'ז\'קט|מעיל|עליון';
+        categoryPattern = 'CHAQUETA|JACKET|COAT|ABRIGO|CHALECO|BLAZER';
       }
       
       if (!categoryPattern) continue;
       
-      // Simplified query for better performance - just match category pattern
+      // Search by product_family which contains category in English/Spanish
       const { data: items, error } = await supabase
         .from('zara_cloth')
         .select('id, product_name, price, colour, image, product_family, product_subfamily')
-        .ilike('product_name', `%${categoryPattern}%`)
+        .or(`product_family.ilike.%${categoryPattern}%,product_name.ilike.%${categoryPattern}%`)
         .not('product_family', 'ilike', '%maquillaje%')
         .not('product_family', 'ilike', '%perfume%')
         .not('product_subfamily', 'ilike', '%cosm%')
