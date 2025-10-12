@@ -237,7 +237,8 @@ const inspectImageStructure = (imageData: any): string => {
 };
 
 /**
- * Extract image without model (usually second-to-last image) for any item type
+ * Extract image without model - prioritizes images 6-9 (full product shots without models)
+ * Pattern: _[6-9]_\d+_1\.jpg indicates a product image without model
  */
 function getImageWithoutModel(imageData: any): string {
   if (!imageData) return '/placeholder.svg';
@@ -262,14 +263,41 @@ function getImageWithoutModel(imageData: any): string {
       }
     }
     
-    // For all items, prefer second-to-last image (usually without model)
-    if (images.length >= 2) {
-      return images[images.length - 2];
+    // Filter URLs to ensure they're valid strings
+    images = images.filter(url => typeof url === 'string' && url.trim() !== '');
+    
+    if (images.length === 0) return '/placeholder.svg';
+    
+    // 1st Priority: Look for images 6-9 without model (full product shots)
+    const noModelImages = images.filter(url => /_[6-9]_\d+_1\.jpg/.test(url));
+    
+    if (noModelImages.length > 0) {
+      // Sort to prefer earlier image numbers (6 over 7, etc.)
+      noModelImages.sort((a, b) => {
+        const aMatch = a.match(/_([6-9])_\d+_1\.jpg/);
+        const bMatch = b.match(/_([6-9])_\d+_1\.jpg/);
+        if (aMatch && bMatch) {
+          return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+        }
+        return 0;
+      });
+      
+      console.log(`✅ [getImageWithoutModel] Found no-model image: ${noModelImages[0]}`);
+      return noModelImages[0];
     }
     
-    return images[0] || '/placeholder.svg';
+    // 2nd Priority: Try second-to-last image (often without model)
+    if (images.length >= 2) {
+      const secondToLast = images[images.length - 2];
+      console.log(`⚠️ [getImageWithoutModel] Using second-to-last image: ${secondToLast}`);
+      return secondToLast;
+    }
+    
+    // Fallback: First image
+    console.log(`⚠️ [getImageWithoutModel] Using first image as fallback: ${images[0]}`);
+    return images[0];
   } catch (error) {
-    console.error('Error extracting image without model:', error);
+    console.error('❌ [getImageWithoutModel] Error:', error);
     return '/placeholder.svg';
   }
 }
