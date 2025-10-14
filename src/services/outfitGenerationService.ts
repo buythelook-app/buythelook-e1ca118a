@@ -397,15 +397,13 @@ export async function findMatchingClothingItems(colors: Record<string, string>):
             extractedUrl: imageUrl
           }
         });
-        // Fix malformed URLs with triple slashes
-        const fixedImageUrl = imageUrl ? imageUrl.replace(/(?<!:)\/\/\//g, '//') : imageUrl;
         
         return {
           id: item.id,
           name: item.product_name,
           type,
           price: `₪${item.price}`,
-          image: fixedImageUrl,
+          image: imageUrl,
           color: item.colour,
           url: item.url
         };
