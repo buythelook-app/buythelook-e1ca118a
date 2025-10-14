@@ -34,6 +34,7 @@ interface LookItemsListProps {
 export const LookItemsList = ({ look }: LookItemsListProps) => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
+  const [autoFilledSizes, setAutoFilledSizes] = useState<Record<string, boolean>>({});
   const { addLook, addItems } = useCartStore();
   const { sizes: userSizes, isLoading: sizesLoading } = useUserSizes();
 
@@ -44,21 +45,26 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
   useEffect(() => {
     if (!sizesLoading && look.items) {
       const autoSizes: Record<string, string> = {};
+      const autoFilledFlags: Record<string, boolean> = {};
       
       look.items.forEach(item => {
         const itemType = item.type?.toLowerCase();
         
         if (itemType === 'top' && userSizes.top) {
           autoSizes[item.id] = userSizes.top;
+          autoFilledFlags[item.id] = true;
         } else if (itemType === 'bottom' && userSizes.bottom) {
           autoSizes[item.id] = userSizes.bottom;
+          autoFilledFlags[item.id] = true;
         } else if (itemType === 'shoes' && userSizes.shoes) {
           autoSizes[item.id] = userSizes.shoes;
+          autoFilledFlags[item.id] = true;
         }
       });
       
       if (Object.keys(autoSizes).length > 0) {
-        setSelectedSizes(prev => ({ ...autoSizes, ...prev }));
+        setSelectedSizes(autoSizes);
+        setAutoFilledSizes(autoFilledFlags);
       }
     }
   }, [look.items, userSizes, sizesLoading]);
@@ -77,6 +83,11 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
     setSelectedSizes(prev => ({
       ...prev,
       [itemId]: size
+    }));
+    // Mark as manually selected (not auto-filled)
+    setAutoFilledSizes(prev => ({
+      ...prev,
+      [itemId]: false
     }));
   };
 
@@ -214,7 +225,7 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
                   value={selectedSizes[item.id] || ""}
                   onValueChange={(value) => handleSizeSelect(item.id, value)}
                 >
-                  <SelectTrigger className="w-32 border-fashion-primary/20">
+                  <SelectTrigger className={`w-32 ${autoFilledSizes[item.id] ? 'border-fashion-primary bg-fashion-primary/5' : 'border-fashion-primary/20'}`}>
                     <SelectValue placeholder={sizesLoading ? "Loading..." : "Select size"} />
                   </SelectTrigger>
                   <SelectContent>
@@ -225,9 +236,9 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
                     ))}
                   </SelectContent>
                 </Select>
-                {selectedSizes[item.id] && (
-                  <span className="text-xs text-fashion-primary">
-                    ✓ Auto-filled from profile
+                {autoFilledSizes[item.id] && selectedSizes[item.id] && (
+                  <span className="text-xs text-fashion-primary font-medium">
+                    ✓ מולא אוטומטית מהפרופיל
                   </span>
                 )}
               </div>
