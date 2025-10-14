@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "./ui/button";
-import { Loader2, ShoppingCart, Shuffle } from "lucide-react";
+import { Loader2, ShoppingCart, Shuffle, ThumbsUp, ThumbsDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { LookCanvas } from "./LookCanvas";
 import { useCartStore } from "./Cart";
@@ -45,6 +45,9 @@ export const LookSuggestions = () => {
   const [colorIntensity, setColorIntensity] = useState(60);
   const [userStylePreference, setUserStylePreference] = useState<string | null>(null);
   const { isGenerating, generateOutfit } = useOutfitGeneration();
+  const [userLiked, setUserLiked] = useState<boolean | undefined>(undefined);
+  const [showFeedbackInput, setShowFeedbackInput] = useState<boolean>(false);
+  const [feedbackComment, setFeedbackComment] = useState<string>('');
   
   // הוספת Enhanced Outfit Generation
   const { 
@@ -174,6 +177,51 @@ export const LookSuggestions = () => {
 
   const handleColorIntensityChange = (value: number[]) => {
     setColorIntensity(value[0]);
+  };
+
+  const handleFeedback = (liked: boolean) => {
+    setUserLiked(liked);
+    
+    if (!liked) {
+      setShowFeedbackInput(true);
+    } else {
+      setShowFeedbackInput(false);
+      if (dashboardItems) {
+        window.dispatchEvent(new CustomEvent('outfit-feedback', {
+          detail: { 
+            lookId: 'look-suggestion', 
+            liked: true, 
+            disliked: false,
+            lookData: { items: dashboardItems }
+          }
+        }));
+      }
+      toast({
+        title: 'תודה!',
+        description: 'הלוק נשמר בהעדפות שלך'
+      });
+    }
+  };
+
+  const handleFeedbackSubmit = () => {
+    if (dashboardItems) {
+      window.dispatchEvent(new CustomEvent('outfit-feedback', {
+        detail: { 
+          lookId: 'look-suggestion', 
+          liked: false, 
+          disliked: true,
+          comment: feedbackComment,
+          lookData: { items: dashboardItems }
+        }
+      }));
+    }
+    
+    setShowFeedbackInput(false);
+    setFeedbackComment('');
+    toast({
+      title: 'תודה על המשוב!',
+      description: 'נשתמש בו כדי לשפר את ההמלצות'
+    });
   };
 
   useEffect(() => {
@@ -408,6 +456,51 @@ export const LookSuggestions = () => {
                       </Button>
                     </div>
                   </div>
+                  
+                  {/* Feedback buttons */}
+                  <div className="flex justify-center gap-2 mt-3 px-4">
+                    <button
+                      onClick={() => handleFeedback(true)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-300 text-xs ${
+                        userLiked === true 
+                          ? 'bg-netflix-accent text-white' 
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <ThumbsUp className="w-3 h-3" />
+                      <span>אהבתי</span>
+                    </button>
+                    <button
+                      onClick={() => handleFeedback(false)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-300 text-xs ${
+                        userLiked === false 
+                          ? 'bg-netflix-accent text-white' 
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <ThumbsDown className="w-3 h-3" />
+                      <span>לא מתאים</span>
+                    </button>
+                  </div>
+
+                  {/* Feedback input for dislikes */}
+                  {showFeedbackInput && (
+                    <div className="space-y-2 mt-3 px-4">
+                      <textarea
+                        value={feedbackComment}
+                        onChange={(e) => setFeedbackComment(e.target.value)}
+                        placeholder="מה לא מתאים? (למשל: הצבעים, הסגנון, הגזרה...)"
+                        className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 text-xs min-h-[60px] resize-none"
+                        dir="rtl"
+                      />
+                      <button 
+                        onClick={handleFeedbackSubmit}
+                        className="w-full bg-netflix-accent text-white px-3 py-2 rounded-lg hover:bg-netflix-accent/90 transition-all duration-300 text-xs"
+                      >
+                        שלח משוב
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

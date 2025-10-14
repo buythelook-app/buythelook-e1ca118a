@@ -9,6 +9,7 @@ import { StyleRulers } from "./look/StyleRulers";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { LookCanvas } from "./LookCanvas";
+import { ThumbsUp, ThumbsDown } from "lucide-react";
 
 export const LookDetail = () => {
   const navigate = useNavigate();
@@ -17,6 +18,9 @@ export const LookDetail = () => {
   const [elegance, setElegance] = useState(75);
   const [colorIntensity, setColorIntensity] = useState(60);
   const [userStyle, setUserStyle] = useState<string | null>(null);
+  const [userLiked, setUserLiked] = useState<boolean | undefined>(undefined);
+  const [showFeedbackInput, setShowFeedbackInput] = useState<boolean>(false);
+  const [feedbackComment, setFeedbackComment] = useState<string>('');
 
   useEffect(() => {
     // Load the user's style preference
@@ -58,6 +62,41 @@ export const LookDetail = () => {
     setColorIntensity(value[0]);
   };
 
+  const handleFeedback = (liked: boolean) => {
+    setUserLiked(liked);
+    
+    if (!liked) {
+      setShowFeedbackInput(true);
+    } else {
+      setShowFeedbackInput(false);
+      window.dispatchEvent(new CustomEvent('outfit-feedback', {
+        detail: { 
+          lookId: look.id, 
+          liked: true, 
+          disliked: false,
+          lookData: look
+        }
+      }));
+      toast.info('תודה! הלוק נשמר בהעדפות שלך');
+    }
+  };
+
+  const handleFeedbackSubmit = () => {
+    window.dispatchEvent(new CustomEvent('outfit-feedback', {
+      detail: { 
+        lookId: look.id, 
+        liked: false, 
+        disliked: true,
+        comment: feedbackComment,
+        lookData: look
+      }
+    }));
+    
+    setShowFeedbackInput(false);
+    setFeedbackComment('');
+    toast.info('תודה על המשוב! נשתמש בו כדי לשפר את ההמלצות');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background/95 via-accent/5 to-primary/5 text-gray-900 p-4 md:p-6">
       <div className="container mx-auto max-w-7xl">
@@ -93,6 +132,51 @@ export const LookDetail = () => {
                     height={800}
                   />
                 </div>
+                
+                {/* Feedback buttons */}
+                <div className="flex justify-center gap-2 mt-4">
+                  <button
+                    onClick={() => handleFeedback(true)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 ${
+                      userLiked === true 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <ThumbsUp className="w-4 h-4" />
+                    <span className="text-sm">אהבתי</span>
+                  </button>
+                  <button
+                    onClick={() => handleFeedback(false)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 ${
+                      userLiked === false 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <ThumbsDown className="w-4 h-4" />
+                    <span className="text-sm">לא מתאים</span>
+                  </button>
+                </div>
+
+                {/* Feedback input for dislikes */}
+                {showFeedbackInput && (
+                  <div className="space-y-2 mt-4">
+                    <textarea
+                      value={feedbackComment}
+                      onChange={(e) => setFeedbackComment(e.target.value)}
+                      placeholder="מה לא מתאים? (למשל: הצבעים, הסגנון, הגזרה...)"
+                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 text-sm min-h-[80px] resize-none"
+                      dir="rtl"
+                    />
+                    <button 
+                      onClick={handleFeedbackSubmit}
+                      className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-all duration-300 text-sm"
+                    >
+                      שלח משוב
+                    </button>
+                  </div>
+                )}
               </div>
               
               <div className="mt-4 md:mt-6">
