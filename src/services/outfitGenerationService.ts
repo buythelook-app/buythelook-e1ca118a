@@ -358,7 +358,7 @@ export async function findMatchingClothingItems(colors: Record<string, string>):
       // Search by product_family or product_name matching any of the category terms
       const { data: items, error } = await supabase
         .from('zara_cloth')
-        .select('id, product_name, price, colour, image, product_family, product_subfamily')
+        .select('id, product_name, price, colour, image, product_family, product_subfamily, url')
         .or(orConditions)
         .not('product_family', 'ilike', '%maquillaje%')
         .not('product_family', 'ilike', '%perfume%')
@@ -404,7 +404,8 @@ export async function findMatchingClothingItems(colors: Record<string, string>):
           type,
           price: `₪${item.price}`,
           image: imageUrl,
-          color: item.colour
+          color: item.colour,
+          url: item.url
         };
       });
       
