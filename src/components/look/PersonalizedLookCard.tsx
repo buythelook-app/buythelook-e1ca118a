@@ -83,25 +83,25 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
         <div className="flex justify-center gap-3">
           <button
             onClick={() => handleFeedback(true)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all duration-300 border-2 ${
+            className={`flex items-center justify-center p-3 rounded-xl transition-all duration-300 border-2 ${
               userLiked === true 
                 ? 'bg-fashion-accent border-fashion-accent text-white shadow-lg' 
                 : 'bg-white/10 border-white/30 text-white hover:bg-fashion-accent/20 hover:border-fashion-accent/50'
             }`}
+            title="אהבתי"
           >
             <ThumbsUp className="w-5 h-5" />
-            <span className="text-sm font-medium">אהבתי</span>
           </button>
           <button
             onClick={() => handleFeedback(false)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all duration-300 border-2 ${
+            className={`flex items-center justify-center p-3 rounded-xl transition-all duration-300 border-2 ${
               userLiked === false 
                 ? 'bg-fashion-primary border-fashion-primary text-white shadow-lg' 
                 : 'bg-white/10 border-white/30 text-white hover:bg-fashion-primary/20 hover:border-fashion-primary/50'
             }`}
+            title="לא מתאים"
           >
             <ThumbsDown className="w-5 h-5" />
-            <span className="text-sm font-medium">לא מתאים</span>
           </button>
         </div>
 
