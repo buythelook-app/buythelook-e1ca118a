@@ -78,36 +78,39 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
           </button>
         )}
       </div>
+      
+      {/* Feedback buttons - centered below canvas */}
+      <div className="flex justify-center gap-3 mb-4">
+        <button
+          onClick={() => handleFeedback(true)}
+          className={`flex items-center justify-center p-3 rounded-full transition-all duration-300 ${
+            userLiked === true 
+              ? 'bg-fashion-accent text-white scale-110 shadow-lg' 
+              : 'bg-fashion-accent/60 text-white hover:bg-fashion-accent hover:scale-105'
+          }`}
+          title="אהבתי"
+        >
+          <ThumbsUp className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => handleFeedback(false)}
+          className={`flex items-center justify-center p-3 rounded-full transition-all duration-300 ${
+            userLiked === false 
+              ? 'bg-fashion-primary text-white scale-110 shadow-lg' 
+              : 'bg-fashion-primary/60 text-white hover:bg-fashion-primary hover:scale-105'
+          }`}
+          title="לא מתאים"
+        >
+          <ThumbsDown className="w-5 h-5" />
+        </button>
+      </div>
+      
       <div className="flex flex-col gap-3">
-        {/* Feedback buttons */}
-        <div className="flex justify-center gap-3">
-          <button
-            onClick={() => handleFeedback(true)}
-            className={`flex items-center justify-center p-3 rounded-full transition-all duration-300 ${
-              userLiked === true 
-                ? 'bg-fashion-accent text-white scale-110 shadow-lg' 
-                : 'bg-fashion-accent/60 text-white hover:bg-fashion-accent hover:scale-105'
-            }`}
-            title="אהבתי"
-          >
-            <ThumbsUp className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => handleFeedback(false)}
-            className={`flex items-center justify-center p-3 rounded-full transition-all duration-300 ${
-              userLiked === false 
-                ? 'bg-fashion-primary text-white scale-110 shadow-lg' 
-                : 'bg-fashion-primary/60 text-white hover:bg-fashion-primary hover:scale-105'
-            }`}
-            title="לא מתאים"
-          >
-            <ThumbsDown className="w-5 h-5" />
-          </button>
-        </div>
+
 
         {/* Feedback input for dislikes */}
         {showFeedbackInput && (
-          <div className="space-y-2">
+          <div className="space-y-2 mb-3">
             <textarea
               value={feedbackComment}
               onChange={(e) => setFeedbackComment(e.target.value)}
