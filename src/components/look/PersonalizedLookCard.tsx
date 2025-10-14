@@ -92,28 +92,28 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
       </div>
       <div className="flex flex-col gap-3">
         {/* Feedback buttons */}
-        <div className="flex justify-center gap-2">
+        <div className="flex justify-center gap-3">
           <button
             onClick={() => handleFeedback(true)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 ${
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all duration-300 border-2 ${
               userLiked === true 
-                ? 'bg-fashion-accent text-white' 
-                : 'bg-white/10 text-white/70 hover:bg-white/20'
+                ? 'bg-green-500 border-green-500 text-white shadow-lg' 
+                : 'bg-white border-white/30 text-gray-800 hover:bg-green-50 hover:border-green-300'
             }`}
           >
-            <ThumbsUp className="w-4 h-4" />
-            <span className="text-sm">אהבתי</span>
+            <ThumbsUp className="w-5 h-5" />
+            <span className="text-sm font-medium">אהבתי</span>
           </button>
           <button
             onClick={() => handleFeedback(false)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 ${
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all duration-300 border-2 ${
               userLiked === false 
-                ? 'bg-fashion-accent text-white' 
-                : 'bg-white/10 text-white/70 hover:bg-white/20'
+                ? 'bg-red-500 border-red-500 text-white shadow-lg' 
+                : 'bg-white border-white/30 text-gray-800 hover:bg-red-50 hover:border-red-300'
             }`}
           >
-            <ThumbsDown className="w-4 h-4" />
-            <span className="text-sm">לא מתאים</span>
+            <ThumbsDown className="w-5 h-5" />
+            <span className="text-sm font-medium">לא מתאים</span>
           </button>
         </div>
 
