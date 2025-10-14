@@ -2,7 +2,6 @@
 import { memo, useState } from "react";
 import { Shuffle, ShoppingCart, ThumbsUp, ThumbsDown } from "lucide-react";
 import { LookCanvas } from "@/components/LookCanvas";
-import { TryMeButton } from "@/components/TryMeButton";
 import { useNavigate } from "react-router-dom";
 import { Look } from "@/hooks/usePersonalizedLooks";
 import { toast } from "sonner";
@@ -59,17 +58,6 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
     toast.info('תודה על המשוב! נשתמש בו כדי לשפר את ההמלצות');
   };
   
-  // Filter items for TryMe button - exclude cart items and only include valid avatar types
-  const avatarItems = look.items.filter(item => 
-    item.type !== 'cart' && 
-    ['top', 'bottom', 'dress', 'shoes', 'outerwear', 'accessory', 'sunglasses'].includes(item.type)
-  ).map(item => ({
-    id: item.id,
-    image: item.image,
-    type: item.type as 'top' | 'bottom' | 'dress' | 'shoes' | 'outerwear' | 'accessory' | 'sunglasses',
-    name: item.name
-  }));
-  
   return (
     <div 
       className="bg-fashion-glass rounded-3xl p-6 border border-white/20 backdrop-blur-xl shadow-lg fashion-card-hover"
@@ -97,8 +85,8 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
             onClick={() => handleFeedback(true)}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all duration-300 border-2 ${
               userLiked === true 
-                ? 'bg-green-500 border-green-500 text-white shadow-lg' 
-                : 'bg-white border-white/30 text-gray-800 hover:bg-green-50 hover:border-green-300'
+                ? 'bg-fashion-accent border-fashion-accent text-white shadow-lg' 
+                : 'bg-white/10 border-white/30 text-white hover:bg-fashion-accent/20 hover:border-fashion-accent/50'
             }`}
           >
             <ThumbsUp className="w-5 h-5" />
@@ -108,8 +96,8 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
             onClick={() => handleFeedback(false)}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all duration-300 border-2 ${
               userLiked === false 
-                ? 'bg-red-500 border-red-500 text-white shadow-lg' 
-                : 'bg-white border-white/30 text-gray-800 hover:bg-red-50 hover:border-red-300'
+                ? 'bg-fashion-primary border-fashion-primary text-white shadow-lg' 
+                : 'bg-white/10 border-white/30 text-white hover:bg-fashion-primary/20 hover:border-fashion-primary/50'
             }`}
           >
             <ThumbsDown className="w-5 h-5" />
@@ -139,8 +127,7 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
         {/* Actions */}
         <div className="flex justify-between items-center">
           <p className="text-fashion-accent font-semibold text-lg">{look.price}</p>
-          <div className="flex space-x-3">
-            <TryMeButton items={avatarItems} />
+          <div className="flex gap-3">
             <button
               onClick={() => onAddToCart(look)}
               className="bg-fashion-accent text-white p-3 rounded-2xl hover:bg-fashion-accent/90 transition-all duration-300 hover:scale-105"
