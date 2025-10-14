@@ -38,6 +38,7 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
   const { sizes: userSizes, isLoading: sizesLoading } = useUserSizes();
 
   const defaultSizes = ["XS", "S", "M", "L", "XL"];
+  const shoeSizes = ["36", "37", "38", "39", "40", "41", "42"];
 
   // Auto-fill sizes from user profile when component mounts
   useEffect(() => {
@@ -217,7 +218,7 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
                     <SelectValue placeholder={sizesLoading ? "Loading..." : "Select size"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {(item.sizes || defaultSizes).map((size) => (
+                    {(item.sizes || (item.type?.toLowerCase() === 'shoes' ? shoeSizes : defaultSizes)).map((size) => (
                       <SelectItem key={size} value={size}>
                         {size}
                       </SelectItem>
