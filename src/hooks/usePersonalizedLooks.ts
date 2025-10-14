@@ -233,7 +233,9 @@ export function usePersonalizedLooks() {
         name: top.name,
         price: top.price
       });
-      totalPrice += parseFloat(top.price || '0');
+      // Remove ₪ symbol and parse price
+      const priceValue = typeof top.price === 'string' ? top.price.replace(/[₪$]/g, '') : top.price;
+      totalPrice += parseFloat(priceValue || '0');
     }
 
     const bottom = getItemByIndex(bottoms, currentCombination);
@@ -245,7 +247,9 @@ export function usePersonalizedLooks() {
         name: bottom.name,
         price: bottom.price
       });
-      totalPrice += parseFloat(bottom.price || '0');
+      // Remove ₪ symbol and parse price
+      const priceValue = typeof bottom.price === 'string' ? bottom.price.replace(/[₪$]/g, '') : bottom.price;
+      totalPrice += parseFloat(priceValue || '0');
     }
 
     const shoe = getItemByIndex(shoes, currentCombination);
@@ -257,7 +261,9 @@ export function usePersonalizedLooks() {
         name: shoe.name,
         price: shoe.price
       });
-      totalPrice += parseFloat(shoe.price || '0');
+      // Remove ₪ symbol and parse price
+      const priceValue = typeof shoe.price === 'string' ? shoe.price.replace(/[₪$]/g, '') : shoe.price;
+      totalPrice += parseFloat(priceValue || '0');
     }
 
     // Ensure we have exactly 3 items
@@ -270,7 +276,7 @@ export function usePersonalizedLooks() {
       id: `${occasion}-look-${index}-${currentCombination}`,
       title: occasion,
       items: lookItems,
-      price: `$${totalPrice.toFixed(2)}`,
+      price: `₪${totalPrice.toFixed(2)}`,
       category: occasion,
       occasion: occasion
     };
