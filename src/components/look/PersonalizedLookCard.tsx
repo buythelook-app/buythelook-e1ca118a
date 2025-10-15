@@ -18,44 +18,21 @@ interface LookCardProps {
 export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userStyleProfile, customCanvas }: LookCardProps) => {
   const navigate = useNavigate();
   const [userLiked, setUserLiked] = useState<boolean | undefined>(undefined);
-  const [showFeedbackInput, setShowFeedbackInput] = useState<boolean>(false);
-  const [feedbackComment, setFeedbackComment] = useState<string>('');
 
   const handleFeedback = (liked: boolean) => {
     setUserLiked(liked);
     
-    if (!liked) {
-      setShowFeedbackInput(true);
-    } else {
-      setShowFeedbackInput(false);
-      // Dispatch feedback event for learning immediately for likes
-      window.dispatchEvent(new CustomEvent('outfit-feedback', {
-        detail: { 
-          lookId: look.id, 
-          liked: true, 
-          disliked: false,
-          lookData: look // 🧠 Include full look data for learning
-        }
-      }));
-      toast.info('תודה! הלוק נשמר בהעדפות שלך');
-    }
-  };
-
-  const handleFeedbackSubmit = () => {
-    // Dispatch feedback event with comment
+    // Dispatch feedback event for learning immediately
     window.dispatchEvent(new CustomEvent('outfit-feedback', {
       detail: { 
         lookId: look.id, 
-        liked: false, 
-        disliked: true,
-        comment: feedbackComment,
+        liked: liked, 
+        disliked: !liked,
         lookData: look // 🧠 Include full look data for learning
       }
     }));
     
-    setShowFeedbackInput(false);
-    setFeedbackComment('');
-    toast.info('תודה על המשוב! נשתמש בו כדי לשפר את ההמלצות');
+    toast.info(liked ? 'תודה! הלוק נשמר בהעדפות שלך' : 'תודה על המשוב! נשתמש בו כדי לשפר את ההמלצות');
   };
   
   return (
@@ -106,27 +83,6 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
       </div>
       
       <div className="flex flex-col gap-3">
-
-
-        {/* Feedback input for dislikes */}
-        {showFeedbackInput && (
-          <div className="space-y-2 mb-3">
-            <textarea
-              value={feedbackComment}
-              onChange={(e) => setFeedbackComment(e.target.value)}
-              placeholder="מה לא מתאים? (למשל: הצבעים, הסגנון, הגזרה...)"
-              className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 text-sm min-h-[80px] resize-none"
-              dir="rtl"
-            />
-            <button 
-              onClick={handleFeedbackSubmit}
-              className="w-full bg-fashion-accent text-white px-4 py-2 rounded-xl hover:bg-fashion-accent/90 transition-all duration-300 text-sm"
-            >
-              שלח משוב
-            </button>
-          </div>
-        )}
-
         {/* Actions */}
         <div className="flex justify-between items-center">
           <p className="text-fashion-accent font-semibold text-lg">{look.price}</p>
