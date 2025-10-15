@@ -19,12 +19,35 @@ export const AuthForm = ({ isSignIn, onToggleAuthMode }: AuthFormProps) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Buy the Look</h1>
-        <p className="text-muted-foreground">התחברו כדי להמשיך</p>
-      </div>
+      <motion.div
+        key={isSignIn ? "signin" : "signup"}
+        initial={{ opacity: 0, x: isSignIn ? -20 : 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: isSignIn ? 20 : -20 }}
+        transition={{ duration: 0.3 }}
+      >
+        {isSignIn ? <SignInForm /> : <SignUpForm />}
+      </motion.div>
       
       <SocialSignIn />
+      
+      <div className="mt-6 text-center">
+        <p className="text-muted-foreground">
+          {isSignIn ? "New to Buy the Look?" : "Already have an account?"}
+        </p>
+        <motion.div 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Button
+            variant="link"
+            className="text-fashion-primary mt-2"
+            onClick={onToggleAuthMode}
+          >
+            {isSignIn ? "Create an account" : "Sign in"}
+          </Button>
+        </motion.div>
+      </div>
     </motion.div>
   );
 };
