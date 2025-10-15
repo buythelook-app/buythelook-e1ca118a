@@ -61,29 +61,10 @@ export const SocialSignIn = () => {
 
   return (
     <div className="space-y-3 w-full">
-      <AuthDivider />
-      
-      <div className="grid gap-3">
-        <MagicLinkButton 
-          isLoading={isLoading.magiclink} 
-          onSendMagicLink={onMagicLinkSend} 
-        />
-        
-        <GoogleButton 
-          isLoading={isLoading.google} 
-          onClick={onGoogleClick} 
-        />
-        
-        <AppleButton 
-          isLoading={isLoading.apple} 
-          onClick={onAppleClick} 
-        />
-
-        <AIButton 
-          isLoading={isLoading.ai} 
-          onClick={onAIClick} 
-        />
-      </div>
+      <GoogleButton 
+        isLoading={isLoading.google} 
+        onClick={onGoogleClick} 
+      />
     </div>
   );
 };
