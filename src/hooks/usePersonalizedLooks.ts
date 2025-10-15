@@ -223,9 +223,18 @@ export function usePersonalizedLooks() {
 
     const getItemByIndex = (arr: DashboardItem[], idx: number) => arr[idx % arr.length];
 
+    // Helper function to safely parse price
+    const parsePrice = (price: string | number | undefined): number => {
+      if (!price) return 0;
+      const priceStr = typeof price === 'string' ? price.replace(/[^0-9.]/g, '') : String(price);
+      const parsed = parseFloat(priceStr);
+      return isNaN(parsed) ? 0 : parsed;
+    };
+
     // Always add top, bottom, and shoes (3 items minimum)
     const top = getItemByIndex(tops, currentCombination);
     if (top) {
+      const itemPrice = parsePrice(top.price);
       lookItems.push({
         id: top.id,
         image: top.image,
@@ -233,11 +242,12 @@ export function usePersonalizedLooks() {
         name: top.name,
         price: top.price
       });
-      totalPrice += parseFloat(top.price || '0');
+      totalPrice += itemPrice;
     }
 
     const bottom = getItemByIndex(bottoms, currentCombination);
     if (bottom) {
+      const itemPrice = parsePrice(bottom.price);
       lookItems.push({
         id: bottom.id,
         image: bottom.image,
@@ -245,11 +255,12 @@ export function usePersonalizedLooks() {
         name: bottom.name,
         price: bottom.price
       });
-      totalPrice += parseFloat(bottom.price || '0');
+      totalPrice += itemPrice;
     }
 
     const shoe = getItemByIndex(shoes, currentCombination);
     if (shoe) {
+      const itemPrice = parsePrice(shoe.price);
       lookItems.push({
         id: shoe.id,
         image: shoe.image,
@@ -257,7 +268,7 @@ export function usePersonalizedLooks() {
         name: shoe.name,
         price: shoe.price
       });
-      totalPrice += parseFloat(shoe.price || '0');
+      totalPrice += itemPrice;
     }
 
     // Ensure we have exactly 3 items
