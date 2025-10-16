@@ -24,10 +24,21 @@ export const useGoogleAuth = ({
       logger.info("Google sign-in started", { data: { timestamp: new Date().toISOString() } });
       setProviderLoading(true);
 
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      
+      // Log המפורט של כל הפרמטרים שנשלחים ל-Google OAuth
+      console.log("🔵 GOOGLE OAUTH REQUEST DETAILS:");
+      console.log("================================");
+      console.log("Provider: google");
+      console.log("Redirect URL:", redirectUrl);
+      console.log("Window Origin:", window.location.origin);
+      console.log("Full URL being used:", redirectUrl);
+      console.log("================================");
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -56,6 +67,11 @@ export const useGoogleAuth = ({
       }
       
       if (data?.url) {
+        console.log("🟢 GOOGLE OAUTH URL RECEIVED:");
+        console.log("================================");
+        console.log("OAuth URL:", data.url);
+        console.log("================================");
+        
         logger.info("Opening Google OAuth URL");
         window.location.href = data.url;
       }
