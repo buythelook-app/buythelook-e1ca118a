@@ -32,7 +32,7 @@ export const useGoogleAuth = ({
             access_type: 'offline',
             prompt: 'consent',
           },
-          skipBrowserRedirect: true // Always skip, we'll handle it manually
+          skipBrowserRedirect: true
         }
       });
       
@@ -59,7 +59,7 @@ export const useGoogleAuth = ({
       if (data?.url) {
         logger.info("Opening Google OAuth in new window/tab");
         
-        // Open in a new window/tab - this works even in iframes
+        // Open in a new window/tab
         const width = 500;
         const height = 600;
         const left = window.screen.width / 2 - width / 2;
@@ -72,10 +72,34 @@ export const useGoogleAuth = ({
         );
         
         if (!popup) {
-          // Popup was blocked, try opening in same window
           logger.info("Popup blocked, opening in same window");
           window.location.href = data.url;
+          return;
         }
+        
+        // Poll for session changes
+        const pollInterval = setInterval(async () => {
+          try {
+            const { data: sessionData } = await supabase.auth.getSession();
+            if (sessionData.session) {
+              logger.info("Session detected after OAuth, cleaning up");
+              clearInterval(pollInterval);
+              if (popup && !popup.closed) {
+                popup.close();
+              }
+              resetLoadingState();
+              // The auth state listener will handle navigation
+            }
+          } catch (e) {
+            logger.error("Error polling for session:", { data: { error: e } });
+          }
+        }, 1000);
+        
+        // Stop polling after 2 minutes
+        setTimeout(() => {
+          clearInterval(pollInterval);
+          resetLoadingState();
+        }, 120000);
       }
     } catch (error: any) {
       logger.error("Google sign-in failed:", { 
