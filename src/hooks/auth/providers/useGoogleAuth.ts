@@ -2,7 +2,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Browser } from "@capacitor/browser";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 import logger from "@/lib/logger";
 
 interface UseGoogleAuthProps {
@@ -19,7 +18,6 @@ export const useGoogleAuth = ({
   resetLoadingState
 }: UseGoogleAuthProps) => {
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleGoogleSignIn = async () => {
     try {
@@ -79,18 +77,32 @@ export const useGoogleAuth = ({
           return;
         }
         
-        // Monitor popup closure
-        const checkPopupClosed = setInterval(() => {
+        // Monitor popup and check for session updates
+        const checkInterval = setInterval(async () => {
+          // Check if popup is closed
           if (popup.closed) {
-            logger.info("Popup closed by user");
-            clearInterval(checkPopupClosed);
+            logger.info("Popup closed, checking for session");
+            clearInterval(checkInterval);
+            
+            // Wait a moment for auth state to propagate
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Check if we have a session now
+            const { data: sessionData } = await supabase.auth.getSession();
+            if (sessionData.session) {
+              logger.info("Session found after popup closed, triggering auth state change");
+              // The onAuthStateChange in useAuthState will handle navigation
+              // Just trigger it by refreshing the session
+              await supabase.auth.refreshSession();
+            }
+            
             resetLoadingState();
           }
         }, 500);
         
         // Clean up after 2 minutes
         setTimeout(() => {
-          clearInterval(checkPopupClosed);
+          clearInterval(checkInterval);
           if (popup && !popup.closed) {
             popup.close();
           }
