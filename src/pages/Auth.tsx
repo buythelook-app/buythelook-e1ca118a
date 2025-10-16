@@ -20,16 +20,23 @@ export const Auth = () => {
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
+        console.log('🔵 Auth page: Checking for existing session');
         logger.info("Auth page: Checking for existing session");
+        
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
+          console.error('❌ Auth page: Session check error', error);
           logger.error("Auth page: Session check error", { data: { error: error.message } });
           setCheckingSession(false);
           return;
         }
 
         if (session) {
+          console.log('✅ Auth page: User already logged in, redirecting to home', {
+            userId: session.user.id,
+            email: session.user.email
+          });
           logger.info("Auth page: User already logged in, redirecting to home", {
             data: { userId: session.user.id }
           });
@@ -37,9 +44,11 @@ export const Auth = () => {
           return;
         }
 
+        console.log('ℹ️ Auth page: No existing session found');
         logger.info("Auth page: No existing session found");
         setCheckingSession(false);
       } catch (err: any) {
+        console.error('❌ Auth page: Error checking session', err);
         logger.error("Auth page: Error checking session", { data: { error: err.message } });
         setCheckingSession(false);
       }

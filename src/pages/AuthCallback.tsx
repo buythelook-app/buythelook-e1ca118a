@@ -11,56 +11,79 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        logger.info('Auth callback started');
+        console.log('🔵 AUTH CALLBACK STARTED');
+        console.log('Current URL:', window.location.href);
+        console.log('Hash:', window.location.hash);
+        console.log('Search:', window.location.search);
         
-        // Check if this is a popup window
-        const isPopup = window.opener && window.opener !== window;
-        
-        // Wait a moment for Supabase to process the OAuth callback
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Get the session after authentication
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          logger.error('Session error:', { data: { error: error.message } });
-          if (isPopup) {
-            window.close();
-          } else {
-            navigate('/auth');
+        logger.info('Auth callback started', {
+          data: {
+            url: window.location.href,
+            hash: window.location.hash,
+            search: window.location.search
           }
-          return;
-        }
-
-        if (session) {
-          logger.info('Session found, user authenticated', { 
-            data: { userId: session.user.id } 
+        });
+        
+        // Check if we have OAuth params in the URL
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const searchParams = new URLSearchParams(window.location.search);
+        
+        const hasOAuthParams = 
+          hashParams.has('access_token') || 
+          hashParams.has('code') ||
+          searchParams.has('code') ||
+          searchParams.has('access_token');
+        
+        console.log('Has OAuth params:', hasOAuthParams);
+        
+        if (hasOAuthParams) {
+          console.log('🟢 Processing OAuth callback with params');
+          
+          // Supabase will automatically handle the OAuth callback
+          // We just need to wait a bit and then check the session
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          const { data: { session }, error } = await supabase.auth.getSession();
+          
+          console.log('Session check result:', {
+            hasSession: !!session,
+            userId: session?.user?.id,
+            error: error?.message
           });
           
-          if (isPopup) {
-            // If this is a popup, just close it - the main window will handle navigation
-            logger.info('Closing popup window');
-            window.close();
+          if (error) {
+            console.error('❌ Session error:', error);
+            logger.error('Session error:', { data: { error: error.message } });
+            navigate('/auth', { replace: true });
+            return;
+          }
+
+          if (session) {
+            console.log('✅ Session found! Redirecting to home');
+            logger.info('Session found, user authenticated', { 
+              data: { 
+                userId: session.user.id,
+                email: session.user.email,
+                provider: session.user.app_metadata?.provider
+              } 
+            });
+            
+            // Navigate to home
+            navigate('/', { replace: true });
           } else {
-            // If not a popup, navigate normally
-            navigate('/');
+            console.warn('⚠️ No session found after OAuth callback');
+            logger.warn('No session found after OAuth callback');
+            navigate('/auth', { replace: true });
           }
         } else {
-          logger.info('No session found');
-          if (isPopup) {
-            window.close();
-          } else {
-            navigate('/auth');
-          }
+          console.log('⚠️ No OAuth params found, redirecting to auth');
+          logger.info('No OAuth params in URL');
+          navigate('/auth', { replace: true });
         }
       } catch (err: any) {
+        console.error('❌ Callback error:', err);
         logger.error('Callback error:', { data: { error: err.message } });
-        const isPopup = window.opener && window.opener !== window;
-        if (isPopup) {
-          window.close();
-        } else {
-          navigate('/auth');
-        }
+        navigate('/auth', { replace: true });
       } finally {
         setLoading(false);
       }
