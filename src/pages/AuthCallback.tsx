@@ -13,6 +13,9 @@ export default function AuthCallback() {
       try {
         logger.info('Auth callback started');
         
+        // Wait a moment for Supabase to process the OAuth callback
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         // Get the session after authentication
         const { data: { session }, error } = await supabase.auth.getSession();
         
@@ -26,9 +29,6 @@ export default function AuthCallback() {
           logger.info('Session found, user authenticated', { 
             data: { userId: session.user.id } 
           });
-
-          // Profile is automatically created by trigger
-          // Navigate to home page
           navigate('/');
         } else {
           logger.info('No session found, redirecting to auth');

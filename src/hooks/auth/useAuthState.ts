@@ -36,7 +36,7 @@ export const useAuthState = () => {
           title: "Success",
           description: "You have been signed in successfully.",
         });
-        navigate('/home');
+        navigate('/');
       } else if (event === 'SIGNED_OUT') {
         console.log("User signed out");
         setState(prev => ({ 

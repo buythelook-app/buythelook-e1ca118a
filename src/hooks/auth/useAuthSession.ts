@@ -41,26 +41,7 @@ export const useAuthSession = ({
         console.log("Session expires at:", new Date(data.session.expires_at! * 1000).toLocaleString());
         console.log("User provider:", data.session.user?.app_metadata?.provider);
         
-        // Check if the session is about to expire (within 5 minutes)
-        const expiresAt = data.session.expires_at ? data.session.expires_at * 1000 : 0;
-        const now = Date.now();
-        const fiveMinutes = 5 * 60 * 1000;
-        
-        if (expiresAt - now < fiveMinutes) {
-          console.log("Session about to expire, attempting to refresh");
-          try {
-            const { error: refreshError } = await supabase.auth.refreshSession();
-            if (refreshError) {
-              console.warn("Session refresh failed:", refreshError);
-            } else {
-              console.log("Session refreshed successfully");
-            }
-          } catch (refreshError) {
-            console.error("Error refreshing session:", refreshError);
-          }
-        }
-        
-        navigate('/home');
+        navigate('/');
         return true;
       }
       

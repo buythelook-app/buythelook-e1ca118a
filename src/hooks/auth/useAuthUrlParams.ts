@@ -71,7 +71,7 @@ export const useAuthUrlParams = ({
               title: "Welcome!",
               description: "Successfully signed in via email link.",
             });
-            navigate('/home');
+            navigate('/');
             return true;
           }
         }
@@ -84,45 +84,29 @@ export const useAuthUrlParams = ({
         }
         
         // Wait briefly to ensure auth state is ready
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 500));
         
-        // Try to exchange the auth code for a session
-        try {
-          const { error: sessionError } = await supabase.auth.refreshSession();
-          if (sessionError) {
-            console.error("Error refreshing session:", JSON.stringify(sessionError, null, 2));
-            // Don't throw, continue trying to get session
-          }
-        } catch (refreshError) {
-          console.error("Exception during session refresh:", refreshError);
-          // Continue with flow, don't exit
+        // Get session (Supabase will handle the OAuth callback automatically)
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Error getting session:", JSON.stringify(error, null, 2));
+          throw error;
         }
         
-        try {
-          const { data, error } = await supabase.auth.getSession();
-          
-          if (error) {
-            console.error("Error getting session:", JSON.stringify(error, null, 2));
-            throw error;
-          }
-          
-          if (data.session) {
-            console.log("Authentication successful from redirect:", data.session.user?.id);
-            console.log("User email:", data.session.user?.email);
-            console.log("Auth provider:", data.session.user?.app_metadata?.provider);
-            setAuthError(null);
-            toast({
-              title: "Success",
-              description: "Authentication successful.",
-            });
-            navigate('/home');
-            return true;
-          } else {
-            console.log("No session after processing redirect");
-          }
-        } catch (sessionError) {
-          console.error("Failed to get session:", sessionError);
-          throw new Error("Failed to verify authentication status");
+        if (data.session) {
+          console.log("Authentication successful from redirect:", data.session.user?.id);
+          console.log("User email:", data.session.user?.email);
+          console.log("Auth provider:", data.session.user?.app_metadata?.provider);
+          setAuthError(null);
+          toast({
+            title: "Success",
+            description: "Authentication successful.",
+          });
+          navigate('/');
+          return true;
+        } else {
+          console.log("No session after processing redirect - this is normal, auth state will handle it");
         }
       } catch (error: any) {
         console.error("Auth redirect processing error:", error);
