@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Browser } from "@capacitor/browser";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import logger from "@/lib/logger";
 
 interface UseGoogleAuthProps {
@@ -18,6 +19,7 @@ export const useGoogleAuth = ({
   resetLoadingState
 }: UseGoogleAuthProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleGoogleSignIn = async () => {
     try {
@@ -82,13 +84,13 @@ export const useGoogleAuth = ({
           try {
             const { data: sessionData } = await supabase.auth.getSession();
             if (sessionData.session) {
-              logger.info("Session detected after OAuth, cleaning up");
+              logger.info("Session detected after OAuth, navigating to home");
               clearInterval(pollInterval);
               if (popup && !popup.closed) {
                 popup.close();
               }
               resetLoadingState();
-              // The auth state listener will handle navigation
+              navigate('/');
             }
           } catch (e) {
             logger.error("Error polling for session:", { data: { error: e } });
