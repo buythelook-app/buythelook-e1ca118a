@@ -24,7 +24,7 @@ export const useGoogleAuth = ({
       logger.info("Google sign-in started", { data: { timestamp: new Date().toISOString() } });
       setProviderLoading(true);
 
-      const redirectUrl = `${window.location.origin}/auth/callback`;
+      const redirectUrl = "https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com/auth/callback";
       
       // Log המפורט של כל הפרמטרים שנשלחים ל-Google OAuth
       console.log("🔵 GOOGLE OAUTH REQUEST DETAILS:");
