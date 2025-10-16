@@ -46,20 +46,6 @@ export const Auth = () => {
     };
 
     checkExistingSession();
-
-    // Also listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      logger.info("Auth page: Auth state changed", { data: { event, hasSession: !!session } });
-      
-      if (event === 'SIGNED_IN' && session) {
-        logger.info("Auth page: User signed in, redirecting to home");
-        navigate('/', { replace: true });
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, [navigate]);
 
   useEffect(() => {
