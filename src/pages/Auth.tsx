@@ -1,5 +1,7 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { AuthLoader } from "@/components/auth/AuthLoader";
 import { AnimatedBackground } from "@/components/auth/AnimatedBackground";
 import { AuthForm } from "@/components/auth/AuthForm";
@@ -10,7 +12,55 @@ import ErrorBoundary from "@/components/auth/ErrorBoundary";
 import logger from "@/lib/logger";
 
 export const Auth = () => {
+  const navigate = useNavigate();
   const { isLoading, isSignIn, toggleAuthMode, authError } = useAuthFlow();
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  // Critical: Check if user is already logged in and redirect
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        logger.info("Auth page: Checking for existing session");
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          logger.error("Auth page: Session check error", { data: { error: error.message } });
+          setCheckingSession(false);
+          return;
+        }
+
+        if (session) {
+          logger.info("Auth page: User already logged in, redirecting to home", {
+            data: { userId: session.user.id }
+          });
+          navigate('/', { replace: true });
+          return;
+        }
+
+        logger.info("Auth page: No existing session found");
+        setCheckingSession(false);
+      } catch (err: any) {
+        logger.error("Auth page: Error checking session", { data: { error: err.message } });
+        setCheckingSession(false);
+      }
+    };
+
+    checkExistingSession();
+
+    // Also listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      logger.info("Auth page: Auth state changed", { data: { event, hasSession: !!session } });
+      
+      if (event === 'SIGNED_IN' && session) {
+        logger.info("Auth page: User signed in, redirecting to home");
+        navigate('/', { replace: true });
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   useEffect(() => {
     // Log component mount for debugging
@@ -32,7 +82,7 @@ export const Auth = () => {
     };
   }, [isLoading, isSignIn, authError]);
 
-  if (isLoading) {
+  if (isLoading || checkingSession) {
     return <AuthLoader />;
   }
 

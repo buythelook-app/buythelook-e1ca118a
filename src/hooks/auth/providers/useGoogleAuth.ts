@@ -77,23 +77,47 @@ export const useGoogleAuth = ({
           return;
         }
         
+        logger.info("Popup opened, monitoring for completion");
+        
         // Monitor popup and check for session updates
         const checkInterval = setInterval(async () => {
           // Check if popup is closed
           if (popup.closed) {
-            logger.info("Popup closed, checking for session");
+            logger.info("Popup closed by user or completed OAuth");
             clearInterval(checkInterval);
             
-            // Wait a moment for auth state to propagate
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Wait for auth state to propagate
+            logger.info("Waiting for session to propagate...");
+            await new Promise(resolve => setTimeout(resolve, 1500));
             
             // Check if we have a session now
-            const { data: sessionData } = await supabase.auth.getSession();
+            const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+            
+            if (sessionError) {
+              logger.error("Error checking session after popup close:", {
+                data: { error: sessionError.message }
+              });
+              resetLoadingState();
+              return;
+            }
+            
             if (sessionData.session) {
-              logger.info("Session found after popup closed, triggering auth state change");
-              // The onAuthStateChange in useAuthState will handle navigation
-              // Just trigger it by refreshing the session
-              await supabase.auth.refreshSession();
+              logger.info("Session found after popup closed!", {
+                data: {
+                  userId: sessionData.session.user.id,
+                  provider: sessionData.session.user.app_metadata?.provider
+                }
+              });
+              
+              // Force a session refresh to trigger onAuthStateChange listeners
+              logger.info("Triggering session refresh to notify listeners");
+              const { error: refreshError } = await supabase.auth.refreshSession();
+              
+              if (refreshError) {
+                logger.error("Error refreshing session:", { data: { error: refreshError.message } });
+              }
+            } else {
+              logger.info("No session found after popup close - user may have cancelled");
             }
             
             resetLoadingState();
@@ -102,6 +126,7 @@ export const useGoogleAuth = ({
         
         // Clean up after 2 minutes
         setTimeout(() => {
+          logger.info("Timeout reached, cleaning up popup monitor");
           clearInterval(checkInterval);
           if (popup && !popup.closed) {
             popup.close();
