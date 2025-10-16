@@ -79,27 +79,22 @@ export const useGoogleAuth = ({
           return;
         }
         
-        // Poll for session changes
-        const pollInterval = setInterval(async () => {
-          try {
-            const { data: sessionData } = await supabase.auth.getSession();
-            if (sessionData.session) {
-              logger.info("Session detected after OAuth, navigating to home");
-              clearInterval(pollInterval);
-              if (popup && !popup.closed) {
-                popup.close();
-              }
-              resetLoadingState();
-              navigate('/');
+        // Listen for auth state changes instead of polling
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (event === 'SIGNED_IN' && session) {
+            logger.info("Session detected after OAuth, navigating to home");
+            subscription.unsubscribe();
+            if (popup && !popup.closed) {
+              popup.close();
             }
-          } catch (e) {
-            logger.error("Error polling for session:", { data: { error: e } });
+            resetLoadingState();
+            navigate('/');
           }
-        }, 1000);
+        });
         
-        // Stop polling after 2 minutes
+        // Clean up after 2 minutes if no session
         setTimeout(() => {
-          clearInterval(pollInterval);
+          subscription.unsubscribe();
           resetLoadingState();
         }, 120000);
       }
