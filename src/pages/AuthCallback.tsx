@@ -13,6 +13,9 @@ export default function AuthCallback() {
       try {
         logger.info('Auth callback started');
         
+        // Check if this is a popup window
+        const isPopup = window.opener && window.opener !== window;
+        
         // Wait a moment for Supabase to process the OAuth callback
         await new Promise(resolve => setTimeout(resolve, 500));
         
@@ -21,7 +24,11 @@ export default function AuthCallback() {
         
         if (error) {
           logger.error('Session error:', { data: { error: error.message } });
-          navigate('/auth');
+          if (isPopup) {
+            window.close();
+          } else {
+            navigate('/auth');
+          }
           return;
         }
 
@@ -29,14 +36,31 @@ export default function AuthCallback() {
           logger.info('Session found, user authenticated', { 
             data: { userId: session.user.id } 
           });
-          navigate('/');
+          
+          if (isPopup) {
+            // If this is a popup, just close it - the main window will handle navigation
+            logger.info('Closing popup window');
+            window.close();
+          } else {
+            // If not a popup, navigate normally
+            navigate('/');
+          }
         } else {
-          logger.info('No session found, redirecting to auth');
-          navigate('/auth');
+          logger.info('No session found');
+          if (isPopup) {
+            window.close();
+          } else {
+            navigate('/auth');
+          }
         }
       } catch (err: any) {
         logger.error('Callback error:', { data: { error: err.message } });
-        navigate('/auth');
+        const isPopup = window.opener && window.opener !== window;
+        if (isPopup) {
+          window.close();
+        } else {
+          navigate('/auth');
+        }
       } finally {
         setLoading(false);
       }
