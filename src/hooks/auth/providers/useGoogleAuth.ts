@@ -24,9 +24,6 @@ export const useGoogleAuth = ({
       logger.info("Google sign-in started", { data: { timestamp: new Date().toISOString() } });
       setProviderLoading(true);
 
-      // Check if we're in an iframe (like Lovable preview)
-      const isInIframe = window.self !== window.top;
-      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -35,7 +32,7 @@ export const useGoogleAuth = ({
             access_type: 'offline',
             prompt: 'consent',
           },
-          skipBrowserRedirect: isInIframe // Skip redirect if in iframe
+          skipBrowserRedirect: true // Always skip, we'll handle it manually
         }
       });
       
@@ -59,16 +56,27 @@ export const useGoogleAuth = ({
         return;
       }
       
-      // If we're in an iframe, open the OAuth URL in the top window
-      if (isInIframe && data?.url) {
-        logger.info("Opening Google OAuth in parent window (escaping iframe)");
-        window.top!.location.href = data.url;
-      } else {
-        logger.info("Google sign-in initiated successfully");
+      if (data?.url) {
+        logger.info("Opening Google OAuth in new window/tab");
+        
+        // Open in a new window/tab - this works even in iframes
+        const width = 500;
+        const height = 600;
+        const left = window.screen.width / 2 - width / 2;
+        const top = window.screen.height / 2 - height / 2;
+        
+        const popup = window.open(
+          data.url,
+          'google-oauth',
+          `width=${width},height=${height},left=${left},top=${top},popup=yes`
+        );
+        
+        if (!popup) {
+          // Popup was blocked, try opening in same window
+          logger.info("Popup blocked, opening in same window");
+          window.location.href = data.url;
+        }
       }
-      
-      // The user will be redirected to Google for authentication
-      // After successful authentication, they will be redirected back to /auth/callback
     } catch (error: any) {
       logger.error("Google sign-in failed:", { 
         context: "Google authentication",
