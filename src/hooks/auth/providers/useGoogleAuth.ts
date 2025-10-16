@@ -79,22 +79,21 @@ export const useGoogleAuth = ({
           return;
         }
         
-        // Listen for auth state changes instead of polling
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (event === 'SIGNED_IN' && session) {
-            logger.info("Session detected after OAuth, navigating to home");
-            subscription.unsubscribe();
-            if (popup && !popup.closed) {
-              popup.close();
-            }
+        // Monitor popup closure
+        const checkPopupClosed = setInterval(() => {
+          if (popup.closed) {
+            logger.info("Popup closed by user");
+            clearInterval(checkPopupClosed);
             resetLoadingState();
-            navigate('/');
           }
-        });
+        }, 500);
         
-        // Clean up after 2 minutes if no session
+        // Clean up after 2 minutes
         setTimeout(() => {
-          subscription.unsubscribe();
+          clearInterval(checkPopupClosed);
+          if (popup && !popup.closed) {
+            popup.close();
+          }
           resetLoadingState();
         }, 120000);
       }
