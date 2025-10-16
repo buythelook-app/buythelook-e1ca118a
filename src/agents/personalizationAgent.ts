@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 import { Agent, AgentResult } from "./index";
 import { createStyleOutfit, getStyleRecommendations } from "../services/styleOutfitService";
 import { styleRecommendations } from "@/components/quiz/constants/styleRecommendations";

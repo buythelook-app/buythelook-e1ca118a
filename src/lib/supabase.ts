@@ -1,3 +1,3 @@
 
 // This file now just re-exports the main client to prevent duplicate instances
-export { supabase } from './supabaseClient';
+export { supabase } from '@/integrations/supabase/client';

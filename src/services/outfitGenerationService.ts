@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 import logger from "@/lib/logger";
 
 // Define the types for request parameters

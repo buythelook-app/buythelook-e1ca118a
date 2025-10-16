@@ -1,5 +1,5 @@
 
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 import logger from "@/lib/logger";
 import { extractImageUrl } from "./outfitGenerationService";
 import { styleRecommendations } from "@/components/quiz/constants/styleRecommendations";

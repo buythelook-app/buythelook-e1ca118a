@@ -251,7 +251,7 @@ class StylingAgentClass implements Agent {
       }
       
       // אחרת, המשך עם השיטה הישנה (Supabase fallback)
-      const { supabase } = await import('../lib/supabaseClient');
+      const { supabase } = await import('@/integrations/supabase/client');
       console.log(`🔍 [FALLBACK] Using Supabase fallback - fetching from both tables...`);
       
       // Fetch clothing from zara_cloth table with budget filter and proper clothing filtering
@@ -330,7 +330,7 @@ class StylingAgentClass implements Agent {
         ...shoe,
         image: shoe.url || '/placeholder.svg',
         price: shoe.price || 0,
-        colour: shoe.color || shoe.colour || 'unknown'
+        colour: shoe.color || 'unknown'
       }));
       
       // Filter shoes by mood colors

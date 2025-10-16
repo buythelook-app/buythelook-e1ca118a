@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { OutfitAgentCard } from "@/components/OutfitAgentCard";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 
 // Define demo items
 const generateDemoOutfits = () => {

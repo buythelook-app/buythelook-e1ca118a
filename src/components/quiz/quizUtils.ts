@@ -1,5 +1,5 @@
 
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 import { QuizFormData } from "./types";
 
 // Simple local storage fallback since we're having DB issues

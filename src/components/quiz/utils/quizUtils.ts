@@ -3,7 +3,7 @@ import { QuizFormData } from '../types';
 import { StyleAnalysis } from '../types/styleTypes';
 import { colorPalettes } from '../constants/colorPalettes';
 import { styleRecommendations } from '../constants/styleRecommendations';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 
 export const loadQuizData = (): QuizFormData => {
   // Return default empty form data - no storage

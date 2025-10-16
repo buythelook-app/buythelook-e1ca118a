@@ -6,7 +6,7 @@ import { AgentOutfitVisualizer } from "@/components/AgentOutfitVisualizer";
 import { DemoOutfitGenerator } from "@/components/DemoOutfitGenerator";
 import { RealOutfitVisualizer } from "@/components/RealOutfitVisualizer";
 import { useFeedbackTrigger } from "@/hooks/useFeedbackTrigger";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function OutfitGenerationPage() {
   const [activeSection, setActiveSection] = useState<string>("real-outfits");

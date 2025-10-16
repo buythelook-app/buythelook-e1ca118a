@@ -3,7 +3,7 @@ import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
 import { agentCrew } from "@/agents/crew";
 import { DashboardItem } from "@/types/lookTypes";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 import logger from "@/lib/logger";
 import { filterWorkAppropriateItems } from "@/components/filters/WorkAppropriateFilter";
 

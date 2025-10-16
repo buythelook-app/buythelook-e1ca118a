@@ -3,7 +3,7 @@ import { personalizationAgent, stylingAgent, validatorAgent, recommendationAgent
 import { learningAgent, LearningData } from "./learningAgent";
 import { OutfitResponse } from "../types/outfitTypes";
 import logger from "@/lib/logger";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EnhancedGenerationContext {
   userId: string;

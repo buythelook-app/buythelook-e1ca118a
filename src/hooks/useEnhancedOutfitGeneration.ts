@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
 import { enhancedAgentCrew } from "@/agents/enhancedCrew";
 import { DashboardItem } from "@/types/lookTypes";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 import logger from "@/lib/logger";
 
 export function useEnhancedOutfitGeneration() {

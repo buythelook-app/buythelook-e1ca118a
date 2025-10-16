@@ -29,7 +29,7 @@ export function useFeedbackTrigger(userId: string | undefined) {
       
       try {
         // שמירת הפידבק ישירות לטבלת user_feedback
-        const { supabase } = await import('@/lib/supabaseClient');
+        const { supabase } = await import('@/integrations/supabase/client');
         
         console.log('💾 [FeedbackTrigger] Saving feedback to database...');
         const { error: saveError } = await (supabase as any)

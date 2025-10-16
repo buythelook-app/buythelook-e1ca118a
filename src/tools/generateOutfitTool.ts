@@ -1,5 +1,5 @@
 
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 
 // Body structure to Hebrew mapping
 const BODY_STRUCTURE_MAPPING = {

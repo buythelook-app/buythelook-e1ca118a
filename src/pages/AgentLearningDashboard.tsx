@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { Brain, TrendingUp, Users, Target, Activity, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { LearningAgent } from '@/agents/learningAgent';
