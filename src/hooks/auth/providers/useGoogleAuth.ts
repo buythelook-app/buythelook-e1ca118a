@@ -24,6 +24,9 @@ export const useGoogleAuth = ({
       logger.info("Google sign-in started", { data: { timestamp: new Date().toISOString() } });
       setProviderLoading(true);
 
+      // Check if we're in an iframe (like Lovable preview)
+      const isInIframe = window.self !== window.top;
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -32,7 +35,7 @@ export const useGoogleAuth = ({
             access_type: 'offline',
             prompt: 'consent',
           },
-          skipBrowserRedirect: false
+          skipBrowserRedirect: isInIframe // Skip redirect if in iframe
         }
       });
       
@@ -56,10 +59,16 @@ export const useGoogleAuth = ({
         return;
       }
       
-      logger.info("Google sign-in initiated successfully");
+      // If we're in an iframe, open the OAuth URL in the top window
+      if (isInIframe && data?.url) {
+        logger.info("Opening Google OAuth in parent window (escaping iframe)");
+        window.top!.location.href = data.url;
+      } else {
+        logger.info("Google sign-in initiated successfully");
+      }
       
       // The user will be redirected to Google for authentication
-      // After successful authentication, they will be redirected back to /auth
+      // After successful authentication, they will be redirected back to /auth/callback
     } catch (error: any) {
       logger.error("Google sign-in failed:", { 
         context: "Google authentication",
