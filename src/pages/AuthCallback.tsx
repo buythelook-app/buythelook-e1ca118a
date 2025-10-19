@@ -39,9 +39,43 @@ export default function AuthCallback() {
         if (hasOAuthParams) {
           console.log('🟢 Processing OAuth callback with params');
           
-          // Supabase will automatically handle the OAuth callback
-          // We just need to wait a bit and then check the session
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          // Check if we have a code that needs to be exchanged
+          const code = searchParams.get('code') || hashParams.get('code');
+          
+          if (code) {
+            console.log('🔄 Exchanging code for session');
+            logger.info('Exchanging OAuth code for session');
+            
+            const { data: { session }, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+            
+            if (exchangeError) {
+              console.error('❌ Code exchange error:', exchangeError);
+              logger.error('Code exchange error:', { data: { error: exchangeError.message } });
+              navigate('/auth', { replace: true });
+              return;
+            }
+            
+            if (session) {
+              console.log('✅ Session created from code! Redirecting to home');
+              logger.info('Session created from OAuth code', { 
+                data: { 
+                  userId: session.user.id,
+                  email: session.user.email,
+                  provider: session.user.app_metadata?.provider
+                } 
+              });
+              navigate('/', { replace: true });
+              return;
+            }
+          }
+          
+          // If no code, check for access_token (implicit flow)
+          const accessToken = hashParams.get('access_token');
+          if (accessToken) {
+            console.log('🔄 Found access token in hash');
+            // Wait a bit for Supabase to process the hash automatically
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
           
           const { data: { session }, error } = await supabase.auth.getSession();
           
