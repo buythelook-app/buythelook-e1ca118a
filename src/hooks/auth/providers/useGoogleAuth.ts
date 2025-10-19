@@ -39,6 +39,7 @@ export const useGoogleAuth = ({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
+          skipBrowserRedirect: false,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
