@@ -26,20 +26,18 @@ export const useGoogleAuth = ({
 
       const redirectUrl = "https://bc0cf4d7-9a35-4a65-b424-9d5ecd554d30.lovableproject.com/auth/callback";
       
-      // Log המפורט של כל הפרמטרים שנשלחים ל-Google OAuth
       console.log("🔵 GOOGLE OAUTH REQUEST DETAILS:");
       console.log("================================");
       console.log("Provider: google");
       console.log("Redirect URL:", redirectUrl);
-      console.log("Window Origin:", window.location.origin);
-      console.log("Full URL being used:", redirectUrl);
+      console.log("Opening in popup window");
       console.log("================================");
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          skipBrowserRedirect: false,
+          skipBrowserRedirect: true, // We'll handle the redirect ourselves
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -71,10 +69,47 @@ export const useGoogleAuth = ({
         console.log("🟢 GOOGLE OAUTH URL RECEIVED:");
         console.log("================================");
         console.log("OAuth URL:", data.url);
+        console.log("Opening popup...");
         console.log("================================");
         
-        logger.info("Opening Google OAuth URL");
-        window.location.href = data.url;
+        // Open popup window
+        const width = 500;
+        const height = 600;
+        const left = window.screen.width / 2 - width / 2;
+        const top = window.screen.height / 2 - height / 2;
+        
+        const popup = window.open(
+          data.url,
+          'Google Sign In',
+          `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
+        );
+        
+        if (!popup) {
+          toast({
+            title: "Popup Blocked",
+            description: "Please allow popups for this site to sign in with Google",
+            variant: "destructive",
+          });
+          resetLoadingState();
+          return;
+        }
+        
+        // Monitor the popup
+        const checkPopup = setInterval(() => {
+          if (!popup || popup.closed) {
+            clearInterval(checkPopup);
+            // Check if we got a session
+            supabase.auth.getSession().then(({ data: { session } }) => {
+              if (session) {
+                logger.info("Google sign-in successful via popup");
+                window.location.href = '/';
+              } else {
+                logger.info("Popup closed without authentication");
+                resetLoadingState();
+              }
+            });
+          }
+        }, 500);
       }
     } catch (error: any) {
       logger.error("Google sign-in failed:", { 
