@@ -33,11 +33,47 @@ export const useGoogleAuth = ({
       console.log("Opening in popup window");
       console.log("================================");
 
+      // Set up message listener for popup callback
+      const messageListener = (event: MessageEvent) => {
+        // Verify origin for security
+        if (event.origin !== window.location.origin) {
+          return;
+        }
+
+        if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+          console.log("🟢 Received auth success message from popup");
+          logger.info("Google authentication successful via popup");
+          
+          // Clean up
+          window.removeEventListener('message', messageListener);
+          
+          // Redirect to home
+          window.location.href = '/';
+        } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+          console.log("🔴 Received auth error message from popup");
+          logger.error("Google authentication failed in popup", {
+            data: { error: event.data.error }
+          });
+          
+          // Clean up
+          window.removeEventListener('message', messageListener);
+          resetLoadingState();
+          
+          toast({
+            title: "Authentication Failed",
+            description: event.data.error || "Failed to complete Google sign-in",
+            variant: "destructive",
+          });
+        }
+      };
+
+      window.addEventListener('message', messageListener);
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          skipBrowserRedirect: true, // We'll handle the redirect ourselves
+          skipBrowserRedirect: true,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -54,6 +90,8 @@ export const useGoogleAuth = ({
             errorName: error.name
           }
         });
+        
+        window.removeEventListener('message', messageListener);
         
         toast({
           title: "Google Sign-in Error",
@@ -85,6 +123,7 @@ export const useGoogleAuth = ({
         );
         
         if (!popup) {
+          window.removeEventListener('message', messageListener);
           toast({
             title: "Popup Blocked",
             description: "Please allow popups for this site to sign in with Google",
@@ -94,14 +133,16 @@ export const useGoogleAuth = ({
           return;
         }
         
-        // Monitor the popup
+        // Monitor if popup is closed manually
         const checkPopup = setInterval(() => {
           if (!popup || popup.closed) {
             clearInterval(checkPopup);
-            // Check if we got a session
+            window.removeEventListener('message', messageListener);
+            
+            // Check if we got a session (in case the message was missed)
             supabase.auth.getSession().then(({ data: { session } }) => {
               if (session) {
-                logger.info("Google sign-in successful via popup");
+                logger.info("Google sign-in successful (detected via polling)");
                 window.location.href = '/';
               } else {
                 logger.info("Popup closed without authentication");
