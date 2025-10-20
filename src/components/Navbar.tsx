@@ -34,7 +34,9 @@ export const Navbar = () => {
   useEffect(() => {
     const getUserData = async () => {
       try {
+        console.log('🔵 [Navbar] Getting user data...');
         const { data: { user } } = await supabase.auth.getUser();
+        console.log('🔵 [Navbar] User:', user?.id, user?.email);
         if (user) {
           setIsAuthenticated(true);
           // Get first name from metadata, email, or Google profile
@@ -65,7 +67,7 @@ export const Navbar = () => {
 
     // Set up auth state listener to update navbar when auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed in Navbar:", event);
+      console.log("🔵 [Navbar] Auth state changed:", event, "Session:", !!session, "User:", session?.user?.email);
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (session?.user) {
           setIsAuthenticated(true);
