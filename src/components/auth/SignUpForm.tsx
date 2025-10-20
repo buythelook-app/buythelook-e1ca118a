@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Bot, Sparkles, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export const SignUpForm = () => {
@@ -11,7 +11,7 @@ export const SignUpForm = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isAIAssisted, setIsAIAssisted] = useState(false);
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -23,12 +23,6 @@ export const SignUpForm = () => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    if (isAIAssisted) {
-      toast({
-        title: "AI Profile Creation",
-        description: "Creating personalized profile suggestions...",
-      });
-    }
 
     try {
       const { error } = await supabase.auth.signUp({
@@ -112,15 +106,6 @@ export const SignUpForm = () => {
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         </div>
-        <Button 
-          type="button"
-          variant="outline"
-          className="w-full flex items-center justify-center gap-2"
-          onClick={() => setIsAIAssisted(!isAIAssisted)}
-        >
-          {isAIAssisted ? <Bot className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-          {isAIAssisted ? "AI Profile Creation Enabled" : "Enable AI Profile Creation"}
-        </Button>
         <Button 
           type="submit" 
           className="w-full bg-fashion-primary hover:bg-fashion-accent"
