@@ -99,7 +99,7 @@ export default function AuthCallback() {
                 return;
               }
               
-              navigate('/', { replace: true });
+              window.location.href = '/';
               return;
             }
           }
@@ -166,8 +166,8 @@ export default function AuthCallback() {
               return;
             }
             
-            // Navigate to home if not in popup
-            navigate('/', { replace: true });
+              // Navigate to home if not in popup
+            window.location.href = '/';
           } else {
             console.warn('⚠️ No session found after OAuth callback');
             logger.warn('No session found after OAuth callback');
