@@ -47,23 +47,50 @@ export const useGoogleAuth = ({
           // Clean up
           window.removeEventListener('message', messageListener);
           
-          // Refresh the session in the main window before redirecting
-          // Wait a bit for the session to be fully synced
+          // The popup has completed authentication and the session should be in localStorage
+          // Force Supabase to refresh from localStorage
           setTimeout(async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            console.log('🔄 Main window session after auth:', session?.user?.id);
-            if (session) {
-              // Force a full page reload to ensure all state is fresh
-              window.location.href = '/';
-            } else {
-              console.warn('⚠️ No session found after Google auth, retrying...');
-              // Retry once more
-              setTimeout(async () => {
-                await supabase.auth.getSession();
-                window.location.href = '/';
-              }, 1000);
+            console.log('🔄 Refreshing session from storage...');
+            
+            // Refresh the session multiple times to ensure it's loaded
+            for (let i = 0; i < 3; i++) {
+              const { data: { session }, error } = await supabase.auth.refreshSession();
+              console.log(`🔄 Refresh attempt ${i + 1}:`, {
+                hasSession: !!session,
+                userId: session?.user?.id,
+                error: error?.message
+              });
+              
+              if (session) {
+                console.log('✅ Session loaded successfully, redirecting...');
+                // Use navigate with replace to prevent back button issues
+                window.location.replace('/');
+                return;
+              }
+              
+              // Wait a bit before retry
+              await new Promise(resolve => setTimeout(resolve, 500));
             }
-          }, 1500);
+            
+            // If still no session, try getting it from storage directly
+            const { data: { session: storedSession } } = await supabase.auth.getSession();
+            console.log('📦 Final session check:', {
+              hasSession: !!storedSession,
+              userId: storedSession?.user?.id
+            });
+            
+            if (storedSession) {
+              window.location.replace('/');
+            } else {
+              console.error('❌ Failed to load session after Google auth');
+              resetLoadingState();
+              toast({
+                title: "Session Error",
+                description: "Authentication succeeded but session could not be loaded. Please try again.",
+                variant: "destructive",
+              });
+            }
+          }, 1000);
         } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
           console.log("🔴 Received auth error message from popup");
           logger.error("Google authentication failed in popup", {
