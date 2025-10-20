@@ -23,12 +23,21 @@ export const SignInForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🔵 Sign in attempt for:', email);
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('🔵 Calling signInWithPassword...');
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
+      });
+
+      console.log('🔵 Sign in response:', { 
+        hasSession: !!data.session, 
+        hasUser: !!data.user,
+        userId: data.user?.id,
+        error: error?.message 
       });
 
       if (error) {
@@ -48,12 +57,15 @@ export const SignInForm = () => {
         return;
       }
 
+      console.log('✅ Sign in successful!');
+      
       toast({
         title: "Welcome back!",
         description: "Successfully logged in.",
       });
       
-      navigate("/home");
+      // Force a full page reload to ensure session is loaded everywhere
+      window.location.href = '/';
     } catch (error) {
       toast({
         title: "Error",
