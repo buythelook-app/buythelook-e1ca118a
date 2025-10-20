@@ -48,9 +48,22 @@ export const useGoogleAuth = ({
           window.removeEventListener('message', messageListener);
           
           // Refresh the session in the main window before redirecting
-          supabase.auth.getSession().then(() => {
-            window.location.href = '/';
-          });
+          // Wait a bit for the session to be fully synced
+          setTimeout(async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            console.log('🔄 Main window session after auth:', session?.user?.id);
+            if (session) {
+              // Force a full page reload to ensure all state is fresh
+              window.location.href = '/';
+            } else {
+              console.warn('⚠️ No session found after Google auth, retrying...');
+              // Retry once more
+              setTimeout(async () => {
+                await supabase.auth.getSession();
+                window.location.href = '/';
+              }, 1000);
+            }
+          }, 1500);
         } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
           console.log("🔴 Received auth error message from popup");
           logger.error("Google authentication failed in popup", {
