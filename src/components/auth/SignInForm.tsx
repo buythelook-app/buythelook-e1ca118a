@@ -41,6 +41,7 @@ export const SignInForm = () => {
       });
 
       if (error) {
+        console.error('❌ Sign in error:', error);
         if (error.message.includes('Email not confirmed')) {
           toast({
             title: "Email not verified",
@@ -58,22 +59,51 @@ export const SignInForm = () => {
       }
 
       if (data.session && data.user) {
-        console.log('✅ Sign in successful! Session:', {
+        console.log('✅ Sign in successful! Full session data:', {
           userId: data.user.id,
           email: data.user.email,
-          hasSession: !!data.session
+          accessToken: data.session.access_token ? 'present' : 'missing',
+          refreshToken: data.session.refresh_token ? 'present' : 'missing',
+          expiresAt: new Date(data.session.expires_at! * 1000).toLocaleString()
         });
+        
+        // Check localStorage immediately
+        const storageKey = 'fashion-app-auth';
+        const storedAuth = localStorage.getItem(`sb-aqkeprwxxsryropnhfvm-auth-token`);
+        console.log('💾 LocalStorage check:', {
+          storageKey,
+          hasData: !!storedAuth,
+          dataLength: storedAuth?.length
+        });
+        
+        // Verify session is actually stored by getting it back
+        const { data: verifyData, error: verifyError } = await supabase.auth.getSession();
+        console.log('🔍 Session verification:', {
+          hasSession: !!verifyData.session,
+          sameUser: verifyData.session?.user?.id === data.user.id,
+          error: verifyError?.message
+        });
+        
+        if (!verifyData.session) {
+          console.error('❌ Session not found after sign in!');
+          toast({
+            title: "Session Error",
+            description: "Session was not saved. Please try again or contact support.",
+            variant: "destructive",
+          });
+          return;
+        }
         
         toast({
           title: "Welcome back!",
           description: "Successfully logged in.",
         });
         
-        // Wait a bit for session to be saved, then redirect
+        // Use navigate instead of window.location to preserve session
+        console.log('🔄 Navigating to home...');
         setTimeout(() => {
-          console.log('🔄 Redirecting to home...');
-          window.location.href = '/';
-        }, 500);
+          navigate('/');
+        }, 100);
       } else {
         console.error('❌ No session created after sign in');
         toast({
@@ -82,10 +112,11 @@ export const SignInForm = () => {
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('❌ Unexpected error during sign in:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
