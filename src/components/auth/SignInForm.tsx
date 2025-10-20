@@ -57,15 +57,31 @@ export const SignInForm = () => {
         return;
       }
 
-      console.log('✅ Sign in successful!');
-      
-      toast({
-        title: "Welcome back!",
-        description: "Successfully logged in.",
-      });
-      
-      // Force a full page reload to ensure session is loaded everywhere
-      window.location.href = '/';
+      if (data.session && data.user) {
+        console.log('✅ Sign in successful! Session:', {
+          userId: data.user.id,
+          email: data.user.email,
+          hasSession: !!data.session
+        });
+        
+        toast({
+          title: "Welcome back!",
+          description: "Successfully logged in.",
+        });
+        
+        // Wait a bit for session to be saved, then redirect
+        setTimeout(() => {
+          console.log('🔄 Redirecting to home...');
+          window.location.href = '/';
+        }, 500);
+      } else {
+        console.error('❌ No session created after sign in');
+        toast({
+          title: "Error",
+          description: "Failed to create session. Please try again.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",
