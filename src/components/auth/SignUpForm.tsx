@@ -21,22 +21,27 @@ export const SignUpForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🔵 SignUp form submitted', { email, name, passwordLength: password.length });
     setIsSubmitting(true);
     
 
     try {
-      const { error } = await supabase.auth.signUp({
+      console.log('🔵 Calling Supabase signUp...');
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth`,
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             name: name,
           }
         }
       });
 
+      console.log('🔵 SignUp response:', { data, error });
+
       if (error) {
+        console.error('❌ SignUp error:', error);
         toast({
           title: "Error",
           description: error.message,
@@ -45,9 +50,10 @@ export const SignUpForm = () => {
         return;
       }
 
+      console.log('✅ SignUp successful!');
       toast({
-        title: "Check your email",
-        description: "We've sent you a confirmation link. Please check your email to verify your account before logging in.",
+        title: "Success!",
+        description: "Account created successfully. You can now sign in.",
       });
       
     } catch (error) {
