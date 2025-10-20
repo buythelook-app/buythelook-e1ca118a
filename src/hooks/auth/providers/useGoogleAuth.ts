@@ -47,8 +47,10 @@ export const useGoogleAuth = ({
           // Clean up
           window.removeEventListener('message', messageListener);
           
-          // Redirect to home
-          window.location.href = '/';
+          // Refresh the session in the main window before redirecting
+          supabase.auth.getSession().then(() => {
+            window.location.href = '/';
+          });
         } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
           console.log("🔴 Received auth error message from popup");
           logger.error("Google authentication failed in popup", {
