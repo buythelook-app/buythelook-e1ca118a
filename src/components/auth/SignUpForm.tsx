@@ -75,7 +75,7 @@ export const SignUpForm = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="bg-black/5 text-white"
+            className="bg-black/5"
           />
         </div>
         <div className="space-y-2">
@@ -85,7 +85,7 @@ export const SignUpForm = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="bg-black/5 text-white"
+            className="bg-black/5"
           />
         </div>
         <div className="space-y-2 relative">
@@ -95,7 +95,7 @@ export const SignUpForm = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="bg-black/5 text-white pr-10"
+            className="bg-black/5 pr-10"
           />
           <button 
             type="button"

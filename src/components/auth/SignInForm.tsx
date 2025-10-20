@@ -126,7 +126,7 @@ export const SignInForm = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="bg-black/5 text-white"
+            className="bg-black/5"
           />
         </div>
         <div className="space-y-2 relative">
@@ -136,7 +136,7 @@ export const SignInForm = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="bg-black/5 text-white pr-10"
+            className="bg-black/5 pr-10"
           />
           <button 
             type="button"
