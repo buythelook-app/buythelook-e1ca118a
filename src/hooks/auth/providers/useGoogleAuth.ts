@@ -34,63 +34,58 @@ export const useGoogleAuth = ({
       console.log("================================");
 
       // Set up message listener for popup callback
-      const messageListener = (event: MessageEvent) => {
+      const messageListener = async (event: MessageEvent) => {
         // Verify origin for security
         if (event.origin !== window.location.origin) {
           return;
         }
 
         if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
-          console.log("🟢 Received auth success message from popup");
+          console.log("🟢 Received auth success message from popup with session data");
           logger.info("Google authentication successful via popup");
           
           // Clean up
           window.removeEventListener('message', messageListener);
           
-          // The popup has completed authentication and the session should be in localStorage
-          // Force Supabase to refresh from localStorage
-          setTimeout(async () => {
-            console.log('🔄 Refreshing session from storage...');
-            
-            // Refresh the session multiple times to ensure it's loaded
-            for (let i = 0; i < 3; i++) {
-              const { data: { session }, error } = await supabase.auth.refreshSession();
-              console.log(`🔄 Refresh attempt ${i + 1}:`, {
-                hasSession: !!session,
-                userId: session?.user?.id,
-                error: error?.message
-              });
-              
-              if (session) {
-                console.log('✅ Session loaded successfully, redirecting...');
-                // Use navigate with replace to prevent back button issues
-                window.location.replace('/');
-                return;
-              }
-              
-              // Wait a bit before retry
-              await new Promise(resolve => setTimeout(resolve, 500));
-            }
-            
-            // If still no session, try getting it from storage directly
-            const { data: { session: storedSession } } = await supabase.auth.getSession();
-            console.log('📦 Final session check:', {
-              hasSession: !!storedSession,
-              userId: storedSession?.user?.id
+          // The popup has sent us the full session data
+          const receivedSession = event.data.session;
+          
+          if (receivedSession) {
+            console.log('✅ Received session from popup:', {
+              userId: receivedSession.user?.id,
+              hasAccessToken: !!receivedSession.access_token,
+              hasRefreshToken: !!receivedSession.refresh_token
             });
             
-            if (storedSession) {
-              window.location.replace('/');
-            } else {
-              console.error('❌ Failed to load session after Google auth');
+            // Set the session in Supabase using the received data
+            const { error: setSessionError } = await supabase.auth.setSession({
+              access_token: receivedSession.access_token,
+              refresh_token: receivedSession.refresh_token
+            });
+            
+            if (setSessionError) {
+              console.error('❌ Failed to set session:', setSessionError);
               resetLoadingState();
               toast({
                 title: "Session Error",
-                description: "Authentication succeeded but session could not be loaded. Please try again.",
+                description: "Failed to establish session. Please try again.",
                 variant: "destructive",
               });
+              return;
             }
-          }, 1000);
+            
+            console.log('✅ Session set successfully, redirecting...');
+            // Redirect to home page
+            window.location.replace('/');
+          } else {
+            console.error('❌ No session data received from popup');
+            resetLoadingState();
+            toast({
+              title: "Session Error",
+              description: "No session data received. Please try again.",
+              variant: "destructive",
+            });
+          }
         } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
           console.log("🔴 Received auth error message from popup");
           logger.error("Google authentication failed in popup", {

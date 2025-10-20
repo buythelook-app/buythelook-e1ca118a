@@ -83,13 +83,12 @@ export default function AuthCallback() {
               
               // Notify parent window if in popup
               if (isPopup && window.opener) {
-                console.log('📤 Sending success message to parent window');
+                console.log('📤 Sending success message with full session to parent window');
+                
+                // Send the full session data to the parent window
                 window.opener.postMessage({
                   type: 'GOOGLE_AUTH_SUCCESS',
-                  session: {
-                    userId: session.user.id,
-                    email: session.user.email
-                  }
+                  session: session
                 }, window.location.origin);
                 
                 // Close popup after a short delay
@@ -150,13 +149,12 @@ export default function AuthCallback() {
             
             // Notify parent window if in popup
             if (isPopup && window.opener) {
-              console.log('📤 Sending success message to parent window');
+              console.log('📤 Sending success message with full session to parent window');
+              
+              // Send the full session data to the parent window
               window.opener.postMessage({
                 type: 'GOOGLE_AUTH_SUCCESS',
-                session: {
-                  userId: session.user.id,
-                  email: session.user.email
-                }
+                session: session
               }, window.location.origin);
               
               // Close popup after a short delay
