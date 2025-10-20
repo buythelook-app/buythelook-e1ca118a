@@ -42,19 +42,42 @@ export const SignUpForm = () => {
 
       if (error) {
         console.error('❌ SignUp error:', error);
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
+        
+        // Handle specific error cases
+        if (error.message.includes('already registered') || error.code === 'user_already_exists') {
+          toast({
+            title: "User already exists",
+            description: "This email is already registered. Please sign in instead.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
         return;
       }
 
-      console.log('✅ SignUp successful!');
-      toast({
-        title: "Success!",
-        description: "Account created successfully. You can now sign in.",
-      });
+      console.log('✅ SignUp successful! User data:', data);
+      
+      // Check if email confirmation is disabled
+      if (data.user && data.session) {
+        console.log('🎉 User has active session, redirecting to home');
+        toast({
+          title: "Welcome!",
+          description: "Account created successfully.",
+        });
+        // Redirect to home
+        window.location.href = '/';
+      } else {
+        console.log('📧 Email confirmation required');
+        toast({
+          title: "Check your email",
+          description: "We've sent you a confirmation link. Please check your email to verify your account.",
+        });
+      }
       
     } catch (error) {
       toast({
