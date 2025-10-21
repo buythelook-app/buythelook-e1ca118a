@@ -66,7 +66,7 @@ export const HeroSection = () => {
           transition={{ duration: 1, ease: "easeOut" }}
           className="mb-12"
         >
-          <h1 className="text-6xl md:text-8xl font-bold text-white mb-8 leading-tight">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-8 leading-tight">
             Say more
             <span className="block fashion-hero-text">
               through style
