@@ -72,7 +72,7 @@ export const HeroSection = () => {
               through style
             </span>
           </h1>
-          <p className="text-xl md:text-2xl text-white/80 font-light max-w-3xl mx-auto leading-relaxed mb-8">
+          <p className="text-xl md:text-2xl text-white/80 font-light max-w-3xl mx-auto leading-relaxed mb-16">
             Meet your personal AI fashion agent. Chat to discover looks that speak your language.
           </p>
           <div className="bg-fashion-glass rounded-full px-6 py-2 inline-block border border-white/20">
