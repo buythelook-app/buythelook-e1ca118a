@@ -101,6 +101,54 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_events: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_time: string | null
+          event_type: string | null
+          google_event_id: string
+          id: string
+          is_synced: boolean | null
+          location: string | null
+          start_time: string
+          suggested_look_ids: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_time?: string | null
+          event_type?: string | null
+          google_event_id: string
+          id?: string
+          is_synced?: boolean | null
+          location?: string | null
+          start_time: string
+          suggested_look_ids?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_time?: string | null
+          event_type?: string | null
+          google_event_id?: string
+          id?: string
+          is_synced?: boolean | null
+          location?: string | null
+          start_time?: string
+          suggested_look_ids?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cart_items: {
         Row: {
           created_at: string
