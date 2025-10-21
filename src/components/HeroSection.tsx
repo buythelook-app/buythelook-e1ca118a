@@ -64,7 +64,7 @@ export const HeroSection = () => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="mb-12"
+          className="mb-20"
         >
           <h1 className="text-6xl md:text-8xl font-bold text-white mb-8 leading-[0.95]">
             Say more
