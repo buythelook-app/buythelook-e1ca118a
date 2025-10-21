@@ -40,3 +40,7 @@ cors = true
 [functions.asos-proxy]
 verify_jwt = false
 cors = true
+
+[functions.calendar-sync]
+verify_jwt = false
+cors = true
