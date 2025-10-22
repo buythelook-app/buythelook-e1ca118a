@@ -22,16 +22,10 @@ export class AgentResultsGenerator {
     });
     
     for (const agent of AGENT_NAMES) {
-      // Select random items from each category - MUST HAVE ALL THREE
+      // Select random items from each category
       const randomTop = this.getRandomItem(categorizedItems.tops);
       const randomBottom = this.getRandomItem(categorizedItems.bottoms);
       const randomShoe = this.getRandomItem(categorizedItems.shoes);
-      
-      // ✅ VALIDATION: Skip outfit if any required item is missing
-      if (!randomTop || !randomBottom || !randomShoe) {
-        console.warn(`⚠️ [DEBUG] Skipping ${agent}: Missing required items (top: ${!!randomTop}, bottom: ${!!randomBottom}, shoes: ${!!randomShoe})`);
-        continue;
-      }
       
       const score = Math.floor(Math.random() * 30) + 70;
       
@@ -113,13 +107,9 @@ export class AgentResultsGenerator {
 
   /**
    * Get random item from array
-   * Returns null only if array is empty - caller should handle this
    */
-  private getRandomItem(items: any[]): any | null {
-    if (items.length === 0) {
-      console.warn(`⚠️ [DEBUG] Cannot select item - category is empty`);
-      return null;
-    }
+  private getRandomItem(items: any[]): any {
+    if (items.length === 0) return null;
     return items[Math.floor(Math.random() * items.length)];
   }
 }
