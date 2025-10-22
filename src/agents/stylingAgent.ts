@@ -765,8 +765,12 @@ class StylingAgentClass implements Agent {
     const availableDresses = dresses.filter(dress => !usedItemIds.has(dress.id));
     const availableShoes = shoes.filter(shoe => !usedShoeIds.has(shoe.name));
     
+    // ✅ VALIDATION: Dress outfits require dress + shoes (no separate top/bottom needed)
     if (availableDresses.length === 0 || availableShoes.length === 0) {
-      console.log(`⚠️ [DRESS] Insufficient items - dresses: ${availableDresses.length}, shoes: ${availableShoes.length}`);
+      console.log(`⚠️ [DRESS] Cannot create outfit - missing required items:`);
+      console.log(`   - Dresses: ${availableDresses.length} available (required: minimum 1)`);
+      console.log(`   - Shoes: ${availableShoes.length} available (required: minimum 1)`);
+      debugInfo.logic_notes.push('VALIDATION FAILED: Missing dresses or shoes for dress outfit');
       return;
     }
     
@@ -864,8 +868,13 @@ class StylingAgentClass implements Agent {
     const availableBottoms = categorizedItems.bottoms.filter((item: ZaraClothItem) => !usedItemIds.has(item.id));
     const availableShoes = shoes.filter(shoe => !usedShoeIds.has(shoe.name));
     
+    // ✅ VALIDATION: Must have all 3 required items (top + bottom + shoes)
     if (availableTops.length === 0 || availableBottoms.length === 0 || availableShoes.length === 0) {
-      console.log(`⚠️ [CASUAL] Insufficient items - tops: ${availableTops.length}, bottoms: ${availableBottoms.length}, shoes: ${availableShoes.length}`);
+      console.log(`⚠️ [CASUAL] Cannot create outfit - missing required items:`);
+      console.log(`   - Tops: ${availableTops.length} available (required: minimum 1)`);
+      console.log(`   - Bottoms: ${availableBottoms.length} available (required: minimum 1)`);
+      console.log(`   - Shoes: ${availableShoes.length} available (required: minimum 1)`);
+      debugInfo.logic_notes.push('VALIDATION FAILED: Missing required item categories for outfit');
       return;
     }
     
@@ -996,8 +1005,13 @@ class StylingAgentClass implements Agent {
       .filter(isWorkBottom);
     const availableShoes = shoes.filter(shoe => !usedShoeIds.has(shoe.name));
 
+    // ✅ VALIDATION: Must have all 3 required items (top + bottom + shoes)
     if (availableTops.length === 0 || availableBottoms.length === 0 || availableShoes.length === 0) {
-      console.log(`⚠️ [WORK] Insufficient items - tops: ${availableTops.length}, bottoms: ${availableBottoms.length}, shoes: ${availableShoes.length}`);
+      console.log(`⚠️ [WORK] Cannot create outfit - missing required items:`);
+      console.log(`   - Work-appropriate tops: ${availableTops.length} available (required: minimum 1)`);
+      console.log(`   - Work-appropriate bottoms: ${availableBottoms.length} available (required: minimum 1)`);
+      console.log(`   - Shoes: ${availableShoes.length} available (required: minimum 1)`);
+      debugInfo.logic_notes.push('VALIDATION FAILED: Missing required work-appropriate items for outfit');
       return;
     }
 
