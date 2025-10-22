@@ -142,17 +142,24 @@ export default function AgentResultsPage() {
   const submitFeedback = async (agentName: string, outfitData: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     
+    if (!user?.id) {
+      toast.error("יש להתחבר כדי לשמור פידבק");
+      return;
+    }
+    
     const feedbackData = {
-      user_id: user?.id || null, // Allow null for admin/development use
+      user_id: user.id,
+      look_id: `agent-${agentName}-${Date.now()}`,
+      is_liked: likes[agentName] === true,
+      is_disliked: likes[agentName] === false,
+      comment: feedback[agentName] || null,
       feedback_type: 'agent_outfit_rating',
-      feedback_text: feedback[agentName] || '',
-      agent_notes: JSON.stringify({
+      look_data: {
         agent: agentName,
         rating: ratings[agentName],
-        liked: likes[agentName],
         outfit: outfitData,
         timestamp: new Date().toISOString()
-      })
+      }
     };
 
     const { error } = await (supabase as any)
