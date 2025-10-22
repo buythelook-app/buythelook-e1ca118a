@@ -58,27 +58,16 @@ function isWorkAppropriate(bodyStructure: BodyStructure, style: StylePreference,
   return isWorkMood;
 }
 
-// Generate work-appropriate outfit recommendations with randomization
+// Generate work-appropriate outfit recommendations
 function generateWorkAppropriateOutfit(bodyStructure: BodyStructure, style: StylePreference, mood: string): OutfitSuggestion[] {
   const results: OutfitSuggestion[] = [];
   
   // Work-appropriate color palette - more conservative colors
   const workPalette = ['#2C3E50', '#34495E', '#7F8C8D', '#BDC3C7', '#ECF0F1', '#1A1A1A', '#FFFFFF'];
   
-  // ✅ CRITICAL: Add timestamp-based seed for better randomization
-  const seed = Date.now();
-  const random = (index: number) => {
-    const x = Math.sin(seed + index) * 10000;
-    return x - Math.floor(x);
-  };
-  
-  // Create 3 work-appropriate outfit suggestions with TRUE randomization
+  // Create 3 work-appropriate outfit suggestions
   for (let i = 0; i < 3; i++) {
-    // ✅ Use timestamp-based randomization instead of Math.random()
-    const shuffledPalette = [...workPalette]
-      .map((color, idx) => ({ color, sort: random(i * 10 + idx) }))
-      .sort((a, b) => a.sort - b.sort)
-      .map(x => x.color);
+    const shuffledPalette = [...workPalette].sort(() => Math.random() - 0.5);
     
     let outfit: OutfitSuggestion = {
       top: shuffledPalette[0],
@@ -89,8 +78,8 @@ function generateWorkAppropriateOutfit(bodyStructure: BodyStructure, style: Styl
       occasion: 'work'
     };
     
-    // Add blazer/jacket for professional look with randomization
-    if (random(i * 5) < 0.7) {
+    // Add blazer/jacket for professional look
+    if (Math.random() < 0.7) {
       outfit.coat = shuffledPalette[3];
     }
     
@@ -155,25 +144,15 @@ function generateWorkAppropriateOutfit(bodyStructure: BodyStructure, style: Styl
   return results;
 }
 
-// Generate specific outfit recommendations based on body structure with TRUE randomization
+// Generate specific outfit recommendations based on body structure
 function generateOutfitForBodyStructure(bodyStructure: BodyStructure, style: StylePreference, mood: string): OutfitSuggestion[] {
   const palette = getColorPaletteForStyle(style);
   const results: OutfitSuggestion[] = [];
   
-  // ✅ CRITICAL: Add timestamp-based seed for better randomization
-  const seed = Date.now();
-  const random = (index: number) => {
-    const x = Math.sin(seed + index) * 10000;
-    return x - Math.floor(x);
-  };
-  
-  // Create 3 outfit suggestions with DIFFERENT colors each time
+  // Create 3 outfit suggestions
   for (let i = 0; i < 3; i++) {
-    // ✅ Use timestamp-based randomization instead of Math.random()
-    const shuffledPalette = [...palette]
-      .map((color, idx) => ({ color, sort: random(i * 10 + idx) }))
-      .sort((a, b) => a.sort - b.sort)
-      .map(x => x.color);
+    // Shuffle palette for variety
+    const shuffledPalette = [...palette].sort(() => Math.random() - 0.5);
     
     // Basic outfit structure
     let outfit: OutfitSuggestion = {
@@ -184,8 +163,8 @@ function generateOutfitForBodyStructure(bodyStructure: BodyStructure, style: Sty
       recommendations: []
     };
     
-    // Add a coat with randomization
-    if (random(i * 5 + 100) < 0.3) {
+    // Add a coat 30% of the time
+    if (Math.random() < 0.3) {
       outfit.coat = shuffledPalette[3];
     }
     

@@ -13,31 +13,35 @@ export const RefreshItemsButton: React.FC = () => {
       // Clear any cached data
       if (typeof window !== 'undefined') {
         // Clear localStorage cache related to items
-        const keysToRemove = Object.keys(localStorage).filter(key => 
+        const localKeysToRemove = Object.keys(localStorage).filter(key => 
           key.includes('outfit') || 
-          key.includes('items') || 
-          key.includes('cache') ||
-          key.includes('dashboard')
+          key.includes('look') || 
+          key.includes('dashboard') ||
+          key.includes('external-catalog') ||
+          key.includes('serp-cache')
         );
-        keysToRemove.forEach(key => localStorage.removeItem(key));
+        localKeysToRemove.forEach(key => localStorage.removeItem(key));
         
-        // Clear sessionStorage cache as well
+        // Clear sessionStorage cache
         const sessionKeysToRemove = Object.keys(sessionStorage).filter(key => 
           key.includes('outfit') || 
-          key.includes('items') || 
-          key.includes('cache')
+          key.includes('look') || 
+          key.includes('dashboard')
         );
         sessionKeysToRemove.forEach(key => sessionStorage.removeItem(key));
+        
+        // ✅ CRITICAL: Clear React Query cache by setting a force refresh flag
+        localStorage.setItem('force-refresh-outfits', Date.now().toString());
       }
-
-      // Force a page reload to refresh all data
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
 
       toast.success('Refreshing items database...', {
         description: 'New data will load in a few seconds'
       });
+      
+      // Force a page reload to refresh all data
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
       
     } catch (error) {
       console.error('Error refreshing items:', error);
