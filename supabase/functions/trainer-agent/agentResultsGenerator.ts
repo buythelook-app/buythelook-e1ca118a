@@ -85,8 +85,8 @@ export class AgentResultsGenerator {
 
       console.log(`🔍 [DEBUG] Categorizing item ${item.id}: family="${family}", subfamily="${subfamily}"`);
 
-      // Check if it's shoes
-      if (family.includes('sandal') || family.includes('shoe') || family.includes('boot') ||
+      // ✅ Check if it's from the shoes table (family === 'shoes')
+      if (family === 'shoes' || family.includes('sandal') || family.includes('shoe') || family.includes('boot') ||
           subfamily.includes('sandal') || subfamily.includes('shoe') || subfamily.includes('boot')) {
         shoes.push(item);
         console.log(`👠 [DEBUG] Categorized as SHOES: ${item.product_name}`);
@@ -105,6 +105,8 @@ export class AgentResultsGenerator {
         console.log(`👕 [DEBUG] Categorized as TOP: ${item.product_name}`);
       }
     }
+
+    console.log(`📊 [DEBUG] Categorization complete - Tops: ${tops.length}, Bottoms: ${bottoms.length}, Shoes: ${shoes.length}`);
 
     return { tops, bottoms, shoes };
   }

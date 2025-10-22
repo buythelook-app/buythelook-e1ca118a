@@ -47,49 +47,81 @@ export class DatabaseService {
 
   /**
    * Fetch and filter valid clothing items with _6_x_1.jpg pattern only
+   * Also fetches shoes from the separate "shoes" table
    */
   async getValidItems(): Promise<{ success: boolean; items?: any[]; error?: string }> {
     try {
-      console.log("🔍 [DEBUG] Fetching items from zara_cloth...");
+      console.log("🔍 [DEBUG] Fetching items from zara_cloth AND shoes tables...");
       
-      const { data: allItems, error: allItemsError } = await this.supabase
+      // Fetch clothing from zara_cloth
+      const { data: allClothingItems, error: clothingError } = await this.supabase
         .from('zara_cloth')
         .select('*')
-        .limit(200); // Increased limit to have more items to filter from
+        .limit(150); // Limit clothing to leave room for shoes
       
-      if (allItemsError) {
-        console.error("❌ [DEBUG] Failed to fetch items:", allItemsError);
-        return { success: false, error: allItemsError.message };
+      if (clothingError) {
+        console.error("❌ [DEBUG] Failed to fetch clothing:", clothingError);
+        return { success: false, error: clothingError.message };
       }
       
-      if (!allItems?.length) {
+      // Fetch shoes from shoes table
+      const { data: allShoes, error: shoesError } = await this.supabase
+        .from('shoes')
+        .select('*')
+        .eq('availability', 'in stock')
+        .limit(50); // Get 50 shoes
+      
+      if (shoesError) {
+        console.error("❌ [DEBUG] Failed to fetch shoes:", shoesError);
+        return { success: false, error: shoesError.message };
+      }
+      
+      if (!allClothingItems?.length && !allShoes?.length) {
         console.error("❌ [DEBUG] No items found in database");
         return { success: false, error: "No items found in database" };
       }
       
-      console.log(`✅ [DEBUG] Found ${allItems.length} total items`);
+      console.log(`✅ [DEBUG] Found ${allClothingItems?.length || 0} clothing items and ${allShoes?.length || 0} shoes`);
       
-      // Filter items to only include those with _6_x_1.jpg pattern
-      console.log('🔍 [DEBUG] Starting _6_x_1.jpg pattern filtering...');
-      const validItems = allItems.filter((item, index) => {
-        console.log(`🔍 [DEBUG] Checking item ${index + 1}/${allItems.length} (ID: ${item.id})`);
+      // Filter clothing items to only include those with _6_x_1.jpg pattern
+      console.log('🔍 [DEBUG] Starting _6_x_1.jpg pattern filtering for clothing...');
+      const validClothing = (allClothingItems || []).filter((item, index) => {
+        console.log(`🔍 [DEBUG] Checking clothing ${index + 1}/${allClothingItems?.length || 0} (ID: ${item.id})`);
         const isValid = isValidImagePattern(item.image);
         if (!isValid) {
-          console.log(`❌ [DEBUG] FILTERED OUT item ${item.id} - no _6_x_1.jpg pattern`);
+          console.log(`❌ [DEBUG] FILTERED OUT clothing ${item.id} - no _6_x_1.jpg pattern`);
         } else {
-          console.log(`✅ [DEBUG] KEEPING item ${item.id} - has _6_x_1.jpg pattern`);
+          console.log(`✅ [DEBUG] KEEPING clothing ${item.id} - has _6_x_1.jpg pattern`);
         }
         return isValid;
       });
 
-      console.log(`✅ [DEBUG] Valid items after _6_x_1.jpg filtering: ${validItems.length} out of ${allItems.length}`);
+      // Transform shoes to match clothing item structure
+      const transformedShoes = (allShoes || []).map(shoe => ({
+        ...shoe,
+        id: shoe.name || `shoe-${Math.random()}`, // Use name as ID
+        product_name: shoe.name,
+        product_family: 'SHOES',
+        product_subfamily: 'SHOES',
+        image: shoe.url ? [shoe.url] : (shoe.image || []), // Use URL as image
+        price: shoe.price || 0,
+        colour: shoe.color || shoe.colour || 'unknown',
+        availability: true
+      }));
 
-      if (validItems.length === 0) {
-        console.error('❌ [DEBUG] No items with _6_x_1.jpg pattern found');
-        return { success: false, error: 'No items with _6_x_1.jpg main product images found in database' };
+      console.log(`✅ [DEBUG] Transformed ${transformedShoes.length} shoes to clothing format`);
+
+      // Combine clothing and shoes
+      const allValidItems = [...validClothing, ...transformedShoes];
+
+      console.log(`✅ [DEBUG] Total valid items: ${allValidItems.length} (${validClothing.length} clothing + ${transformedShoes.length} shoes)`);
+
+      if (allValidItems.length === 0) {
+        console.error('❌ [DEBUG] No valid items found after filtering');
+        return { success: false, error: 'No valid items found in database' };
       }
 
-      return { success: true, items: validItems };
+      return { success: true, items: allValidItems };
     } catch (error) {
       console.error("❌ [DEBUG] Error fetching items:", error);
       return { success: false, error: error.message };
