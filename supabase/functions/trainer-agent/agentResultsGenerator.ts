@@ -27,6 +27,12 @@ export class AgentResultsGenerator {
       const randomBottom = this.getRandomItem(categorizedItems.bottoms);
       const randomShoe = this.getRandomItem(categorizedItems.shoes);
       
+      // ✅ CRITICAL: Skip if no shoes available - shoes are mandatory
+      if (!randomShoe) {
+        console.log(`⚠️ [DEBUG] Skipping ${agent} - no shoes available`);
+        continue;
+      }
+      
       const score = Math.floor(Math.random() * 30) + 70;
       
       console.log(`✅ [DEBUG] Creating outfit for ${agent}:`, {
@@ -76,16 +82,19 @@ export class AgentResultsGenerator {
     for (const item of items) {
       const family = item.product_family?.toLowerCase() || '';
       const subfamily = item.product_subfamily?.toLowerCase() || '';
+      const name = item.product_name?.toLowerCase() || '';
 
-      console.log(`🔍 [DEBUG] Categorizing item ${item.id}: family="${family}", subfamily="${subfamily}"`);
+      console.log(`🔍 [DEBUG] Categorizing item ${item.id}: family="${family}", subfamily="${subfamily}", name="${name}"`);
 
-      // ✅ Check if it's from the shoes table (family === 'shoes')
-      if (family === 'shoes' || family.includes('sandal') || family.includes('shoe') || family.includes('boot') ||
-          subfamily.includes('sandal') || subfamily.includes('shoe') || subfamily.includes('boot')) {
+      // ✅ PRIORITY 1: Check if it's shoes (from shoes table OR contains shoe-related keywords)
+      if (family === 'shoes' || 
+          family.includes('sandal') || family.includes('shoe') || family.includes('boot') || family.includes('sneaker') || family.includes('heel') || family.includes('flat') ||
+          subfamily.includes('sandal') || subfamily.includes('shoe') || subfamily.includes('boot') || subfamily.includes('sneaker') || subfamily.includes('heel') || subfamily.includes('flat') ||
+          name.includes('shoe') || name.includes('boot') || name.includes('sandal') || name.includes('sneaker') || name.includes('heel') || name.includes('flat') || name.includes('mule')) {
         shoes.push(item);
         console.log(`👠 [DEBUG] Categorized as SHOES: ${item.product_name}`);
       }
-      // Check if it's bottom wear
+      // PRIORITY 2: Check if it's bottom wear
       else if (family.includes('pant') || family.includes('jean') || family.includes('trouser') ||
                family.includes('skirt') || family.includes('short') || family.includes('bermuda') ||
                subfamily.includes('pant') || subfamily.includes('jean') || subfamily.includes('trouser') ||
@@ -93,7 +102,7 @@ export class AgentResultsGenerator {
         bottoms.push(item);
         console.log(`👖 [DEBUG] Categorized as BOTTOM: ${item.product_name}`);
       }
-      // Everything else is considered a top
+      // PRIORITY 3: Everything else is considered a top
       else {
         tops.push(item);
         console.log(`👕 [DEBUG] Categorized as TOP: ${item.product_name}`);
