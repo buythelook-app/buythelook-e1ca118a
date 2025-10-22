@@ -88,10 +88,11 @@ const EVENT_RECOMMENDATIONS = {
     ],
     // מילות מפתח שאסורות לחלוטין בקזואל
     forbidden_keywords: [
-      "blazer", "בלייזר", "formal", "פורמלי", "tailored", "מחויט", "wrap dress", "שמלת מעטפת", 
-      "evening", "ערב", "gown", "שמלת ערב", "suit", "חליפה", "business", "עסקי", 
-      "elegant", "אלגנטי", "חגיגי", "מיוחד", "cocktail", "קוקטיל", "office", "משרד",
-      "professional", "מקצועי", "dress shirt", "חולצת דרס", "pencil skirt", "חצאית עפרון"
+      "blazer", "בלייזר", "jacket", "ז'קט", "מעיל", "formal", "פורמלי", "tailored", "מחויט", 
+      "wrap dress", "שמלת מעטפת", "evening", "ערב", "gown", "שמלת ערב", "suit", "חליפה", 
+      "business", "עסקי", "elegant", "אלגנטי", "חגיגי", "מיוחד", "cocktail", "קוקטיל", 
+      "office", "משרד", "professional", "מקצועי", "dress shirt", "חולצת דרס", 
+      "pencil skirt", "חצאית עפרון", "boot", "מגף", "מגפיים", "high heel", "עקב"
     ]
   }
 };

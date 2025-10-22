@@ -87,17 +87,21 @@ export class AgentResultsGenerator {
       console.log(`🔍 [DEBUG] Categorizing item ${item.id}: family="${family}", subfamily="${subfamily}", name="${name}"`);
 
       // ✅ PRIORITY 1: Check if it's shoes (from shoes table OR contains shoe-related keywords)
-      if (family === 'shoes' || 
+      // CRITICAL: Exclude pant/trouser/jean from shoes - these are bottoms only!
+      const isPants = family.includes('pant') || family.includes('jean') || family.includes('trouser') ||
+                      subfamily.includes('pant') || subfamily.includes('jean') || subfamily.includes('trouser') ||
+                      name.includes('pant') || name.includes('jean') || name.includes('trouser') || name.includes('מכנס');
+      
+      if (!isPants && (family === 'shoes' || 
           family.includes('sandal') || family.includes('shoe') || family.includes('boot') || family.includes('sneaker') || family.includes('heel') || family.includes('flat') ||
           subfamily.includes('sandal') || subfamily.includes('shoe') || subfamily.includes('boot') || subfamily.includes('sneaker') || subfamily.includes('heel') || subfamily.includes('flat') ||
-          name.includes('shoe') || name.includes('boot') || name.includes('sandal') || name.includes('sneaker') || name.includes('heel') || name.includes('flat') || name.includes('mule')) {
+          name.includes('shoe') || name.includes('boot') || name.includes('sandal') || name.includes('sneaker') || name.includes('heel') || name.includes('flat') || name.includes('mule'))) {
         shoes.push(item);
         console.log(`👠 [DEBUG] Categorized as SHOES: ${item.product_name}`);
       }
       // PRIORITY 2: Check if it's bottom wear
-      else if (family.includes('pant') || family.includes('jean') || family.includes('trouser') ||
+      else if (isPants ||
                family.includes('skirt') || family.includes('short') || family.includes('bermuda') ||
-               subfamily.includes('pant') || subfamily.includes('jean') || subfamily.includes('trouser') ||
                subfamily.includes('skirt') || subfamily.includes('short') || subfamily.includes('bermuda')) {
         bottoms.push(item);
         console.log(`👖 [DEBUG] Categorized as BOTTOM: ${item.product_name}`);
