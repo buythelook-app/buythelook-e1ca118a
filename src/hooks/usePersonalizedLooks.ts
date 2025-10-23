@@ -6,7 +6,7 @@ import type { Mood } from "@/components/filters/MoodFilter";
 import { DashboardItem } from "@/types/lookTypes";
 import { useExternalCatalog } from "./useExternalCatalog";
 import { supabase } from "@/integrations/supabase/client";
-import { enhancedAgentCrew } from "@/agents/enhancedCrew";
+import { generateOutfit, findMatchingClothingItems } from "@/services/outfitGenerationService";
 import logger from "@/lib/logger";
 
 export interface LookItem {
@@ -69,115 +69,147 @@ export function usePersonalizedLooks() {
     }
   }, []);
 
-  // Uses Enhanced Agent Crew with full AI agent logic
+  // Uses color-based outfit generation with real Zara data
   const queryFn = useCallback(async () => {
     const outfitsByOccasion: { [key: string]: DashboardItem[] } = {};
 
     try {
-      logger.info('🎯 [usePersonalizedLooks] מתחיל יצירת תלבושות עם Enhanced Agent Crew');
+      logger.info('🎯 [usePersonalizedLooks] יצירת תלבושות עם התאמת צבעים ופריטי Zara', {
+        context: 'usePersonalizedLooks'
+      });
       
       // Clear global tracking when forced refresh
       if (forceRefresh) {
         clearOutfitCache();
       }
       
-      // קבלת משתמש נוכחי
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id || 'anonymous-user';
+      // Get user style from localStorage
+      const styleData = localStorage.getItem('styleAnalysis');
+      let bodyShape = 'X';
+      let styleProfile = 'classic';
       
-      // יצירת הקשר משופר עם פרמטרי למידה מלאים
-      const enhancedContext = {
-        userId,
-        forceRefresh: true,
-        randomSeed: Math.random(),
-        timestamp: Date.now(),
-        learningEnabled: true,
-        attempt: Date.now()
+      if (styleData) {
+        try {
+          const parsedData = JSON.parse(styleData);
+          bodyShape = parsedData?.analysis?.bodyShape || 'X';
+          styleProfile = parsedData?.analysis?.styleProfile || 'classic';
+        } catch (e) {
+          logger.error("Error parsing stored style data", { context: 'usePersonalizedLooks', data: e });
+        }
+      }
+
+      // Get current mood
+      const currentMood = localStorage.getItem('current-mood') || selectedMood || 'elegant';
+
+      // Generate outfit colors using the API
+      logger.info('🎨 [usePersonalizedLooks] קורא ל-generate-outfit', {
+        context: 'usePersonalizedLooks',
+        data: { bodyShape, styleProfile, currentMood }
+      });
+      
+      const outfitResponse = await generateOutfit({
+        bodyStructure: bodyShape as any,
+        style: styleProfile as any,
+        mood: currentMood
+      });
+
+      if (!outfitResponse.success || !outfitResponse.data || outfitResponse.data.length === 0) {
+        throw new Error(outfitResponse.error || "Failed to generate outfit");
+      }
+
+      // Get outfit colors from the first suggestion
+      const firstOutfit = outfitResponse.data[0];
+      const colors = {
+        top: firstOutfit.top,
+        bottom: firstOutfit.bottom,
+        shoes: firstOutfit.shoes,
+        coat: firstOutfit.coat
       };
       
-      logger.info('🧠 [usePersonalizedLooks] קורא ל-Enhanced Agent Crew', {
+      logger.info('🎨 [usePersonalizedLooks] קיבלנו צבעים', {
         context: 'usePersonalizedLooks',
-        data: enhancedContext
+        data: colors
       });
-      
-      // שימוש ב-Enhanced Agent Crew עם כל הסוכנים:
-      // - PersonalizationAgent - מנתח את הפרופיל והסגנון
-      // - StylingAgent - יוצר תלבושות מתאימות
-      // - ValidatorAgent - מוודא תאימות צבעים ואיכות
-      // - RecommendationAgent - מוסיף המלצות סטייל
-      // + Learning Agent - משתמש בלמידה מעמוד הבית
-      const result = await enhancedAgentCrew.runWithLearning(enhancedContext);
-      
-      if (!result.success || !result.data?.looks) {
-        logger.warn('[usePersonalizedLooks] Enhanced Agent Crew לא החזיר לוקים', {
-          context: 'usePersonalizedLooks',
-          data: { error: result.error }
-        });
-        throw new Error(result.error || 'Failed to generate outfits');
-      }
-      
-      logger.info('✅ [usePersonalizedLooks] קיבלנו לוקים מ-Enhanced Agent Crew', {
+
+      // Find matching clothing items from real Zara data
+      const matchingItems = await findMatchingClothingItems(colors);
+      logger.info('🎨 [usePersonalizedLooks] מצאנו פריטים תואמים מ-Zara', {
         context: 'usePersonalizedLooks',
-        data: {
-          totalLooks: result.data.looks.length,
-          agentFlow: result.data.agentFlow,
-          learningApplied: result.data.learningData?.applied,
-          supervisorFeedback: result.data.supervisorFeedback
-        }
-      });
-      
-      // חלוקת הלוקים לפי אוקזיה
-      const looks = result.data.looks;
-      
-      looks.forEach((look: any) => {
-        const occasion = look.occasion || 'Casual';
-        const occasionKey = occasions.find(o => 
-          o.toLowerCase() === occasion.toLowerCase()
-        ) || 'Casual';
-        
-        if (!outfitsByOccasion[occasionKey]) {
-          outfitsByOccasion[occasionKey] = [];
-        }
-        
-        // המרת פריטי הלוק לפורמט DashboardItem
-        const items = look.items.map((item: any) => ({
-          id: item.id,
-          name: item.title || item.name || item.product_name,
-          image: item.image,
-          type: item.type,
-          price: item.price,
-          category: item.type,
-          color: item.color || item.colour,
-          affiliate_link: item.url || item.product_url || '#',
-          season: 'all',
-          formality: occasionKey === 'Work' ? 'formal' : 'casual',
-          style: userStyle?.analysis?.styleProfile || 'classic'
-        }));
-        
-        outfitsByOccasion[occasionKey].push(...items);
-      });
-      
-      // וידוא שכל אוקזיה קיבלה פריטים
-      occasions.forEach(occasion => {
-        if (!outfitsByOccasion[occasion] || outfitsByOccasion[occasion].length === 0) {
-          logger.warn(`[usePersonalizedLooks] אין פריטים עבור ${occasion}, משתמש בפריטים כלליים`);
-          // אם אין פריטים לאוקזיה מסוימת, קח מהכללי
-          const casualItems = outfitsByOccasion['Casual'] || [];
-          outfitsByOccasion[occasion] = casualItems.slice(0, 6);
+        data: { 
+          tops: matchingItems.top?.length || 0,
+          bottoms: matchingItems.bottom?.length || 0,
+          shoes: matchingItems.shoes?.length || 0
         }
       });
 
-      logger.info('✅ [usePersonalizedLooks] חלוקת לוקים סופית לפי אוקזיה:', 
-        Object.keys(outfitsByOccasion).reduce((acc, key) => ({
+      // Convert to DashboardItem format
+      const allItems: DashboardItem[] = [];
+      
+      Object.entries(matchingItems).forEach(([type, items]) => {
+        items.forEach((item: any) => {
+          allItems.push({
+            id: item.id,
+            name: item.name,
+            type: type as any,
+            image: item.image,
+            price: item.price,
+            category: type,
+            color: item.color,
+            affiliate_link: item.url || '#',
+            season: 'all',
+            formality: currentMood === 'elegant' ? 'formal' : 'casual',
+            style: styleProfile
+          });
+        });
+      });
+
+      logger.info('✅ [usePersonalizedLooks] המרנו פריטים', {
+        context: 'usePersonalizedLooks',
+        data: { totalItems: allItems.length }
+      });
+
+      // Distribute items across occasions - ensure each has tops, bottoms, and shoes
+      const tops = allItems.filter(item => item.type === 'top');
+      const bottoms = allItems.filter(item => item.type === 'bottom');
+      const shoes = allItems.filter(item => item.type === 'shoes');
+      
+      occasions.forEach((occasion, index) => {
+        // Distribute items evenly across occasions
+        const occasionItems: DashboardItem[] = [];
+        
+        // Add tops for this occasion
+        const topCount = Math.ceil(tops.length / occasions.length);
+        const topStartIdx = index * topCount;
+        occasionItems.push(...tops.slice(topStartIdx, topStartIdx + topCount));
+        
+        // Add bottoms for this occasion
+        const bottomCount = Math.ceil(bottoms.length / occasions.length);
+        const bottomStartIdx = index * bottomCount;
+        occasionItems.push(...bottoms.slice(bottomStartIdx, bottomStartIdx + bottomCount));
+        
+        // Add shoes for this occasion - important! All occasions need shoes
+        const shoeCount = Math.ceil(shoes.length / occasions.length);
+        const shoeStartIdx = index * shoeCount;
+        occasionItems.push(...shoes.slice(shoeStartIdx, shoeStartIdx + shoeCount));
+        
+        outfitsByOccasion[occasion] = occasionItems;
+      });
+
+      logger.info('✅ [usePersonalizedLooks] חילקנו לוקים לפי אוקזיה', {
+        context: 'usePersonalizedLooks',
+        data: Object.keys(outfitsByOccasion).reduce((acc, key) => ({
           ...acc,
           [key]: outfitsByOccasion[key].length
         }), {})
-      );
+      });
       
       return outfitsByOccasion;
 
     } catch (err) {
-      logger.error("❌ [usePersonalizedLooks] שגיאה ביצירת לוקים:", err);
+      logger.error("❌ [usePersonalizedLooks] שגיאה ביצירת לוקים", {
+        context: 'usePersonalizedLooks',
+        data: err
+      });
       sonnerToast.error("שגיאה בטעינת תלבושות");
       
       // Return empty outfits
