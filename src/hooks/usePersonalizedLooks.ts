@@ -6,7 +6,8 @@ import type { Mood } from "@/components/filters/MoodFilter";
 import { DashboardItem } from "@/types/lookTypes";
 import { useExternalCatalog } from "./useExternalCatalog";
 import { supabase } from "@/integrations/supabase/client";
-import { generateOutfit, findMatchingClothingItems, getOutfitColors } from "@/services/outfitGenerationService";
+import { agentCrew } from "@/agents/crew";
+import { extractImageUrl } from "@/services/outfitGenerationService";
 
 export interface LookItem {
   id: string;
@@ -68,16 +69,24 @@ export function usePersonalizedLooks() {
     }
   }, []);
 
-  // 🆕 New queryFn - uses same logic as RealOutfitVisualizer (outfitGenerationService)
+  // 🆕 Uses the full agent crew with all intelligence and rules
   const queryFn = useCallback(async () => {
     const outfitsByOccasion: { [key: string]: DashboardItem[] } = {};
 
     try {
-      console.log('🎨 [usePersonalizedLooks] Starting outfit generation...');
+      console.log('🎨 [usePersonalizedLooks] Starting agent crew outfit generation...');
       
       // Clear global tracking when forced refresh
       if (forceRefresh) {
         clearOutfitCache();
+      }
+      
+      // Get user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id;
+      
+      if (!userId) {
+        throw new Error("User not authenticated");
       }
       
       // Get user style from localStorage
@@ -97,79 +106,76 @@ export function usePersonalizedLooks() {
 
       // Get current mood
       const currentMood = localStorage.getItem('current-mood') || selectedMood || 'elegant';
-
-      // Generate outfit using the same service as RealOutfitVisualizer
-      console.log('🎨 [usePersonalizedLooks] Generating outfit with:', { bodyShape, styleProfile, currentMood });
+      const selectedMode = localStorage.getItem('selected-mode') || 'casual';
       
-      const outfitResponse = await generateOutfit({
-        bodyStructure: bodyShape as any,
-        style: styleProfile as any,
-        mood: currentMood
+      console.log('🎨 [usePersonalizedLooks] User context:', { 
+        userId, 
+        bodyShape, 
+        styleProfile, 
+        currentMood,
+        selectedMode 
       });
 
-      if (!outfitResponse.success || !outfitResponse.data) {
-        throw new Error(outfitResponse.error || "Failed to generate outfit");
+      // Generate outfits for each occasion using the agent crew
+      for (const occasion of occasions) {
+        console.log(`🎨 [usePersonalizedLooks] Generating outfit for: ${occasion}`);
+        
+        // Build generation context with all parameters
+        const generationContext = {
+          userId,
+          forceRefresh,
+          randomSeed: Date.now() + occasions.indexOf(occasion),
+          timestamp: Date.now(),
+          selectedMode,
+          bodyStructure: bodyShape,
+          styleProfile,
+          mood: currentMood,
+          occasion: occasion.toLowerCase(),
+          workAppropriate: occasion === 'Work',
+          requiredModesty: false
+        };
+
+        // Run the agent crew
+        const result = await agentCrew.run(generationContext);
+
+        if (!result.success || !result.data?.looks?.length) {
+          console.warn(`⚠️ [usePersonalizedLooks] No outfits generated for ${occasion}`);
+          outfitsByOccasion[occasion] = [];
+          continue;
+        }
+
+        // Extract the first look and convert to DashboardItem format
+        const look = result.data.looks[0];
+        const items: DashboardItem[] = [];
+
+        // Process each item in the look
+        if (look.items) {
+          look.items.forEach((item: any) => {
+            const imageUrl = extractImageUrl(item.image);
+            
+            items.push({
+              id: item.id,
+              name: item.product_name || item.name || 'פריט',
+              type: item.type || 'top',
+              image: imageUrl,
+              price: item.price ? `₪${item.price}` : '0',
+              category: item.product_family || item.category || 'general',
+              color: item.colour || item.color,
+              affiliate_link: item.url || '#',
+              season: 'all',
+              formality: occasion === 'Work' ? 'formal' : 'casual',
+              style: styleProfile
+            });
+          });
+        }
+
+        console.log(`✅ [usePersonalizedLooks] ${occasion}: ${items.length} items`);
+        outfitsByOccasion[occasion] = items;
       }
 
-      // Get outfit colors
-      const colors = getOutfitColors();
-      console.log('🎨 [usePersonalizedLooks] Outfit colors:', colors);
-
-      // Find matching clothing items
-      const matchingItems = await findMatchingClothingItems(colors);
-      console.log('🎨 [usePersonalizedLooks] Matching items:', matchingItems);
-
-      // Convert to DashboardItem format
-      const allItems: DashboardItem[] = [];
+      console.log('🎨 [usePersonalizedLooks] Final outfits by occasion:', 
+        Object.keys(outfitsByOccasion).map(k => `${k}: ${outfitsByOccasion[k].length} items`));
       
-      Object.entries(matchingItems).forEach(([type, items]) => {
-        items.forEach((item: any) => {
-          allItems.push({
-            id: item.id,
-            name: item.name,
-            type: type as any,
-            image: item.image,
-            price: item.price,
-            category: type,
-            color: item.color,
-            affiliate_link: item.url || '#',
-            season: 'all',
-            formality: currentMood === 'elegant' ? 'formal' : 'casual',
-            style: styleProfile
-          });
-        });
-      });
-
-      console.log('🎨 [usePersonalizedLooks] All items converted:', allItems.length);
-
-      // Distribute items across occasions - ensure each has tops, bottoms, and shoes
-      const tops = allItems.filter(item => item.type === 'top');
-      const bottoms = allItems.filter(item => item.type === 'bottom');
-      const shoes = allItems.filter(item => item.type === 'shoes');
-      
-      occasions.forEach((occasion, index) => {
-        // Distribute items evenly across occasions
-        const occasionItems: DashboardItem[] = [];
-        
-        // Add tops for this occasion
-        const topCount = Math.ceil(tops.length / occasions.length);
-        const topStartIdx = index * topCount;
-        occasionItems.push(...tops.slice(topStartIdx, topStartIdx + topCount));
-        
-        // Add bottoms for this occasion
-        const bottomCount = Math.ceil(bottoms.length / occasions.length);
-        const bottomStartIdx = index * bottomCount;
-        occasionItems.push(...bottoms.slice(bottomStartIdx, bottomStartIdx + bottomCount));
-        
-        // Add shoes for this occasion - important! All occasions need shoes
-        const shoeCount = Math.ceil(shoes.length / occasions.length);
-        const shoeStartIdx = index * shoeCount;
-        occasionItems.push(...shoes.slice(shoeStartIdx, shoeStartIdx + shoeCount));
-        
-        outfitsByOccasion[occasion] = occasionItems;
-      });
-
-      console.log('🎨 [usePersonalizedLooks] Final outfits by occasion:', outfitsByOccasion);
       return outfitsByOccasion;
 
     } catch (err) {
