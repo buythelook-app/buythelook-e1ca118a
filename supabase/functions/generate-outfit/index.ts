@@ -65,12 +65,9 @@ function generateWorkAppropriateOutfit(bodyStructure: BodyStructure, style: Styl
   // Work-appropriate color palette - more conservative colors
   const workPalette = ['#2C3E50', '#34495E', '#7F8C8D', '#BDC3C7', '#ECF0F1', '#1A1A1A', '#FFFFFF'];
   
-  // Create 3 work-appropriate outfit suggestions with more randomization
-  const timestamp = Date.now();
+  // Create 3 work-appropriate outfit suggestions
   for (let i = 0; i < 3; i++) {
-    // Add timestamp-based seed for more variety
-    const seed = timestamp + i * 1000;
-    const shuffledPalette = [...workPalette].sort(() => (Math.sin(seed) * 10000) % 1 - 0.5);
+    const shuffledPalette = [...workPalette].sort(() => Math.random() - 0.5);
     
     let outfit: OutfitSuggestion = {
       top: shuffledPalette[0],
@@ -152,12 +149,10 @@ function generateOutfitForBodyStructure(bodyStructure: BodyStructure, style: Sty
   const palette = getColorPaletteForStyle(style);
   const results: OutfitSuggestion[] = [];
   
-  // Create 3 outfit suggestions with more randomization
-  const timestamp = Date.now();
+  // Create 3 outfit suggestions
   for (let i = 0; i < 3; i++) {
-    // Add timestamp-based seed for more variety
-    const seed = timestamp + i * 1000;
-    const shuffledPalette = [...palette].sort(() => (Math.sin(seed) * 10000) % 1 - 0.5);
+    // Shuffle palette for variety
+    const shuffledPalette = [...palette].sort(() => Math.random() - 0.5);
     
     // Basic outfit structure
     let outfit: OutfitSuggestion = {

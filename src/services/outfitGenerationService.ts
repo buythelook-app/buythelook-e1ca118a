@@ -74,8 +74,13 @@ export async function generateOutfit(request: OutfitGenerationRequest): Promise<
         localStorage.setItem('style-recommendations', JSON.stringify(firstOutfit.recommendations));
       }
       
-      // DON'T cache colors anymore - causes same items to appear repeatedly
-      // Each generation should get fresh colors from the API
+      const colors = {
+        top: firstOutfit.top,
+        bottom: firstOutfit.bottom,
+        shoes: firstOutfit.shoes,
+        coat: firstOutfit.coat
+      };
+      localStorage.setItem('outfit-colors', JSON.stringify(colors));
       
       localStorage.setItem('last-outfit-data', JSON.stringify(firstOutfit));
     }

@@ -64,15 +64,15 @@ export const HeroSection = () => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="mb-20"
+          className="mb-12"
         >
-          <h1 className="text-6xl md:text-8xl font-bold text-white mb-8 leading-[0.95]">
+          <h1 className="text-6xl md:text-8xl font-bold text-white mb-8 leading-tight">
             Say more
             <span className="block fashion-hero-text">
               through style
             </span>
           </h1>
-          <p className="text-xl md:text-2xl text-white/80 font-light max-w-3xl mx-auto leading-relaxed mb-16">
+          <p className="text-xl md:text-2xl text-white/80 font-light max-w-3xl mx-auto leading-relaxed mb-8">
             Meet your personal AI fashion agent. Chat to discover looks that speak your language.
           </p>
           <div className="bg-fashion-glass rounded-full px-6 py-2 inline-block border border-white/20">

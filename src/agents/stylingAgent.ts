@@ -435,12 +435,7 @@ class StylingAgentClass implements Agent {
     
     const moodColors = ColorCoordinationService.getColorsForMood(mood);
     const styleColors = ColorCoordinationService.getColorsForStyle(userStyle);
-    
-    // Add Neutral mood support
-    const neutralMoodColors = ['white', 'beige', 'black', 'light gray'];
-    const effectiveMoodColors = mood === 'neutral' ? neutralMoodColors : moodColors;
-    
-    console.log(`🎨 [COLORS] Mood: ${mood} → [${effectiveMoodColors.join(', ')}], Style: ${userStyle} → [${styleColors.join(', ')}]`);
+    console.log(`🎨 [COLORS] Mood: ${mood} → [${moodColors.join(', ')}], Style: ${userStyle} → [${styleColors.join(', ')}]`);
     
     const filtered = clothingItems.filter(item => {
       if (!isUnlimited && item.price > budget * 0.7) {
@@ -449,13 +444,6 @@ class StylingAgentClass implements Agent {
       
       const itemColor = String(item.colour || item.color || '').toLowerCase();
       const itemName = String(item.product_name || '').toLowerCase();
-      
-      // Check if item matches mood colors
-      const matchesMoodColor = effectiveMoodColors.some(moodColor => 
-        itemColor.includes(String(moodColor).toLowerCase()) ||
-        itemName.includes(String(moodColor).toLowerCase()) ||
-        ColorCoordinationService.areColorsCompatible(itemColor, String(moodColor))
-      );
       
       // Check if item matches style colors (higher priority)
       const matchesStyleColor = styleColors.some(styleColor => 
@@ -474,6 +462,13 @@ class StylingAgentClass implements Agent {
           return false;
         }
       }
+      
+      // Check mood colors (secondary priority)
+      const matchesMoodColor = moodColors.some(moodColor => 
+        itemColor.includes(String(moodColor).toLowerCase()) ||
+        itemName.includes(String(moodColor).toLowerCase()) ||
+        ColorCoordinationService.areColorsCompatible(itemColor, String(moodColor))
+      );
       
       const neutralColors = ['black', 'white', 'gray', 'beige', 'brown'];
       const isNeutral = neutralColors.some(neutral => 

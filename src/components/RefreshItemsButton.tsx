@@ -28,9 +28,6 @@ export const RefreshItemsButton: React.FC = () => {
           key.includes('cache')
         );
         sessionKeysToRemove.forEach(key => sessionStorage.removeItem(key));
-        
-        // Set force refresh flag with timestamp
-        localStorage.setItem('force-refresh-outfits', Date.now().toString());
       }
 
       // Force a page reload to refresh all data
