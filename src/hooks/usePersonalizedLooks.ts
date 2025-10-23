@@ -94,6 +94,11 @@ export function usePersonalizedLooks() {
       // Always clear cache on generation
       clearOutfitCache();
       
+      // Clear stored colors to force new generation
+      localStorage.removeItem('outfit-colors');
+      localStorage.removeItem('last-outfit-data');
+      localStorage.removeItem('style-recommendations');
+      
       // Get user style from localStorage
       const styleData = localStorage.getItem('styleAnalysis');
       let bodyShape = 'X';
