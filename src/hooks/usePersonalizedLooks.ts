@@ -30,7 +30,7 @@ export function usePersonalizedLooks() {
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [userStyle, setUserStyle] = useState<any>(null);
   const [combinations, setCombinations] = useState<{ [key: string]: number }>({});
-  const [forceRefresh, setForceRefresh] = useState(false);
+  const [forceRefresh, setForceRefresh] = useState<number>(Date.now());
   const [apiErrorShown, setApiErrorShown] = useState(false);
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
   const { fetchCatalog } = useExternalCatalog();
@@ -68,6 +68,22 @@ export function usePersonalizedLooks() {
     }
   }, []);
 
+  // Listen for force refresh events
+  useEffect(() => {
+    const handleForceRefresh = () => {
+      const refreshFlag = localStorage.getItem('force-refresh-outfits');
+      if (refreshFlag) {
+        setForceRefresh(parseInt(refreshFlag));
+        localStorage.removeItem('force-refresh-outfits');
+      }
+    };
+
+    window.addEventListener('storage', handleForceRefresh);
+    handleForceRefresh(); // Check on mount
+    
+    return () => window.removeEventListener('storage', handleForceRefresh);
+  }, []);
+
   // 🆕 New queryFn - uses same logic as RealOutfitVisualizer (outfitGenerationService)
   const queryFn = useCallback(async () => {
     const outfitsByOccasion: { [key: string]: DashboardItem[] } = {};
@@ -75,10 +91,8 @@ export function usePersonalizedLooks() {
     try {
       console.log('🎨 [usePersonalizedLooks] Starting outfit generation...');
       
-      // Clear global tracking when forced refresh
-      if (forceRefresh) {
-        clearOutfitCache();
-      }
+      // Always clear cache on generation
+      clearOutfitCache();
       
       // Get user style from localStorage
       const styleData = localStorage.getItem('styleAnalysis');
