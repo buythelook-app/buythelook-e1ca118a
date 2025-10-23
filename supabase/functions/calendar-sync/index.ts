@@ -1,27 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.48.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// ניתוח סוג האירוע לפי הכותרת
-function detectEventType(summary: string, description?: string): string {
-  const text = `${summary} ${description || ''}`.toLowerCase();
-  
-  if (text.includes('חתונה') || text.includes('wedding')) return 'wedding';
-  if (text.includes('פגישה') || text.includes('meeting') || text.includes('ישיבה')) return 'meeting';
-  if (text.includes('כנס') || text.includes('conference') || text.includes('סמינר')) return 'conference';
-  if (text.includes('חופשה') || text.includes('vacation') || text.includes('נופש')) return 'vacation';
-  if (text.includes('ראיון') || text.includes('interview')) return 'interview';
-  if (text.includes('מסיבה') || text.includes('party') || text.includes('חגיגה')) return 'party';
-  if (text.includes('ספורט') || text.includes('sport') || text.includes('כושר')) return 'sport';
-  if (text.includes('ארוחה') || text.includes('dinner') || text.includes('לאנץ')) return 'dining';
-  if (text.includes('תיאטרון') || text.includes('קולנוע') || text.includes('הצגה')) return 'entertainment';
-  
-  return 'general';
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -48,33 +30,10 @@ serve(async (req) => {
       );
     }
 
-    // יצירת Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const authHeader = req.headers.get('Authorization')!;
-    
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-
-    // קבלת המשתמש הנוכחי
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('Fetching calendar events for user:', user.id);
-
-    // קריאה ל-Google Calendar API לקבלת אירועים קרובים (30 יום קדימה)
-    const timeMin = new Date().toISOString();
-    const timeMax = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-    
+    // קריאה ל-Google Calendar API לקבלת אירועים קרובים
     const calendarResponse = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=50&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`,
+      'https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=10&timeMin=' + 
+      new Date().toISOString(),
       {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -97,55 +56,14 @@ serve(async (req) => {
     }
 
     const calendarData = await calendarResponse.json();
-    const events = calendarData.items || [];
     
-    console.log('Successfully fetched calendar events:', events.length);
-
-    // שמירת האירועים בדאטה-בייס
-    const savedEvents = [];
-    for (const event of events) {
-      if (!event.start?.dateTime && !event.start?.date) continue;
-      
-      const startTime = event.start.dateTime || event.start.date;
-      const endTime = event.end?.dateTime || event.end?.date;
-      const eventType = detectEventType(event.summary, event.description);
-      
-      const { data, error } = await supabase
-        .from('calendar_events')
-        .upsert({
-          user_id: user.id,
-          google_event_id: event.id,
-          title: event.summary || 'ללא כותרת',
-          description: event.description,
-          start_time: startTime,
-          end_time: endTime,
-          location: event.location,
-          event_type: eventType,
-          is_synced: true,
-        }, {
-          onConflict: 'user_id,google_event_id'
-        })
-        .select()
-        .single();
-      
-      if (!error && data) {
-        savedEvents.push({
-          ...data,
-          google_data: {
-            htmlLink: event.htmlLink,
-            hangoutLink: event.hangoutLink,
-          }
-        });
-      }
-    }
-
-    console.log('Saved events to database:', savedEvents.length);
+    console.log('Successfully fetched calendar events:', calendarData.items?.length || 0);
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        events: savedEvents,
-        message: `נמצאו ${savedEvents.length} אירועים קרובים`
+        events: calendarData.items || [],
+        message: 'Calendar synced successfully'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
