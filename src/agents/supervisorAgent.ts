@@ -321,11 +321,15 @@ export const supervisorAgent = {
         improvements.push('השתמש בגלגל הצבעים לשילובים הרמוניים יותר');
       }
 
-      // בדיקת יותר מדי צבעים
+      // בדיקת יותר מדי צבעים - עם חריגה ל-monochrome
       const uniqueColors = [...new Set(colors)];
-      if (uniqueColors.length > 3) {
+      const isMonochromeLook = this.checkMonochromeLook(colors);
+      
+      if (uniqueColors.length > 3 && !isMonochromeLook) {
         feedback.push(`🌈 לוק ${index + 1}: יותר מדי צבעים (${uniqueColors.length})`);
         improvements.push('הגבל לשילוב של 2-3 צבעים עיקריים בלוק');
+      } else if (isMonochromeLook && uniqueColors.length <= 5) {
+        feedback.push(`✅ לוק ${index + 1}: לוק מונוכרומטי מוצלח (${uniqueColors.length} גוונים)`);
       } else {
         feedback.push(`✅ לוק ${index + 1}: איזון צבעים טוב`);
       }
@@ -424,6 +428,29 @@ export const supervisorAgent = {
     if (!hasPrices) score -= 10;
 
     return Math.max(score, 0);
+  },
+
+  /**
+   * בדיקת לוק מונוכרומטי (אותה משפחת צבעים)
+   */
+  checkMonochromeLook(colors: string[]): boolean {
+    const colorFamilies = {
+      beige: ['beige', 'cream', 'tan', 'camel', 'nude'],
+      gray: ['gray', 'grey', 'charcoal', 'silver'],
+      blue: ['blue', 'navy', 'cobalt', 'denim'],
+      black: ['black', 'charcoal'],
+      white: ['white', 'off-white', 'ivory']
+    };
+    
+    for (const [family, variants] of Object.entries(colorFamilies)) {
+      const allInFamily = colors.every(color => 
+        variants.some(variant => color.toLowerCase().includes(variant))
+      );
+      if (allInFamily) {
+        return true;
+      }
+    }
+    return false;
   },
 
   /**

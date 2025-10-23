@@ -14,85 +14,81 @@ const BODY_STRUCTURE_MAPPING = {
 const BODY_STRUCTURE_RECOMMENDATIONS = {
   'X': {
     description: "מבנה גוף שעון חול - מותן מוגדר וכתפיים ומותניים ברוחב דומה",
-    recommendations: ["הדגש את המותן המוגדר", "בחר בגדים מותאמים לגוף", "המנע מבגדים רחבים מדי"],
-    preferred_fits: ['מותאם', 'צמוד', 'מדגיש מותן', 'wrap', 'fitted'],
+    recommendations: ["הדגש את המותן המוגדר", "בחר בגדים מותאמים לגוף", "התאם oversized במבנה"],
+    preferred_fits: ['high waist', 'מותן גבוה', 'fitted', 'מותאם', 'wrap'],
     preferred_silhouettes: ['A-line', 'מותאם לגוף', 'bodycon'],
-    avoid_keywords: ['רחב', 'oversized', 'boxy', 'ישר מדי', 'loose'],
+    avoid_keywords: ['unstructured'],
+    allow_structured_oversized: true,
     top_preferences: ['V-neck', 'wrap', 'מותאם', 'צמוד לגוף'],
     bottom_preferences: ['high-waisted', 'מותן גבוה', 'מותאם', 'skinny', 'straight']
   },
   'V': {
     description: "מבנה גוף משולש הפוך - כתפיים רחבות יחסית למותניים",
     recommendations: ["הוסף נפח לחלק התחתון", "בחר חצאיות ומכנסיים עם פרטים", "המנע מדגש על הכתפיים"],
-    preferred_fits: ['רחב בתחתית', 'A-line', 'flare', 'wide-leg'],
+    preferred_fits: ['A-line', 'flare', 'wide-leg', 'רחב בתחתית'],
     preferred_silhouettes: ['A-line', 'bootcut', 'wide', 'עם נפח'],
-    avoid_keywords: ['כתפיים רחבות', 'shoulder pads', 'horizontal stripes על', 'tight בתחתית'],
+    avoid_keywords: ['broad shoulders', 'כתפיים רחבות'],
     top_preferences: ['V-neck', 'scoop neck', 'פשוט', 'ללא פרטים בכתפיים'],
     bottom_preferences: ['A-line', 'flare', 'wide-leg', 'bootcut', 'עם נפח', 'רחב']
   },
   'H': {
     description: "מבנה גוף מלבני - כתפיים, מותן ומותניים ברוחב דומה",
     recommendations: ["צור אשליה של קווי גוף", "הוסף פרטים בחלק העליון והתחתון", "השתמש בחגורות להגדרת המותן"],
-    preferred_fits: ['עם פרטים', 'layered', 'textured', 'peplum', 'ruffles'],
+    preferred_fits: ['peplum', 'layered', 'textured', 'belted', 'ruched', 'עם פרטים'],
     preferred_silhouettes: ['peplum', 'עם שכבות', 'textured'],
-    avoid_keywords: ['ישר מדי', 'simple', 'plain', 'minimal'],
-    top_preferences: ['peplum', 'עם פרטים', 'ruffles', 'textured', 'layered'],
-    bottom_preferences: ['עם פרטים', 'textured', 'pleated', 'A-line']
+    avoid_keywords: ['simple', 'flat', 'ישר מדי'],
+    top_preferences: ['peplum', 'עם פרטים', 'ruffles', 'textured', 'layered', 'belted'],
+    bottom_preferences: ['עם פרטים', 'textured', 'pleated', 'A-line', 'belted']
   },
   'O': {
     description: "מבנה גוף סגלגל - חלק האמצע רחב יותר",
     recommendations: ["הדגש את הרגליים והזרועות", "בחר קווי V בחלק העליון", "המנע מהדגשת האמצע"],
-    preferred_fits: ['empire', 'A-line', 'flowing', 'loose', 'tunic'],
+    preferred_fits: ['empire', 'A-line', 'flowing'],
     preferred_silhouettes: ['empire waist', 'A-line', 'flowing', 'tunic'],
-    avoid_keywords: ['צמוד באמצע', 'tight waist', 'belt', 'חגורה'],
+    avoid_keywords: ['tight_midsection', 'צמוד באמצע'],
     top_preferences: ['V-neck', 'empire', 'tunic', 'flowing', 'loose'],
     bottom_preferences: ['straight', 'bootcut', 'A-line', 'wide-leg']
   },
   'A': {
     description: "מבנה גוף אגס - מותניים רחבים יחסית לכתפיים",
     recommendations: ["הדגש את החלק העליון", "הוסף נפח לכתפיים", "בחר חצאיות A ומכנסיים ישרים"],
-    preferred_fits: ['עם פרטים בחלק עליון', 'statement sleeves', 'horizontal stripes על'],
+    preferred_fits: ['statement_top', 'A-line_bottom', 'straight-leg'],
     preferred_silhouettes: ['A-line', 'straight', 'bootcut'],
-    avoid_keywords: ['צמוד בתחתית', 'tight bottom', 'skinny'],
+    avoid_keywords: ['tight_bottom', 'צמוד בתחתית'],
     top_preferences: ['statement', 'עם פרטים', 'horizontal stripes', 'bold patterns'],
     bottom_preferences: ['A-line', 'straight', 'bootcut', 'wide-leg']
   }
 };
 
-// Enhanced event-specific clothing recommendations with stricter casual filtering
+// Enhanced event-specific clothing recommendations
 const EVENT_RECOMMENDATIONS = {
   workwear: {
     description: "Clothing suitable for a professional office or work environment",
-    include_keywords: [
-      "blazer", "shirt", "button-down", "trousers", "slacks", "blouse", "midi skirt",
-      "high-waist", "wide-leg", "tailored", "wrap dress", "structured", "knit", "v-neck"
-    ],
-    exclude_keywords: [
-      "crop", "sleeveless", "mini skirt", "denim", "ripped", "transparent", "cut-out",
-      "sports", "casual", "t-shirt", "hoodie"
-    ]
+    mandatory_keywords: ["blazer", "shirt", "trousers", "blouse", "structured"],
+    forbidden_keywords: ["crop", "sleeveless", "mini skirt", "hoodie"],
+    exceptions: {
+      "t-shirt": {
+        allowed_if_material: ["silk", "linen", "structured cotton"]
+      }
+    }
   },
   casual: {
-    description: "Comfortable, everyday clothing suitable for informal occasions - STRICT FILTERING",
-    // חיזוק הכלמות החיוביות - חובה שיהיה לפחות אחד מהמילים האלה
-    mandatory_keywords: [
-      "t-shirt", "טי שירט", "חולצת טי", "jeans", "ג'ינס", "denim", "דנים", 
-      "sneakers", "סניקרס", "sweater", "סוודר", "hoodie", "הודי", "casual", "קז'ואל",
-      "cotton", "כותנה", "טריקו", "נוח", "יומיומי", "ספורט", "רלקס", "נוחות"
-    ],
-    // מילות מפתח שמחזקות שזה קזואל
-    reinforcing_keywords: [
-      "cardigan", "קרדיגן", "tank top", "גופיה", "leggings", "לגינס", 
-      "shorts", "מכנסיים קצרים", "joggers", "מכנסי טרנינג", "relaxed fit", "גזרה רחבה", 
-      "crewneck", "צווארון עגול", "polo", "פולו", "basic", "בסיסי"
-    ],
-    // מילות מפתח שאסורות לחלוטין בקזואל
-    forbidden_keywords: [
-      "blazer", "בלייזר", "formal", "פורמלי", "tailored", "מחויט", "wrap dress", "שמלת מעטפת", 
-      "evening", "ערב", "gown", "שמלת ערב", "suit", "חליפה", "business", "עסקי", 
-      "elegant", "אלגנטי", "חגיגי", "מיוחד", "cocktail", "קוקטיל", "office", "משרד",
-      "professional", "מקצועי", "dress shirt", "חולצת דרס", "pencil skirt", "חצאית עפרון"
-    ]
+    description: "Comfortable, everyday clothing suitable for informal occasions",
+    mandatory_keywords: ["t-shirt", "jeans", "sneakers"],
+    optional_keywords: ["jacket", "casual blazer", "boots", "loafers", "simple accessories"],
+    forbidden_keywords: ["evening", "sequin", "high_heel", "formal_suit", "silk_dress"]
+  },
+  evening: {
+    description: "Elegant clothing for evening events",
+    mandatory_keywords: ["evening", "formal", "elegant", "heel"],
+    optional_keywords: ["tailored pants", "wide-leg pants"],
+    forbidden_keywords: ["t-shirt", "sneakers", "casual"]
+  },
+  weekend: {
+    description: "Comfortable clothing for weekend activities",
+    mandatory_keywords: ["comfortable shoes", "light fabrics"],
+    optional_keywords: ["hat", "crossbody bag"],
+    forbidden_keywords: ["heels", "formal wear"]
   }
 };
 
@@ -241,94 +237,96 @@ function filterByOccasion(items: any[], occasion: string): any[] {
       case 'work':
         const workRecommendations = EVENT_RECOMMENDATIONS.workwear;
         
-        // Check if item contains any include keywords
-        const hasIncludeKeywords = workRecommendations.include_keywords.some(keyword => text.includes(keyword.toLowerCase()));
+        // Check if item contains any mandatory keywords
+        const hasMandatoryKeywords = workRecommendations.mandatory_keywords.some(keyword => text.includes(keyword.toLowerCase()));
         
-        // Check if item contains any exclude keywords
-        const hasExcludeKeywords = workRecommendations.exclude_keywords.some(keyword => text.includes(keyword.toLowerCase()));
+        // Check if item contains any forbidden keywords
+        const hasForbiddenKeywords = workRecommendations.forbidden_keywords.some(keyword => text.includes(keyword.toLowerCase()));
         
         // Log detailed work filtering info
         console.log(`🔍 WORK FILTER DEBUG for "${item.product_name}":`);
         console.log(`  - Text: "${text}"`);
-        console.log(`  - Has include keywords: ${hasIncludeKeywords}`);
-        console.log(`  - Has exclude keywords: ${hasExcludeKeywords}`);
+        console.log(`  - Has mandatory keywords: ${hasMandatoryKeywords}`);
+        console.log(`  - Has forbidden keywords: ${hasForbiddenKeywords}`);
         console.log(`  - Item type: ${itemType}`);
         
         // For shoes - formal/business shoes for work
         if (itemType === 'shoes') {
-          const workShoeKeywords = ['עסקי', 'פורמלי', 'עור', 'קלאסי', 'מגף', 'עקב נמוך', 'heel', 'formal', 'business', 'leather'];
-          const avoidCasualShoes = !text.includes('סניקרס') && !text.includes('ספורט') && !text.includes('ריצה');
-          const isWorkShoe = workShoeKeywords.some(keyword => text.includes(keyword)) && avoidCasualShoes;
+          const workShoeKeywords = ['עסקי', 'פורמלי', 'עור', 'קלאסי', 'מגף', 'עקב נמוך', 'heel', 'formal', 'business', 'leather', 'loafers', 'ankle boots'];
+          const forbiddenShoeKeywords = ['sneakers', 'flip-flops', 'סניקרס'];
+          const hasWorkShoeKeywords = workShoeKeywords.some(keyword => text.includes(keyword));
+          const hasForbiddenShoeKeywords = forbiddenShoeKeywords.some(keyword => text.includes(keyword));
+          const isWorkShoe = hasWorkShoeKeywords && !hasForbiddenShoeKeywords;
           console.log(`  - Work shoe decision: ${isWorkShoe}`);
           return isWorkShoe;
         }
         
-        // Item is suitable for work if it has include keywords and doesn't have exclude keywords
-        const isWorkSuitable = hasIncludeKeywords && !hasExcludeKeywords;
+        // Item is suitable for work if it has mandatory keywords and doesn't have forbidden keywords
+        const isWorkSuitable = hasMandatoryKeywords && !hasForbiddenKeywords;
         console.log(`  - Final work suitable decision: ${isWorkSuitable}`);
         return isWorkSuitable;
         
       case 'weekend':
+        const weekendRecommendations = EVENT_RECOMMENDATIONS.weekend;
+        
+        // For shoes - comfortable shoes only
+        if (itemType === 'shoes') {
+          const weekendShoeKeywords = ['comfortable', 'sneakers', 'sandals', 'נוח', 'סניקרס'];
+          const forbiddenWeekendShoeKeywords = ['heels', 'high heel', 'עקב', 'formal'];
+          const hasWeekendShoeKeywords = weekendShoeKeywords.some(keyword => text.includes(keyword));
+          const hasForbiddenWeekendShoeKeywords = forbiddenWeekendShoeKeywords.some(keyword => text.includes(keyword));
+          return hasWeekendShoeKeywords && !hasForbiddenWeekendShoeKeywords;
+        }
+        
+        const hasWeekendKeywords = weekendRecommendations.mandatory_keywords.some(keyword => text.includes(keyword.toLowerCase()));
+        const hasWeekendForbiddenKeywords = weekendRecommendations.forbidden_keywords.some(keyword => text.includes(keyword.toLowerCase()));
+        return hasWeekendKeywords && !hasWeekendForbiddenKeywords;
+      
+      case 'casual':
         const casualRecommendations = EVENT_RECOMMENDATIONS.casual;
         
-        console.log(`👕 STRICT CASUAL FILTER DEBUG for "${item.product_name}":`);
-        console.log(`  - Text: "${text}"`);
-        console.log(`  - Item type: ${itemType}`);
+        // Must have mandatory casual keywords
+        const hasCasualMandatory = casualRecommendations.mandatory_keywords.some(keyword => text.includes(keyword.toLowerCase()));
         
-        // STEP 1: Check if item has MANDATORY casual keywords - MUST have at least one
-        const hasMandatoryCasualKeywords = casualRecommendations.mandatory_keywords.some(keyword => text.includes(keyword.toLowerCase()));
-        console.log(`  - Has mandatory casual keywords: ${hasMandatoryCasualKeywords}`);
+        // Check if has optional keywords (nice to have but not required)
+        const hasCasualOptional = casualRecommendations.optional_keywords?.some(keyword => text.includes(keyword.toLowerCase()));
         
-        // STEP 2: Check if item has FORBIDDEN keywords - if ANY forbidden keyword found, REJECT immediately
-        const hasForbiddenKeywords = casualRecommendations.forbidden_keywords.some(keyword => text.includes(keyword.toLowerCase()));
-        console.log(`  - Has forbidden keywords: ${hasForbiddenKeywords}`);
+        // Must not have forbidden keywords
+        const hasCasualForbidden = casualRecommendations.forbidden_keywords.some(keyword => text.includes(keyword.toLowerCase()));
         
-        // STEP 3: For shoes - ULTRA STRICT filtering - ONLY sneakers and casual shoes
+        // For shoes - allow casual shoes including boots, loafers
         if (itemType === 'shoes') {
-          console.log(`👟 ULTRA STRICT CASUAL SHOES FILTER for "${item.product_name}":`);
-          
-          // MANDATORY casual shoe keywords - item MUST have at least one
-          const mandatoryCasualShoeKeywords = ['סניקרס', 'ספורט', 'ריצה', 'התעמלות', 'נוח', 'sneakers', 'sport', 'running', 'casual', 'trainer'];
-          const hasMandatoryCasualShoeKeywords = mandatoryCasualShoeKeywords.some(keyword => text.includes(keyword));
-          
-          // FORBIDDEN keywords for casual shoes - if ANY of these appear, reject immediately
-          const ultraForbiddenCasualShoeKeywords = [
-            'עקב', 'heel', 'heels', 'פורמלי', 'עסקי', 'formal', 'business', 
-            'קלאסי', 'elegant', 'אלגנטי', 'dress', 'דרס', 'leather', 'עור',
-            'high heel', 'stiletto', 'pump', 'oxford', 'loafer', 'חגיגי', 'מיוחד', 'ערב',
-            'dress shoes', 'נעלי דרס', 'משרד', 'עבודה', 'מקצועי'
-          ];
-          const hasUltraForbiddenCasualShoeKeywords = ultraForbiddenCasualShoeKeywords.some(keyword => text.includes(keyword));
-          
-          console.log(`  - Has mandatory casual shoe keywords: ${hasMandatoryCasualShoeKeywords}`);
-          console.log(`  - Has ultra forbidden casual shoe keywords: ${hasUltraForbiddenCasualShoeKeywords}`);
-          
-          // FINAL DECISION: Must have casual keywords AND must not have ANY formal indicators
-          const isCasualShoesSuitable = hasMandatoryCasualShoeKeywords && !hasUltraForbiddenCasualShoeKeywords;
-          console.log(`  - Final ULTRA STRICT casual shoes decision: ${isCasualShoesSuitable}`);
-          return isCasualShoesSuitable;
+          const casualShoeKeywords = ['sneakers', 'boots', 'loafers', 'סניקרס', 'נעלי ספורט'];
+          const forbiddenCasualShoeKeywords = ['high_heel', 'evening', 'formal suit'];
+          const hasCasualShoeKeywords = casualShoeKeywords.some(keyword => text.includes(keyword));
+          const hasForbiddenCasualShoeKeywords = forbiddenCasualShoeKeywords.some(keyword => text.includes(keyword));
+          return hasCasualShoeKeywords || (hasCasualOptional && !hasForbiddenCasualShoeKeywords);
         }
         
-        // STEP 4: For all other casual items - ULTRA STRICT filtering
-        // Must have mandatory casual keywords AND must not have ANY forbidden keywords
-        const isCasualSuitable = hasMandatoryCasualKeywords && !hasForbiddenKeywords;
-        console.log(`  - Final STRICT casual item decision: ${isCasualSuitable}`);
-        return isCasualSuitable;
+        return (hasCasualMandatory || hasCasualOptional) && !hasCasualForbidden;
         
       case 'evening':
-        // Evening formal items - elegant, dressy
-        const eveningKeywords = ['ערב', 'אלגנטי', 'חגיגי', 'פורמלי', 'מיוחד'];
-        const hasEveningKeywords = eveningKeywords.some(keyword => text.includes(keyword));
+        const eveningRecommendations = EVENT_RECOMMENDATIONS.evening;
         
-        // For evening shoes - elegant/formal shoes including heels ARE ALLOWED
+        // Must have mandatory evening keywords
+        const hasEveningMandatory = eveningRecommendations.mandatory_keywords.some(keyword => text.includes(keyword.toLowerCase()));
+        
+        // Can have optional keywords
+        const hasEveningOptional = eveningRecommendations.optional_keywords?.some(keyword => text.includes(keyword.toLowerCase()));
+        
+        // Must not have forbidden keywords
+        const hasEveningForbidden = eveningRecommendations.forbidden_keywords.some(keyword => text.includes(keyword.toLowerCase()));
+        
+        // For evening shoes - heels allowed
         if (itemType === 'shoes') {
-          const eveningShoeKeywords = ['עקב', 'אלגנטי', 'ערב', 'פורמלי', 'חגיגי', 'עור', 'heel', 'formal', 'elegant', 'dress'];
-          const isEveningShoe = eveningShoeKeywords.some(keyword => text.includes(keyword));
-          console.log(`✨ EVENING SHOES DEBUG for "${item.product_name}": ${isEveningShoe}`);
-          return isEveningShoe;
+          const eveningShoeKeywords = ['heel', 'elegant sneakers', 'formal', 'elegant'];
+          const forbiddenEveningShoeKeywords = ['flip-flops'];
+          const hasEveningShoeKeywords = eveningShoeKeywords.some(keyword => text.includes(keyword));
+          const hasForbiddenEveningShoeKeywords = forbiddenEveningShoeKeywords.some(keyword => text.includes(keyword));
+          return hasEveningShoeKeywords && !hasForbiddenEveningShoeKeywords;
         }
         
-        return hasEveningKeywords;
+        return (hasEveningMandatory || hasEveningOptional) && !hasEveningForbidden;
         
       default:
         return true;
