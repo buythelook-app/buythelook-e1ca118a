@@ -30,33 +30,10 @@ export function usePersonalizedLooks() {
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [userStyle, setUserStyle] = useState<any>(null);
   const [combinations, setCombinations] = useState<{ [key: string]: number }>({});
-  const [forceRefresh, setForceRefresh] = useState(0); // Changed to number for timestamp
+  const [forceRefresh, setForceRefresh] = useState(false);
   const [apiErrorShown, setApiErrorShown] = useState(false);
   const occasions = ['Work', 'Casual', 'Evening', 'Weekend'];
   const { fetchCatalog } = useExternalCatalog();
-
-  // ✅ Listen for force refresh flag from RefreshItemsButton
-  useEffect(() => {
-    const checkForceRefresh = () => {
-      const refreshFlag = localStorage.getItem('force-refresh-outfits');
-      if (refreshFlag) {
-        const timestamp = parseInt(refreshFlag);
-        if (timestamp > forceRefresh) {
-          console.log('🔄 [usePersonalizedLooks] Force refresh detected:', timestamp);
-          setForceRefresh(timestamp);
-          localStorage.removeItem('force-refresh-outfits');
-        }
-      }
-    };
-    
-    // Check immediately
-    checkForceRefresh();
-    
-    // Check every second
-    const interval = setInterval(checkForceRefresh, 1000);
-    
-    return () => clearInterval(interval);
-  }, [forceRefresh]);
 
   // Load style analysis from localStorage on component mount and listen for changes
   useEffect(() => {
