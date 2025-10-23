@@ -130,9 +130,15 @@ export function usePersonalizedLooks() {
         throw new Error(outfitResponse.error || "Failed to generate outfit");
       }
 
-      // Get outfit colors
-      const colors = getOutfitColors();
-      console.log('🎨 [usePersonalizedLooks] Outfit colors:', colors);
+      // Extract colors directly from API response
+      const firstOutfit = outfitResponse.data[0];
+      const colors = {
+        top: firstOutfit.top,
+        bottom: firstOutfit.bottom,
+        shoes: firstOutfit.shoes,
+        coat: firstOutfit.coat
+      };
+      console.log('🎨 [usePersonalizedLooks] Outfit colors from API:', colors);
 
       // Find matching clothing items
       const matchingItems = await findMatchingClothingItems(colors);
