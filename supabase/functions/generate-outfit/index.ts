@@ -69,11 +69,10 @@ function generateWorkAppropriateOutfit(bodyStructure: BodyStructure, style: Styl
   for (let i = 0; i < 3; i++) {
     const shuffledPalette = [...workPalette].sort(() => Math.random() - 0.5);
     
-    // ✅ REQUIRED: Every work outfit MUST include all 3 items (top + bottom + shoes)
     let outfit: OutfitSuggestion = {
-      top: shuffledPalette[0],        // REQUIRED: Top item color
-      bottom: shuffledPalette[1],     // REQUIRED: Bottom item color  
-      shoes: shuffledPalette[2],      // REQUIRED: Shoes color
+      top: shuffledPalette[0],
+      bottom: shuffledPalette[1],
+      shoes: shuffledPalette[2],
       description: "",
       recommendations: [],
       occasion: 'work'
@@ -155,11 +154,11 @@ function generateOutfitForBodyStructure(bodyStructure: BodyStructure, style: Sty
     // Shuffle palette for variety
     const shuffledPalette = [...palette].sort(() => Math.random() - 0.5);
     
-    // ✅ REQUIRED: Every outfit MUST include all 3 items (top + bottom + shoes)
+    // Basic outfit structure
     let outfit: OutfitSuggestion = {
-      top: shuffledPalette[0],        // REQUIRED: Top item color
-      bottom: shuffledPalette[1],     // REQUIRED: Bottom item color
-      shoes: shuffledPalette[2],      // REQUIRED: Shoes color
+      top: shuffledPalette[0],
+      bottom: shuffledPalette[1],
+      shoes: shuffledPalette[2],
       description: "",
       recommendations: []
     };

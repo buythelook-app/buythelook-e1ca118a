@@ -22,16 +22,10 @@ export class AgentResultsGenerator {
     });
     
     for (const agent of AGENT_NAMES) {
-      // Select random items from each category - MUST HAVE ALL THREE
+      // Select random items from each category
       const randomTop = this.getRandomItem(categorizedItems.tops);
       const randomBottom = this.getRandomItem(categorizedItems.bottoms);
       const randomShoe = this.getRandomItem(categorizedItems.shoes);
-      
-      // ✅ VALIDATION: Skip outfit if any required item is missing
-      if (!randomTop || !randomBottom || !randomShoe) {
-        console.warn(`⚠️ [DEBUG] Skipping ${agent}: Missing required items (top: ${!!randomTop}, bottom: ${!!randomBottom}, shoes: ${!!randomShoe})`);
-        continue;
-      }
       
       const score = Math.floor(Math.random() * 30) + 70;
       
@@ -85,8 +79,8 @@ export class AgentResultsGenerator {
 
       console.log(`🔍 [DEBUG] Categorizing item ${item.id}: family="${family}", subfamily="${subfamily}"`);
 
-      // ✅ Check if it's from the shoes table (family === 'shoes')
-      if (family === 'shoes' || family.includes('sandal') || family.includes('shoe') || family.includes('boot') ||
+      // Check if it's shoes
+      if (family.includes('sandal') || family.includes('shoe') || family.includes('boot') ||
           subfamily.includes('sandal') || subfamily.includes('shoe') || subfamily.includes('boot')) {
         shoes.push(item);
         console.log(`👠 [DEBUG] Categorized as SHOES: ${item.product_name}`);
@@ -106,20 +100,14 @@ export class AgentResultsGenerator {
       }
     }
 
-    console.log(`📊 [DEBUG] Categorization complete - Tops: ${tops.length}, Bottoms: ${bottoms.length}, Shoes: ${shoes.length}`);
-
     return { tops, bottoms, shoes };
   }
 
   /**
    * Get random item from array
-   * Returns null only if array is empty - caller should handle this
    */
-  private getRandomItem(items: any[]): any | null {
-    if (items.length === 0) {
-      console.warn(`⚠️ [DEBUG] Cannot select item - category is empty`);
-      return null;
-    }
+  private getRandomItem(items: any[]): any {
+    if (items.length === 0) return null;
     return items[Math.floor(Math.random() * items.length)];
   }
 }
