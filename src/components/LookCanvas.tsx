@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { extractZaraImageUrl, extractShoesImageUrl } from '@/utils/imageUtils';
 
 interface OutfitItem {
   id: string;
@@ -25,9 +26,6 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
   // Helper function to extract image URL from various formats using imageUtils
   const getImageUrl = (image: any, itemType?: string): string => {
     if (!image) return '';
-    
-    // Import the proper image extraction utility
-    const { extractZaraImageUrl, extractShoesImageUrl } = require('@/utils/imageUtils');
     
     // Use specialized function for shoes, generic for others
     if (itemType === 'shoes') {
