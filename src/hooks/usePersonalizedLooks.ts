@@ -243,14 +243,31 @@ export function usePersonalizedLooks() {
     const bottoms = items.filter(item => item.type === 'bottom');
     const shoes = items.filter(item => item.type === 'shoes');
 
-    // Ensure we have at least one item of each required type (top, bottom, shoes)
-    if (tops.length === 0 || bottoms.length === 0 || shoes.length === 0) {
-      console.log(`⚠️ [createLookFromItems] Missing required items for ${occasion}:`, {
-        tops: tops.length,
-        bottoms: bottoms.length,
-        shoes: shoes.length
-      });
-      return null;
+    // Check if we have a dress
+    const hasDress = tops.some(top => 
+      top.name.toUpperCase().includes('VESTIDO') || 
+      top.name.toUpperCase().includes('DRESS')
+    );
+
+    // For dress: need tops (dress) + shoes
+    // For regular outfit: need tops + bottoms + shoes
+    if (hasDress) {
+      if (tops.length === 0 || shoes.length === 0) {
+        console.log(`⚠️ [createLookFromItems] Missing required items for dress look in ${occasion}:`, {
+          tops: tops.length,
+          shoes: shoes.length
+        });
+        return null;
+      }
+    } else {
+      if (tops.length === 0 || bottoms.length === 0 || shoes.length === 0) {
+        console.log(`⚠️ [createLookFromItems] Missing required items for ${occasion}:`, {
+          tops: tops.length,
+          bottoms: bottoms.length,
+          shoes: shoes.length
+        });
+        return null;
+      }
     }
 
     const lookItems: LookItem[] = [];
