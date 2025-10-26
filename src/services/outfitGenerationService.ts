@@ -414,20 +414,49 @@ export async function findMatchingClothingItems(
           }
         });
 
-        // המרה לפורמט הנכון
-        result[type] = items.map(item => {
-          const imageUrl = extractImageUrl(item.image, type);
-          
-          return {
-            id: item.id,
-            name: item.product_name,
-            type,
-            price: `₪${item.price}`,
-            image: imageUrl,
-            color: item.colour,
-            url: item.url
-          };
-        });
+        // המרה לפורמט הנכון + ולידציה נוספת
+        result[type] = items
+          .filter(item => {
+            // וולידציה - וודא שהפריט באמת תואם לקטגוריה
+            const productName = (item.product_name || '').toUpperCase();
+            const productFamily = (item.product_family || '').toUpperCase();
+            
+            if (type === 'top') {
+              // ודא שזה לא מכנסיים/חצאית
+              if (productName.includes('PANTALON') || productName.includes('FALDA') || 
+                  productFamily.includes('PANTALON') || productFamily.includes('FALDA')) {
+                return false;
+              }
+            } else if (type === 'bottom') {
+              // ודא שזה לא חולצה
+              if (productName.includes('CAMISETA') || productName.includes('BLUSA') || 
+                  productFamily.includes('CAMISETA') || productFamily.includes('BLUSA')) {
+                return false;
+              }
+            } else if (type === 'shoes') {
+              // ודא שזה נעליים
+              if (!productName.includes('ZAPATO') && !productName.includes('BOTA') && 
+                  !productName.includes('SHOE') && !productName.includes('SANDAL') &&
+                  !productFamily.includes('ZAPATO') && !productFamily.includes('BOTA')) {
+                return false;
+              }
+            }
+            
+            return true;
+          })
+          .map(item => {
+            const imageUrl = extractImageUrl(item.image, type);
+            
+            return {
+              id: item.id,
+              name: item.product_name,
+              type,
+              price: `₪${item.price}`,
+              image: imageUrl,
+              color: item.colour,
+              url: item.url
+            };
+          });
       }
     } catch (error) {
       logger.error(`❌ [findMatchingClothingItems] שגיאה בחיפוש ${type}`, {
