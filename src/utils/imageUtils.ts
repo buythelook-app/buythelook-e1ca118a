@@ -55,14 +55,24 @@ export const extractZaraImageUrl = (imageData: ZaraImageData): string => {
       }
       
       // Handle JSON string arrays like "[\"https://static.zara.net/photos/...jpg\"]"
+      // or Shopify format: "[{\"url\":\"https://cdn.shopify.com/...\"}]"
       else {
         try {
           const parsed = JSON.parse(trimmedData);
           
           // If parsed into array, get all items
           if (Array.isArray(parsed)) {
-            imageUrls = parsed.filter(url => typeof url === 'string' && url.trim() !== '');
-            console.log(`✅ [ImageUtils] Successfully parsed JSON string array with ${imageUrls.length} URLs`);
+            parsed.forEach(item => {
+              // Handle Shopify format {url: "..."}
+              if (item && typeof item === 'object' && item.url) {
+                imageUrls.push(item.url);
+              }
+              // Handle simple string URLs
+              else if (typeof item === 'string' && item.trim() !== '') {
+                imageUrls.push(item);
+              }
+            });
+            console.log(`✅ [ImageUtils] Successfully parsed JSON array with ${imageUrls.length} URLs`);
           }
           
           // If parsed into object, look for URL
@@ -189,7 +199,16 @@ export const getShoeImageWithoutModel = (imageData: ZaraImageData): string => {
       try {
         const parsed = JSON.parse(imageData);
         if (Array.isArray(parsed)) {
-          imageUrls = parsed.filter(url => typeof url === 'string' && url.trim() !== '');
+          parsed.forEach(item => {
+            // Handle Shopify format {url: "..."}
+            if (item && typeof item === 'object' && item.url) {
+              imageUrls.push(item.url);
+            }
+            // Handle simple string URLs
+            else if (typeof item === 'string' && item.trim() !== '') {
+              imageUrls.push(item);
+            }
+          });
         }
       } catch {
         imageUrls = [imageData];
