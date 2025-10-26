@@ -22,30 +22,25 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
   const [loadingState, setLoadingState] = useState<'loading' | 'success' | 'error'>('loading');
   const [loadedCount, setLoadedCount] = useState(0);
 
-  // Helper function to extract image URL from various formats
-  const getImageUrl = (image: any): string => {
+  // Helper function to extract image URL from various formats using imageUtils
+  const getImageUrl = (image: any, itemType?: string): string => {
     if (!image) return '';
     
-    // If it's already a string, return it
-    if (typeof image === 'string') return image;
+    // Import the proper image extraction utility
+    const { extractZaraImageUrl, extractShoesImageUrl } = require('@/utils/imageUtils');
     
-    // If it's an array, take the first item
-    if (Array.isArray(image) && image.length > 0) {
-      return typeof image[0] === 'string' ? image[0] : image[0]?.url || '';
+    // Use specialized function for shoes, generic for others
+    if (itemType === 'shoes') {
+      return extractShoesImageUrl(image);
     }
     
-    // If it's an object with url property
-    if (typeof image === 'object' && image.url) {
-      return image.url;
-    }
-    
-    return '';
+    return extractZaraImageUrl(image);
   };
 
   // Ultra simplified validation - just check for HTTP URLs
   const isValidImageUrl = (image: any, itemType: string): boolean => {
-    const imageUrl = getImageUrl(image);
-    console.log(`🔍 [LookCanvas] Validating ${itemType} image: "${imageUrl}"`);
+    const imageUrl = getImageUrl(image, itemType);
+    console.log(`🔍 [LookCanvas] Validating ${itemType} image: "${imageUrl?.substring(0, 80)}..."`);
     
     if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '') {
       console.log(`❌ [LookCanvas] Invalid URL: empty or not string`);
@@ -110,8 +105,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       id: item.id,
       type: item.type,
       name: item.name || 'Unknown',
-      imageRaw: item.image,
-      imageUrl: getImageUrl(item.image),
+      imageRaw: typeof item.image === 'object' ? JSON.stringify(item.image).substring(0, 100) : item.image,
+      imageUrl: getImageUrl(item.image, item.type)?.substring(0, 80),
       isShoes: item.type === 'shoes',
       imageValid: isValidImageUrl(item.image, item.type)
     })));
@@ -168,11 +163,11 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     // FORCE INCLUDE SHOES - do not filter them out
     const validItems = items.filter(item => {
       if (item.type === 'shoes') {
-        const imageUrl = getImageUrl(item.image);
+        const imageUrl = getImageUrl(item.image, 'shoes');
         console.log(`👠 [LookCanvas] SHOES ITEM PROCESSING: "${item.name}"`, {
           id: item.id,
-          imageRaw: item.image,
-          imageUrl: imageUrl?.substring(0, 50) + '...',
+          imageRaw: typeof item.image === 'object' ? 'Array/Object' : item.image,
+          imageUrl: imageUrl?.substring(0, 80) + '...',
           hasImage: !!imageUrl,
           imageType: typeof item.image
         });
@@ -183,8 +178,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
       const hasValidImage = isValidImageUrl(item.image, item.type);
       
       if (!hasValidImage) {
-        const imageUrl = getImageUrl(item.image);
-        console.log(`❌ [LookCanvas] Filtering out non-shoes item: ${item.id} (${item.type}) - image: "${imageUrl?.substring(0, 50)}..."`);
+        const imageUrl = getImageUrl(item.image, item.type);
+        console.log(`❌ [LookCanvas] Filtering out non-shoes item: ${item.id} (${item.type}) - image: "${imageUrl?.substring(0, 80)}..."`);
       } else {
         console.log(`✅ [LookCanvas] Valid non-shoes item accepted: ${item.id} (${item.type})`);
       }
@@ -198,8 +193,8 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
     const shoesItems = validItems.filter(item => item.type === 'shoes');
     console.log(`👠 [LookCanvas] Found ${shoesItems.length} shoes items in validItems`);
     shoesItems.forEach((shoe, index) => {
-      const imageUrl = getImageUrl(shoe.image);
-      console.log(`👠 [LookCanvas] Shoe ${index + 1}: "${shoe.name}" with image: ${imageUrl}`);
+      const imageUrl = getImageUrl(shoe.image, 'shoes');
+      console.log(`👠 [LookCanvas] Shoe ${index + 1}: "${shoe.name}" with image: ${imageUrl?.substring(0, 80)}`);
     });
 
     if (validItems.length === 0) {
@@ -229,16 +224,18 @@ export const LookCanvas = ({ items, width = 400, height = 700 }: LookCanvasProps
           console.log(`🔍 [LookCanvas] Processing item ${i + 1}: ${item.id} (${item.type}) - ${item.name}`);
           
           if (item.type === 'shoes') {
-            const imageUrl = getImageUrl(item.image);
-            console.log(`👠 [LookCanvas] PROCESSING SHOES: "${item.name}" with image: ${imageUrl}`);
+            const imageUrl = getImageUrl(item.image, 'shoes');
+            console.log(`👠 [LookCanvas] PROCESSING SHOES: "${item.name}" with image: ${imageUrl?.substring(0, 80)}`);
           }
           
           try {
-            // For shoes, try loading even if URL seems invalid, with fast fallback
-            let imageToLoad = getImageUrl(item.image);
-            if (item.type === 'shoes' && (!imageToLoad || !isValidImageUrl(item.image, item.type))) {
-              console.log(`👠 [LookCanvas] Shoes has invalid image, using fallback`);
-              imageToLoad = 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop';
+            // Extract proper image URL using utilities
+            let imageToLoad = getImageUrl(item.image, item.type);
+            
+            // Validate and handle invalid URLs
+            if (!imageToLoad || imageToLoad.includes('placeholder.svg')) {
+              console.log(`⚠️ [LookCanvas] ${item.type} has invalid/missing image, skipping`);
+              throw new Error(`No valid image for ${item.type}`);
             }
             
             const img = await loadImageForCanvas(imageToLoad, item.type);
