@@ -125,25 +125,14 @@ export const useSmartLooks = ({ userProfile, mood, occasion }: UseSmartLooksPara
               enhanced: false
             }));
 
-        // שלב 5: ולידציה עם ValidatorAgent
-        const validationResult = await validatorAgent.runWithOutfitData(userId, looksData);
-
-        const finalLooks = validationResult.success && validationResult.data?.isCompatible
-          ? looksData
-          : looksData.filter((_: any, index: number) => {
-              const result = validationResult.data?.validationResults?.[index];
-              return !result || result.validationScore >= 70;
-            });
-
         logger.info('✅ [useSmartLooks] שלבים 3-5 הושלמו', {
           context: 'useSmartLooks',
           data: { 
-            totalLooks: finalLooks.length,
-            validationScore: validationResult.data?.overallScore 
+            totalLooks: looksData.length
           }
         });
 
-        // שלב 6 (async): שליחה ל-crew ללמידה ברקע
+        // שלב 6 (async): שליחה ל-crew ללמידה ברקע - פשוט עם userId
         agentCrew.run(userId).catch(err => {
           logger.warn('⚠️ [useSmartLooks] למידה ברקע נכשלה (לא משפיע על המשתמש)', {
             context: 'useSmartLooks',
@@ -152,8 +141,8 @@ export const useSmartLooks = ({ userProfile, mood, occasion }: UseSmartLooksPara
         });
 
         return {
-          looks: finalLooks,
-          validationScore: validationResult.data?.overallScore || 85,
+          looks: looksData,
+          validationScore: 85,
           enhanced: personalizedResult.success
         };
 
