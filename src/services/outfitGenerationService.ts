@@ -315,68 +315,119 @@ export function extractImageUrl(imageJson: any, itemType?: string): string {
 }
 
 /**
+ * מחזיר תבנית חיפוש משופרת לפי סוג פריט ואירוע
+ */
+function getCategoryPattern(type: string, occasion?: string): string {
+  const basePatterns: Record<string, string> = {
+    'top': 'CAMISETA|BLUSA|CAMISA|TOP|JERSEY|SUDADERA',
+    'bottom': 'PANTALON|FALDA|VAQUERO|JEANS',
+    'shoes': 'ZAPATO|BOTA|SHOE|BOOT|SANDAL',
+    'coat': 'CAZADORA|ABRIGO|CHALECO|JACKET|COAT|BLAZER'
+  };
+
+  let pattern = basePatterns[type] || '';
+
+  // שיפור החיפוש לפי אירוע
+  if (occasion === 'Work') {
+    if (type === 'top') pattern += '|BLAZER|AMERICANA';
+    if (type === 'bottom') pattern += '|FORMAL';
+    if (type === 'shoes') pattern += '|OXFORD|MOCASIN';
+  } else if (occasion === 'Evening') {
+    if (type === 'top') pattern += '|VESTIDO|ELEGANTE|FIESTA';
+    if (type === 'shoes') pattern += '|SALON|TACON';
+  } else if (occasion === 'Casual') {
+    if (type === 'top') pattern += '|CASUAL|BASICO';
+    if (type === 'shoes') pattern += '|DEPORTIVA|SNEAKER';
+  }
+
+  return pattern;
+}
+
+/**
+ * מחזיר תבנית של פריטים לא רלוונטיים לדחות מראש
+ */
+function getExcludePattern(occasion?: string, type?: string): string {
+  // סינון בסיסי - דברים שתמיד לא רלוונטיים
+  const alwaysExclude = ['%maquillaje%', '%perfume%', '%cosm%'];
+  
+  // סינון ספציפי לאירוע - רק דברים ברורים
+  const occasionExclude: Record<string, string[]> = {
+    'Work': ['%bikini%', '%bañador%', '%pijama%', '%lenceria%'],
+    'Evening': ['%deportiva%', '%running%', '%gym%'],
+    'Casual': [] // אין דחייה מיוחדת
+  };
+
+  const toExclude = [
+    ...alwaysExclude,
+    ...(occasion ? occasionExclude[occasion] || [] : [])
+  ];
+
+  // אם אין מה לדחות, החזר משהו שלא יתאים לכלום
+  return toExclude.length > 0 ? toExclude.join('|') : '%xxxnomatchxxx%';
+}
+
+/**
  * Find clothing items matching the recommended colors from the agent
  * @param colors Record of item types to hex colors
+ * @param occasion Optional occasion for better filtering
  * @returns A record of item types to matching clothing items
  */
-export async function findMatchingClothingItems(colors: Record<string, string>): Promise<Record<string, any[]>> {
-  try {
-    logger.info("Finding matching clothing items for colors", {
-      context: "outfitGenerationService",
-      data: colors
-    });
+export async function findMatchingClothingItems(
+  colors: Record<string, string>,
+  occasion?: string
+): Promise<Record<string, any[]>> {
+  
+  logger.info('🔍 [findMatchingClothingItems] מתחיל חיפוש', {
+    context: 'findMatchingClothingItems',
+    data: { colors, occasion }
+  });
+
+  const result: Record<string, any[]> = {
+    top: [],
+    bottom: [],
+    shoes: [],
+    coat: []
+  };
+
+  // לולאה על כל סוג פריט
+  for (const [type, color] of Object.entries(colors)) {
+    if (!color || type === 'coat') continue;
+
+    // 1. קבל תבנית חיפוש משופרת לפי אירוע
+    const categoryPattern = getCategoryPattern(type, occasion);
     
-    const result: Record<string, any[]> = {};
-    
-    // For each item type (top, bottom, shoes), find matching items by color
-    for (const [type, hexColor] of Object.entries(colors)) {
-      if (!hexColor) continue;
-      
-      // Convert hex color to color name for database search
-      const colorName = getColorName(hexColor);
-      
-      // Map item types to database categories - support both Spanish and English
-      let categoryPattern = '';
-      if (type === 'top') {
-        categoryPattern = 'CAMISA|TOP|CAMISETA|BLASIER|BLOUSE|SHIRT';
-      } else if (type === 'bottom') {
-        categoryPattern = 'PANTALON|FALDA|BERMUDA|PANTS|SKIRT|JEAN';
-      } else if (type === 'shoes') {
-        categoryPattern = 'ZAPATO|BOTA|SHOE|BOOT|SANDAL';
-      } else if (type === 'coat') {
-        categoryPattern = 'CAZADORA|ABRIGO|CHALECO|JACKET|COAT|BLAZER';
-      }
-      
-      if (!categoryPattern) continue;
-      
-      // Split pattern into individual terms for OR query
-      const terms = categoryPattern.split('|');
-      const orConditions = terms.map(term => 
-        `product_family.ilike.%${term}%,product_name.ilike.%${term}%`
-      ).join(',');
-      
-      // Search by product_family or product_name matching any of the category terms
+    if (!categoryPattern) continue;
+
+    // 2. פצל לתנאי OR מרובים
+    const terms = categoryPattern.split('|');
+    const orConditions = terms.map(term =>
+      `product_family.ilike.%${term}%,product_name.ilike.%${term}%`
+    ).join(',');
+
+    // 3. קבל תבנית דחייה
+    const excludePattern = getExcludePattern(occasion, type);
+
+    try {
+      // 4. חיפוש משופר עם דחייה מראש
       const { data: items, error } = await supabase
         .from('zara_cloth')
         .select('id, product_name, price, colour, image, product_family, product_subfamily, url')
         .or(orConditions)
-        .not('product_family', 'ilike', '%maquillaje%')
-        .not('product_family', 'ilike', '%perfume%')
-        .not('product_subfamily', 'ilike', '%cosm%')
-        .limit(10);
-      
+        .not('product_family', 'ilike', excludePattern)
+        .not('product_subfamily', 'ilike', excludePattern)
+        .limit(12); // קצת יותר פריטים למקרה של סינון נוסף
+
       if (error) {
-        logger.error(`Error finding ${type} items:`, {
-          context: "outfitGenerationService",
+        logger.error(`❌ [findMatchingClothingItems] שגיאה בחיפוש ${type}:`, {
+          context: 'findMatchingClothingItems',
           data: error
         });
         continue;
       }
-      
-      // Log information about the first item for debugging
-      if (items.length > 0) {
-        logger.info(`First ${type} item data:`, {
-          context: "findMatchingClothingItems",
+
+      if (items && items.length > 0) {
+        logger.info(`✅ [findMatchingClothingItems] נמצאו ${items.length} פריטי ${type}`, {
+          context: 'findMatchingClothingItems',
           data: {
             id: items[0].id,
             productName: items[0].product_name,
@@ -384,42 +435,29 @@ export async function findMatchingClothingItems(colors: Record<string, string>):
             color: items[0].colour
           }
         });
-      }
-      
-      // Map the results to the return format, extracting image URLs
-      result[type] = items.map(item => {
-        const imageUrl = extractImageUrl(item.image, type); // Pass type for shoe logic
-        
-        logger.info(`Extracted image URL for ${item.product_name}:`, {
-          context: "findMatchingClothingItems",
-          data: {
+
+        // המרה לפורמט הנכון
+        result[type] = items.map(item => {
+          const imageUrl = extractImageUrl(item.image, type);
+          
+          return {
             id: item.id,
-            extractedUrl: imageUrl
-          }
+            name: item.product_name,
+            type,
+            price: `₪${item.price}`,
+            image: imageUrl,
+            color: item.colour,
+            url: item.url
+          };
         });
-        
-        return {
-          id: item.id,
-          name: item.product_name,
-          type,
-          price: `₪${item.price}`,
-          image: imageUrl,
-          color: item.colour,
-          url: item.url
-        };
-      });
-      
-      logger.info(`Found ${result[type].length} ${type} items matching ${colorName}`, {
-        context: "outfitGenerationService"
+      }
+    } catch (error) {
+      logger.error(`❌ [findMatchingClothingItems] שגיאה בחיפוש ${type}:`, {
+        context: 'findMatchingClothingItems',
+        data: error
       });
     }
-    
-    return result;
-  } catch (error) {
-    logger.error("Error finding matching clothing items", {
-      context: "outfitGenerationService",
-      data: error
-    });
-    return {};
   }
+
+  return result;
 }
