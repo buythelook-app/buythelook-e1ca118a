@@ -9,7 +9,7 @@ import { useCartStore } from "@/components/Cart";
 import { toast as sonnerToast } from "sonner";
 import { StyleProfileDisplay } from "@/components/look/StyleProfileDisplay";
 import { PersonalizedLooksGrid } from "@/components/look/PersonalizedLooksGrid";
-import { useSmartLooks } from "@/hooks/useSmartLooks";
+import { usePersonalizedLooks } from "@/hooks/usePersonalizedLooks";
 import { memo, useCallback, useMemo, useState, useEffect } from "react";
 import type { Mood } from "@/components/filters/MoodFilter";
 import type { Look } from "@/types/lookTypes";
@@ -39,62 +39,18 @@ const Index = () => {
   useFeedbackTrigger(userId);
   
   const {
-    looks,
-    isLoading,
-    error,
     selectedMood,
+    userStyle,
+    occasions,
+    occasionOutfits,
+    isLoading,
+    isError,
+    error,
+    createLookFromItems,
     handleMoodSelect,
-    validationScore,
-    isEnhanced
-  } = useSmartLooks();
-  
-  // המרה לפורמט הישן לתאימות
-  const userStyle = useMemo(() => {
-    const styleData = localStorage.getItem('styleAnalysis');
-    return styleData ? JSON.parse(styleData) : null;
-  }, []);
-  
-  const occasions = useMemo(() => Object.keys(looks), [looks]);
-  const occasionOutfits = looks;
-  const isError = !!error;
-  
-  const createLookFromItems = useCallback((items: any[], occasion: string, index: number) => {
-    if (!items || items.length === 0) {
-      return {
-        id: `empty-look-${Date.now()}`,
-        title: 'Empty Look',
-        items: [],
-        price: '$0.00',
-        category: occasion,
-        occasion: occasion
-      };
-    }
-    
-    const totalPrice = items.reduce((sum, item) => sum + (parseFloat(String(item.price || 0).replace(/[^0-9.]/g, '')) || 0), 0);
-    return {
-      id: `look-${occasion}-${index}-${Date.now()}`,
-      title: `${occasion} Look`,
-      items: items.map(item => ({
-        id: item.id,
-        name: item.name,
-        image: item.image || '/placeholder.svg',
-        type: item.type,
-        price: String(item.price || 0),
-        product_subfamily: item.product_subfamily
-      })),
-      price: `$${totalPrice.toFixed(2)}`,
-      category: occasion,
-      occasion: occasion
-    };
-  }, []);
-  
-  const handleShuffleLook = useCallback((occasion: string) => {
-    console.log('Shuffle not implemented in smart looks yet');
-  }, []);
-  
-  const resetError = useCallback(() => {
-    console.log('Reset error not needed in smart looks');
-  }, []);
+    handleShuffleLook,
+    resetError
+  } = usePersonalizedLooks();
   
   // Memoize handleAddToCart to prevent creating a new function on every render
   const handleAddToCart = useCallback((look: any) => {
