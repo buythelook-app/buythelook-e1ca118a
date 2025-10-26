@@ -269,8 +269,14 @@ export function usePersonalizedLooks() {
       return isNaN(parsed) ? 0 : parsed;
     };
 
-    // Always add top, bottom, and shoes (3 items minimum)
+    // Check if the top is a dress - dresses don't need bottoms
     const top = getItemByIndex(tops, currentCombination);
+    const isDress = top && (
+      top.name.toUpperCase().includes('VESTIDO') || 
+      top.name.toUpperCase().includes('DRESS')
+    );
+
+    // Add top (or dress)
     if (top) {
       const itemPrice = parsePrice(top.price);
       lookItems.push({
@@ -283,19 +289,23 @@ export function usePersonalizedLooks() {
       totalPrice += itemPrice;
     }
 
-    const bottom = getItemByIndex(bottoms, currentCombination);
-    if (bottom) {
-      const itemPrice = parsePrice(bottom.price);
-      lookItems.push({
-        id: bottom.id,
-        image: bottom.image,
-        type: 'bottom',
-        name: bottom.name,
-        price: bottom.price
-      });
-      totalPrice += itemPrice;
+    // Only add bottom if it's NOT a dress
+    if (!isDress) {
+      const bottom = getItemByIndex(bottoms, currentCombination);
+      if (bottom) {
+        const itemPrice = parsePrice(bottom.price);
+        lookItems.push({
+          id: bottom.id,
+          image: bottom.image,
+          type: 'bottom',
+          name: bottom.name,
+          price: bottom.price
+        });
+        totalPrice += itemPrice;
+      }
     }
 
+    // Always add shoes
     const shoe = getItemByIndex(shoes, currentCombination);
     if (shoe) {
       const itemPrice = parsePrice(shoe.price);
@@ -309,9 +319,10 @@ export function usePersonalizedLooks() {
       totalPrice += itemPrice;
     }
 
-    // Ensure we have exactly 3 items
-    if (lookItems.length !== 3) {
-      console.log(`⚠️ [createLookFromItems] Created look with ${lookItems.length} items instead of 3 for ${occasion}`);
+    // For dresses: expect 2 items (dress + shoes), otherwise expect 3 items (top + bottom + shoes)
+    const expectedItems = isDress ? 2 : 3;
+    if (lookItems.length !== expectedItems) {
+      console.log(`⚠️ [createLookFromItems] Created look with ${lookItems.length} items instead of ${expectedItems} for ${occasion} (isDress: ${isDress})`);
       return null;
     }
 
