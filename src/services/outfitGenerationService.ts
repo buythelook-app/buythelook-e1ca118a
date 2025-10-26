@@ -387,13 +387,21 @@ export async function findMatchingClothingItems(
     ).join(',');
 
     try {
-      // חיפוש עם דחייה מינימלית
-      const { data: items, error } = await supabase
+      // חיפוש עם דחייה מינימלית + התאמת צבעים
+      let query = supabase
         .from('zara_cloth')
         .select('id, product_name, price, colour, image, product_family, product_subfamily, url')
         .or(orConditions)
-        .not('product_family', 'ilike', excludePattern)
-        .limit(10);
+        .not('product_family', 'ilike', excludePattern);
+
+      // הוספת חיפוש לפי צבע אם קיים
+      if (color) {
+        const colorName = getColorName(color).toLowerCase();
+        // חיפוש גמיש - כולל את שם הצבע או קרוב אליו
+        query = query.or(`colour.ilike.%${colorName}%,color.ilike.%${colorName}%`);
+      }
+
+      const { data: items, error } = await query.limit(10);
 
       if (error) {
         logger.error(`❌ [findMatchingClothingItems] שגיאה בחיפוש ${type}`, {
@@ -421,13 +429,25 @@ export async function findMatchingClothingItems(
             const productName = (item.product_name || '').toUpperCase();
             const productFamily = (item.product_family || '').toUpperCase();
             
+            // בדיקת שמלה - שמלות לא צריכות להיות תחת top או bottom
+            const isDress = productName.includes('VESTIDO') || 
+                           productName.includes('DRESS') ||
+                           productFamily.includes('VESTIDO') ||
+                           productFamily.includes('DRESS');
+            
             if (type === 'top') {
+              // דחה שמלות מ-top (הן ייכללו בקטגוריה נפרדת)
+              if (isDress) return false;
+              
               // ודא שזה לא מכנסיים/חצאית
               if (productName.includes('PANTALON') || productName.includes('FALDA') || 
                   productFamily.includes('PANTALON') || productFamily.includes('FALDA')) {
                 return false;
               }
             } else if (type === 'bottom') {
+              // דחה שמלות מ-bottom
+              if (isDress) return false;
+              
               // ודא שזה לא חולצה
               if (productName.includes('CAMISETA') || productName.includes('BLUSA') || 
                   productFamily.includes('CAMISETA') || productFamily.includes('BLUSA')) {
