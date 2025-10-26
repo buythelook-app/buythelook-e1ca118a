@@ -243,31 +243,16 @@ export function usePersonalizedLooks() {
     const bottoms = items.filter(item => item.type === 'bottom');
     const shoes = items.filter(item => item.type === 'shoes');
 
-    // Check if we have a dress
-    const hasDress = tops.some(top => 
-      top.name.toUpperCase().includes('VESTIDO') || 
-      top.name.toUpperCase().includes('DRESS')
-    );
+    // Must have shoes always
+    if (shoes.length === 0) {
+      console.log(`⚠️ [createLookFromItems] No shoes for ${occasion}`);
+      return null;
+    }
 
-    // For dress: need tops (dress) + shoes
-    // For regular outfit: need tops + bottoms + shoes
-    if (hasDress) {
-      if (tops.length === 0 || shoes.length === 0) {
-        console.log(`⚠️ [createLookFromItems] Missing required items for dress look in ${occasion}:`, {
-          tops: tops.length,
-          shoes: shoes.length
-        });
-        return null;
-      }
-    } else {
-      if (tops.length === 0 || bottoms.length === 0 || shoes.length === 0) {
-        console.log(`⚠️ [createLookFromItems] Missing required items for ${occasion}:`, {
-          tops: tops.length,
-          bottoms: bottoms.length,
-          shoes: shoes.length
-        });
-        return null;
-      }
+    // Must have at least one top
+    if (tops.length === 0) {
+      console.log(`⚠️ [createLookFromItems] No tops for ${occasion}`);
+      return null;
     }
 
     const lookItems: LookItem[] = [];
@@ -308,17 +293,20 @@ export function usePersonalizedLooks() {
 
     // Only add bottom if it's NOT a dress
     if (!isDress) {
-      const bottom = getItemByIndex(bottoms, currentCombination);
-      if (bottom) {
-        const itemPrice = parsePrice(bottom.price);
-        lookItems.push({
-          id: bottom.id,
-          image: bottom.image,
-          type: 'bottom',
-          name: bottom.name,
-          price: bottom.price
-        });
-        totalPrice += itemPrice;
+      // Only add bottom if we have bottoms available
+      if (bottoms.length > 0) {
+        const bottom = getItemByIndex(bottoms, currentCombination);
+        if (bottom) {
+          const itemPrice = parsePrice(bottom.price);
+          lookItems.push({
+            id: bottom.id,
+            image: bottom.image,
+            type: 'bottom',
+            name: bottom.name,
+            price: bottom.price
+          });
+          totalPrice += itemPrice;
+        }
       }
     }
 
@@ -336,10 +324,13 @@ export function usePersonalizedLooks() {
       totalPrice += itemPrice;
     }
 
-    // For dresses: expect 2 items (dress + shoes), otherwise expect 3 items (top + bottom + shoes)
-    const expectedItems = isDress ? 2 : 3;
-    if (lookItems.length !== expectedItems) {
-      console.log(`⚠️ [createLookFromItems] Created look with ${lookItems.length} items instead of ${expectedItems} for ${occasion} (isDress: ${isDress})`);
+    // For dresses: expect 2 items (dress + shoes)
+    // For regular outfits: expect at least 2 items (top + shoes), 3 if we have bottoms (top + bottom + shoes)
+    const minItems = isDress ? 2 : 2;
+    const maxItems = isDress ? 2 : 3;
+    
+    if (lookItems.length < minItems) {
+      console.log(`⚠️ [createLookFromItems] Created look with only ${lookItems.length} items for ${occasion} (isDress: ${isDress})`);
       return null;
     }
 
