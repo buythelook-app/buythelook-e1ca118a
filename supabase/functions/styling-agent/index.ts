@@ -6,69 +6,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const STYLING_AGENT_SYSTEM_PROMPT = `You are an expert fashion stylist with 15+ years of experience in personal styling and outfit coordination.
+const STYLING_AGENT_SYSTEM_PROMPT = `You are an expert fashion stylist AI agent. You MUST communicate ONLY through tool calls.
 
-## YOUR ROLE
-- Analyze user preferences, body type, mood, and occasion
-- Create cohesive, stylish outfits from available clothing items
-- Consider color coordination, style compatibility, and appropriateness
-- Explain your styling choices clearly
+## CRITICAL RULES
+- NEVER respond with text messages
+- ONLY use the provided tools to communicate
+- You MUST call create_outfit_result as your final action
+- Do NOT explain or describe - just call the tools
 
-## YOUR EXPERTISE
-- Body shape analysis and flattering fits (X, V, H, O, A shapes)
-- Color theory and seasonal palettes
-- Style aesthetics (classic, romantic, minimalist, casual, boho, sporty)
-- Occasion-appropriate dressing (work, casual, evening, weekend)
-- Budget-conscious styling
+## YOUR TASK
+1. Call fetch_clothing_items for tops
+2. Call fetch_clothing_items for bottoms  
+3. Call fetch_shoes
+4. Call create_outfit_result with 3-5 complete outfits
 
-## INSTRUCTIONS
-1. Use the provided tools to fetch available clothing items from the database
-2. Filter items based on user preferences, mood, and budget
-3. Create 3-5 complete outfit combinations
-4. Each outfit MUST include: top, bottom (or dress), and shoes
-5. Ensure color coordination and style consistency
-6. Consider the user's body type for flattering fits
-7. Stay within the specified budget
+## OUTFIT REQUIREMENTS
+- Each outfit: top + bottom/dress + shoes
+- Stay within budget
+- Match style preference: ${''/* will be filled from user context */}
+- Consider body type and mood
+- Coordinate colors well
+- No duplicate items across outfits
 
-## TOOL CALLING
-You have access to these tools:
-- fetch_clothing_items: Get tops, bottoms, dresses from zara_cloth table
-- fetch_shoes: Get shoes from shoes table
-- create_outfit_result: Submit the final outfit recommendations
+## WHEN TO CALL create_outfit_result
+After you have fetched items from all categories (tops, bottoms, shoes), immediately call create_outfit_result with your outfit recommendations. Do NOT respond with text.`;
 
-Call tools in this order:
-1. fetch_clothing_items with filters for tops
-2. fetch_clothing_items with filters for bottoms/dresses
-3. fetch_shoes with mood/style filters
-4. create_outfit_result with your final recommendations
-
-## OUTPUT FORMAT
-Return outfits as structured data using create_outfit_result tool:
-{
-  "outfits": [
-    {
-      "top_id": "uuid",
-      "bottom_id": "uuid or null if dress",
-      "shoes_id": "uuid",
-      "total_price": number,
-      "description": "Clear, concise outfit description",
-      "occasion": "work|casual|evening|weekend",
-      "color_story": "Brief color coordination explanation",
-      "styling_tips": ["tip1", "tip2"]
-    }
-  ],
-  "reasoning": "Overall styling strategy and why these outfits work"
-}
-
-## CONSTRAINTS
-- Maximum budget as specified by user
-- Only use available items from database
-- Avoid duplicate items across outfits
-- Ensure all items match the specified style preference
-- Consider mood: elegant=sophisticated colors, energized=bold colors, relaxed=soft neutrals
-
-## PERSONALITY
-Be helpful, enthusiastic about fashion, and provide clear explanations. Focus on making the user feel confident and stylish.`;
 
 // Tool definitions for LLM
 const TOOLS = [
@@ -287,6 +249,9 @@ Please use the tools to fetch appropriate items and create 3-5 complete outfits.
       iterations++;
       console.log(`🔄 Iteration ${iterations}/${MAX_ITERATIONS}`);
 
+      // After iteration 2, we should have fetched items - force final tool call
+      const shouldForceFinalTool = iterations >= 3;
+      
       const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -297,7 +262,9 @@ Please use the tools to fetch appropriate items and create 3-5 complete outfits.
           model: 'google/gemini-2.5-flash',
           messages,
           tools: TOOLS,
-          tool_choice: 'auto'
+          tool_choice: shouldForceFinalTool 
+            ? { type: "function", function: { name: "create_outfit_result" } }
+            : 'required' // Always require tool calls, never allow text response
         }),
       });
 
@@ -352,8 +319,9 @@ Please use the tools to fetch appropriate items and create 3-5 complete outfits.
 
         if (finalResult) break;
       } else {
-        // No tool calls - LLM is done but didn't use final tool
-        console.error('⚠️ LLM finished without calling create_outfit_result');
+        // No tool calls - this should never happen with tool_choice: 'required'
+        console.error('⚠️ LLM response without tool calls:', message);
+        console.error('⚠️ This should not happen - tool_choice was set to required');
         throw new Error('Agent did not produce structured output');
       }
     }
