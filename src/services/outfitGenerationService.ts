@@ -316,58 +316,38 @@ export function extractImageUrl(imageJson: any, itemType?: string): string {
 
 /**
  * מחזיר תבנית חיפוש משופרת לפי סוג פריט ואירוע
+ * מוסיף מילות מפתח נוספות לחיפוש רחב יותר
  */
 function getCategoryPattern(type: string, occasion?: string): string {
   const basePatterns: Record<string, string> = {
     'top': 'CAMISETA|BLUSA|CAMISA|TOP|JERSEY|SUDADERA',
-    'bottom': 'PANTALON|FALDA|VAQUERO|JEANS',
-    'shoes': 'ZAPATO|BOTA|SHOE|BOOT|SANDAL',
+    'bottom': 'PANTALON|FALDA|VAQUERO|JEANS|SHORT',
+    'shoes': 'ZAPATO|BOTA|SHOE|BOOT|SANDAL|DEPORTIVA',
     'coat': 'CAZADORA|ABRIGO|CHALECO|JACKET|COAT|BLAZER'
   };
 
   let pattern = basePatterns[type] || '';
 
-  // שיפור החיפוש לפי אירוע
-  if (occasion === 'Work') {
-    if (type === 'top') pattern += '|BLAZER|AMERICANA';
-    if (type === 'bottom') pattern += '|FORMAL';
-    if (type === 'shoes') pattern += '|OXFORD|MOCASIN';
-  } else if (occasion === 'Evening') {
-    if (type === 'top') pattern += '|VESTIDO|ELEGANTE|FIESTA';
-    if (type === 'shoes') pattern += '|SALON|TACON';
-  } else if (occasion === 'Casual') {
-    if (type === 'top') pattern += '|CASUAL|BASICO';
-    if (type === 'shoes') pattern += '|DEPORTIVA|SNEAKER';
+  // הוספת דגש לפי אירוע (בנוסף לחיפוש הבסיסי, לא במקומו)
+  if (occasion === 'Work' && type === 'top') {
+    pattern += '|BLAZER|AMERICANA|FORMAL';
+  } else if (occasion === 'Evening' && type === 'top') {
+    pattern += '|VESTIDO|ELEGANTE|FIESTA';
   }
 
   return pattern;
 }
 
 /**
- * מחזיר תבנית של פריטים לא רלוונטיים לדחות מראש
+ * מחזיר תבנית דחייה בסיסית - רק פריטים שברור ש-100% לא בגדים
  */
-function getExcludePattern(occasion?: string, type?: string): string {
-  // סינון בסיסי - דברים שתמיד לא רלוונטיים
-  const alwaysExclude = ['%maquillaje%', '%perfume%', '%cosm%'];
-  
-  // סינון ספציפי לאירוע - רק דברים ברורים
-  const occasionExclude: Record<string, string[]> = {
-    'Work': ['%bikini%', '%bañador%', '%pijama%', '%lenceria%'],
-    'Evening': ['%deportiva%', '%running%', '%gym%'],
-    'Casual': [] // אין דחייה מיוחדת
-  };
-
-  const toExclude = [
-    ...alwaysExclude,
-    ...(occasion ? occasionExclude[occasion] || [] : [])
-  ];
-
-  // אם אין מה לדחות, החזר משהו שלא יתאים לכלום
-  return toExclude.length > 0 ? toExclude.join('|') : '%xxxnomatchxxx%';
+function getBasicExcludePattern(): string {
+  return '%maquillaje%|%perfume%|%fragancia%|%cosmetico%';
 }
 
 /**
  * Find clothing items matching the recommended colors from the agent
+ * גרסה מתונה - מרחיב חיפוש אבל דוחה רק דברים בסיסיים
  * @param colors Record of item types to hex colors
  * @param occasion Optional occasion for better filtering
  * @returns A record of item types to matching clothing items
@@ -389,36 +369,34 @@ export async function findMatchingClothingItems(
     coat: []
   };
 
-  // לולאה על כל סוג פריט
+  // דחייה בסיסית - אחת לכל הלולאה
+  const excludePattern = getBasicExcludePattern();
+
   for (const [type, color] of Object.entries(colors)) {
     if (!color || type === 'coat') continue;
 
-    // 1. קבל תבנית חיפוש משופרת לפי אירוע
+    // קבל תבנית חיפוש משופרת
     const categoryPattern = getCategoryPattern(type, occasion);
     
     if (!categoryPattern) continue;
 
-    // 2. פצל לתנאי OR מרובים
+    // פצל לתנאי OR מרובים
     const terms = categoryPattern.split('|');
     const orConditions = terms.map(term =>
       `product_family.ilike.%${term}%,product_name.ilike.%${term}%`
     ).join(',');
 
-    // 3. קבל תבנית דחייה
-    const excludePattern = getExcludePattern(occasion, type);
-
     try {
-      // 4. חיפוש משופר עם דחייה מראש
+      // חיפוש עם דחייה מינימלית
       const { data: items, error } = await supabase
         .from('zara_cloth')
         .select('id, product_name, price, colour, image, product_family, product_subfamily, url')
         .or(orConditions)
         .not('product_family', 'ilike', excludePattern)
-        .not('product_subfamily', 'ilike', excludePattern)
-        .limit(12); // קצת יותר פריטים למקרה של סינון נוסף
+        .limit(10);
 
       if (error) {
-        logger.error(`❌ [findMatchingClothingItems] שגיאה בחיפוש ${type}:`, {
+        logger.error(`❌ [findMatchingClothingItems] שגיאה בחיפוש ${type}`, {
           context: 'findMatchingClothingItems',
           data: error
         });
@@ -452,7 +430,7 @@ export async function findMatchingClothingItems(
         });
       }
     } catch (error) {
-      logger.error(`❌ [findMatchingClothingItems] שגיאה בחיפוש ${type}:`, {
+      logger.error(`❌ [findMatchingClothingItems] שגיאה בחיפוש ${type}`, {
         context: 'findMatchingClothingItems',
         data: error
       });

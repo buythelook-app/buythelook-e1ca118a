@@ -132,7 +132,7 @@ export function usePersonalizedLooks() {
       });
 
       // Find matching clothing items from real Zara data
-      // Note: We'll distribute across occasions later, so we don't pass a specific occasion here
+      // Note: We don't pass occasion here since items are distributed across occasions later
       const matchingItems = await findMatchingClothingItems(colors);
       logger.info('🎨 [usePersonalizedLooks] מצאנו פריטים תואמים מ-Zara', {
         context: 'usePersonalizedLooks',
