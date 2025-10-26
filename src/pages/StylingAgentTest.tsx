@@ -1,14 +1,48 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { LookImage } from "@/components/look/LookImage";
 
 export default function StylingAgentTest() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [outfitItems, setOutfitItems] = useState<Record<string, any>>({});
   const { toast } = useToast();
+
+  // Fetch product details when result changes
+  useEffect(() => {
+    if (result?.data?.outfits) {
+      fetchOutfitItems(result.data.outfits);
+    }
+  }, [result]);
+
+  const fetchOutfitItems = async (outfits: any[]) => {
+    const itemIds = new Set<string>();
+    
+    outfits.forEach(outfit => {
+      if (outfit.top_id) itemIds.add(outfit.top_id);
+      if (outfit.bottom_id) itemIds.add(outfit.bottom_id);
+      if (outfit.shoes_id) itemIds.add(outfit.shoes_id);
+    });
+
+    if (itemIds.size === 0) return;
+
+    const { data, error } = await supabase
+      .from('zara_cloth')
+      .select('id, product_name, price, colour, image')
+      .in('id', Array.from(itemIds));
+
+    if (!error && data) {
+      const itemsMap: Record<string, any> = {};
+      data.forEach(item => {
+        itemsMap[item.id] = item;
+      });
+      setOutfitItems(itemsMap);
+    }
+  };
 
   const testCases = [
     {
@@ -166,38 +200,82 @@ export default function StylingAgentTest() {
                     <h3 className="font-semibold mb-2">
                       Outfits ({result.data?.outfits?.length || 0}):
                     </h3>
-                    <div className="space-y-3">
-                      {result.data?.outfits?.map((outfit: any, idx: number) => (
-                        <div key={idx} className="bg-muted p-4 rounded-lg">
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-medium">Outfit #{idx + 1}</h4>
-                            <span className="text-sm bg-primary/10 px-2 py-1 rounded">
-                              {outfit.occasion}
-                            </span>
-                          </div>
-                          <p className="text-sm mb-2">{outfit.description}</p>
-                          <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                            <div>Top: {outfit.top_id?.substring(0, 8)}...</div>
-                            <div>Bottom: {outfit.bottom_id?.substring(0, 8) || 'N/A'}...</div>
-                            <div>Shoes: {outfit.shoes_id?.substring(0, 8)}...</div>
-                            <div>Price: ${outfit.total_price?.toFixed(2) || 'N/A'}</div>
-                          </div>
-                          <div className="mt-2">
-                            <p className="text-xs font-medium">Color Story:</p>
-                            <p className="text-xs text-muted-foreground">{outfit.color_story}</p>
-                          </div>
-                          {outfit.styling_tips && outfit.styling_tips.length > 0 && (
-                            <div className="mt-2">
-                              <p className="text-xs font-medium">Styling Tips:</p>
-                              <ul className="text-xs text-muted-foreground list-disc list-inside">
-                                {outfit.styling_tips.map((tip: string, i: number) => (
-                                  <li key={i}>{tip}</li>
-                                ))}
-                              </ul>
+                    <div className="space-y-4">
+                      {result.data?.outfits?.map((outfit: any, idx: number) => {
+                        const topItem = outfitItems[outfit.top_id];
+                        const bottomItem = outfitItems[outfit.bottom_id];
+                        const shoesItem = outfitItems[outfit.shoes_id];
+
+                        return (
+                          <div key={idx} className="bg-card border rounded-lg p-4">
+                            <div className="flex justify-between items-start mb-3">
+                              <h4 className="font-medium text-lg">Outfit #{idx + 1}</h4>
+                              <span className="text-sm bg-primary/10 px-3 py-1 rounded-full">
+                                {outfit.occasion}
+                              </span>
                             </div>
-                          )}
-                        </div>
-                      ))}
+
+                            {/* Product Images */}
+                            <div className="grid grid-cols-3 gap-3 mb-4">
+                              {topItem && (
+                                <div className="space-y-1">
+                                  <LookImage 
+                                    image={topItem.image} 
+                                    title={topItem.product_name}
+                                    type="top"
+                                  />
+                                  <p className="text-xs font-medium truncate">{topItem.product_name}</p>
+                                  <p className="text-xs text-muted-foreground">₪{topItem.price}</p>
+                                </div>
+                              )}
+                              {bottomItem && (
+                                <div className="space-y-1">
+                                  <LookImage 
+                                    image={bottomItem.image} 
+                                    title={bottomItem.product_name}
+                                    type="bottom"
+                                  />
+                                  <p className="text-xs font-medium truncate">{bottomItem.product_name}</p>
+                                  <p className="text-xs text-muted-foreground">₪{bottomItem.price}</p>
+                                </div>
+                              )}
+                              {shoesItem && (
+                                <div className="space-y-1">
+                                  <LookImage 
+                                    image={shoesItem.image} 
+                                    title={shoesItem.product_name}
+                                    type="shoes"
+                                  />
+                                  <p className="text-xs font-medium truncate">{shoesItem.product_name}</p>
+                                  <p className="text-xs text-muted-foreground">₪{shoesItem.price}</p>
+                                </div>
+                              )}
+                            </div>
+
+                            <p className="text-sm mb-3 text-muted-foreground">{outfit.description}</p>
+                            
+                            <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                              <div className="bg-muted p-2 rounded">
+                                <span className="font-medium">Total Price:</span> ${outfit.total_price?.toFixed(2) || 'N/A'}
+                              </div>
+                              <div className="bg-muted p-2 rounded">
+                                <span className="font-medium">Color Story:</span> {outfit.color_story}
+                              </div>
+                            </div>
+
+                            {outfit.styling_tips && outfit.styling_tips.length > 0 && (
+                              <div className="mt-3 bg-muted/50 p-3 rounded">
+                                <p className="text-xs font-medium mb-1">💡 Styling Tips:</p>
+                                <ul className="text-xs text-muted-foreground space-y-1">
+                                  {outfit.styling_tips.map((tip: string, i: number) => (
+                                    <li key={i}>• {tip}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
