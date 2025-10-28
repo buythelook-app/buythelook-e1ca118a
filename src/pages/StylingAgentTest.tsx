@@ -38,28 +38,50 @@ export default function StylingAgentTest() {
   }, [result]);
 
   const fetchOutfitItems = async (outfits: any[]) => {
-    const itemIds = new Set<string>();
+    const clothingIds = new Set<string>();
+    const shoesIds = new Set<string>();
     
     outfits.forEach(outfit => {
-      if (outfit.top_id) itemIds.add(outfit.top_id);
-      if (outfit.bottom_id) itemIds.add(outfit.bottom_id);
-      if (outfit.shoes_id) itemIds.add(outfit.shoes_id);
+      if (outfit.top_id) clothingIds.add(outfit.top_id);
+      if (outfit.bottom_id) clothingIds.add(outfit.bottom_id);
+      if (outfit.shoes_id) shoesIds.add(outfit.shoes_id);
     });
 
-    if (itemIds.size === 0) return;
+    const itemsMap: Record<string, any> = {};
 
-    const { data, error } = await supabase
-      .from('zara_cloth')
-      .select('id, product_name, price, colour, image')
-      .in('id', Array.from(itemIds));
+    // Fetch clothing items
+    if (clothingIds.size > 0) {
+      const { data: clothingData } = await supabase
+        .from('zara_cloth')
+        .select('id, product_name, price, colour, image')
+        .in('id', Array.from(clothingIds));
 
-    if (!error && data) {
-      const itemsMap: Record<string, any> = {};
-      data.forEach(item => {
-        itemsMap[item.id] = item;
-      });
-      setOutfitItems(itemsMap);
+      if (clothingData) {
+        clothingData.forEach(item => {
+          itemsMap[item.id] = item;
+        });
+      }
     }
+
+    // Fetch shoes
+    if (shoesIds.size > 0) {
+      const { data: shoesData } = await supabase
+        .from('shoes')
+        .select('id, name, price, color, image')
+        .in('id', Array.from(shoesIds));
+
+      if (shoesData) {
+        shoesData.forEach(item => {
+          itemsMap[item.id] = {
+            ...item,
+            product_name: item.name,
+            colour: item.color
+          };
+        });
+      }
+    }
+
+    setOutfitItems(itemsMap);
   };
 
   const testCases = [
