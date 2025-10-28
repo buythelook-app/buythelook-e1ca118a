@@ -94,7 +94,7 @@ const TOOLS = [
     type: "function",
     function: {
       name: "create_outfit_result",
-      description: "Submit the final outfit recommendations - MUST be called at the end with all outfits. Each outfit must include the COMPLETE item objects (with all their properties including id) that you received from the fetch tools.",
+      description: "Submit the final outfit recommendations - MUST be called at the end with all outfits. Use ONLY the actual item IDs that were returned from fetch_clothing_items and fetch_shoes.",
       parameters: {
         type: "object",
         properties: {
@@ -103,18 +103,18 @@ const TOOLS = [
             items: {
               type: "object",
               properties: {
-                top: { 
-                  type: "object",
-                  description: "COMPLETE top item object from fetch_clothing_items - must include ALL properties especially 'id'"
+                top_id: { 
+                  type: "string",
+                  description: "UUID of top/dress item - MUST be from the fetched items"
                 },
-                bottom: { 
-                  type: "object", 
-                  description: "COMPLETE bottom item object from fetch_clothing_items - must include ALL properties especially 'id'. Use null if outfit has a dress instead",
+                bottom_id: { 
+                  type: "string", 
+                  description: "UUID of bottom item - MUST be from the fetched items. Use null if dress",
                   nullable: true 
                 },
-                shoes: { 
-                  type: "object",
-                  description: "COMPLETE shoes item object from fetch_shoes - must include ALL properties especially 'id'"
+                shoes_id: { 
+                  type: "string",
+                  description: "UUID of shoes - MUST be from the fetched items"
                 },
                 total_price: { type: "number" },
                 description: { type: "string" },
@@ -128,7 +128,7 @@ const TOOLS = [
                   items: { type: "string" }
                 }
               },
-              required: ["top", "shoes", "description", "occasion"]
+              required: ["top_id", "shoes_id", "description", "occasion"]
             }
           },
           reasoning: { type: "string", description: "Overall styling strategy" }

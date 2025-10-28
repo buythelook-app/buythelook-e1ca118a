@@ -309,10 +309,9 @@ export default function StylingAgentTest() {
                     </h3>
                     <div className="space-y-4">
                       {result.data?.outfits?.map((outfit: any, idx: number) => {
-                        // Extract items from outfit object (new format)
-                        const topItem = outfit.top;
-                        const bottomItem = outfit.bottom;
-                        const shoesItem = outfit.shoes;
+                        const topItem = outfitItems[outfit.top_id];
+                        const bottomItem = outfitItems[outfit.bottom_id];
+                        const shoesItem = outfitItems[outfit.shoes_id];
                         const outfitId = `outfit-${idx}`;
                         const currentFeedback = feedback[outfitId];
 
