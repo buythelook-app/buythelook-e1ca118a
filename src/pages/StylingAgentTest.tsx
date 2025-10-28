@@ -3,14 +3,27 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, ThumbsUp, ThumbsDown } from "lucide-react";
 import { LookImage } from "@/components/look/LookImage";
+import { useFeedbackTrigger } from "@/hooks/useFeedbackTrigger";
 
 export default function StylingAgentTest() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [outfitItems, setOutfitItems] = useState<Record<string, any>>({});
+  const [userId, setUserId] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<Record<string, 'like' | 'dislike' | null>>({});
   const { toast } = useToast();
+
+  // Initialize user session
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id || null);
+    });
+  }, []);
+
+  // Enable feedback learning
+  useFeedbackTrigger(userId || undefined);
 
   // Fetch product details when result changes
   useEffect(() => {
@@ -133,6 +146,35 @@ export default function StylingAgentTest() {
     }
   };
 
+  const handleFeedback = async (outfitId: string, liked: boolean) => {
+    if (!userId) {
+      toast({
+        title: "נדרש התחברות",
+        description: "יש להתחבר כדי לתת פידבק",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newFeedback = liked ? 'like' : 'dislike';
+    setFeedback(prev => ({ ...prev, [outfitId]: newFeedback }));
+
+    // Dispatch event for feedback learning agent
+    window.dispatchEvent(new CustomEvent('outfit-feedback', {
+      detail: {
+        lookId: outfitId,
+        liked,
+        disliked: !liked,
+        lookData: result?.data?.outfits?.find((_: any, idx: number) => `outfit-${idx}` === outfitId)
+      }
+    }));
+
+    toast({
+      title: liked ? "👍 אהבתי!" : "👎 לא אהבתי",
+      description: "הפידבק נשמר וישמש לשיפור ההמלצות הבאות"
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -205,14 +247,34 @@ export default function StylingAgentTest() {
                         const topItem = outfitItems[outfit.top_id];
                         const bottomItem = outfitItems[outfit.bottom_id];
                         const shoesItem = outfitItems[outfit.shoes_id];
+                        const outfitId = `outfit-${idx}`;
+                        const currentFeedback = feedback[outfitId];
 
                         return (
                           <div key={idx} className="bg-card border rounded-lg p-4">
                             <div className="flex justify-between items-start mb-3">
                               <h4 className="font-medium text-lg">Outfit #{idx + 1}</h4>
-                              <span className="text-sm bg-primary/10 px-3 py-1 rounded-full">
-                                {outfit.occasion}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm bg-primary/10 px-3 py-1 rounded-full">
+                                  {outfit.occasion}
+                                </span>
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant={currentFeedback === 'like' ? 'default' : 'outline'}
+                                    onClick={() => handleFeedback(outfitId, true)}
+                                  >
+                                    <ThumbsUp className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant={currentFeedback === 'dislike' ? 'destructive' : 'outline'}
+                                    onClick={() => handleFeedback(outfitId, false)}
+                                  >
+                                    <ThumbsDown className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
                             </div>
 
                             {/* Product Images */}
