@@ -38,50 +38,29 @@ export default function StylingAgentTest() {
   }, [result]);
 
   const fetchOutfitItems = async (outfits: any[]) => {
-    const clothingIds = new Set<string>();
-    const shoesIds = new Set<string>();
+    const allItemIds = new Set<string>();
     
     outfits.forEach(outfit => {
-      if (outfit.top_id) clothingIds.add(outfit.top_id);
-      if (outfit.bottom_id) clothingIds.add(outfit.bottom_id);
-      if (outfit.shoes_id) shoesIds.add(outfit.shoes_id);
+      if (outfit.top_id) allItemIds.add(outfit.top_id);
+      if (outfit.bottom_id) allItemIds.add(outfit.bottom_id);
+      if (outfit.shoes_id) allItemIds.add(outfit.shoes_id);
     });
 
-    const itemsMap: Record<string, any> = {};
+    if (allItemIds.size === 0) return;
 
-    // Fetch clothing items
-    if (clothingIds.size > 0) {
-      const { data: clothingData } = await supabase
-        .from('zara_cloth')
-        .select('id, product_name, price, colour, image')
-        .in('id', Array.from(clothingIds));
+    // Fetch all items (tops, bottoms, shoes) from zara_cloth
+    const { data, error } = await supabase
+      .from('zara_cloth')
+      .select('id, product_name, price, colour, image, category')
+      .in('id', Array.from(allItemIds));
 
-      if (clothingData) {
-        clothingData.forEach(item => {
-          itemsMap[item.id] = item;
-        });
-      }
+    if (!error && data) {
+      const itemsMap: Record<string, any> = {};
+      data.forEach(item => {
+        itemsMap[item.id] = item;
+      });
+      setOutfitItems(itemsMap);
     }
-
-    // Fetch shoes
-    if (shoesIds.size > 0) {
-      const { data: shoesData } = await supabase
-        .from('shoes')
-        .select('id, name, price, color, image')
-        .in('id', Array.from(shoesIds));
-
-      if (shoesData) {
-        shoesData.forEach(item => {
-          itemsMap[item.id] = {
-            ...item,
-            product_name: item.name,
-            colour: item.color
-          };
-        });
-      }
-    }
-
-    setOutfitItems(itemsMap);
   };
 
   const testCases = [
