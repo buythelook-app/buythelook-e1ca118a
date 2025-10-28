@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ThumbsUp, ThumbsDown } from "lucide-react";
@@ -13,6 +15,9 @@ export default function StylingAgentTest() {
   const [outfitItems, setOutfitItems] = useState<Record<string, any>>({});
   const [userId, setUserId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Record<string, 'like' | 'dislike' | null>>({});
+  const [feedbackDialog, setFeedbackDialog] = useState<{ open: boolean; outfitId: string; outfit: any } | null>(null);
+  const [feedbackComment, setFeedbackComment] = useState("");
+  const [analyzingFeedback, setAnalyzingFeedback] = useState(false);
   const { toast } = useToast();
 
   // Initialize user session
@@ -146,7 +151,7 @@ export default function StylingAgentTest() {
     }
   };
 
-  const handleFeedback = async (outfitId: string, liked: boolean) => {
+  const handleFeedback = async (outfitId: string, liked: boolean, outfit: any) => {
     if (!userId) {
       toast({
         title: "נדרש התחברות",
@@ -156,23 +161,82 @@ export default function StylingAgentTest() {
       return;
     }
 
-    const newFeedback = liked ? 'like' : 'dislike';
-    setFeedback(prev => ({ ...prev, [outfitId]: newFeedback }));
+    if (liked) {
+      // Direct like - no dialog needed
+      const newFeedback = 'like';
+      setFeedback(prev => ({ ...prev, [outfitId]: newFeedback }));
 
-    // Dispatch event for feedback learning agent
-    window.dispatchEvent(new CustomEvent('outfit-feedback', {
-      detail: {
-        lookId: outfitId,
-        liked,
-        disliked: !liked,
-        lookData: result?.data?.outfits?.find((_: any, idx: number) => `outfit-${idx}` === outfitId)
-      }
-    }));
+      window.dispatchEvent(new CustomEvent('outfit-feedback', {
+        detail: {
+          lookId: outfitId,
+          liked: true,
+          disliked: false,
+          lookData: outfit
+        }
+      }));
 
-    toast({
-      title: liked ? "👍 אהבתי!" : "👎 לא אהבתי",
-      description: "הפידבק נשמר וישמש לשיפור ההמלצות הבאות"
-    });
+      toast({
+        title: "👍 אהבתי!",
+        description: "הפידבק נשמר וישמש לשיפור ההמלצות הבאות"
+      });
+    } else {
+      // Open dialog for dislike to get detailed feedback
+      setFeedbackDialog({ open: true, outfitId, outfit });
+      setFeedbackComment("");
+    }
+  };
+
+  const submitDetailedFeedback = async () => {
+    if (!feedbackDialog || !userId) return;
+
+    setAnalyzingFeedback(true);
+
+    try {
+      // Analyze the feedback using AI
+      const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-feedback', {
+        body: {
+          outfit: feedbackDialog.outfit,
+          comment: feedbackComment,
+          userId
+        }
+      });
+
+      if (analysisError) throw analysisError;
+
+      console.log('🧠 AI Feedback Analysis:', analysisData);
+
+      // Mark as disliked
+      setFeedback(prev => ({ ...prev, [feedbackDialog.outfitId]: 'dislike' }));
+
+      // Dispatch enhanced feedback event with AI insights
+      window.dispatchEvent(new CustomEvent('outfit-feedback', {
+        detail: {
+          lookId: feedbackDialog.outfitId,
+          liked: false,
+          disliked: true,
+          comment: feedbackComment,
+          lookData: feedbackDialog.outfit,
+          aiInsights: analysisData?.insights // AI-generated insights about what's wrong
+        }
+      }));
+
+      toast({
+        title: "👎 פידבק נשמר בהצלחה",
+        description: "ה-AI נתח את ההערה שלך וישפר את ההמלצות הבאות"
+      });
+
+      setFeedbackDialog(null);
+      setFeedbackComment("");
+    } catch (error: any) {
+      console.error('❌ Error analyzing feedback:', error);
+      toast({
+        title: "שגיאה בניתוח הפידבק",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setAnalyzingFeedback(false);
+    }
   };
 
   return (
@@ -262,14 +326,14 @@ export default function StylingAgentTest() {
                                   <Button
                                     size="sm"
                                     variant={currentFeedback === 'like' ? 'default' : 'outline'}
-                                    onClick={() => handleFeedback(outfitId, true)}
+                                    onClick={() => handleFeedback(outfitId, true, outfit)}
                                   >
                                     <ThumbsUp className="h-4 w-4" />
                                   </Button>
                                   <Button
                                     size="sm"
                                     variant={currentFeedback === 'dislike' ? 'destructive' : 'outline'}
-                                    onClick={() => handleFeedback(outfitId, false)}
+                                    onClick={() => handleFeedback(outfitId, false, outfit)}
                                   >
                                     <ThumbsDown className="h-4 w-4" />
                                   </Button>
@@ -354,6 +418,44 @@ export default function StylingAgentTest() {
             </CardContent>
           </Card>
         )}
+
+        {/* Feedback Dialog */}
+        <Dialog open={feedbackDialog?.open || false} onOpenChange={(open) => !open && setFeedbackDialog(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>מה לא מתאים בהתאמה?</DialogTitle>
+              <DialogDescription>
+                תארי במילים שלך מה לא מתאים - ה-AI ינתח את ההערה וישפר את ההמלצות הבאות
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Textarea
+                placeholder="לדוגמה: הצבעים לא מתאימים, הגזרה לא מחמיאה, יקר מדי, לא מתאים לאירוע..."
+                value={feedbackComment}
+                onChange={(e) => setFeedbackComment(e.target.value)}
+                rows={4}
+              />
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setFeedbackDialog(null)}>
+                  ביטול
+                </Button>
+                <Button 
+                  onClick={submitDetailedFeedback} 
+                  disabled={!feedbackComment.trim() || analyzingFeedback}
+                >
+                  {analyzingFeedback ? (
+                    <>
+                      <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                      מנתח...
+                    </>
+                  ) : (
+                    'שלח פידבק'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
