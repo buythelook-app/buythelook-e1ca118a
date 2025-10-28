@@ -171,9 +171,12 @@ async function executeTool(toolName: string, args: any, supabase: any) {
     }
 
     case "fetch_shoes": {
+      // Fetch shoes from zara_cloth table (shoes category)
       let query = supabase
-        .from('shoes')
-        .select('id, name, price, color, description, brand, image')
+        .from('zara_cloth')
+        .select('id, product_name, price, colour, description, image, images, category')
+        .eq('availability', true)
+        .or('category.ilike.%shoe%,category.ilike.%boot%,category.ilike.%sandal%,category.ilike.%heel%')
         .limit(args.limit || 30);
 
       if (args.max_price) {
@@ -187,8 +190,19 @@ async function executeTool(toolName: string, args: any, supabase: any) {
         throw error;
       }
 
-      console.log(`✅ Fetched ${data?.length || 0} shoes`);
-      return { success: true, shoes: data || [] };
+      console.log(`✅ Fetched ${data?.length || 0} shoes from zara_cloth`);
+      
+      // Map to shoes format
+      const shoesData = data?.map(item => ({
+        id: item.id,
+        name: item.product_name,
+        price: item.price,
+        color: item.colour,
+        description: item.description,
+        image: item.image || item.images
+      })) || [];
+      
+      return { success: true, shoes: shoesData };
     }
 
     case "create_outfit_result": {
