@@ -94,7 +94,7 @@ const TOOLS = [
     type: "function",
     function: {
       name: "create_outfit_result",
-      description: "Submit the final outfit recommendations - MUST be called at the end with all outfits",
+      description: "Submit the final outfit recommendations - MUST be called at the end with all outfits. Each outfit must include the COMPLETE item objects (with all their properties including id) that you received from the fetch tools.",
       parameters: {
         type: "object",
         properties: {
@@ -103,9 +103,19 @@ const TOOLS = [
             items: {
               type: "object",
               properties: {
-                top_id: { type: "string", description: "UUID of the top/dress item" },
-                bottom_id: { type: "string", description: "UUID of bottom item, null if using dress", nullable: true },
-                shoes_id: { type: "string", description: "UUID of shoes" },
+                top: { 
+                  type: "object",
+                  description: "COMPLETE top item object from fetch_clothing_items - must include ALL properties especially 'id'"
+                },
+                bottom: { 
+                  type: "object", 
+                  description: "COMPLETE bottom item object from fetch_clothing_items - must include ALL properties especially 'id'. Use null if outfit has a dress instead",
+                  nullable: true 
+                },
+                shoes: { 
+                  type: "object",
+                  description: "COMPLETE shoes item object from fetch_shoes - must include ALL properties especially 'id'"
+                },
                 total_price: { type: "number" },
                 description: { type: "string" },
                 occasion: { 
@@ -118,7 +128,7 @@ const TOOLS = [
                   items: { type: "string" }
                 }
               },
-              required: ["top_id", "shoes_id", "description", "occasion"]
+              required: ["top", "shoes", "description", "occasion"]
             }
           },
           reasoning: { type: "string", description: "Overall styling strategy" }
