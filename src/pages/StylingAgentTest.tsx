@@ -39,28 +39,52 @@ export default function StylingAgentTest() {
 
   const fetchOutfitItems = async (outfits: any[]) => {
     const allItemIds = new Set<string>();
+    const allShoesIds = new Set<string>();
     
     outfits.forEach(outfit => {
       if (outfit.top_id) allItemIds.add(outfit.top_id);
       if (outfit.bottom_id) allItemIds.add(outfit.bottom_id);
-      if (outfit.shoes_id) allItemIds.add(outfit.shoes_id);
+      if (outfit.shoes_id) allShoesIds.add(outfit.shoes_id);
     });
 
-    if (allItemIds.size === 0) return;
+    if (allItemIds.size === 0 && allShoesIds.size === 0) return;
 
-    // Fetch all items (tops, bottoms, shoes) from zara_cloth
-    const { data, error } = await supabase
+    // Fetch clothing items from zara_cloth
+    const { data: clothingData, error: clothingError } = await supabase
       .from('zara_cloth')
-      .select('id, product_name, price, colour, image, category')
+      .select('id, product_name, price, colour, image, images, category')
       .in('id', Array.from(allItemIds));
 
-    if (!error && data) {
-      const itemsMap: Record<string, any> = {};
-      data.forEach(item => {
-        itemsMap[item.id] = item;
-      });
-      setOutfitItems(itemsMap);
-    }
+    // Fetch shoes from shoes table  
+    const { data: shoesData, error: shoesError } = await supabase
+      .from('shoes')
+      .select('id, name, price, color, image, brand, category')
+      .in('id', Array.from(allShoesIds));
+
+    if (clothingError) console.error('Error fetching clothing:', clothingError);
+    if (shoesError) console.error('Error fetching shoes:', shoesError);
+
+    // Combine both into items map
+    const itemsMap: Record<string, any> = {};
+    
+    clothingData?.forEach(item => {
+      itemsMap[item.id] = {
+        ...item,
+        product_name: item.product_name,
+        image: item.image || item.images?.[0] || item.images
+      };
+    });
+
+    shoesData?.forEach(shoe => {
+      itemsMap[shoe.id] = {
+        ...shoe,
+        product_name: shoe.name,
+        colour: shoe.color,
+        image: shoe.image
+      };
+    });
+
+    setOutfitItems(itemsMap);
   };
 
   const testCases = [
