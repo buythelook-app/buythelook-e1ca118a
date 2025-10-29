@@ -16,6 +16,47 @@ const STYLING_AGENT_SYSTEM_PROMPT = `You are an expert fashion stylist AI agent.
 - DO NOT invent or generate random UUIDs - use ONLY IDs from the fetched data
 - IF YOU USE AN ID THAT WASN'T RETURNED BY A fetch_* TOOL, THE OUTFIT WILL FAIL
 
+## HOW TO USE TOOL RESULTS - READ CAREFULLY!
+
+When you call fetch_clothing_items, you receive:
+{
+  "success": true,
+  "items": [
+    { "id": "abc-123-real-uuid", "product_name": "Blue Shirt", "price": 50 },
+    { "id": "def-456-real-uuid", "product_name": "Red Dress", "price": 80 }
+  ]
+}
+
+When you call fetch_shoes, you receive:
+{
+  "success": true,
+  "shoes": [
+    { "id": "xyz-789-real-uuid", "name": "White Sneakers", "price": 60 },
+    { "id": "uvw-012-real-uuid", "name": "Black Heels", "price": 90 }
+  ]
+}
+
+TO USE THESE RESULTS:
+1. The clothing items are in result.items array
+2. The shoes are in result.shoes array
+3. Each item/shoe has an "id" field with the UUID
+4. When creating outfits, use item.id and shoe.id values
+
+EXAMPLE WORKFLOW:
+Step 1: fetch_clothing_items(category="top") returns items with IDs ["uuid-1", "uuid-2"]
+Step 2: fetch_clothing_items(category="bottom") returns items with IDs ["uuid-3", "uuid-4"]
+Step 3: fetch_shoes() returns shoes with IDs ["uuid-5", "uuid-6"]
+Step 4: create_outfit_result using THOSE EXACT IDs:
+  {
+    outfits: [{
+      top_id: "uuid-1",     // ← From step 1 items array
+      bottom_id: "uuid-3",  // ← From step 2 items array
+      shoes_id: "uuid-5"    // ← From step 3 shoes array
+    }]
+  }
+
+NEVER CREATE YOUR OWN UUIDs! Only use the IDs returned by the tools!
+
 ## AVAILABLE CATEGORIES
 When fetching items, use these categories:
 - "top": shirts, t-shirts, tops, bodysuits, polos (CAMISA, CAMISETA, TOPS, BODY, POLO)
@@ -254,12 +295,47 @@ async function executeTool(toolName: string, args: any, supabase: any) {
       }
 
       console.log(`✅ Fetched ${data?.length || 0} shoes from shoes table`);
+      console.log('📋 Sample shoe IDs:', data?.slice(0, 3).map(s => s.id));
       
       return { success: true, shoes: data || [] };
     }
 
     case "create_outfit_result": {
       console.log('✅ Final outfit result created');
+      
+      // UUID validation regex
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
+      // Validate UUIDs format
+      args.outfits?.forEach((outfit: any, idx: number) => {
+        console.log(`Validating outfit ${idx + 1}:`, {
+          top_id: outfit.top_id,
+          bottom_id: outfit.bottom_id,
+          shoes_id: outfit.shoes_id
+        });
+        
+        if (!uuidRegex.test(outfit.top_id)) {
+          console.error(`❌ Invalid top_id in outfit ${idx + 1}:`, outfit.top_id);
+          throw new Error(`Invalid top_id format: ${outfit.top_id}. You must use actual UUIDs from fetch_clothing_items!`);
+        }
+        
+        if (outfit.bottom_id && !uuidRegex.test(outfit.bottom_id)) {
+          console.error(`❌ Invalid bottom_id in outfit ${idx + 1}:`, outfit.bottom_id);
+          throw new Error(`Invalid bottom_id format: ${outfit.bottom_id}. You must use actual UUIDs from fetch_clothing_items!`);
+        }
+        
+        if (!outfit.shoes_id) {
+          console.error(`❌ Missing shoes_id in outfit ${idx + 1}`);
+          throw new Error(`Outfit ${idx + 1} is missing shoes_id! Every outfit MUST have shoes!`);
+        }
+        
+        if (!uuidRegex.test(outfit.shoes_id)) {
+          console.error(`❌ Invalid shoes_id in outfit ${idx + 1}:`, outfit.shoes_id);
+          throw new Error(`Invalid shoes_id format: ${outfit.shoes_id}. You must use actual UUIDs from fetch_shoes!`);
+        }
+      });
+      
+      console.log('✅ All outfit UUIDs are valid format');
       
       // Validate no duplicate items across outfits
       const usedIds = new Set<string>();
