@@ -58,54 +58,34 @@ export default function StylingAgentTest() {
     // Fetch shoes from shoes table  
     const { data: shoesData, error: shoesError } = await supabase
       .from('shoes')
-      .select('id, name, price, color, image, brand, category, you_might_also_like')
+      .select('*')
       .in('id', Array.from(allShoesIds));
 
     if (clothingError) console.error('Error fetching clothing:', clothingError);
     if (shoesError) console.error('Error fetching shoes:', shoesError);
 
-    // Combine both into items map
+    // Combine both into items map - keep raw data, let LookImage handle extraction
     const itemsMap: Record<string, any> = {};
     
     clothingData?.forEach(item => {
-      // zara_cloth.image is an array of URL strings
-      let imageUrl = '/placeholder.svg';
-      if (item.image && Array.isArray(item.image) && item.image.length > 0) {
-        // image is array of strings like ["https://..."]
-        imageUrl = typeof item.image[0] === 'string' ? item.image[0] : '/placeholder.svg';
-      } else if (item.images && Array.isArray(item.images) && item.images.length > 0) {
-        imageUrl = typeof item.images[0] === 'string' ? item.images[0] : '/placeholder.svg';
-      }
-      
       itemsMap[item.id] = {
         ...item,
         product_name: item.product_name,
-        image: imageUrl
+        // Keep raw image data - LookImage will handle extraction
+        image: item.image || item.images
       };
-      console.log('👕 [Clothing] Added item to map:', item.id, item.product_name, imageUrl);
+      console.log('👕 [Clothing] Added item to map:', item.id, item.product_name);
     });
 
     shoesData?.forEach(shoe => {
-      // shoes.you_might_also_like is an array of URL strings (when image is null)
-      let imageUrl = '/placeholder.svg';
-      if (shoe.you_might_also_like && Array.isArray(shoe.you_might_also_like) && shoe.you_might_also_like.length > 0) {
-        // you_might_also_like is array of strings like ["https://..."]
-        imageUrl = typeof shoe.you_might_also_like[0] === 'string' ? shoe.you_might_also_like[0] : '/placeholder.svg';
-      } else if (shoe.image) {
-        if (Array.isArray(shoe.image)) {
-          imageUrl = typeof shoe.image[0] === 'string' ? shoe.image[0] : '/placeholder.svg';
-        } else {
-          imageUrl = typeof shoe.image === 'string' ? shoe.image : '/placeholder.svg';
-        }
-      }
-      
       itemsMap[shoe.id] = {
         ...shoe,
         product_name: shoe.name,
         colour: shoe.color,
-        image: imageUrl
+        // Keep raw image data - LookImage will handle extraction
+        image: shoe.image || shoe.you_might_also_like
       };
-      console.log('👟 [Shoes] Added shoe to map:', shoe.id, shoe.name, imageUrl);
+      console.log('👟 [Shoes] Added shoe to map:', shoe.id, shoe.name);
     });
 
     setOutfitItems(itemsMap);
