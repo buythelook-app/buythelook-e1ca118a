@@ -58,7 +58,7 @@ export default function StylingAgentTest() {
     // Fetch shoes from shoes table  
     const { data: shoesData, error: shoesError } = await supabase
       .from('shoes')
-      .select('id, name, price, color, image, brand, category')
+      .select('id, name, price, color, image, brand, category, you_might_also_like')
       .in('id', Array.from(allShoesIds));
 
     if (clothingError) console.error('Error fetching clothing:', clothingError);
@@ -68,22 +68,46 @@ export default function StylingAgentTest() {
     const itemsMap: Record<string, any> = {};
     
     clothingData?.forEach(item => {
+      // Extract image URL from JSONB array with url objects
+      let imageUrl = '/placeholder.svg';
+      if (item.image && Array.isArray(item.image) && item.image.length > 0) {
+        const firstImage = item.image[0] as any;
+        imageUrl = firstImage?.url || firstImage || '/placeholder.svg';
+      } else if (item.images && Array.isArray(item.images) && item.images.length > 0) {
+        const firstImage = item.images[0] as any;
+        imageUrl = firstImage?.url || firstImage || '/placeholder.svg';
+      }
+      
       itemsMap[item.id] = {
         ...item,
         product_name: item.product_name,
-        image: item.image || item.images?.[0] || item.images
+        image: imageUrl
       };
+      console.log('👕 [Clothing] Added item to map:', item.id, item.product_name, imageUrl);
     });
 
     shoesData?.forEach(shoe => {
+      // Extract image from you_might_also_like JSONB
+      let imageUrl = '/placeholder.svg';
+      if (shoe.you_might_also_like && Array.isArray(shoe.you_might_also_like) && shoe.you_might_also_like.length > 0) {
+        const firstRelated = shoe.you_might_also_like[0] as any;
+        imageUrl = firstRelated?.imageUrl || firstRelated?.image || '/placeholder.svg';
+      } else if (shoe.image) {
+        if (Array.isArray(shoe.image)) {
+          const firstImage = shoe.image[0] as any;
+          imageUrl = firstImage?.url || firstImage || '/placeholder.svg';
+        } else {
+          imageUrl = shoe.image as string;
+        }
+      }
+      
       itemsMap[shoe.id] = {
         ...shoe,
         product_name: shoe.name,
         colour: shoe.color,
-        // Extract image URL from JSONB array or use as-is
-        image: Array.isArray(shoe.image) ? shoe.image[0] : shoe.image
+        image: imageUrl
       };
-      console.log('👟 [Shoes] Added shoe to map:', shoe.id, shoe.name, itemsMap[shoe.id].image);
+      console.log('👟 [Shoes] Added shoe to map:', shoe.id, shoe.name, imageUrl);
     });
 
     setOutfitItems(itemsMap);

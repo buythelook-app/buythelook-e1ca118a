@@ -66,7 +66,7 @@ const TOOLS = [
           limit: {
             type: "number",
             description: "Maximum number of items to return",
-            default: 50
+            default: 100
           }
         },
         required: ["category"],
@@ -88,7 +88,7 @@ const TOOLS = [
           },
           limit: {
             type: "number",
-            default: 30
+            default: 50
           }
         },
         additionalProperties: false
