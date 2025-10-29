@@ -132,29 +132,16 @@ export default function StylingAgentTest() {
     });
 
     // Map shoes - normalize field names to match clothing
-    console.log('👟 [Shoes] Raw shoes data from DB:', shoesData);
-    const shoesWithImages = shoesData?.filter(shoe => shoe.image !== null) || [];
-    console.log(`👟 [Shoes] Filtered ${shoesWithImages.length} shoes with images out of ${shoesData?.length || 0} total`);
-    
-    shoesWithImages.forEach(shoe => {
-      console.log('👟 [Shoes] Processing shoe:', {
-        id: shoe.id,
-        name: shoe.name,
-        image: shoe.image,
-        imageType: typeof shoe.image,
-        imageKeys: shoe.image ? Object.keys(shoe.image) : [],
-        url: shoe.url
-      });
-      
+    shoesData?.forEach(shoe => {
       itemsMap[shoe.id] = {
         ...shoe,
         product_name: shoe.name, // shoes table uses 'name' field
         colour: shoe.color, // shoes table uses 'color' field
         type: 'shoes',
         // Keep raw image data - LookImage will handle extraction
-        image: shoe.image
+        image: shoe.image || shoe.you_might_also_like
       };
-      console.log('👟 [Shoes] Normalized shoe for display:', itemsMap[shoe.id]);
+      console.log('👟 [Shoes] Added shoe to map:', shoe.id, shoe.name);
     });
 
     console.log('📊 [fetchOutfitItems] Final items map:', {
