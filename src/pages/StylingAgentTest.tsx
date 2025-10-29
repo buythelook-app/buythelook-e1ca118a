@@ -102,11 +102,13 @@ export default function StylingAgentTest() {
       console.log('👕 [Clothing] Added item to map:', item.id, item.product_name);
     });
 
+    // Map shoes - normalize field names to match clothing
     shoesData?.forEach(shoe => {
       itemsMap[shoe.id] = {
         ...shoe,
-        product_name: shoe.name,
-        colour: shoe.color,
+        product_name: shoe.name, // shoes table uses 'name' field
+        colour: shoe.color, // shoes table uses 'color' field
+        type: 'shoes',
         // Keep raw image data - LookImage will handle extraction
         image: shoe.image || shoe.you_might_also_like
       };
@@ -446,10 +448,12 @@ export default function StylingAgentTest() {
                                 <div className="space-y-1">
                                   <LookImage 
                                     image={shoesItem.image} 
-                                    title={shoesItem.product_name}
+                                    title={shoesItem.product_name || shoesItem.name || 'נעליים'}
                                     type="shoes"
                                   />
-                                  <p className="text-xs font-medium truncate">{shoesItem.product_name}</p>
+                                  <p className="text-xs font-medium truncate">
+                                    {shoesItem.product_name || shoesItem.name || 'נעליים'}
+                                  </p>
                                   <p className="text-xs text-muted-foreground">₪{shoesItem.price}</p>
                                 </div>
                               )}
