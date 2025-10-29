@@ -172,7 +172,7 @@ export default function StylingAgentTest() {
         bodyType: "X",
         mood: "elegant",
         style: "classic",
-        budget: 500,
+        budget: 300,
         userId: "test-user-1"
       }
     },
@@ -182,7 +182,7 @@ export default function StylingAgentTest() {
         bodyType: "V",
         mood: "relaxed",
         style: "casual",
-        budget: 400,
+        budget: 200,
         userId: "test-user-2"
       }
     },
@@ -192,58 +192,8 @@ export default function StylingAgentTest() {
         bodyType: "A",
         mood: "elegant",
         style: "romantic",
-        budget: 450,
+        budget: 250,
         userId: "test-user-3"
-      }
-    },
-    {
-      name: "Luxury Minimalist",
-      params: {
-        bodyType: "H",
-        mood: "confident",
-        style: "minimalist",
-        budget: 800,
-        userId: "test-user-4"
-      }
-    },
-    {
-      name: "Boho Chic",
-      params: {
-        bodyType: "O",
-        mood: "creative",
-        style: "boohoo",
-        budget: 350,
-        userId: "test-user-5"
-      }
-    },
-    {
-      name: "Sporty Casual",
-      params: {
-        bodyType: "V",
-        mood: "energetic",
-        style: "sporty",
-        budget: 300,
-        userId: "test-user-6"
-      }
-    },
-    {
-      name: "Budget Test (Low)",
-      params: {
-        bodyType: "X",
-        mood: "relaxed",
-        style: "casual",
-        budget: 150,
-        userId: "test-user-7"
-      }
-    },
-    {
-      name: "Premium Test (High)",
-      params: {
-        bodyType: "A",
-        mood: "elegant",
-        style: "romantic",
-        budget: 1000,
-        userId: "test-user-8"
       }
     }
   ];
