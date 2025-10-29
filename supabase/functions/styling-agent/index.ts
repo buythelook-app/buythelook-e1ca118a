@@ -28,7 +28,12 @@ const STYLING_AGENT_SYSTEM_PROMPT = `You are an expert fashion stylist AI agent.
 - Match style preference
 - Consider body type and mood
 - Coordinate colors well
-- No duplicate items across outfits
+
+## CRITICAL: NO DUPLICATE ITEMS
+- Each item can appear in ONLY ONE outfit
+- NEVER reuse the same top_id, bottom_id, or shoes_id across different outfits
+- Track which IDs you've used and ensure each outfit uses UNIQUE items
+- If you run out of unique items, create fewer outfits rather than duplicate items
 - USE ONLY ACTUAL IDS FROM THE DATABASE - DO NOT MAKE UP IDS
 
 ## WHEN TO CALL create_outfit_result
@@ -208,6 +213,28 @@ async function executeTool(toolName: string, args: any, supabase: any) {
 
     case "create_outfit_result": {
       console.log('✅ Final outfit result created');
+      
+      // Validate no duplicate items across outfits
+      const usedIds = new Set<string>();
+      const duplicates: string[] = [];
+      
+      args.outfits?.forEach((outfit: any, idx: number) => {
+        [outfit.top_id, outfit.bottom_id, outfit.shoes_id].forEach(id => {
+          if (id) {
+            if (usedIds.has(id)) {
+              duplicates.push(`Outfit ${idx + 1}: item ${id}`);
+            }
+            usedIds.add(id);
+          }
+        });
+      });
+      
+      if (duplicates.length > 0) {
+        console.warn('⚠️ Found duplicate items across outfits:', duplicates);
+      } else {
+        console.log('✅ All outfits use unique items');
+      }
+      
       return { success: true, result: args };
     }
 
