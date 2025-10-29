@@ -79,7 +79,7 @@ export default function StylingAgentTest() {
       console.log('👟 [fetchOutfitItems] Querying shoes table for IDs:', Array.from(allShoesIds));
       const result = await supabase
         .from('shoes')
-        .select('id, name, price, color, description, image, brand, category, you_might_also_like')
+        .select('id, name, price, color, description, image, brand, category, url')
         .in('id', Array.from(allShoesIds));
       
       shoesData = result.data;
@@ -88,8 +88,22 @@ export default function StylingAgentTest() {
       console.log('👟 [fetchOutfitItems] Shoes query result:', {
         found: shoesData?.length || 0,
         error: shoesError?.message || 'none',
-        data: shoesData
+        sample: shoesData?.[0]
       });
+      
+      // Normalize shoes data to match zara_cloth structure
+      if (shoesData) {
+        shoesData = shoesData.map(shoe => ({
+          ...shoe,
+          product_name: shoe.name,
+          colour: Array.isArray(shoe.color) ? shoe.color[0] : (typeof shoe.color === 'string' ? shoe.color : 'Mixed'),
+          // Extract first image from JSONB if it exists
+          image: shoe.image && typeof shoe.image === 'object' && shoe.image.url 
+            ? [shoe.image.url] 
+            : (Array.isArray(shoe.image) ? shoe.image : [])
+        }));
+        console.log('👟 [fetchOutfitItems] Normalized shoes:', shoesData);
+      }
     }
 
     if (clothingError) {
