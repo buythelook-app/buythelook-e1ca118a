@@ -161,7 +161,7 @@ export default function StylingAgentTest() {
         bodyType: "X",
         mood: "elegant",
         style: "classic",
-        budget: 300,
+        budget: 1000,
         userId: "test-user-1"
       }
     },
@@ -171,7 +171,7 @@ export default function StylingAgentTest() {
         bodyType: "V",
         mood: "relaxed",
         style: "casual",
-        budget: 200,
+        budget: 800,
         userId: "test-user-2"
       }
     },
@@ -181,7 +181,7 @@ export default function StylingAgentTest() {
         bodyType: "A",
         mood: "elegant",
         style: "romantic",
-        budget: 250,
+        budget: 1200,
         userId: "test-user-3"
       }
     }
