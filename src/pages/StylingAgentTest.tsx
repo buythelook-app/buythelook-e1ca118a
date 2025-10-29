@@ -41,13 +41,29 @@ export default function StylingAgentTest() {
     const allItemIds = new Set<string>();
     const allShoesIds = new Set<string>();
     
+    console.log('📦 [fetchOutfitItems] Starting to process outfits:', outfits);
+    
     outfits.forEach(outfit => {
+      console.log('👗 [fetchOutfitItems] Processing outfit:', {
+        top_id: outfit.top_id,
+        bottom_id: outfit.bottom_id,
+        shoes_id: outfit.shoes_id
+      });
+      
       if (outfit.top_id) allItemIds.add(outfit.top_id);
       if (outfit.bottom_id) allItemIds.add(outfit.bottom_id);
       if (outfit.shoes_id) allShoesIds.add(outfit.shoes_id);
     });
 
-    if (allItemIds.size === 0 && allShoesIds.size === 0) return;
+    console.log('🔍 [fetchOutfitItems] Collected IDs:', {
+      clothing: Array.from(allItemIds),
+      shoes: Array.from(allShoesIds)
+    });
+
+    if (allItemIds.size === 0 && allShoesIds.size === 0) {
+      console.warn('⚠️ [fetchOutfitItems] No item IDs found to fetch!');
+      return;
+    }
 
     // Fetch clothing items from zara_cloth
     const { data: clothingData, error: clothingError } = await supabase
@@ -61,8 +77,17 @@ export default function StylingAgentTest() {
       .select('*')
       .in('id', Array.from(allShoesIds));
 
-    if (clothingError) console.error('Error fetching clothing:', clothingError);
-    if (shoesError) console.error('Error fetching shoes:', shoesError);
+    if (clothingError) {
+      console.error('❌ Error fetching clothing:', clothingError);
+    } else {
+      console.log('✅ Fetched clothing items:', clothingData?.length || 0);
+    }
+    
+    if (shoesError) {
+      console.error('❌ Error fetching shoes:', shoesError);
+    } else {
+      console.log('✅ Fetched shoes:', shoesData?.length || 0);
+    }
 
     // Combine both into items map - keep raw data, let LookImage handle extraction
     const itemsMap: Record<string, any> = {};
@@ -86,6 +111,11 @@ export default function StylingAgentTest() {
         image: shoe.image || shoe.you_might_also_like
       };
       console.log('👟 [Shoes] Added shoe to map:', shoe.id, shoe.name);
+    });
+
+    console.log('📊 [fetchOutfitItems] Final items map:', {
+      totalItems: Object.keys(itemsMap).length,
+      ids: Object.keys(itemsMap)
     });
 
     setOutfitItems(itemsMap);
@@ -342,6 +372,24 @@ export default function StylingAgentTest() {
                         const shoesItem = outfitItems[outfit.shoes_id];
                         const outfitId = `outfit-${idx}`;
                         const currentFeedback = feedback[outfitId];
+
+                        console.log(`🎨 [Outfit #${idx + 1}] Rendering:`, {
+                          outfit_ids: {
+                            top: outfit.top_id,
+                            bottom: outfit.bottom_id,
+                            shoes: outfit.shoes_id
+                          },
+                          items_found: {
+                            top: !!topItem,
+                            bottom: !!bottomItem,
+                            shoes: !!shoesItem
+                          },
+                          item_names: {
+                            top: topItem?.product_name,
+                            bottom: bottomItem?.product_name,
+                            shoes: shoesItem?.product_name
+                          }
+                        });
 
                         return (
                           <div key={idx} className="bg-card border rounded-lg p-4">
