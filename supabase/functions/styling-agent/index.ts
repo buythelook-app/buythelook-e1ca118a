@@ -172,30 +172,30 @@ async function executeTool(toolName: string, args: any, supabase: any) {
       // Filter by product_family instead of category
       if (args.category === "top") {
         query = query.or(
-          'product_family.ilike.%CAMISA%,' +      // shirts
-          'product_family.ilike.%CAMISETA%,' +     // t-shirts  
-          'product_family.ilike.%TOPS%,' +         // tops
-          'product_family.ilike.%BODY%,' +         // bodysuits
-          'product_family.ilike.%POLO%'            // polos
+          'product_family.ilike.*CAMISA*,' +      // shirts
+          'product_family.ilike.*CAMISETA*,' +     // t-shirts  
+          'product_family.ilike.*TOPS*,' +         // tops
+          'product_family.ilike.*BODY*,' +         // bodysuits
+          'product_family.ilike.*POLO*'            // polos
         );
       } else if (args.category === "bottom") {
         query = query.or(
-          'product_family.ilike.%PANTALON%,' +     // pants
-          'product_family.ilike.%FALDA%,' +        // skirts
-          'product_family.ilike.%BERMUDA%,' +      // shorts
-          'product_family.ilike.%SHORT%'           // shorts
+          'product_family.ilike.*PANTALON*,' +     // pants
+          'product_family.ilike.*FALDA*,' +        // skirts
+          'product_family.ilike.*BERMUDA*,' +      // shorts
+          'product_family.ilike.*SHORT*'           // shorts
         );
       } else if (args.category === "dress") {
         query = query.or(
-          'product_family.ilike.%VESTIDO%,' +      // dresses
-          'product_family.ilike.%MONO%'            // jumpsuits
+          'product_family.ilike.*VESTIDO*,' +      // dresses
+          'product_family.ilike.*MONO*'            // jumpsuits
         );
       } else if (args.category === "outerwear") {
         query = query.or(
-          'product_family.ilike.%BLAZER%,' +       // blazers
-          'product_family.ilike.%CHAQUETA%,' +     // jackets
-          'product_family.ilike.%ABRIGO%,' +       // coats
-          'product_family.ilike.%CHALECO%'         // vests
+          'product_family.ilike.*BLAZER*,' +       // blazers
+          'product_family.ilike.*CHAQUETA*,' +     // jackets
+          'product_family.ilike.*ABRIGO*,' +       // coats
+          'product_family.ilike.*CHALECO*'         // vests
         );
       }
       // If "all" or no specific category, don't filter by product_family
@@ -209,7 +209,7 @@ async function executeTool(toolName: string, args: any, supabase: any) {
       if (args.colors && args.colors.length > 0) {
         // Convert colors to lowercase for better matching
         const colorPatterns = args.colors.map(c => 
-          `colour.ilike.%${c}%`
+          `colour.ilike.*${c}*`
         ).join(',');
         query = query.or(colorPatterns);
       }
