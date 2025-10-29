@@ -29,8 +29,24 @@ When fetching items, use these categories:
 2. SECOND: Call fetch_clothing_items for bottoms (category: "bottom", limit: 30)
 3. THIRD: Call fetch_clothing_items for dresses (category: "dress", limit: 20)
 4. FOURTH: Call fetch_clothing_items for outerwear (category: "outerwear", limit: 20)
-5. FIFTH: Call fetch_shoes (limit: 30) - ⚠️ ABSOLUTELY MANDATORY! DO NOT SKIP!
+5. FIFTH: Call fetch_shoes (limit: 50) - ⚠️ ABSOLUTELY MANDATORY! DO NOT SKIP!
 6. SIXTH: Call create_outfit_result with 3-5 complete outfits using ONLY the IDs you received
+
+When you call fetch_shoes(), you receive an array of shoe objects:
+[
+  { "id": "uuid-123", "name": "Shoe Name", "price": 50, "color": ["BLACK"], "image": {...} },
+  { "id": "uuid-456", "name": "Another Shoe", "price": 75, "color": ["WHITE"], "image": {...} }
+]
+
+To use shoes in your outfits:
+1. Call fetch_shoes() to get available shoes
+2. Choose a shoe from the array you received
+3. Use that shoe's id (the UUID) as shoes_id in your outfit
+
+IMPORTANT: 
+- The id field contains the UUID you need
+- Only use IDs from shoes you actually received from fetch_shoes
+- Every outfit MUST include shoes_id
 
 ⚠️ CRITICAL: You CANNOT create outfits without shoes!
 ⚠️ You MUST call fetch_shoes BEFORE calling create_outfit_result!
@@ -97,16 +113,17 @@ const TOOLS = [
     type: "function",
     function: {
       name: "fetch_shoes",
-      description: "Fetch shoes from the database",
+      description: "Fetch shoes from database. Returns array of shoes with: id (UUID), name, price, color (array), image (JSONB). Only returns shoes that have images available.",
       parameters: {
         type: "object",
         properties: {
           max_price: {
             type: "number",
-            description: "Maximum price"
+            description: "Maximum price filter"
           },
           limit: {
             type: "number",
+            description: "Max number of shoes to return",
             default: 50
           }
         },
@@ -236,11 +253,11 @@ async function executeTool(toolName: string, args: any, supabase: any) {
     }
 
     case "fetch_shoes": {
-      // Fetch shoes from shoes table
       let query = supabase
         .from('shoes')
-        .select('id, name, price, color, description, image, brand, category')
-        .limit(args.limit || 30);
+        .select('id, name, price, color, image')
+        .not('image', 'is', null)  // Only shoes with images
+        .limit(args.limit || 50);   // Increased limit
 
       if (args.max_price) {
         query = query.lte('price', args.max_price);
@@ -249,13 +266,14 @@ async function executeTool(toolName: string, args: any, supabase: any) {
       const { data, error } = await query;
       
       if (error) {
-        console.error('❌ Error fetching shoes:', error);
+        console.error('Error fetching shoes:', error);
         throw error;
       }
-
-      console.log(`✅ Fetched ${data?.length || 0} shoes from shoes table`);
       
-      return { success: true, shoes: data || [] };
+      console.log(`✅ Fetched ${data?.length || 0} shoes with images`);
+      
+      // Return just the array (simpler for LLM)
+      return data || [];
     }
 
     case "create_outfit_result": {
