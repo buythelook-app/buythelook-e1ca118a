@@ -68,14 +68,13 @@ export default function StylingAgentTest() {
     const itemsMap: Record<string, any> = {};
     
     clothingData?.forEach(item => {
-      // Extract image URL from JSONB array with url objects
+      // zara_cloth.image is an array of URL strings
       let imageUrl = '/placeholder.svg';
       if (item.image && Array.isArray(item.image) && item.image.length > 0) {
-        const firstImage = item.image[0] as any;
-        imageUrl = firstImage?.url || firstImage || '/placeholder.svg';
+        // image is array of strings like ["https://..."]
+        imageUrl = typeof item.image[0] === 'string' ? item.image[0] : '/placeholder.svg';
       } else if (item.images && Array.isArray(item.images) && item.images.length > 0) {
-        const firstImage = item.images[0] as any;
-        imageUrl = firstImage?.url || firstImage || '/placeholder.svg';
+        imageUrl = typeof item.images[0] === 'string' ? item.images[0] : '/placeholder.svg';
       }
       
       itemsMap[item.id] = {
@@ -87,17 +86,16 @@ export default function StylingAgentTest() {
     });
 
     shoesData?.forEach(shoe => {
-      // Extract image from you_might_also_like JSONB
+      // shoes.you_might_also_like is an array of URL strings (when image is null)
       let imageUrl = '/placeholder.svg';
       if (shoe.you_might_also_like && Array.isArray(shoe.you_might_also_like) && shoe.you_might_also_like.length > 0) {
-        const firstRelated = shoe.you_might_also_like[0] as any;
-        imageUrl = firstRelated?.imageUrl || firstRelated?.image || '/placeholder.svg';
+        // you_might_also_like is array of strings like ["https://..."]
+        imageUrl = typeof shoe.you_might_also_like[0] === 'string' ? shoe.you_might_also_like[0] : '/placeholder.svg';
       } else if (shoe.image) {
         if (Array.isArray(shoe.image)) {
-          const firstImage = shoe.image[0] as any;
-          imageUrl = firstImage?.url || firstImage || '/placeholder.svg';
+          imageUrl = typeof shoe.image[0] === 'string' ? shoe.image[0] : '/placeholder.svg';
         } else {
-          imageUrl = shoe.image as string;
+          imageUrl = typeof shoe.image === 'string' ? shoe.image : '/placeholder.svg';
         }
       }
       
