@@ -15,11 +15,23 @@ const STYLING_AGENT_SYSTEM_PROMPT = `You are an expert fashion stylist AI agent.
 - CRITICALLY IMPORTANT: You MUST use ONLY the actual item IDs that were returned from fetch_clothing_items and fetch_shoes
 - DO NOT invent or generate random UUIDs - use ONLY IDs from the fetched data
 
+## AVAILABLE CATEGORIES
+When fetching items, use these categories:
+- "top": shirts, t-shirts, tops, bodysuits, polos (CAMISA, CAMISETA, TOPS, BODY, POLO)
+- "bottom": pants, skirts, shorts, bermudas (PANTALON, FALDA, BERMUDA, SHORT)
+- "dress": dresses, jumpsuits, overalls (VESTIDO, MONO)
+- "outerwear": blazers, jackets, coats, vests (BLAZER, CHAQUETA, ABRIGO, CHALECO)
+- "all": no category filter (use for variety)
+
 ## YOUR TASK - FOLLOW EXACTLY IN THIS ORDER
-1. FIRST: Call fetch_clothing_items for tops (category: "top")
-2. SECOND: Call fetch_clothing_items for bottoms (category: "bottom")  
-3. THIRD: Call fetch_shoes - THIS IS MANDATORY
-4. FOURTH: Call create_outfit_result with 3-5 complete outfits using ONLY the IDs you received
+1. FIRST: Call fetch_clothing_items for tops (category: "top", limit: 30)
+2. SECOND: Call fetch_clothing_items for bottoms (category: "bottom", limit: 30)
+3. THIRD: Call fetch_clothing_items for dresses (category: "dress", limit: 20)
+4. FOURTH: Call fetch_clothing_items for outerwear (category: "outerwear", limit: 20)
+5. FIFTH: Call fetch_shoes (limit: 30) - THIS IS MANDATORY
+6. SIXTH: Call create_outfit_result with 3-5 complete outfits using ONLY the IDs you received
+
+This gives you ~130 items to work with for creating diverse outfits!
 
 ## OUTFIT REQUIREMENTS
 - EVERY outfit MUST have: top + bottom + shoes (or dress + shoes)
@@ -37,7 +49,7 @@ const STYLING_AGENT_SYSTEM_PROMPT = `You are an expert fashion stylist AI agent.
 - USE ONLY ACTUAL IDS FROM THE DATABASE - DO NOT MAKE UP IDS
 
 ## WHEN TO CALL create_outfit_result
-After you have fetched items from ALL THREE categories (tops, bottoms, AND shoes), immediately call create_outfit_result. You MUST fetch shoes before creating outfits. Do NOT respond with text.`;
+After you have fetched items from ALL categories (tops, bottoms, dresses, outerwear, AND shoes), immediately call create_outfit_result. You MUST fetch shoes before creating outfits. Do NOT respond with text.`;
 
 
 // Tool definitions for LLM
@@ -46,13 +58,14 @@ const TOOLS = [
     type: "function",
     function: {
       name: "fetch_clothing_items",
-      description: "Fetch clothing items (tops, bottoms, dresses) from the database with filters",
+      description: "Fetch clothing items from database. Categories based on product_family field. Call multiple times for variety!",
       parameters: {
         type: "object",
         properties: {
           category: {
             type: "string",
-            description: "Type of clothing to fetch - use 'top' for shirts/blouses/dresses, 'bottom' for pants/skirts"
+            enum: ["top", "bottom", "dress", "outerwear", "all"],
+            description: "Type of clothing: top (shirts/t-shirts), bottom (pants/skirts), dress, outerwear (blazers/jackets), or all"
           },
           max_price: {
             type: "number",
@@ -61,11 +74,11 @@ const TOOLS = [
           colors: {
             type: "array",
             items: { type: "string" },
-            description: "Preferred colors to filter by"
+            description: "Preferred colors (will search in colour field)"
           },
           limit: {
             type: "number",
-            description: "Maximum number of items to return",
+            description: "Maximum number of items to return (recommend 50-100 per call)",
             default: 100
           }
         },
@@ -153,29 +166,56 @@ async function executeTool(toolName: string, args: any, supabase: any) {
     case "fetch_clothing_items": {
       let query = supabase
         .from('zara_cloth')
-        .select('id, product_name, price, colour, description, category, image, images')
-        .eq('availability', true)
-        .limit(args.limit || 50);
+        .select('id, product_name, product_family, colour, price, image, availability')
+        .eq('availability', true);
 
-      // Filter by category if specified
-      if (args.category) {
-        if (args.category === 'top') {
-          // Include tops, shirts, blouses, dresses
-          query = query.or('category.ilike.%top%,category.ilike.%shirt%,category.ilike.%blouse%,category.ilike.%dress%');
-        } else if (args.category === 'bottom') {
-          // Include pants, skirts, trousers
-          query = query.or('category.ilike.%pant%,category.ilike.%skirt%,category.ilike.%trouser%');
-        }
+      // Filter by product_family instead of category
+      if (args.category === "top") {
+        query = query.or(
+          'product_family.ilike.%CAMISA%,' +      // shirts
+          'product_family.ilike.%CAMISETA%,' +     // t-shirts  
+          'product_family.ilike.%TOPS%,' +         // tops
+          'product_family.ilike.%BODY%,' +         // bodysuits
+          'product_family.ilike.%POLO%'            // polos
+        );
+      } else if (args.category === "bottom") {
+        query = query.or(
+          'product_family.ilike.%PANTALON%,' +     // pants
+          'product_family.ilike.%FALDA%,' +        // skirts
+          'product_family.ilike.%BERMUDA%,' +      // shorts
+          'product_family.ilike.%SHORT%'           // shorts
+        );
+      } else if (args.category === "dress") {
+        query = query.or(
+          'product_family.ilike.%VESTIDO%,' +      // dresses
+          'product_family.ilike.%MONO%'            // jumpsuits
+        );
+      } else if (args.category === "outerwear") {
+        query = query.or(
+          'product_family.ilike.%BLAZER%,' +       // blazers
+          'product_family.ilike.%CHAQUETA%,' +     // jackets
+          'product_family.ilike.%ABRIGO%,' +       // coats
+          'product_family.ilike.%CHALECO%'         // vests
+        );
       }
+      // If "all" or no specific category, don't filter by product_family
 
+      // Price filter
       if (args.max_price) {
         query = query.lte('price', args.max_price);
       }
 
+      // Color filter
       if (args.colors && args.colors.length > 0) {
-        const colorFilters = args.colors.map((c: string) => `colour.ilike.%${c}%`).join(',');
-        query = query.or(colorFilters);
+        // Convert colors to lowercase for better matching
+        const colorPatterns = args.colors.map(c => 
+          `colour.ilike.%${c}%`
+        ).join(',');
+        query = query.or(colorPatterns);
       }
+
+      // Limit
+      query = query.limit(args.limit || 100); // Increased from 50 to 100
 
       const { data, error } = await query;
       
@@ -184,7 +224,8 @@ async function executeTool(toolName: string, args: any, supabase: any) {
         throw error;
       }
 
-      console.log(`✅ Fetched ${data?.length || 0} clothing items (category: ${args.category})`);
+      console.log(`✅ Fetched ${data?.length || 0} clothing items for category: ${args.category}`);
+      
       return { success: true, items: data || [] };
     }
 
