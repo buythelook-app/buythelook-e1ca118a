@@ -255,8 +255,8 @@ async function executeTool(toolName: string, args: any, supabase: any) {
     case "fetch_shoes": {
       let query = supabase
         .from('shoes')
-        .select('id, name, price, color, image')
-        .not('image', 'is', null)  // Only shoes with images
+        .select('id, name, price, color, you_might_also_like')
+        .not('you_might_also_like', 'is', null)  // Only shoes with images
         .limit(args.limit || 50);   // Increased limit
 
       if (args.max_price) {

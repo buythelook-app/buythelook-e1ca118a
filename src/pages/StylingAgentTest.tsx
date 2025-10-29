@@ -79,7 +79,7 @@ export default function StylingAgentTest() {
       console.log('👟 [fetchOutfitItems] Querying shoes table for IDs:', Array.from(allShoesIds));
       const result = await supabase
         .from('shoes')
-        .select('id, name, price, color, description, image, brand, category, url')
+        .select('id, name, price, color, description, you_might_also_like, brand, category, url')
         .in('id', Array.from(allShoesIds));
       
       shoesData = result.data;
@@ -97,10 +97,10 @@ export default function StylingAgentTest() {
           ...shoe,
           product_name: shoe.name,
           colour: Array.isArray(shoe.color) ? shoe.color[0] : (typeof shoe.color === 'string' ? shoe.color : 'Mixed'),
-          // Extract first image from JSONB if it exists
-          image: shoe.image && typeof shoe.image === 'object' && shoe.image.url 
-            ? [shoe.image.url] 
-            : (Array.isArray(shoe.image) ? shoe.image : [])
+          // Extract first image from you_might_also_like array
+          image: Array.isArray(shoe.you_might_also_like) && shoe.you_might_also_like.length > 0
+            ? [shoe.you_might_also_like[0]]
+            : []
         }));
         console.log('👟 [fetchOutfitItems] Normalized shoes:', shoesData);
       }
@@ -138,8 +138,10 @@ export default function StylingAgentTest() {
         product_name: shoe.name, // shoes table uses 'name' field
         colour: shoe.color, // shoes table uses 'color' field
         type: 'shoes',
-        // Keep raw image data - LookImage will handle extraction
-        image: shoe.image || shoe.you_might_also_like
+        // Extract first image URL from you_might_also_like array
+        image: Array.isArray(shoe.you_might_also_like) && shoe.you_might_also_like.length > 0
+          ? [shoe.you_might_also_like[0]]
+          : []
       };
       console.log('👟 [Shoes] Added shoe to map:', shoe.id, shoe.name);
     });
