@@ -71,11 +71,26 @@ export default function StylingAgentTest() {
       .select('id, product_name, price, colour, image, images, category')
       .in('id', Array.from(allItemIds));
 
-    // Fetch shoes from shoes table  
-    const { data: shoesData, error: shoesError } = await supabase
-      .from('shoes')
-      .select('*')
-      .in('id', Array.from(allShoesIds));
+    // Fetch shoes from shoes table
+    let shoesData = null;
+    let shoesError = null;
+    
+    if (allShoesIds.size > 0) {
+      console.log('👟 [fetchOutfitItems] Querying shoes table for IDs:', Array.from(allShoesIds));
+      const result = await supabase
+        .from('shoes')
+        .select('id, name, price, color, description, image, brand, category, you_might_also_like')
+        .in('id', Array.from(allShoesIds));
+      
+      shoesData = result.data;
+      shoesError = result.error;
+      
+      console.log('👟 [fetchOutfitItems] Shoes query result:', {
+        found: shoesData?.length || 0,
+        error: shoesError?.message || 'none',
+        data: shoesData
+      });
+    }
 
     if (clothingError) {
       console.error('❌ Error fetching clothing:', clothingError);
