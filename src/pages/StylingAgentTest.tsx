@@ -133,7 +133,10 @@ export default function StylingAgentTest() {
 
     // Map shoes - normalize field names to match clothing
     console.log('👟 [Shoes] Raw shoes data from DB:', shoesData);
-    shoesData?.forEach(shoe => {
+    const shoesWithImages = shoesData?.filter(shoe => shoe.image !== null) || [];
+    console.log(`👟 [Shoes] Filtered ${shoesWithImages.length} shoes with images out of ${shoesData?.length || 0} total`);
+    
+    shoesWithImages.forEach(shoe => {
       console.log('👟 [Shoes] Processing shoe:', {
         id: shoe.id,
         name: shoe.name,
@@ -149,7 +152,7 @@ export default function StylingAgentTest() {
         colour: shoe.color, // shoes table uses 'color' field
         type: 'shoes',
         // Keep raw image data - LookImage will handle extraction
-        image: shoe.image || shoe.you_might_also_like || shoe.url
+        image: shoe.image
       };
       console.log('👟 [Shoes] Normalized shoe for display:', itemsMap[shoe.id]);
     });

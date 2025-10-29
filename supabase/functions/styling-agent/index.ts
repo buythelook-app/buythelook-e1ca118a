@@ -277,10 +277,11 @@ async function executeTool(toolName: string, args: any, supabase: any) {
     }
 
     case "fetch_shoes": {
-      // Fetch shoes from shoes table
+      // Fetch shoes from shoes table - ONLY shoes with images!
       let query = supabase
         .from('shoes')
         .select('id, name, price, color, description, image, brand, category')
+        .not('image', 'is', null)  // CRITICAL: Only shoes with images!
         .limit(args.limit || 30);
 
       if (args.max_price) {
@@ -294,7 +295,7 @@ async function executeTool(toolName: string, args: any, supabase: any) {
         throw error;
       }
 
-      console.log(`✅ Fetched ${data?.length || 0} shoes from shoes table`);
+      console.log(`✅ Fetched ${data?.length || 0} shoes WITH images from shoes table`);
       console.log('📋 Sample shoe IDs:', data?.slice(0, 3).map(s => s.id));
       
       return { success: true, shoes: data || [] };
