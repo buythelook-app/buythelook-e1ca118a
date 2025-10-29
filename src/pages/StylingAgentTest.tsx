@@ -80,8 +80,10 @@ export default function StylingAgentTest() {
         ...shoe,
         product_name: shoe.name,
         colour: shoe.color,
-        image: shoe.image
+        // Extract image URL from JSONB array or use as-is
+        image: Array.isArray(shoe.image) ? shoe.image[0] : shoe.image
       };
+      console.log('👟 [Shoes] Added shoe to map:', shoe.id, shoe.name, itemsMap[shoe.id].image);
     });
 
     setOutfitItems(itemsMap);
