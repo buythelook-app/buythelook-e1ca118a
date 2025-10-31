@@ -100,6 +100,46 @@ EXAMPLE BALANCED OUTFITS:
 - DO NOT invent or generate random UUIDs - use ONLY IDs from the fetched data
 - IF YOU USE AN ID THAT WASN'T RETURNED BY A fetch_* TOOL, THE OUTFIT WILL FAIL
 
+## OCCASION-BASED STYLING RULES
+
+CRITICAL: Adapt outfit style based on the occasion:
+
+✓ WORK:
+  - Professional, polished, structured pieces
+  - Blazers, tailored pants, pencil skirts, button-up shirts
+  - Classic pumps, loafers, oxford shoes
+  - Neutral colors, minimal patterns
+  - AVOID: casual t-shirts, sneakers, ripped jeans
+
+✓ CASUAL:
+  - Relaxed, comfortable, everyday pieces
+  - T-shirts, casual blouses, jeans, casual pants, sweaters
+  - Sneakers, flat sandals, casual boots
+  - Mix of colors and patterns welcome
+  - AVOID: overly formal blazers, dress shoes, cocktail dresses
+
+✓ EVENING:
+  - Elegant, sophisticated, dressy pieces
+  - Cocktail dresses, dressy tops, tailored pants, skirts
+  - Heels, elegant flats, dressy boots
+  - Rich colors, luxe fabrics, statement pieces
+  - AVOID: casual sneakers, basic t-shirts, gym wear
+
+✓ WEEKEND:
+  - Comfortable, laid-back, fun pieces
+  - Casual dresses, comfortable tops, relaxed pants, skirts
+  - Comfortable shoes, sneakers, sandals, casual boots
+  - Playful colors and patterns
+  - AVOID: business suits, formal blazers, office wear
+
+EXAMPLE OUTFITS:
+✅ WORK: Tailored blazer + slim trousers + pumps
+✅ CASUAL: Cotton t-shirt + jeans + white sneakers  
+✅ EVENING: Silk blouse + pencil skirt + heels
+✅ WEEKEND: Loose sweater + comfortable pants + casual boots
+❌ WORK: Oversized hoodie + ripped jeans + sneakers (too casual!)
+❌ CASUAL: Business blazer + formal trousers + heels (too formal!)
+
 ## AVAILABLE CATEGORIES
 When fetching items, use these categories:
 - "top": shirts, t-shirts, tops, bodysuits, polos (CAMISA, CAMISETA, TOPS, BODY, POLO)
@@ -374,16 +414,27 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-    const { bodyType, mood, style, budget, userId } = await req.json();
-    console.log('📝 Request params:', { bodyType, mood, style, budget, userId });
+    const { bodyType, mood, style, budget, occasion, userId } = await req.json();
+    console.log('📝 Request params:', { bodyType, mood, style, budget, occasion, userId });
 
-    // Build user context prompt
-    const userPrompt = `Create outfit recommendations for:
+    // Build user context prompt with occasion
+    const userPrompt = `Create ${occasion || 'versatile'} outfits for:
 - Body Type: ${bodyType || 'not specified'}
 - Mood: ${mood || 'versatile'}
 - Style: ${style || 'classic'}
 - Maximum Budget per outfit: $${budget || 200}
+- Occasion: ${occasion || 'general'} (IMPORTANT: Follow the ${occasion?.toUpperCase()} styling rules!)
 - User ID: ${userId}
+
+CRITICAL REMINDERS:
+- You MUST call fetch_shoes() - outfits without shoes will FAIL
+- Balance proportions (loose + fitted OR fitted + any)
+- Match the formality level to ${occasion || 'general'} occasion
+- For CASUAL: choose relaxed, everyday pieces (t-shirts, jeans, sneakers)
+- For WORK: choose professional, structured pieces (blazers, trousers, pumps)
+- For EVENING: choose elegant, dressy pieces (cocktail attire, heels)
+- For WEEKEND: choose comfortable, laid-back pieces (casual comfort)
+- Use ONLY item IDs from the fetch_* tool responses
 
 Please use the tools to fetch appropriate items and create 3-5 complete outfits. Start by fetching tops, then bottoms, then shoes.`;
 
