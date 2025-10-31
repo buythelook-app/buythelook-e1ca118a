@@ -174,6 +174,16 @@ export function usePersonalizedLooks() {
       const bottoms = allItems.filter(item => item.type === 'bottom');
       const shoes = allItems.filter(item => item.type === 'shoes');
       
+      logger.info('👠 [usePersonalizedLooks] חלוקת פריטים לפי occasion', {
+        context: 'usePersonalizedLooks',
+        data: { 
+          totalTops: tops.length,
+          totalBottoms: bottoms.length,
+          totalShoes: shoes.length,
+          occasionsCount: occasions.length
+        }
+      });
+      
       occasions.forEach((occasion, index) => {
         // Distribute items evenly across occasions
         const occasionItems: DashboardItem[] = [];
@@ -181,19 +191,55 @@ export function usePersonalizedLooks() {
         // Add tops for this occasion
         const topCount = Math.ceil(tops.length / occasions.length);
         const topStartIdx = index * topCount;
-        occasionItems.push(...tops.slice(topStartIdx, topStartIdx + topCount));
+        const occasionTops = tops.slice(topStartIdx, topStartIdx + topCount);
+        occasionItems.push(...occasionTops);
         
         // Add bottoms for this occasion
         const bottomCount = Math.ceil(bottoms.length / occasions.length);
         const bottomStartIdx = index * bottomCount;
-        occasionItems.push(...bottoms.slice(bottomStartIdx, bottomStartIdx + bottomCount));
+        const occasionBottoms = bottoms.slice(bottomStartIdx, bottomStartIdx + bottomCount);
+        occasionItems.push(...occasionBottoms);
         
-        // Add shoes for this occasion - important! All occasions need shoes
-        const shoeCount = Math.ceil(shoes.length / occasions.length);
-        const shoeStartIdx = index * shoeCount;
-        occasionItems.push(...shoes.slice(shoeStartIdx, shoeStartIdx + shoeCount));
+        // CRITICAL FIX: Make sure EVERY occasion gets at least one shoe!
+        // If we have shoes, use round-robin distribution to ensure coverage
+        if (shoes.length > 0) {
+          const shoeCount = Math.max(1, Math.ceil(shoes.length / occasions.length));
+          const shoeStartIdx = index * shoeCount;
+          const occasionShoes = shoes.slice(shoeStartIdx, Math.min(shoeStartIdx + shoeCount, shoes.length));
+          
+          // If this occasion didn't get shoes (e.g., last occasion with few shoes), take from beginning
+          if (occasionShoes.length === 0) {
+            occasionShoes.push(shoes[index % shoes.length]);
+          }
+          
+          occasionItems.push(...occasionShoes);
+          
+          logger.info(`👠 [usePersonalizedLooks] ${occasion} - נעליים שהתקבלו`, {
+            context: 'usePersonalizedLooks',
+            data: { 
+              occasion,
+              shoesCount: occasionShoes.length,
+              shoeIds: occasionShoes.map(s => s.id)
+            }
+          });
+        } else {
+          logger.error(`❌ [usePersonalizedLooks] ${occasion} - אין נעליים כלל!`, {
+            context: 'usePersonalizedLooks'
+          });
+        }
         
         outfitsByOccasion[occasion] = occasionItems;
+        
+        logger.info(`✅ [usePersonalizedLooks] ${occasion} - סיכום פריטים`, {
+          context: 'usePersonalizedLooks',
+          data: {
+            occasion,
+            tops: occasionTops.length,
+            bottoms: occasionBottoms.length,
+            shoes: occasionItems.filter(i => i.type === 'shoes').length,
+            total: occasionItems.length
+          }
+        });
       });
 
       logger.info('✅ [usePersonalizedLooks] חילקנו לוקים לפי אוקזיה', {
