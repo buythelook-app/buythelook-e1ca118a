@@ -54,3 +54,7 @@ cors = true
 [functions.styling-agent]
 verify_jwt = false
 cors = true
+
+[functions.validation-agent]
+verify_jwt = false
+cors = true

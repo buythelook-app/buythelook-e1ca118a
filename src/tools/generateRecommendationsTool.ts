@@ -1,11 +1,11 @@
 
 /**
- * Tool for generating styling recommendations
- * Provides styling tips and additional context for outfits
+ * Tool for generating detailed styling recommendations
+ * Provides specific, actionable styling tips with accessory suggestions
  */
 export const GenerateRecommendationsTool = {
   name: "GenerateRecommendationsTool",
-  description: "Enhances outfit with explanations, alternatives or styling tips",
+  description: "Generate 3-5 specific styling tips including accessory suggestions, styling hacks, and occasion alternatives. Be detailed and avoid generic advice.",
   execute: async (outfit: {
     top: {
       color: string;
