@@ -11,6 +11,8 @@ import { ShippingAddress } from "./ShippingAddress";
 import { UserDropdownMenu } from "./navbar/UserDropdownMenu";
 import { useCalendarSync } from "./navbar/CalendarSync";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
+import { CreditsDisplay } from "./navbar/CreditsDisplay";
+import { useCreditsSystem } from "@/hooks/useCreditsSystem";
 import { useCartStore } from "./Cart";
 import { Badge } from "./ui/badge";
 import { supabase } from "@/lib/supabase";
@@ -24,6 +26,7 @@ export const Navbar = () => {
   const { items, looks } = useCartStore();
   const [firstName, setFirstName] = useState<string>("");
   const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const { creditsData } = useCreditsSystem();
 
   const totalLooks = favorites.length;
   const displayCount = totalLooks > 9 ? '9+' : totalLooks.toString();
@@ -128,6 +131,12 @@ export const Navbar = () => {
           
           {isAuthenticated ? (
             <>
+              {!creditsData.isLoading && (
+                <CreditsDisplay 
+                  credits={creditsData.credits} 
+                  variant={creditsData.variant} 
+                />
+              )}
               <Link to="/my-list" className="hover:text-netflix-accent relative">
                 <Heart className="h-5 w-5" />
                 {totalLooks > 0 && (

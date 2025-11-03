@@ -46,31 +46,37 @@ export type Database = {
           agent_name: string
           body_type: string | null
           id: string
+          remaining_credits: number | null
           result: Json
           score: number
           status: string
           timestamp: string
           user_id: string | null
+          variant: string | null
         }
         Insert: {
           agent_name: string
           body_type?: string | null
           id?: string
+          remaining_credits?: number | null
           result: Json
           score: number
           status?: string
           timestamp?: string
           user_id?: string | null
+          variant?: string | null
         }
         Update: {
           agent_name?: string
           body_type?: string | null
           id?: string
+          remaining_credits?: number | null
           result?: Json
           score?: number
           status?: string
           timestamp?: string
           user_id?: string | null
+          variant?: string | null
         }
         Relationships: []
       }
@@ -98,6 +104,54 @@ export type Database = {
           properties?: Json | null
           session_id?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      calendar_events: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_time: string | null
+          event_type: string | null
+          google_event_id: string
+          id: string
+          is_synced: boolean | null
+          location: string | null
+          start_time: string
+          suggested_look_ids: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_time?: string | null
+          event_type?: string | null
+          google_event_id: string
+          id?: string
+          is_synced?: boolean | null
+          location?: string | null
+          start_time: string
+          suggested_look_ids?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_time?: string | null
+          event_type?: string | null
+          google_event_id?: string
+          id?: string
+          is_synced?: boolean | null
+          location?: string | null
+          start_time?: string
+          suggested_look_ids?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -415,7 +469,9 @@ export type Database = {
           email: string | null
           id: string
           name: string | null
+          pricing_variant: string | null
           updated_at: string | null
+          user_credits: number | null
         }
         Insert: {
           avatar_url?: string | null
@@ -423,7 +479,9 @@ export type Database = {
           email?: string | null
           id: string
           name?: string | null
+          pricing_variant?: string | null
           updated_at?: string | null
+          user_credits?: number | null
         }
         Update: {
           avatar_url?: string | null
@@ -431,7 +489,9 @@ export type Database = {
           email?: string | null
           id?: string
           name?: string | null
+          pricing_variant?: string | null
           updated_at?: string | null
+          user_credits?: number | null
         }
         Relationships: []
       }
@@ -645,6 +705,39 @@ export type Database = {
           interaction_type?: string
           item_id?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          credits_purchased: number
+          currency: string | null
+          id: string
+          payment_status: string | null
+          user_id: string
+          variant: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          credits_purchased: number
+          currency?: string | null
+          id?: string
+          payment_status?: string | null
+          user_id: string
+          variant: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          credits_purchased?: number
+          currency?: string | null
+          id?: string
+          payment_status?: string | null
+          user_id?: string
+          variant?: string
         }
         Relationships: []
       }

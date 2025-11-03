@@ -24,6 +24,8 @@ export const SignUpForm = () => {
     console.log('🔵 SignUp form submitted', { email, name, passwordLength: password.length });
     setIsSubmitting(true);
     
+    // Randomly assign A/B variant (50/50 split)
+    const variant = Math.random() < 0.5 ? 'A' : 'B';
 
     try {
       console.log('🔵 Calling Supabase signUp...');
@@ -34,9 +36,28 @@ export const SignUpForm = () => {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
             name: name,
+            pricing_variant: variant,
           }
         }
       });
+      
+      // Update profile with variant and initial credits
+      if (data.user) {
+        await supabase
+          .from('profiles')
+          .update({ 
+            pricing_variant: variant,
+            user_credits: 3 
+          })
+          .eq('id', data.user.id);
+        
+        // Log analytics for A/B test assignment
+        await supabase.from('analytics_events').insert({
+          user_id: data.user.id,
+          event: 'user_variant_assigned',
+          properties: { variant },
+        });
+      }
 
       console.log('🔵 SignUp response:', { data, error });
 
