@@ -114,6 +114,22 @@ export const LookSuggestions = () => {
     navigate('/cart');
   };
 
+  const handleBuyTheLook = () => {
+    if (!dashboardItems || dashboardItems.length === 0) return;
+    
+    // פתיחת כל הפריטים בחלונות נפרדים
+    dashboardItems.forEach((item) => {
+      if (item.affiliate_link) {
+        window.open(item.affiliate_link, '_blank', 'noopener,noreferrer');
+      }
+    });
+    
+    toast({
+      title: "Opening stores",
+      description: `Opening ${dashboardItems.length} product pages...`,
+    });
+  };
+
   const mapItemType = (type: string): 'top' | 'bottom' | 'dress' | 'shoes' | 'accessory' | 'sunglasses' | 'outerwear' => {
     if (!type) {
       console.warn('Empty type received in mapItemType');
@@ -439,7 +455,7 @@ export const LookSuggestions = () => {
                     <LookCanvas items={canvasItems} width={300} height={480} />
                     <div className="absolute bottom-0 left-4 right-4 flex justify-between gap-2">
                       <Button 
-                        onClick={() => handleAddToCart(dashboardItems)}
+                        onClick={handleBuyTheLook}
                         className="bg-netflix-accent hover:bg-netflix-accent/80 shadow-lg flex-1 text-xs h-8"
                         disabled={isRefetching || isGenerating || isGeneratingEnhanced || !hasAllRequiredItems()}
                       >
