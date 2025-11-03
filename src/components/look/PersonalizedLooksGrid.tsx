@@ -12,6 +12,7 @@ interface PersonalizedLooksGridProps {
   isError: boolean;
   occasionOutfits: { [key: string]: DashboardItem[] };
   occasions: string[];
+  combinations: { [key: string]: number };
   createLookFromItems: (items: any[], occasion: string, index: number) => Look | null;
   handleShuffleLook: (occasion: string) => void;
   handleAddToCart: (look: any) => void;
@@ -24,6 +25,7 @@ export const PersonalizedLooksGrid = memo(({
   isError,
   occasionOutfits,
   occasions,
+  combinations,
   createLookFromItems,
   handleShuffleLook,
   handleAddToCart,
@@ -31,8 +33,8 @@ export const PersonalizedLooksGrid = memo(({
   userStyleProfile
 }: PersonalizedLooksGridProps) => {
 
-  // Track used items for this render session
-  const usedItemsInCurrentSession = useMemo(() => new Set<string>(), [occasionOutfits]);
+  // Track used items for this render session - reset when combinations change
+  const usedItemsInCurrentSession = useMemo(() => new Set<string>(), [occasionOutfits, combinations]);
 
   // Function to filter out already used items for this session
   const getAvailableItems = (items: DashboardItem[]): DashboardItem[] => {
