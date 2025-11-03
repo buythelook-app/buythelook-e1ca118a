@@ -33,19 +33,6 @@ export const PersonalizedLooksGrid = memo(({
   userStyleProfile
 }: PersonalizedLooksGridProps) => {
 
-  // Track used items for this render session - reset when combinations change
-  const usedItemsInCurrentSession = useMemo(() => new Set<string>(), [occasionOutfits, combinations]);
-
-  // Function to filter out already used items for this session
-  const getAvailableItems = (items: DashboardItem[]): DashboardItem[] => {
-    return items.filter(item => !usedItemsInCurrentSession.has(item.id));
-  };
-
-  // Function to mark items as used in this session
-  const markItemsAsUsed = (items: DashboardItem[]) => {
-    items.forEach(item => usedItemsInCurrentSession.add(item.id));
-  };
-
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -84,12 +71,8 @@ export const PersonalizedLooksGrid = memo(({
       {occasions.map((occasion) => {
         const occasionItems = occasionOutfits[occasion] || [];
         
-        // Get available items (not used in this session yet)
-        const availableItems = getAvailableItems(occasionItems);
-        
-        console.log(`🔍 [PersonalizedLooksGrid] ${occasion} - Total items: ${occasionItems.length}, Available (unused): ${availableItems.length}`);
-        
-        const look = createLookFromItems(availableItems, occasion, 0);
+        // Create the look directly with all items - createLookFromItems handles the combination logic
+        const look = createLookFromItems(occasionItems, occasion, 0);
         
         if (!look) {
           return (
@@ -104,25 +87,15 @@ export const PersonalizedLooksGrid = memo(({
           );
         }
 
-        // Mark the items used in this look as used for this session
-        const usedItems = availableItems.filter(item => 
-          look.items.some(lookItem => lookItem.id === item.id)
-        );
-        markItemsAsUsed(usedItems);
+        // Convert look items to canvas format
+        const canvasItems = look.items.map(item => ({
+          id: item.id,
+          image: item.image || '/placeholder.svg',
+          type: item.type,
+          name: item.name
+        }));
 
-        console.log(`✅ [PersonalizedLooksGrid] ${occasion} - Marked ${usedItems.length} items as used:`, usedItems.map(i => i.id));
-
-        // Convert DashboardItems to canvas items format
-        const canvasItems = availableItems
-          .filter(item => look.items.some(lookItem => lookItem.id === item.id))
-          .map(item => ({
-            id: item.id,
-            image: item.image || '/placeholder.svg',
-            type: item.type,
-            name: item.name
-          }));
-
-        console.log(`🔍 [PersonalizedLooksGrid] ${occasion} canvas items:`, canvasItems);
+        console.log(`🔍 [PersonalizedLooksGrid] ${occasion} - Look ID: ${look.id}, Items:`, canvasItems.map(i => i.name));
 
         return (
           <div key={occasion} className="space-y-4">
