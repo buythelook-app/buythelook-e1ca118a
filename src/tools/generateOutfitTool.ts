@@ -103,7 +103,7 @@ let usedItemIds = new Set<string>();
  * Enhanced filtering function that uses body structure recommendations
  * and ensures data consistency
  */
-function filterItemsByBodyStructure(items: any[], bodyStructure: string, style?: string): any[] {
+function filterItemsByBodyStructure(items: any[], bodyStructure: string): any[] {
   const recommendations = BODY_STRUCTURE_RECOMMENDATIONS[bodyStructure as keyof typeof BODY_STRUCTURE_RECOMMENDATIONS];
 
   if (!recommendations) {
@@ -125,16 +125,6 @@ function filterItemsByBodyStructure(items: any[], bodyStructure: string, style?:
     }
 
     const text = `${item.product_name} ${item.description}`.toLowerCase();
-    const itemType = detectItemType(item);
-
-    // Minimal Casual-specific filter: exclude high heels for casual style
-    if (style?.toLowerCase() === 'casual' && itemType === 'shoes') {
-      const heelKeywords = ['עקב', 'heel', 'heels', 'stiletto'];
-      if (heelKeywords.some(keyword => text.includes(keyword))) {
-        console.log(`Filtering out high heels for casual style: ${item.product_name}`);
-        return false;
-      }
-    }
 
     const hasPreferredFit = recommendations.preferred_fits?.some(fit => text.includes(fit.toLowerCase()));
     const hasPreferredSilhouette = recommendations.preferred_silhouettes?.some(s => text.includes(s.toLowerCase()));
@@ -426,9 +416,9 @@ export const GenerateOutfitTool = {
       
       console.log(`🎯 FILTERING FOR OCCASION: ${occasion}`);
       
-      const filteredTops = filterByOccasion(filterItemsByBodyStructure(categorizedItems.tops, bodyStructure, style), occasion);
-      const filteredBottoms = filterByOccasion(filterItemsByBodyStructure(categorizedItems.bottoms, bodyStructure, style), occasion);
-      const filteredShoes = filterByOccasion(filterItemsByBodyStructure(categorizedItems.shoes, bodyStructure, style), occasion);
+      const filteredTops = filterByOccasion(filterItemsByBodyStructure(categorizedItems.tops, bodyStructure), occasion);
+      const filteredBottoms = filterByOccasion(filterItemsByBodyStructure(categorizedItems.bottoms, bodyStructure), occasion);
+      const filteredShoes = filterByOccasion(filterItemsByBodyStructure(categorizedItems.shoes, bodyStructure), occasion);
 
       console.log(`After filtering for ${bodyStructure} and ${occasion}:`);
       console.log(`- Tops: ${categorizedItems.tops.length} → ${filteredTops.length} items`);
