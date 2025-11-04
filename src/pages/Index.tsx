@@ -46,6 +46,7 @@ const Index = () => {
     isLoading,
     isError,
     error,
+    combinations,
     createLookFromItems,
     handleMoodSelect,
     handleShuffleLook,
@@ -138,6 +139,7 @@ const Index = () => {
               isError={isError}
               occasionOutfits={occasionOutfits}
               occasions={occasions}
+              combinations={combinations}
               createLookFromItems={createLookFromItems}
               handleShuffleLook={handleShuffleLook}
               handleAddToCart={handleAddToCart}

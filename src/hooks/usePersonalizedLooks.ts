@@ -307,6 +307,8 @@ export function usePersonalizedLooks() {
     const lookKey = `${occasion}-${index}`;
     const currentCombination = combinations[lookKey] || 0;
 
+    console.log(`🔄 [createLookFromItems] ${occasion} - Combination: ${currentCombination}, Available: tops=${tops.length}, bottoms=${bottoms.length}, shoes=${shoes.length}`);
+
     const getItemByIndex = (arr: DashboardItem[], idx: number) => arr[idx % arr.length];
 
     // Helper function to safely parse price
@@ -335,6 +337,7 @@ export function usePersonalizedLooks() {
         price: top.price
       });
       totalPrice += itemPrice;
+      console.log(`👕 [createLookFromItems] Selected top: ${top.name}`);
     }
 
     // Only add bottom if it's NOT a dress
@@ -352,6 +355,7 @@ export function usePersonalizedLooks() {
             price: bottom.price
           });
           totalPrice += itemPrice;
+          console.log(`👖 [createLookFromItems] Selected bottom: ${bottom.name}`);
         }
       }
     }
@@ -368,6 +372,7 @@ export function usePersonalizedLooks() {
         price: shoe.price
       });
       totalPrice += itemPrice;
+      console.log(`👠 [createLookFromItems] Selected shoes: ${shoe.name}`);
     }
 
     // For dresses: expect 2 items (dress + shoes)
@@ -379,6 +384,8 @@ export function usePersonalizedLooks() {
       console.log(`⚠️ [createLookFromItems] Created look with only ${lookItems.length} items for ${occasion} (isDress: ${isDress})`);
       return null;
     }
+
+    console.log(`✅ [createLookFromItems] ${occasion} - Created look with ${lookItems.length} items (combination ${currentCombination})`);
 
     return {
       id: `${occasion}-look-${index}-${currentCombination}`,
@@ -399,11 +406,16 @@ export function usePersonalizedLooks() {
 
   const handleShuffleLook = useCallback((occasion: string) => {
     const lookKey = `${occasion}-0`;
-    setCombinations(prev => ({
-      ...prev,
-      [lookKey]: (prev[lookKey] || 0) + 1
-    }));
-  }, []);
+    console.log(`🔄 [handleShuffleLook] Shuffling ${occasion}, current combination:`, combinations[lookKey] || 0);
+    setCombinations(prev => {
+      const newCombination = (prev[lookKey] || 0) + 1;
+      console.log(`🔄 [handleShuffleLook] New combination for ${occasion}:`, newCombination);
+      return {
+        ...prev,
+        [lookKey]: newCombination
+      };
+    });
+  }, [combinations]);
 
   const resetError = useCallback(() => {
     setApiErrorShown(false);

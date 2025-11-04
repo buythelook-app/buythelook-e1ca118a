@@ -12,6 +12,7 @@ interface PersonalizedLooksGridProps {
   isError: boolean;
   occasionOutfits: { [key: string]: DashboardItem[] };
   occasions: string[];
+  combinations: { [key: string]: number };
   createLookFromItems: (items: any[], occasion: string, index: number) => Look | null;
   handleShuffleLook: (occasion: string) => void;
   handleAddToCart: (look: any) => void;
@@ -24,25 +25,13 @@ export const PersonalizedLooksGrid = memo(({
   isError,
   occasionOutfits,
   occasions,
+  combinations,
   createLookFromItems,
   handleShuffleLook,
   handleAddToCart,
   resetError,
   userStyleProfile
 }: PersonalizedLooksGridProps) => {
-
-  // Track used items for this render session
-  const usedItemsInCurrentSession = useMemo(() => new Set<string>(), [occasionOutfits]);
-
-  // Function to filter out already used items for this session
-  const getAvailableItems = (items: DashboardItem[]): DashboardItem[] => {
-    return items.filter(item => !usedItemsInCurrentSession.has(item.id));
-  };
-
-  // Function to mark items as used in this session
-  const markItemsAsUsed = (items: DashboardItem[]) => {
-    items.forEach(item => usedItemsInCurrentSession.add(item.id));
-  };
 
   if (isLoading) {
     return (
@@ -82,12 +71,8 @@ export const PersonalizedLooksGrid = memo(({
       {occasions.map((occasion) => {
         const occasionItems = occasionOutfits[occasion] || [];
         
-        // Get available items (not used in this session yet)
-        const availableItems = getAvailableItems(occasionItems);
-        
-        console.log(`🔍 [PersonalizedLooksGrid] ${occasion} - Total items: ${occasionItems.length}, Available (unused): ${availableItems.length}`);
-        
-        const look = createLookFromItems(availableItems, occasion, 0);
+        // Create the look directly with all items - createLookFromItems handles the combination logic
+        const look = createLookFromItems(occasionItems, occasion, 0);
         
         if (!look) {
           return (
@@ -102,25 +87,15 @@ export const PersonalizedLooksGrid = memo(({
           );
         }
 
-        // Mark the items used in this look as used for this session
-        const usedItems = availableItems.filter(item => 
-          look.items.some(lookItem => lookItem.id === item.id)
-        );
-        markItemsAsUsed(usedItems);
+        // Convert look items to canvas format
+        const canvasItems = look.items.map(item => ({
+          id: item.id,
+          image: item.image || '/placeholder.svg',
+          type: item.type,
+          name: item.name
+        }));
 
-        console.log(`✅ [PersonalizedLooksGrid] ${occasion} - Marked ${usedItems.length} items as used:`, usedItems.map(i => i.id));
-
-        // Convert DashboardItems to canvas items format
-        const canvasItems = availableItems
-          .filter(item => look.items.some(lookItem => lookItem.id === item.id))
-          .map(item => ({
-            id: item.id,
-            image: item.image || '/placeholder.svg',
-            type: item.type,
-            name: item.name
-          }));
-
-        console.log(`🔍 [PersonalizedLooksGrid] ${occasion} canvas items:`, canvasItems);
+        console.log(`🔍 [PersonalizedLooksGrid] ${occasion} - Look ID: ${look.id}, Items:`, canvasItems.map(i => i.name));
 
         return (
           <div key={occasion} className="space-y-4">
