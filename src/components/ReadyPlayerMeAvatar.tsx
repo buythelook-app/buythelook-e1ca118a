@@ -62,7 +62,7 @@ export const ReadyPlayerMeAvatar = ({
   return (
     <div className="relative bg-white rounded-lg shadow-lg overflow-hidden">
       <div 
-        className="relative bg-gradient-to-b from-blue-50 to-purple-50 flex flex-col items-center justify-center p-8"
+        className="relative bg-gradient-to-b from-blue-50 to-cyan-50 flex flex-col items-center justify-center p-8"
         style={{ width: `${width}px`, height: `${height}px` }}
       >
         {/* Avatar Display */}

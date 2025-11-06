@@ -58,7 +58,7 @@ export const TryMeButton = ({ items }: TryMeButtonProps) => {
       onClick={() => alert("Coming Soon")}
       variant="outline"
       size="sm"
-      className="flex items-center gap-2 text-sm px-3 py-2 h-9 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none hover:from-purple-600 hover:to-pink-600 transition-all duration-300"
+      className="flex items-center gap-2 text-sm px-3 py-2 h-9 bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-none hover:from-blue-600 hover:to-cyan-600 transition-all duration-300"
     >
       <User className="w-4 h-4" />
       Try with Avatar

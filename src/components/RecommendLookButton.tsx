@@ -39,7 +39,7 @@ export default function RecommendLookButton({ userId }: { userId: string }) {
       <button
         onClick={handleClick}
         disabled={loading}
-        className="bg-violet-600 text-white px-4 py-2 rounded hover:bg-violet-700"
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
       >
         {loading ? "Generating Look..." : "Recommend Me a Look"}
       </button>

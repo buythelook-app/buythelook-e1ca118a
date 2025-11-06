@@ -12,7 +12,7 @@ export function DeveloperNav() {
   }
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-purple-800 py-1 px-4 flex items-center justify-between text-white text-xs">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-blue-800 py-1 px-4 flex items-center justify-between text-white text-xs">
       <div className="flex items-center space-x-2">
         <Link to="/home" className="hover:underline">Home</Link>
         <Link to="/dev" className="hover:underline">DevTools</Link>

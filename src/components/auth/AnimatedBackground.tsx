@@ -10,7 +10,7 @@ export const AnimatedBackground = () => {
         {[...Array(5)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute rounded-full bg-purple-500/10"
+            className="absolute rounded-full bg-blue-500/10"
             style={{
               width: Math.random() * 300 + 50,
               height: Math.random() * 300 + 50,

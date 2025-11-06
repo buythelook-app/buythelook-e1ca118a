@@ -10,7 +10,7 @@ export const colorPalettes: Record<string, ColorPalette> = {
   cool: {
     primary: '#0EA5E9',
     secondary: '#D3E4FD',
-    accent: '#8B5CF6',
+    accent: '#3B82F6',
     neutral: '#E5DEFF'
   },
   neutral: {
@@ -22,7 +22,7 @@ export const colorPalettes: Record<string, ColorPalette> = {
   dark: {
     primary: '#1A1F2C',
     secondary: '#403E43',
-    accent: '#8B5CF6',
+    accent: '#3B82F6',
     neutral: '#8E9196'
   }
 };

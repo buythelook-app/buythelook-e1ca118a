@@ -34,7 +34,7 @@ export const FashionRecommendations = ({
       'dress': 'bg-pink-100 text-pink-800',
       'top': 'bg-blue-100 text-blue-800',
       'bottom': 'bg-green-100 text-green-800',
-      'shoes': 'bg-purple-100 text-purple-800',
+      'shoes': 'bg-blue-100 text-blue-800',
       'accessory': 'bg-yellow-100 text-yellow-800',
       'outerwear': 'bg-indigo-100 text-indigo-800',
       'other': 'bg-gray-100 text-gray-800'
