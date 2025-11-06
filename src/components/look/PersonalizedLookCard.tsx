@@ -65,7 +65,7 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
               ? 'bg-fashion-accent text-white scale-110 shadow-lg' 
               : 'bg-fashion-accent/60 text-white hover:bg-fashion-accent hover:scale-105'
           }`}
-          title="אהבתי"
+          title="Like"
         >
           <ThumbsUp className="w-5 h-5" />
         </button>
@@ -76,7 +76,7 @@ export const PersonalizedLookCard = memo(({ look, onShuffle, onAddToCart, userSt
               ? 'bg-fashion-primary text-white scale-110 shadow-lg' 
               : 'bg-fashion-primary/60 text-white hover:bg-fashion-primary hover:scale-105'
           }`}
-          title="לא מתאים"
+          title="Dislike"
         >
           <ThumbsDown className="w-5 h-5" />
         </button>

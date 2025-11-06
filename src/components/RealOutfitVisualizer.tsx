@@ -380,7 +380,7 @@ export function RealOutfitVisualizer() {
                     className="flex items-center gap-2"
                   >
                     <ThumbsUp className="h-4 w-4" />
-                    אהבתי את הלוק!
+                    Like this look!
                   </Button>
                   <Button
                     variant={userLiked === false ? "default" : "outline"}
@@ -389,7 +389,7 @@ export function RealOutfitVisualizer() {
                     className="flex items-center gap-2"
                   >
                     <ThumbsDown className="h-4 w-4" />
-                    לא מתאים לי
+                    Not for me
                   </Button>
                 </div>
 

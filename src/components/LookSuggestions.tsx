@@ -488,7 +488,7 @@ export const LookSuggestions = () => {
                       }`}
                     >
                       <ThumbsUp className="w-3 h-3" />
-                      <span>אהבתי</span>
+                      <span>Like</span>
                     </button>
                     <button
                       onClick={() => handleFeedback(false)}
@@ -499,7 +499,7 @@ export const LookSuggestions = () => {
                       }`}
                     >
                       <ThumbsDown className="w-3 h-3" />
-                      <span>לא מתאים</span>
+                      <span>Dislike</span>
                     </button>
                   </div>
 

@@ -144,7 +144,7 @@ export const LookDetail = () => {
                     }`}
                   >
                     <ThumbsUp className="w-4 h-4" />
-                    <span className="text-sm">אהבתי</span>
+                    <span className="text-sm">Like</span>
                   </button>
                   <button
                     onClick={() => handleFeedback(false)}
@@ -155,7 +155,7 @@ export const LookDetail = () => {
                     }`}
                   >
                     <ThumbsDown className="w-4 h-4" />
-                    <span className="text-sm">לא מתאים</span>
+                    <span className="text-sm">Dislike</span>
                   </button>
                 </div>
 
