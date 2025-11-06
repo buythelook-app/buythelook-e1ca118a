@@ -46,7 +46,7 @@ export const CartItem = ({ id, image, title, price, onRemove }: CartItemProps) =
         variant="ghost"
         size="icon"
         onClick={() => onRemove(id)}
-        className="text-destructive hover:text-destructive/90"
+        className="text-primary hover:text-primary/80"
       >
         <Trash2 className="h-5 w-5" />
       </Button>

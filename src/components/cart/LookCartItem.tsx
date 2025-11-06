@@ -47,7 +47,7 @@ export const LookCartItem = ({
             variant="ghost"
             size="icon"
             onClick={() => onRemoveLook(id)}
-            className="text-destructive hover:text-destructive/90"
+            className="text-primary hover:text-primary/80"
           >
             <Trash2 className="h-5 w-5" />
           </Button>
@@ -90,7 +90,7 @@ export const LookCartItem = ({
                 variant="ghost"
                 size="icon"
                 onClick={() => onRemoveItem(id, item.id)}
-                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive/90"
+                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-primary hover:text-primary/80"
               >
                 <Trash2 className="h-3 w-3" />
               </Button>
