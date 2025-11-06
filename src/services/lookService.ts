@@ -882,7 +882,7 @@ function selectShoeForOccasion(shoes: any[], occasion: string): any | null {
 
   // Strict Minimalist filtering (brands, terms, colors)
   if (userStyle === 'minimalist') {
-    const minimalistColors = ['white', 'cream', 'beige', 'tan', 'taupe', 'light gray', 'light grey', 'gray', 'grey', 'nude', 'black'];
+    const minimalistColors = ['white', 'cream', 'beige', 'tan', 'taupe', 'light gray', 'light grey', 'gray', 'grey', 'nude', 'black', 'light blue', 'sky blue', 'powder blue', 'baby blue', 'light pink', 'blush', 'rose', 'dusty rose', 'light green', 'sage', 'mint', 'olive', 'light brown', 'camel', 'sand', 'ivory', 'off-white', 'pale', 'soft'];
     const minimalistTerms = ['flat', 'simple', 'basic', 'minimal', 'clean', 'slip-on', 'loafer', 'mule', 'ballet', 'derby', 'oxford', 'chelsea', 'boot', 'court', 'pointed', 'leather', 'smooth', 'low-top', 'plain', 'white sneaker', 'black sneaker'];
     const nonMinimalistBrands = ['nike', 'adidas', 'new balance', 'converse', 'puma', 'asics', 'reebok'];
     // Removed 'sneaker' and 'sneakers' from non-minimalist terms - simple sneakers can be minimalist
