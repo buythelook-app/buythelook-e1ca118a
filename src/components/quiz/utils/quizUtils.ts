@@ -103,10 +103,10 @@ export const analyzeStyleWithAI = async (formData: QuizFormData): Promise<StyleA
       chest: parseFloat(formData.chest) || 0,
     };
 
-    const finalStyle = formData.stylePreferences[formData.stylePreferences.length - 1] || 'Classy';
+    const finalStyle = formData.stylePreferences[formData.stylePreferences.length - 1] || 'Casual';
     const colorPreference = formData.colorPreferences[0] || 'neutral';
     const selectedPalette = colorPalettes[colorPreference];
-    const styleRecs = styleRecommendations[finalStyle] || styleRecommendations.Classy;
+    const styleRecs = styleRecommendations[finalStyle] || styleRecommendations.Casual;
 
     const analysis: StyleAnalysis = {
       analysis: {
