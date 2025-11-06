@@ -218,7 +218,7 @@ export const LookItemsList = ({ look }: LookItemsListProps) => {
                 </label>
                 <p className="text-fashion-accent text-lg font-semibold">{item.price}</p>
               </div>
-              <p className="text-muted-foreground text-sm">{item.description || `${item.type || 'Item'} for your collection`}</p>
+              <p className="text-muted-foreground text-sm">{item.description || `${item.type || 'Item'} for your wardrobe`}</p>
               <div className="flex items-center gap-4 mt-3">
                 <span className="text-sm text-muted-foreground">Size:</span>
                 <Select
