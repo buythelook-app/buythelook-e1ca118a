@@ -883,9 +883,10 @@ function selectShoeForOccasion(shoes: any[], occasion: string): any | null {
   // Strict Minimalist filtering (brands, terms, colors)
   if (userStyle === 'minimalist') {
     const minimalistColors = ['white', 'cream', 'beige', 'tan', 'taupe', 'light gray', 'light grey', 'gray', 'grey', 'nude', 'black'];
-    const minimalistTerms = ['flat', 'simple', 'basic', 'minimal', 'clean', 'slip-on', 'loafer', 'mule', 'ballet', 'derby', 'oxford', 'chelsea', 'boot', 'court', 'pointed', 'leather', 'smooth', 'low-top', 'plain'];
+    const minimalistTerms = ['flat', 'simple', 'basic', 'minimal', 'clean', 'slip-on', 'loafer', 'mule', 'ballet', 'derby', 'oxford', 'chelsea', 'boot', 'court', 'pointed', 'leather', 'smooth', 'low-top', 'plain', 'white sneaker', 'black sneaker'];
     const nonMinimalistBrands = ['nike', 'adidas', 'new balance', 'converse', 'puma', 'asics', 'reebok'];
-    const nonMinimalistTerms = ['trainer', 'trainers', 'sneaker', 'sneakers', 'running', 'runner', 'athletic', 'sport', 'mesh', 'neon', 'logo', 'branding', 'chunky', 'platform', 'wedge', 'studded', 'embellished', 'chain', 'metallic', 'cutout', 'strappy'];
+    // Removed 'sneaker' and 'sneakers' from non-minimalist terms - simple sneakers can be minimalist
+    const nonMinimalistTerms = ['trainer', 'trainers', 'running', 'runner', 'athletic', 'sport', 'mesh', 'neon', 'logo', 'branding', 'chunky', 'platform', 'wedge', 'studded', 'embellished', 'chain', 'metallic', 'cutout', 'strappy'];
 
     const minimalistCandidates = shoes.filter(shoe => {
       const name = (shoe.product_name || '').toLowerCase();
@@ -900,8 +901,16 @@ function selectShoeForOccasion(shoes: any[], occasion: string): any | null {
       if (nonMinimalistBrands.some(b => brand.includes(b))) return false;
       if (nonMinimalistTerms.some(t => text.includes(t))) return false;
 
-      // Require either minimalist color OR minimalist descriptive term
+      // Allow simple sneakers if they're in minimalist colors
+      const isSneaker = text.includes('sneaker') || text.includes('sneakers');
       const hasMinColor = minimalistColors.some(c => color.includes(c) || text.includes(c));
+      
+      if (isSneaker) {
+        // For sneakers, must be in minimalist color (white/black/beige)
+        return hasMinColor;
+      }
+      
+      // For non-sneakers, require either minimalist color OR minimalist descriptive term
       const hasMinTerm = minimalistTerms.some(t => text.includes(t));
       return hasMinColor || hasMinTerm;
     });
