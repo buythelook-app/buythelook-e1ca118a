@@ -77,7 +77,7 @@ export const RefreshItemsButton: React.FC = () => {
       className="gap-2"
     >
       <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-      {isRefreshing ? 'מרענן...' : 'רענן פריטים'}
+      {isRefreshing ? 'Refreshing...' : 'Refresh Items'}
     </Button>
   );
 };

@@ -6,6 +6,7 @@ import { DashboardItem } from "@/types/lookTypes";
 import { supabase } from "@/integrations/supabase/client";
 import logger from "@/lib/logger";
 import { filterWorkAppropriateItems } from "@/components/filters/WorkAppropriateFilter";
+import { useCreditsSystem } from "./useCreditsSystem";
 
 // Track user preferences for color combinations and styles
 const userPreferences = {
@@ -22,6 +23,7 @@ export function useOutfitGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const { toast } = useToast();
+  const { deductCredit, canGenerateLook, creditsData } = useCreditsSystem();
   
   // Function to record user feedback (like/dislike)
   const recordUserFeedback = async (outfitItems: any[], isLiked: boolean) => {
@@ -88,9 +90,33 @@ export function useOutfitGeneration() {
   };
   
   const generateOutfit = async (forceRefresh: boolean = true, selectedMode?: string) => {
+    // Check credits before generating
+    if (!canGenerateLook()) {
+      toast({
+        title: "No credits remaining",
+        description: creditsData.variant === 'B' 
+          ? "Please purchase more credits to continue" 
+          : "You've used your free credits",
+        variant: "destructive",
+      });
+      return { success: false, items: [] };
+    }
+
     setIsGenerating(true);
     
     try {
+      // Deduct credit first
+      const creditDeducted = await deductCredit();
+      if (!creditDeducted && creditsData.variant === 'B') {
+        toast({
+          title: "Failed to deduct credit",
+          description: "Please try again",
+          variant: "destructive",
+        });
+        setIsGenerating(false);
+        return { success: false, items: [] };
+      }
+
       logger.info("🚀 Starting COORDINATED outfit generation", { 
         context: "useOutfitGeneration",
         data: { forceRefresh, attempt: previousCombinations.size + 1, selectedMode }

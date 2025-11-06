@@ -6,16 +6,42 @@ import { enhancedAgentCrew } from "@/agents/enhancedCrew";
 import { DashboardItem } from "@/types/lookTypes";
 import { supabase } from "@/integrations/supabase/client";
 import logger from "@/lib/logger";
+import { useCreditsSystem } from "./useCreditsSystem";
 
 export function useEnhancedOutfitGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const { toast } = useToast();
+  const { deductCredit, canGenerateLook, creditsData } = useCreditsSystem();
   
   const generateOutfitWithLearning = async (forceRefresh: boolean = true) => {
+    // Check credits before generating
+    if (!canGenerateLook()) {
+      toast({
+        title: "No credits remaining",
+        description: creditsData.variant === 'B' 
+          ? "Please purchase more credits to continue" 
+          : "You've used your free credits",
+        variant: "destructive",
+      });
+      return { success: false, items: [] };
+    }
+
     setIsGenerating(true);
     
     try {
+      // Deduct credit first
+      const creditDeducted = await deductCredit();
+      if (!creditDeducted && creditsData.variant === 'B') {
+        toast({
+          title: "Failed to deduct credit",
+          description: "Please try again",
+          variant: "destructive",
+        });
+        setIsGenerating(false);
+        return { success: false, items: [] };
+      }
+
       logger.info("🚀 מתחיל יצירת תלבושת משופרת עם למידה", { 
         context: "useEnhancedOutfitGeneration",
         data: { forceRefresh }
