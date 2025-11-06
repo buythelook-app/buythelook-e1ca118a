@@ -2,14 +2,35 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCreditsSystem } from '@/hooks/useCreditsSystem';
 
 export const RefreshItemsButton: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { deductCredit, canGenerateLook, creditsData } = useCreditsSystem();
 
   const handleRefresh = async () => {
+    // Check if user can generate a new look
+    if (!canGenerateLook()) {
+      toast.error('אין מספיק קרדיטים', {
+        description: 'אנא רכוש קרדיטים נוספים כדי להמשיך'
+      });
+      return;
+    }
+
     setIsRefreshing(true);
     
     try {
+      // Deduct credit first
+      const success = await deductCredit();
+      
+      if (!success) {
+        toast.error('שגיאה בהורדת קרדיט', {
+          description: 'אנא נסה שוב'
+        });
+        setIsRefreshing(false);
+        return;
+      }
+
       // Clear any cached data
       if (typeof window !== 'undefined') {
         // Clear localStorage cache related to items
@@ -35,13 +56,14 @@ export const RefreshItemsButton: React.FC = () => {
         window.location.reload();
       }, 500);
 
-      toast.success('Refreshing items database...', {
-        description: 'New data will load in a few seconds'
+      const remainingCredits = creditsData.credits - 1;
+      toast.success('מרענן פריטים...', {
+        description: `נותרו ${remainingCredits} קרדיטים`
       });
       
     } catch (error) {
       console.error('Error refreshing items:', error);
-      toast.error('Error refreshing data');
+      toast.error('שגיאה ברענון נתונים');
       setIsRefreshing(false);
     }
   };
@@ -49,13 +71,13 @@ export const RefreshItemsButton: React.FC = () => {
   return (
     <Button
       onClick={handleRefresh}
-      disabled={isRefreshing}
+      disabled={isRefreshing || creditsData.isLoading}
       variant="outline"
       size="sm"
       className="gap-2"
     >
       <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-      {isRefreshing ? 'Refreshing...' : 'Refresh Items'}
+      {isRefreshing ? 'מרענן...' : 'רענן פריטים'}
     </Button>
   );
 };
