@@ -88,25 +88,25 @@ export const UserDropdownMenu = ({ onAddressClick, handleCalendarSync }: UserDro
   };
 
   return (
-    <DropdownMenuContent align="end" className="w-56 bg-netflix-card p-2">
-      <div className="flex items-center gap-3 p-2 mb-2 border-b border-gray-700">
+    <DropdownMenuContent align="end" className="w-56 bg-card border-border p-2">
+      <div className="flex items-center gap-3 p-2 mb-2 border-b border-border">
         <Avatar className="h-12 w-12">
           <AvatarImage src="" />
-          <AvatarFallback>
-            <Sparkles className="h-6 w-6" />
+          <AvatarFallback className="bg-primary/10">
+            <Sparkles className="h-6 w-6 text-primary" />
           </AvatarFallback>
         </Avatar>
         <div className="flex flex-col">
-          <span className="font-medium text-netflix-text">{userName}</span>
-          <span className="text-sm text-gray-400">{userEmail}</span>
+          <span className="font-medium text-foreground">{userName}</span>
+          <span className="text-sm text-muted-foreground">{userEmail}</span>
         </div>
       </div>
       
       <div className="space-y-2">
         <div className="flex items-center justify-between px-2 py-1">
           <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-netflix-text" />
-            <span className="text-sm text-netflix-text">Sync To Calendar</span>
+            <Calendar className="h-4 w-4 text-foreground" />
+            <span className="text-sm text-foreground">Sync To Calendar</span>
           </div>
           <Switch 
             checked={isCalendarEnabled}
@@ -116,8 +116,8 @@ export const UserDropdownMenu = ({ onAddressClick, handleCalendarSync }: UserDro
 
         <div className="flex items-center justify-between px-2 py-1">
           <div className="flex items-center gap-2">
-            <Bell className="h-4 w-4 text-netflix-text" />
-            <span className="text-sm text-netflix-text">Turn On Notification</span>
+            <Bell className="h-4 w-4 text-foreground" />
+            <span className="text-sm text-foreground">Turn On Notification</span>
           </div>
           <Switch 
             checked={isNotificationsEnabled}
@@ -127,54 +127,54 @@ export const UserDropdownMenu = ({ onAddressClick, handleCalendarSync }: UserDro
 
         <DropdownMenuItem 
           onClick={onAddressClick}
-          className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent"
+          className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground"
         >
           <MapPin className="h-4 w-4" />
           <span>Shipping Address</span>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
-          <Link to="/orders" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
+          <Link to="/orders" className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground">
             <ShoppingBag className="h-4 w-4" />
             <span>My Orders</span>
           </Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
-          <Link to="/style-guide" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
+          <Link to="/style-guide" className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground">
             <Book className="h-4 w-4" />
             <span>Style Guide</span>
           </Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
-          <Link to="/profile" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
+          <Link to="/profile" className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground">
             <UserCog className="h-4 w-4" />
             <span>Update Profile</span>
           </Link>
         </DropdownMenuItem>
 
-        <DropdownMenuSeparator className="bg-gray-700" />
+        <DropdownMenuSeparator className="bg-border" />
 
         <DropdownMenuItem asChild>
-          <Link to="/about" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
+          <Link to="/about" className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground">
             <Info className="h-4 w-4" />
             <span>About The App</span>
           </Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
-          <Link to="/rules" className="flex items-center gap-2 text-netflix-text hover:text-netflix-accent">
+          <Link to="/rules" className="flex items-center gap-2 text-foreground hover:bg-accent hover:text-accent-foreground">
             <ScrollText className="h-4 w-4" />
             <span>Our Rules</span>
           </Link>
         </DropdownMenuItem>
 
-        <DropdownMenuSeparator className="bg-gray-700" />
+        <DropdownMenuSeparator className="bg-border" />
 
         <DropdownMenuItem 
           onClick={handleSignOut}
-          className="flex items-center gap-2 text-red-500 hover:text-red-400"
+          className="flex items-center gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
         >
           <LogOut className="h-4 w-4" />
           <span>Sign Out</span>
