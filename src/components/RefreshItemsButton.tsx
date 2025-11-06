@@ -31,6 +31,11 @@ export const RefreshItemsButton: React.FC = () => {
         return;
       }
 
+      // Show success message with updated credits
+      toast.success('מרענן פריטים...', {
+        description: `נותרו ${creditsData.credits - 1} קרדיטים`
+      });
+
       // Clear any cached data
       if (typeof window !== 'undefined') {
         // Clear localStorage cache related to items
@@ -55,11 +60,6 @@ export const RefreshItemsButton: React.FC = () => {
       setTimeout(() => {
         window.location.reload();
       }, 500);
-
-      const remainingCredits = creditsData.credits - 1;
-      toast.success('מרענן פריטים...', {
-        description: `נותרו ${remainingCredits} קרדיטים`
-      });
       
     } catch (error) {
       console.error('Error refreshing items:', error);
