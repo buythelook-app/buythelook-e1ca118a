@@ -72,16 +72,16 @@
 
   /* Sophisticated color palette - gender-neutral blue theme */
   :root {
-    --fashion-primary: 214 88% 52%;      /* Deep blue for elegance */
-    --fashion-accent: 220 91% 60%;       /* Vibrant blue accent */
+    --fashion-primary: 217 91% 60%;      /* Vibrant blue for buttons */
+    --fashion-accent: 220 88% 56%;       /* Blue accent */
     --fashion-neutral-dark: 220 39% 11%;  /* Rich dark blue background */
     --fashion-neutral-mid: 215 25% 27%;   /* Medium neutral */
     --fashion-neutral-light: 213 27% 84%; /* Light neutral */
     --fashion-glass: 0 0% 100% / 0.1;     /* Glass effect */
-    --fashion-glow: 220 91% 60% / 0.3;    /* Blue glow effect */
+    --fashion-glow: 217 91% 60% / 0.3;    /* Blue glow effect */
     
     /* Gradient definitions */
-    --gradient-hero: linear-gradient(135deg, hsl(214 88% 52%), hsl(220 91% 60%));
+    --gradient-hero: linear-gradient(135deg, hsl(217 91% 60%), hsl(220 88% 56%));
     --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
     --gradient-overlay: linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.1));
   }
