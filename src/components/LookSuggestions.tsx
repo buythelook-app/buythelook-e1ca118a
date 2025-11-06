@@ -365,15 +365,35 @@ export const LookSuggestions = () => {
     return {
       id: item.id,
       image: item.image,
-      type: mappedType
+      type: mappedType,
+      name: item.name
     };
+  }).filter(item => {
+    // Filter logic: if there's a dress, only show dress + shoes
+    const hasDress = dashboardItems?.some(i => mapItemType(i.type) === 'dress');
+    
+    if (hasDress) {
+      // If there's a dress, only show dress and shoes
+      return item.type === 'dress' || item.type === 'shoes';
+    } else {
+      // Otherwise show top + bottom + shoes
+      return item.type === 'top' || item.type === 'bottom' || item.type === 'shoes';
+    }
   });
 
   const hasAllRequiredItems = () => {
     if (!canvasItems) return false;
     
     const types = canvasItems.map(item => item.type);
-    return types.includes('top') && types.includes('bottom') && types.includes('shoes');
+    const hasDress = types.includes('dress');
+    
+    if (hasDress) {
+      // For dress outfit: need dress + shoes
+      return types.includes('dress') && types.includes('shoes');
+    } else {
+      // For regular outfit: need top + bottom + shoes
+      return types.includes('top') && types.includes('bottom') && types.includes('shoes');
+    }
   };
 
   if (!hasQuizData) {

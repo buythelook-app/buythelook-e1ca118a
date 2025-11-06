@@ -87,30 +87,49 @@ export default function AgentResultsPage() {
   const getLookItems = (agentOutput: AgentOutfit) => {
     const lookItems = [];
     
-    if (agentOutput.top) {
-      const topItem = {
-        id: agentOutput.top.id || 'top-item',
+    // Check if there's a dress first
+    const hasDress = agentOutput.top?.product_family?.toLowerCase().includes('dress') ||
+                     agentOutput.top?.product_family?.toLowerCase().includes('vestido');
+    
+    if (hasDress) {
+      // If it's a dress, only add dress and shoes
+      const dressItem = {
+        id: agentOutput.top.id || 'dress-item',
         image: extractZaraImageUrl(agentOutput.top.image),
-        type: 'top' as const,
-        name: agentOutput.top.product_name || 'Top Item',
-        price: agentOutput.top.price ? `$${agentOutput.top.price}` : '$49.99'
+        type: 'dress' as const,
+        name: agentOutput.top.product_name || 'Dress Item',
+        price: agentOutput.top.price ? `$${agentOutput.top.price}` : '$79.99'
       };
-      lookItems.push(topItem);
-      console.log(`Added top item: ${topItem.id} with image: ${topItem.image}`);
+      lookItems.push(dressItem);
+      console.log(`Added dress item: ${dressItem.id} with image: ${dressItem.image}`);
+    } else {
+      // Regular outfit: add top and bottom
+      if (agentOutput.top) {
+        const topItem = {
+          id: agentOutput.top.id || 'top-item',
+          image: extractZaraImageUrl(agentOutput.top.image),
+          type: 'top' as const,
+          name: agentOutput.top.product_name || 'Top Item',
+          price: agentOutput.top.price ? `$${agentOutput.top.price}` : '$49.99'
+        };
+        lookItems.push(topItem);
+        console.log(`Added top item: ${topItem.id} with image: ${topItem.image}`);
+      }
+      
+      if (agentOutput.bottom) {
+        const bottomItem = {
+          id: agentOutput.bottom.id || 'bottom-item',
+          image: extractZaraImageUrl(agentOutput.bottom.image),
+          type: 'bottom' as const,
+          name: agentOutput.bottom.product_name || 'Bottom Item',
+          price: agentOutput.bottom.price ? `$${agentOutput.bottom.price}` : '$59.99'
+        };
+        lookItems.push(bottomItem);
+        console.log(`Added bottom item: ${bottomItem.id} with image: ${bottomItem.image}`);
+      }
     }
     
-    if (agentOutput.bottom) {
-      const bottomItem = {
-        id: agentOutput.bottom.id || 'bottom-item',
-        image: extractZaraImageUrl(agentOutput.bottom.image),
-        type: 'bottom' as const,
-        name: agentOutput.bottom.product_name || 'Bottom Item',
-        price: agentOutput.bottom.price ? `$${agentOutput.bottom.price}` : '$59.99'
-      };
-      lookItems.push(bottomItem);
-      console.log(`Added bottom item: ${bottomItem.id} with image: ${bottomItem.image}`);
-    }
-    
+    // Always add shoes
     if (agentOutput.shoes) {
       const shoesItem = {
         id: agentOutput.shoes.id || 'shoes-item',
