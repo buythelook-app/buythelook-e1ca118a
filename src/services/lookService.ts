@@ -1262,16 +1262,19 @@ function categorizeItemsAdvanced(items: any[], eventType: string) {
     
     const searchText = `${name} ${subfamily} ${family}`;
     
+    // וסט הוא בגד עליון - CHALECO = vest (Spanish)
+    const isVest = searchText.includes('vest') || searchText.includes('chaleco') || searchText.includes('וסט');
+    
     if (searchText.includes('שמלה') || searchText.includes('dress')) {
       categories.dresses.push(item);
     } else if (searchText.includes('מכנס') || searchText.includes('ג\'ינס') || searchText.includes('חצאית') || 
-               searchText.includes('pants') || searchText.includes('jeans') || searchText.includes('skirt')) {
+               searchText.includes('pants') || searchText.includes('pantalon') || searchText.includes('jeans') || searchText.includes('skirt') || searchText.includes('falda')) {
       categories.bottoms.push(item);
-    } else if (searchText.includes('מעיל') || searchText.includes('ז\'קט') || 
+    } else if (isVest || searchText.includes('מעיל') || searchText.includes('ז\'קט') || 
                searchText.includes('jacket') || searchText.includes('coat')) {
       categories.outerwear.push(item);
     } else if (searchText.includes('חולצ') || searchText.includes('טופ') || searchText.includes('בלוז') ||
-               searchText.includes('shirt') || searchText.includes('top') || searchText.includes('blouse')) {
+               searchText.includes('shirt') || searchText.includes('camisa') || searchText.includes('top') || searchText.includes('blouse')) {
       categories.tops.push(item);
     }
   });
