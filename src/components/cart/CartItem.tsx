@@ -15,7 +15,7 @@ export const CartItem = ({ id, image, title, price, onRemove }: CartItemProps) =
   const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(title + " Zara")}`;
 
   return (
-    <div className="flex items-center justify-between gap-4 bg-netflix-background p-4 rounded-lg">
+    <div className="flex items-center justify-between gap-4 bg-card p-4 rounded-lg border border-border">
       <div className="flex items-center gap-4 flex-1">
         <div className="w-32 h-40 flex-shrink-0">
           <img 
@@ -27,15 +27,15 @@ export const CartItem = ({ id, image, title, price, onRemove }: CartItemProps) =
         </div>
         <div className="flex-1">
           <h3 
-            className="font-medium cursor-pointer hover:text-netflix-accent transition-colors"
+            className="font-medium cursor-pointer hover:text-primary transition-colors"
             onClick={() => window.open(searchUrl, '_blank')}
           >
             {title}
           </h3>
-          <p className="text-netflix-accent">{price}</p>
+          <p className="text-primary">{price}</p>
           <button
             onClick={() => window.open(searchUrl, '_blank')}
-            className="text-sm text-gray-400 hover:text-netflix-accent transition-colors flex items-center gap-1 mt-1"
+            className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 mt-1"
           >
             <ExternalLink className="h-3 w-3" />
             View Product
@@ -46,7 +46,7 @@ export const CartItem = ({ id, image, title, price, onRemove }: CartItemProps) =
         variant="ghost"
         size="icon"
         onClick={() => onRemove(id)}
-        className="text-red-500 hover:text-red-600"
+        className="text-destructive hover:text-destructive/90"
       >
         <Trash2 className="h-5 w-5" />
       </Button>

@@ -34,20 +34,20 @@ export const LookCartItem = ({
   };
 
   return (
-    <div className="bg-netflix-background rounded-lg p-4 space-y-4">
+    <div className="bg-card rounded-lg p-4 space-y-4 border border-border">
       <div className="flex justify-between items-center">
         <h3 className="text-xl font-semibold">{title}</h3>
         <div className="flex items-center gap-4">
           {items.length > 1 ? (
-            <span className="text-netflix-accent">${calculateLookTotal().toFixed(2)}</span>
+            <span className="text-primary text-lg">${calculateLookTotal().toFixed(2)}</span>
           ) : (
-            <span className="text-netflix-accent">{items[0]?.price}</span>
+            <span className="text-primary text-lg">{items[0]?.price}</span>
           )}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => onRemoveLook(id)}
-            className="text-red-500 hover:text-red-600"
+            className="text-destructive hover:text-destructive/90"
           >
             <Trash2 className="h-5 w-5" />
           </Button>
@@ -60,7 +60,7 @@ export const LookCartItem = ({
           return (
             <div 
               key={`${id}-${item.id}`}
-              className="flex flex-col gap-2 bg-netflix-card p-3 rounded-lg relative group"
+              className="flex flex-col gap-2 bg-background/50 p-3 rounded-lg relative group border border-border/50"
             >
               <div className="aspect-[3/4] mb-2">
                 <img 
@@ -72,15 +72,15 @@ export const LookCartItem = ({
               </div>
               <div className="flex-1">
                 <p 
-                  className="font-medium cursor-pointer hover:text-netflix-accent transition-colors"
+                  className="font-medium cursor-pointer hover:text-primary transition-colors"
                   onClick={() => window.open(searchUrl, '_blank')}
                 >
                   {item.title}
                 </p>
-                <p className="text-sm text-netflix-accent">{item.price}</p>
+                <p className="text-sm text-primary">{item.price}</p>
                 <button
                   onClick={() => window.open(searchUrl, '_blank')}
-                  className="text-xs text-gray-400 hover:text-netflix-accent transition-colors flex items-center gap-1 mt-1"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 mt-1"
                 >
                   <ExternalLink className="h-3 w-3" />
                   View Product
@@ -90,7 +90,7 @@ export const LookCartItem = ({
                 variant="ghost"
                 size="icon"
                 onClick={() => onRemoveItem(id, item.id)}
-                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600"
+                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive/90"
               >
                 <Trash2 className="h-3 w-3" />
               </Button>

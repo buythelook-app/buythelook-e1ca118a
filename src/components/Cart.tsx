@@ -225,12 +225,12 @@ export const Cart = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="container mx-auto">
         <Button 
           variant="ghost" 
           onClick={() => navigate(-1)}
-          className="mb-6 text-gray-700 hover:bg-gray-100"
+          className="mb-6"
         >
           ← Back
         </Button>
@@ -239,7 +239,7 @@ export const Cart = () => {
         
         <div className="bg-fashion-glass rounded-xl p-6 backdrop-blur-xl border border-white/20">
           {looks.length === 0 && items.length === 0 ? (
-            <p className="text-center text-gray-400">Your cart is empty</p>
+            <p className="text-center text-muted-foreground">Your cart is empty</p>
           ) : (
             <div className="space-y-8">
               {looks.map((look, index) => (
