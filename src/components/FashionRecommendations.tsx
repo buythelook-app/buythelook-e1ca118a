@@ -13,13 +13,15 @@ interface FashionRecommendationsProps {
   style: string;
   budget: string;
   gender?: 'women' | 'men';
+  mode?: 'basic' | 'premium';
 }
 
 export const FashionRecommendations = ({ 
   eventType, 
   style, 
   budget, 
-  gender = 'women' 
+  gender = 'women',
+  mode = 'basic'
 }: FashionRecommendationsProps) => {
   const { items, loading, error, fetchFashionItems } = useFashionItems();
 
@@ -97,11 +99,16 @@ export const FashionRecommendations = ({
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="w-full">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold mb-4">Your Perfect Style Match</h2>
+        <h2 className="text-3xl font-bold mb-4">
+          {mode === 'premium' ? 'Your Premium Style Match' : 'Your Basic Style Match'}
+        </h2>
         <p className="text-muted-foreground mb-4">
-          Curated {eventType} pieces in {style} style for your {budget} budget
+          {mode === 'premium' 
+            ? `AI-curated ${eventType} pieces with advanced personalization`
+            : `Curated ${eventType} pieces in ${style} style for your ${budget} budget`
+          }
         </p>
         <div className="flex justify-center gap-2 flex-wrap">
           <Badge variant="secondary">{eventType}</Badge>
