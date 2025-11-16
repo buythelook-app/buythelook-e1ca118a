@@ -3,12 +3,16 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { FashionRecommendations } from "@/components/FashionRecommendations";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, RotateCcw } from "lucide-react";
+import { ArrowLeft, RotateCcw, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import { PremiumLookUpgrade } from "@/components/PremiumLookUpgrade";
+import { usePremiumLookPass } from "@/hooks/usePremiumLookPass";
 
 export default function FashionResultsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { passData } = usePremiumLookPass();
+  const [showPremiumLook, setShowPremiumLook] = useState(false);
   
   // Get parameters from URL or localStorage
   const [params, setParams] = useState({
@@ -119,12 +123,50 @@ export default function FashionResultsPage() {
       </motion.div>
 
       {/* Results Section */}
-      <FashionRecommendations 
-        eventType={params.eventType}
-        style={params.style}
-        budget={params.budget}
-        gender={params.gender}
-      />
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* Basic Look */}
+        <div>
+          <FashionRecommendations 
+            eventType={params.eventType}
+            style={params.style}
+            budget={params.budget}
+            gender={params.gender}
+            mode="basic"
+          />
+        </div>
+
+        {/* Premium Upgrade CTA */}
+        {!passData.hasPremiumLook && !showPremiumLook && (
+          <PremiumLookUpgrade 
+            onUpgradeComplete={() => setShowPremiumLook(true)}
+          />
+        )}
+
+        {/* Premium Look */}
+        {(passData.hasPremiumLook || showPremiumLook) && (
+          <div className="space-y-4">
+            <div className="bg-green-50 dark:bg-green-950/20 border-2 border-green-500 rounded-lg p-4 text-center">
+              <p className="font-semibold text-green-700 dark:text-green-400">
+                ✓ Upgrade complete! Your premium look is ready ↓
+              </p>
+            </div>
+            
+            <div className="border-2 border-primary/20 rounded-lg p-6">
+              <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                <Sparkles className="h-6 w-6 text-yellow-500" />
+                Your Premium Look
+              </h2>
+              <FashionRecommendations 
+                eventType={params.eventType}
+                style={params.style}
+                budget={params.budget}
+                gender={params.gender}
+                mode="premium"
+              />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
