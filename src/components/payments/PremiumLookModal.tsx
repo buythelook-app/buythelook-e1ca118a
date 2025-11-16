@@ -30,7 +30,7 @@ export function PremiumLookModal({ isOpen, onClose, onPurchase }: PremiumLookMod
             Upgrade to Premium Look
           </DialogTitle>
           <DialogDescription>
-            Get a fully personalized, accurate, and flattering look for just 15₪
+            Get a fully personalized, accurate, and flattering look for just $5
           </DialogDescription>
         </DialogHeader>
 
@@ -59,7 +59,7 @@ export function PremiumLookModal({ isOpen, onClose, onPurchase }: PremiumLookMod
 
           <div className="flex items-center justify-between py-3 border-t border-b">
             <span className="font-semibold">Premium Look Pass</span>
-            <span className="text-2xl font-bold">15₪</span>
+            <span className="text-2xl font-bold">$5</span>
           </div>
 
           <Button
@@ -69,7 +69,7 @@ export function PremiumLookModal({ isOpen, onClose, onPurchase }: PremiumLookMod
             size="lg"
           >
             <CreditCard className="mr-2 h-4 w-4" />
-            {isProcessing ? "Processing..." : "Upgrade Now - 15₪"}
+            {isProcessing ? "Processing..." : "Upgrade Now - $5"}
           </Button>
 
           <p className="text-xs text-center text-muted-foreground">

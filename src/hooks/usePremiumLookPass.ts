@@ -56,8 +56,8 @@ export const usePremiumLookPass = () => {
         user_id: user.id,
         event: 'look_pass_purchase',
         properties: {
-          amount: 15,
-          currency: 'ILS',
+          amount: 5,
+          currency: 'USD',
           timestamp: new Date().toISOString(),
         },
       });
