@@ -41,7 +41,7 @@ export function PremiumLookUpgrade({ onUpgradeComplete }: PremiumLookUpgradeProp
               size="lg"
             >
               <Sparkles className="mr-2 h-4 w-4" />
-              Upgrade to Premium Look – 15₪
+              Upgrade to Premium Look – $5
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
