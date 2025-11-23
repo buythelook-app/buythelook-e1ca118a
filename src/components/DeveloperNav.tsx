@@ -23,6 +23,7 @@ export function DeveloperNav() {
         <Link to="/agent-debug" className="hover:underline">Agent Debug</Link>
         <Link to="/outfit-generation" className="hover:underline">Outfit Generation</Link>
         <Link to="/catalog-demo" className="hover:underline">Catalog Demo</Link>
+        <Link to="/admin/users" className="hover:underline">Admin Users</Link>
       </div>
       <div>
         <span>DEV MODE</span>

@@ -42,6 +42,7 @@ import AgentHealthPage from './pages/AgentHealth';
 import ApiTest from './pages/ApiTest';
 import { ProductLinks } from './pages/ProductLinks';
 import StylingAgentTest from './pages/StylingAgentTest';
+import AdminUsers from './pages/AdminUsers';
 
 // Create QueryClient instance with error handling
 const queryClient = new QueryClient({
@@ -116,6 +117,7 @@ function App() {
             <Route path="/agent-health" element={<AgentHealthPage />} />
             <Route path="/validation-dashboard" element={<ValidationDashboard />} />
             <Route path="/styling-agent-test" element={<StylingAgentTest />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
           </Routes>
           <Toaster />
         </Router>
