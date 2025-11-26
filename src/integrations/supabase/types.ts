@@ -303,6 +303,78 @@ export type Database = {
           },
         ]
       }
+      generated_outfits: {
+        Row: {
+          created_at: string
+          description: string | null
+          feedback_reason: string | null
+          feedback_text: string | null
+          id: string
+          is_liked: boolean | null
+          is_unlocked: boolean | null
+          items: Json
+          links_unlocked: boolean | null
+          name: string
+          purchased_at: string | null
+          quiz_id: string | null
+          stylist_notes: Json | null
+          total_price: number | null
+          user_id: string
+          why_it_works: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          feedback_reason?: string | null
+          feedback_text?: string | null
+          id?: string
+          is_liked?: boolean | null
+          is_unlocked?: boolean | null
+          items: Json
+          links_unlocked?: boolean | null
+          name: string
+          purchased_at?: string | null
+          quiz_id?: string | null
+          stylist_notes?: Json | null
+          total_price?: number | null
+          user_id: string
+          why_it_works?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          feedback_reason?: string | null
+          feedback_text?: string | null
+          id?: string
+          is_liked?: boolean | null
+          is_unlocked?: boolean | null
+          items?: Json
+          links_unlocked?: boolean | null
+          name?: string
+          purchased_at?: string | null
+          quiz_id?: string | null
+          stylist_notes?: Json | null
+          total_price?: number | null
+          user_id?: string
+          why_it_works?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_outfits_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "style_quizzes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_outfits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       items: {
         Row: {
           created_at: string
@@ -432,6 +504,53 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_transactions: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          currency: string | null
+          id: string
+          metadata: Json | null
+          payment_type: string | null
+          status: string | null
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          currency?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_type?: string | null
+          status?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_type?: string | null
+          status?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_cache: {
         Row: {
           cache_key: string
@@ -462,13 +581,51 @@ export type Database = {
         }
         Relationships: []
       }
+      product_interactions: {
+        Row: {
+          created_at: string
+          id: string
+          interaction_type: string | null
+          product_id: string
+          product_url: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interaction_type?: string | null
+          product_id: string
+          product_url?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interaction_type?: string | null
+          product_id?: string
+          product_url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_interactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          credits_tour_completed: boolean | null
           email: string | null
           id: string
           name: string | null
+          onboarding_completed: boolean | null
+          outfits_tour_completed: boolean | null
           pricing_variant: string | null
           updated_at: string | null
           user_credits: number | null
@@ -476,9 +633,12 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          credits_tour_completed?: boolean | null
           email?: string | null
           id: string
           name?: string | null
+          onboarding_completed?: boolean | null
+          outfits_tour_completed?: boolean | null
           pricing_variant?: string | null
           updated_at?: string | null
           user_credits?: number | null
@@ -486,9 +646,12 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          credits_tour_completed?: boolean | null
           email?: string | null
           id?: string
           name?: string | null
+          onboarding_completed?: boolean | null
+          outfits_tour_completed?: boolean | null
           pricing_variant?: string | null
           updated_at?: string | null
           user_credits?: number | null
@@ -641,6 +804,100 @@ export type Database = {
           weight?: string | null
         }
         Relationships: []
+      }
+      style_quizzes: {
+        Row: {
+          budget: string | null
+          created_at: string
+          id: string
+          mood: string | null
+          occasion: string | null
+          uploaded_image_url: string | null
+          user_id: string
+          vision: string | null
+        }
+        Insert: {
+          budget?: string | null
+          created_at?: string
+          id?: string
+          mood?: string | null
+          occasion?: string | null
+          uploaded_image_url?: string | null
+          user_id: string
+          vision?: string | null
+        }
+        Update: {
+          budget?: string | null
+          created_at?: string
+          id?: string
+          mood?: string | null
+          occasion?: string | null
+          uploaded_image_url?: string | null
+          user_id?: string
+          vision?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "style_quizzes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      styled_profiles: {
+        Row: {
+          avoided_colors: Json | null
+          body_type: string | null
+          created_at: string
+          default_budget: string | null
+          default_occasion: string | null
+          face_shape: string | null
+          height_cm: number | null
+          preferred_colors: Json | null
+          skin_tone: string | null
+          updated_at: string
+          user_id: string
+          weight_kg: number | null
+        }
+        Insert: {
+          avoided_colors?: Json | null
+          body_type?: string | null
+          created_at?: string
+          default_budget?: string | null
+          default_occasion?: string | null
+          face_shape?: string | null
+          height_cm?: number | null
+          preferred_colors?: Json | null
+          skin_tone?: string | null
+          updated_at?: string
+          user_id: string
+          weight_kg?: number | null
+        }
+        Update: {
+          avoided_colors?: Json | null
+          body_type?: string | null
+          created_at?: string
+          default_budget?: string | null
+          default_occasion?: string | null
+          face_shape?: string | null
+          height_cm?: number | null
+          preferred_colors?: Json | null
+          skin_tone?: string | null
+          updated_at?: string
+          user_id?: string
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "styled_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_feedback: {
         Row: {
