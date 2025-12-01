@@ -3,13 +3,13 @@ import { createLemonSqueezyCheckout } from "@/lib/lemonsqueezy"
 import { getLemonSqueezyPackageById } from "@/lib/lemonsqueezy-packages"
 
 export async function POST(request: Request) {
-  console.log("[v0] LemonSqueezy Credits: Creating checkout session")
+  console.log("[] LemonSqueezy Credits: Creating checkout session")
 
   try {
     const { packageId, userId } = await request.json()
 
-    console.log("[v0] LemonSqueezy Credits: Package ID:", packageId)
-    console.log("[v0] LemonSqueezy Credits: User ID:", userId)
+    console.log("[] LemonSqueezy Credits: Package ID:", packageId)
+    console.log("[] LemonSqueezy Credits: User ID:", userId)
 
     // Validate inputs
     if (!userId) {
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     }
 
     console.log(
-      "[v0] LemonSqueezy Credits: Package found:",
+      "[] LemonSqueezy Credits: Package found:",
       creditPackage.name,
       creditPackage.credits,
       "credits for $",
@@ -51,13 +51,13 @@ export async function POST(request: Request) {
       redirectUrl: successUrl,
     })
 
-    console.log("[v0] LemonSqueezy Credits: Checkout URL created")
+    console.log("[] LemonSqueezy Credits: Checkout URL created")
 
     return NextResponse.json({
       url: checkoutUrl,
     })
   } catch (error: any) {
-    console.error("[v0] LemonSqueezy Credits: Error creating checkout:", error.message)
+    console.error("[] LemonSqueezy Credits: Error creating checkout:", error.message)
     return NextResponse.json({ error: "Failed to create checkout session", details: error.message }, { status: 500 })
   }
 }

@@ -2,14 +2,14 @@ import { NextResponse } from "next/server"
 import { getSupabaseAdmin } from "@/lib/supabase-admin"
 
 export async function POST(request: Request) {
-  console.log("[v0] LemonSqueezy: Verifying session and unlocking outfit")
+  console.log("[] LemonSqueezy: Verifying session and unlocking outfit")
 
   try {
     const { outfitId, userId, type } = await request.json()
 
-    console.log("[v0] LemonSqueezy: Outfit ID:", outfitId)
-    console.log("[v0] LemonSqueezy: User ID:", userId)
-    console.log("[v0] LemonSqueezy: Type:", type)
+    console.log("[] LemonSqueezy: Outfit ID:", outfitId)
+    console.log("[] LemonSqueezy: User ID:", userId)
+    console.log("[] LemonSqueezy: Type:", type)
 
     if (!outfitId || !userId) {
       return NextResponse.json({ error: "Outfit ID and User ID required" }, { status: 400 })
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const supabaseAdmin = getSupabaseAdmin()
 
     if (type === "links_unlock" || type === "outfit_unlock") {
-      console.log("[v0] LemonSqueezy: Attempting to update links_unlocked for outfit:", outfitId)
+      console.log("[] LemonSqueezy: Attempting to update links_unlocked for outfit:", outfitId)
 
       const { data: outfitCheck, error: checkError } = await supabaseAdmin
         .from("generated_outfits")
@@ -28,16 +28,16 @@ export async function POST(request: Request) {
         .maybeSingle()
 
       if (checkError) {
-        console.error("[v0] LemonSqueezy: Database error:", checkError)
+        console.error("[] LemonSqueezy: Database error:", checkError)
         return NextResponse.json({ error: "Database query failed", details: checkError.message }, { status: 500 })
       }
 
       if (!outfitCheck) {
-        console.error("[v0] LemonSqueezy: Outfit not found or doesn't belong to user")
+        console.error("[] LemonSqueezy: Outfit not found or doesn't belong to user")
         return NextResponse.json({ error: "Outfit not found", outfitId }, { status: 404 })
       }
 
-      console.log("[v0] LemonSqueezy: Found outfit, current links_unlocked:", outfitCheck.links_unlocked)
+      console.log("[] LemonSqueezy: Found outfit, current links_unlocked:", outfitCheck.links_unlocked)
 
       const { data: updateData, error: updateError } = await supabaseAdmin
         .from("generated_outfits")
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
         .select()
 
       if (updateError) {
-        console.error("[v0] LemonSqueezy: Failed to unlock links:", updateError)
+        console.error("[] LemonSqueezy: Failed to unlock links:", updateError)
         return NextResponse.json(
           { error: "Failed to unlock outfit links", details: updateError.message },
           { status: 500 },
@@ -55,11 +55,11 @@ export async function POST(request: Request) {
       }
 
       if (!updateData || updateData.length === 0) {
-        console.error("[v0] LemonSqueezy: Update returned no rows")
+        console.error("[] LemonSqueezy: Update returned no rows")
         return NextResponse.json({ error: "Database update failed", details: "No rows were updated" }, { status: 500 })
       }
 
-      console.log("[v0] LemonSqueezy: Successfully unlocked links for outfit:", updateData[0].id)
+      console.log("[] LemonSqueezy: Successfully unlocked links for outfit:", updateData[0].id)
 
       // Try to record transaction (non-critical)
       try {
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
           metadata: { outfitId, type: "links_unlock", provider: "lemonsqueezy" },
         })
       } catch (txError) {
-        console.log("[v0] LemonSqueezy: Transaction record save failed (non-critical):", txError)
+        console.log("[] LemonSqueezy: Transaction record save failed (non-critical):", txError)
       }
     }
 
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
       amountTotal: 500,
     })
   } catch (error: any) {
-    console.error("[v0] LemonSqueezy: Verification error:", error)
+    console.error("[] LemonSqueezy: Verification error:", error)
     return NextResponse.json({ error: "Failed to verify session", details: error.message }, { status: 500 })
   }
 }

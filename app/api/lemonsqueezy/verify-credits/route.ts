@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getSupabaseAdmin } from "@/lib/supabase-admin"
 
 export async function POST(request: Request) {
-  console.log("[v0] LemonSqueezy Verify Credits: Starting verification")
+  console.log("[] LemonSqueezy Verify Credits: Starting verification")
 
   try {
     const { userId, credits } = await request.json()
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     }
 
     const creditsToAdd = Number.parseInt(credits, 10)
-    console.log("[v0] LemonSqueezy Verify Credits: Adding", creditsToAdd, "credits to user", userId)
+    console.log("[] LemonSqueezy Verify Credits: Adding", creditsToAdd, "credits to user", userId)
 
     // Get Supabase admin client
     const supabaseAdmin = getSupabaseAdmin()
@@ -25,24 +25,24 @@ export async function POST(request: Request) {
       .single()
 
     if (fetchError) {
-      console.error("[v0] LemonSqueezy Verify Credits: Error fetching profile:", fetchError)
+      console.error("[] LemonSqueezy Verify Credits: Error fetching profile:", fetchError)
       return NextResponse.json({ error: "Failed to fetch user profile" }, { status: 500 })
     }
 
     const currentCredits = profile?.credits || 0
     const newCredits = currentCredits + creditsToAdd
 
-    console.log("[v0] LemonSqueezy Verify Credits: Current credits:", currentCredits, "-> New credits:", newCredits)
+    console.log("[] LemonSqueezy Verify Credits: Current credits:", currentCredits, "-> New credits:", newCredits)
 
     // Update credits
     const { error: updateError } = await supabaseAdmin.from("profiles").update({ credits: newCredits }).eq("id", userId)
 
     if (updateError) {
-      console.error("[v0] LemonSqueezy Verify Credits: Error updating credits:", updateError)
+      console.error("[] LemonSqueezy Verify Credits: Error updating credits:", updateError)
       return NextResponse.json({ error: "Failed to update credits" }, { status: 500 })
     }
 
-    console.log("[v0] LemonSqueezy Verify Credits: Credits updated successfully!")
+    console.log("[] LemonSqueezy Verify Credits: Credits updated successfully!")
 
     // Try to record transaction (non-critical)
     try {
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
         metadata: { credits: creditsToAdd, provider: "lemonsqueezy" },
       })
     } catch (txError) {
-      console.log("[v0] LemonSqueezy: Transaction record save failed (non-critical):", txError)
+      console.log("[] LemonSqueezy: Transaction record save failed (non-critical):", txError)
     }
 
     return NextResponse.json({
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       newBalance: newCredits,
     })
   } catch (error: any) {
-    console.error("[v0] LemonSqueezy Verify Credits: Error:", error.message)
+    console.error("[] LemonSqueezy Verify Credits: Error:", error.message)
     return NextResponse.json({ error: "Failed to verify payment", details: error.message }, { status: 500 })
   }
 }

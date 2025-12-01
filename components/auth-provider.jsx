@@ -75,7 +75,7 @@ export function AuthProvider({ children }) {
         data: {
           full_name: fullName,
         },
-        emailRedirectTo: `https://buythelook.pdfwhisperer.xyz/auth/callback`,
+        emailRedirectTo: `https://buythelook.app/auth/callback`,
       },
     })
 
