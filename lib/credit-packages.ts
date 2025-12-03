@@ -14,23 +14,23 @@ export const CREDIT_PACKAGES: CreditPackage[] = [
   {
     id: "starter",
     name: "Starter",
-    credits: 5,
+    credits: 1,
     priceInCents: 499, // $4.99
     description: "Perfect for trying out new looks",
   },
   {
     id: "popular",
     name: "Style Pack",
-    credits: 15,
-    priceInCents: 999, // $9.99
+    credits: 5,
+    priceInCents: 2000, // $9.99
     popular: true,
     description: "Most popular - Best value for regular users",
   },
   {
     id: "pro",
     name: "Fashionista",
-    credits: 50,
-    priceInCents: 2499, // $24.99
+    credits: 10,
+    priceInCents: 3500, // $24.99
     description: "For the serious style enthusiast",
   },
 ]

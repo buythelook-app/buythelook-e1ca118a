@@ -8,6 +8,7 @@ import { supabaseAuth } from "@/lib/supabase-auth-client"
 import { Menu, X, ChevronDown, User, LogOut, Coins } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 import { motion } from "framer-motion"
+import { Logo } from "@/components/logo"
 
 export function Header() {
   const pathname = usePathname()
@@ -62,7 +63,7 @@ export function Header() {
 
   const textColor = isTransparent ? "text-white" : "text-neutral-900"
   const mutedTextColor = isTransparent ? "text-white/70 hover:text-white" : "text-neutral-500 hover:text-neutral-900"
-  const logoColor = isTransparent ? "text-white hover:opacity-80" : "text-neutral-900 hover:opacity-70"
+  const logoVariant = isTransparent ? "light" : "dark"
 
   return (
     <motion.header
@@ -95,9 +96,9 @@ export function Header() {
         {/* Center Logo */}
         <Link
           href="/"
-          className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xl md:text-2xl font-serif font-bold tracking-tight transition-all duration-300 ${logoColor}`}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-300 hover:opacity-80"
         >
-          BuyTheLook
+          <Logo className="h-12 md:h-14 w-auto" variant={logoVariant} />
         </Link>
 
         {/* Right Actions */}
@@ -205,7 +206,7 @@ export function Header() {
                 className="text-sm font-semibold uppercase tracking-wider text-neutral-500 hover:text-neutral-900 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Credits: <span className={textColor}>{credits}</span>
+                Credits: <span className="text-neutral-900">{credits}</span>
               </Link>
             )}
 

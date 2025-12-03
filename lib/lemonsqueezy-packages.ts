@@ -17,7 +17,7 @@ export const LEMONSQUEEZY_CREDIT_PACKAGES: LemonSqueezyCreditPackage[] = [
   {
     id: "starter",
     name: "Starter",
-    credits: 5,
+     credits: 1,
     priceInCents: 499, // $4.99
     variantId: process.env.LEMONSQUEEZY_VARIANT_ID || "1115018", // Use default variant with custom price
     description: "Perfect for trying out new looks",
@@ -25,8 +25,8 @@ export const LEMONSQUEEZY_CREDIT_PACKAGES: LemonSqueezyCreditPackage[] = [
   {
     id: "popular",
     name: "Style Pack",
-    credits: 15,
-    priceInCents: 999, // $9.99
+    credits: 5,
+    priceInCents: 2000, // $9.99
     variantId: process.env.LEMONSQUEEZY_VARIANT_ID || "1115018",
     popular: true,
     description: "Most popular - Best value for regular users",
@@ -34,8 +34,8 @@ export const LEMONSQUEEZY_CREDIT_PACKAGES: LemonSqueezyCreditPackage[] = [
   {
     id: "pro",
     name: "Fashionista",
-    credits: 50,
-    priceInCents: 2499, // $24.99
+     credits: 10,
+    priceInCents: 3500, // $24.99
     variantId: process.env.LEMONSQUEEZY_VARIANT_ID || "1115018",
     description: "For the serious style enthusiast",
   },

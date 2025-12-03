@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Instagram, Twitter, Facebook } from "lucide-react"
-
+import Logo from './logo'
 export function Footer() {
   return (
     <footer className="border-t border-black/10 bg-white text-black">
@@ -10,14 +10,17 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           {/* Brand */}
           <div className="md:col-span-2">
-            <h3 className="text-3xl font-serif mb-6">BuyTheLook</h3>
+            <Link href="/" className="inline-block mb-6">
+              <Logo className="h-16 w-auto" variant="dark" />
+            </Link>
             <p className="text-sm leading-relaxed text-black/60 max-w-md mb-8">
-              Experience the pinnacle of personal styling. AI-curated looks tailored to your unique essence and
-              occasion.
+             AI styling. Instant shopping. Zero effort.
+
+
             </p>
             <div className="flex items-center gap-4">
               <a
-                href="https://instagram.com"
+                href="https://instagram.com/buy_the_look__"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-black/40 hover:text-black transition-colors"

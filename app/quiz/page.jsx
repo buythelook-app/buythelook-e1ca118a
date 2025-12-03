@@ -46,7 +46,8 @@ export default function QuizPage() {
   }, [user])
 
   const handleUseProfileClick = () => {
-    setShowQuickForm(true)
+    // setShowQuickForm(true)
+    handleQuickFormSubmit()
   }
 
   const handleQuickFormSubmit = async () => {
@@ -127,7 +128,7 @@ export default function QuizPage() {
               No, Start Fresh
             </Button>
             <Button onClick={handleUseProfileClick} size="lg" className="flex-1 bg-black text-white hover:bg-zinc-800">
-              Yes, Use Profile
+              Yes, Use Profile 
             </Button>
           </div>
 

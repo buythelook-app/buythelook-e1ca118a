@@ -234,12 +234,14 @@ export function QuizFlow({ styledProfile }) {
       router.push("/generate")
     }
   }
-
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
-    }
+const handleBack = () => {
+  if (currentStep > 0) {
+    setCurrentStep(currentStep - 1);
+  } else {
+    // Go to home page
+    window.location.href = "/";
   }
+};
 
   const handleTextChange = (e) => {
     setQuizData({ ...quizData, [currentQuestion.id]: e.target.value })
@@ -479,7 +481,7 @@ export function QuizFlow({ styledProfile }) {
         <Button
           variant="outline"
           onClick={handleBack}
-          disabled={currentStep === 0}
+          // disabled={currentStep === 0}
           className="px-8 transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-30 bg-transparent border-border"
         >
           Back

@@ -124,7 +124,7 @@ CLIENT PROFILE:
 - Style: ${profile.styleKeywords?.aesthetic?.join(", ") || "casual"}
 - Occasion: ${profile.occasionGuidelines?.occasion || "everyday"}
 - Colors: ${profile.colorStrategy?.primary?.join(", ") || "black, white, navy"}
-- Budget: $${profile.priceRange?.min || 50}-$${profile.priceRange?.max || 200}
+- Budget: $${profile.priceRange?.min || 50}-$${profile.priceRange?.max || 200} per outfit (STRICT)
 
 ${styledProfile ? "IMPORTANT: Use the physical profile data above to recommend flattering cuts, proportions, and colors that complement the client's body type, face shape, and skin tone." : ""}
 
@@ -148,6 +148,11 @@ RULES:
 4. NO product can appear in multiple outfits
 5. Calculate accurate total price
 6. Create diverse options (different styles, colors, price points)
+7. **CRITICAL BUDGET RULE**: Each outfit's TOTAL PRICE must be within or as close as possible to $${profile.priceRange?.min || 50}-$${profile.priceRange?.max || 200}
+   - FIRST PRIORITY: Find outfits within the exact budget range
+   - SECOND PRIORITY: If not possible, choose items closest to the budget (prefer slightly under budget over over budget)
+   - Each outfit should have totalPrice calculated as: top.price + bottom.price + shoes.price
+   - Aim for AT LEAST 6 out of 9 outfits to be within the budget range
 
 Return ONLY valid JSON with 9 outfits:
 {
@@ -165,6 +170,7 @@ Return ONLY valid JSON with 9 outfits:
         "id": "product_id_from_list"
       },
       "totalPrice": 165,
+      "withinBudget": true,
       "whyItWorks": "2-3 sentences explaining the outfit",
       "stylistNotes": [
         "Styling tip 1",
@@ -176,7 +182,7 @@ Return ONLY valid JSON with 9 outfits:
   ]
 }
 
-CRITICAL: Create exactly 9 diverse outfits using different products! Do not include per-item reasoning, only the overall whyItWorks.`
+CRITICAL: Create exactly 9 diverse outfits using different products! Prioritize staying within the budget of $${profile.priceRange?.min || 50}-$${profile.priceRange?.max || 200} per outfit.`
 
     console.log(" Outfit Picker: Calling OpenAI for 9 outfit generation...")
     const response = await callOpenAI({
@@ -217,6 +223,7 @@ CRITICAL: Create exactly 9 diverse outfits using different products! Do not incl
               (products.tops[index]?.price || 50) +
               (products.bottoms[index]?.price || 50) +
               (products.shoes[index]?.price || 50),
+            withinBudget: false,
             qualityScore: outfit.confidenceScore || 85,
             items: [
               {
@@ -252,10 +259,15 @@ CRITICAL: Create exactly 9 diverse outfits using different products! Do not incl
           }
         }
 
+        const totalPrice = topProduct.price + bottomProduct.price + shoesProduct.price
+        const withinBudget =
+          totalPrice >= (profile.priceRange?.min || 50) && totalPrice <= (profile.priceRange?.max || 200)
+
         const enriched = {
           id: `outfit-${index + 1}`,
           name: outfit.name,
-          totalPrice: topProduct.price + bottomProduct.price + shoesProduct.price,
+          totalPrice: totalPrice,
+          withinBudget: withinBudget,
           qualityScore: outfit.confidenceScore || 90,
           items: [
             {

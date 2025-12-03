@@ -101,7 +101,7 @@ function HeroVideoBackground({ isPlaying, isMuted }) {
           isLoaded ? 'opacity-100' : 'opacity-0'
         }`}
         style={{
-          filter: "brightness(0.55) contrast(1.1) saturate(0.9)",
+          filter: "",
         }}
       >
         <source src="/ved.mp4" type="video/mp4" />
@@ -283,9 +283,9 @@ function HomeContent() {
     <div className="relative">
       <Header openAuth={openAuth} />
 
-      <main className="relative bg-[#faf9f7]">
+      <main className="relative ">
         {/* ========== HERO SECTION - 90vh ========== */}
-        <section className="w-full relative h-[90vh] flex items-center justify-center overflow-hidden">
+        <section className="w-full relative h-[100vh] flex items-center justify-center overflow-hidden">
           <HeroVideoBackground isPlaying={isVideoPlaying} isMuted={isVideoMuted} />
 
           {/* Video Controls */}
@@ -328,9 +328,9 @@ function HomeContent() {
             </motion.div>
 
             <h1 className="text-[12vw] sm:text-[10vw] md:text-[7vw] lg:text-[6rem] xl:text-[7rem] leading-[0.9] font-serif tracking-[-0.02em] text-white mb-6 md:mb-8">
-              <AnimatedHeroText delay={0.5}>Discover Your</AnimatedHeroText>
+              <AnimatedHeroText delay={0.5}>Your AI Personal </AnimatedHeroText>
               <AnimatedHeroText delay={0.7}>
-                <span className="italic font-light text-white/95">Signature Style</span>
+                <span className="italic font-light text-white/95">Stylist</span>
               </AnimatedHeroText>
             </h1>
 
@@ -340,8 +340,9 @@ function HomeContent() {
               transition={{ duration: 0.8, delay: 1.1 }}
               className="text-base md:text-lg text-white/60 font-light max-w-lg mx-auto mb-10 md:mb-12 leading-relaxed"
             >
-              Experience bespoke fashion curation powered by artificial intelligence.
-              <span className="hidden md:inline"> Your personal stylist, reimagined.</span>
+              Complete outfits curated for you. Shop instantly.
+
+              {/* <span className="hidden md:inline"> Your personal stylist, reimagined.</span> */}
             </motion.p>
 
             <motion.div
@@ -356,20 +357,26 @@ function HomeContent() {
                 className="group h-13 px-8 bg-white text-neutral-900 hover:bg-white/95 text-sm font-medium tracking-wide transition-all duration-300"
               >
                 <span className="flex items-center gap-2">
-                  Begin Your Journey
+                 Get Styled Now
+
                   <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </span>
               </Button>
 
-              <Link href="/outfits">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="h-13 px-8 bg-transparent border border-white/30 text-white hover:bg-white/10 hover:border-white/50 text-sm font-medium tracking-wide transition-all duration-300"
-                >
-                  View Collections
-                </Button>
-              </Link>
+           
+               <Button
+  variant="outline"
+  size="lg"
+  onClick={() => {
+    document.getElementById("howits")?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }}
+  className="h-13 px-8 bg-transparent border border-white/30 text-white hover:bg-white/10 hover:border-white/50 text-sm font-medium tracking-wide transition-all duration-300"
+>
+  How It Works
+</Button>
+
             </motion.div>
 
             <motion.div
@@ -379,9 +386,9 @@ function HomeContent() {
               className="mt-14 md:mt-16 flex items-center justify-center gap-10 md:gap-12"
             >
               {[
-                { value: "10K+", label: "Styled" },
-                { value: "98%", label: "Satisfaction" },
-                { value: "AI", label: "Powered" },
+                { value: "AI-Powered ", label: "Personalized to your style" },
+                { value: "Instant Shopping", label: "Direct links to every piece" },
+                { value: "Zero Effort", label: "Perfect outfits in minutes" },
               ].map((stat, i) => (
                 <div key={stat.label} className="text-center">
                   <div className="text-lg md:text-xl font-light text-white/80 tracking-wide">{stat.value}</div>
@@ -615,16 +622,14 @@ function HomeContent() {
 
                 <FadeInView delay={0.1}>
                   <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif leading-[1.15] text-neutral-900 mb-6">
-                    Where artificial intelligence meets
-                    <span className="italic font-light"> timeless elegance</span>
+                    AI Meets Fashion. You Get Perfect Outfits.
+                    <span className="italic font-light"> </span>
                   </h2>
                 </FadeInView>
 
                 <FadeInView delay={0.2}>
                   <p className="text-lg text-neutral-500 font-light leading-relaxed mb-8">
-                    Our AI stylist analyzes your unique preferences, body type, and lifestyle to create perfectly
-                    curated outfits that express your authentic self. Each recommendation is crafted with the precision
-                    of a personal couturier.
+                  Stop endless scrolling. Our AI analyzes your style, body type, and occasion to create complete looks you’ll love—with one-click shopping for every piece.
                   </p>
                 </FadeInView>
 
@@ -678,14 +683,14 @@ function HomeContent() {
         </section>
 
         {/* ========== HOW IT WORKS SECTION ========== */}
-        <section className="py-28 md:py-36 bg-[#faf9f7]">
+        <section className="py-28 md:py-36 bg-[#faf9f7]" id="howits">
           <div className="max-w-6xl mx-auto px-6 md:px-8">
             <FadeInView className="text-center mb-16">
               <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-neutral-400 mb-5">
                 How It Works
               </span>
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif text-neutral-900">
-                Three simple <span className="italic font-light">steps</span>
+                Get Styled in 3 <span className="italic font-light">steps</span>
               </h2>
             </FadeInView>
 
@@ -694,17 +699,17 @@ function HomeContent() {
                 {
                   step: "01",
                   title: "Share Your Style",
-                  description: "Take our refined style quiz to help our AI understand your preferences and lifestyle.",
+                  description: "Quick quiz: preferences, body type, occasion",
                 },
                 {
                   step: "02",
-                  title: "AI Curation",
-                  description: "Our sophisticated algorithm analyzes thousands of pieces to find your perfect matches.",
+                  title: "AI Curates Your Look",
+                  description: "Thousands of pieces analyzed in seconds",
                 },
                 {
                   step: "03",
-                  title: "Discover & Shop",
-                  description: "Explore your personalized collection and shop directly from curated recommendations.",
+                  title: "Shop Instantly",
+                  description: "One-click purchase for every item",
                 },
               ].map((item, i) => (
                 <FadeInView key={item.step} delay={i * 0.1}>
@@ -726,13 +731,13 @@ function HomeContent() {
           <div className="max-w-4xl mx-auto px-6 md:px-8 text-center">
             <FadeInView>
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif text-neutral-900 mb-6">
-                Ready to discover your <span className="italic font-light">perfect style</span>?
+                Ready for Your Perfect <span className="italic font-light"> Wardrobe?</span>?
               </h2>
             </FadeInView>
 
             <FadeInView delay={0.1}>
               <p className="text-lg text-neutral-500 font-light mb-10 max-w-2xl mx-auto">
-                Join thousands who have transformed their wardrobe with AI-powered personal styling.
+Join thousands getting AI-styled daily.
               </p>
             </FadeInView>
 
@@ -742,7 +747,7 @@ function HomeContent() {
                 size="lg"
                 className="h-14 px-10 bg-neutral-900 text-white hover:bg-neutral-800 text-sm font-medium tracking-wide transition-all duration-300"
               >
-                Start Style Quiz
+Start Style Quiz
                 <ArrowRight className="w-4 h-4 ml-3" />
               </Button>
             </FadeInView>
