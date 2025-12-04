@@ -43,23 +43,37 @@ export function AuthProvider({ children }) {
     router.push("/")
   }
 
-  const signInWithGoogle = async () => {
-    if (isWebView()) {
-      redirectToExternalBrowser()
-      return { isWebView: true, redirecting: true }
-    }
-
-    const { error } = await supabaseAuth.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo:
-          process.env.NEXT_PUBLIC_SUPABASE_AUTH_REDIRECT_URL ||
-          `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback`,
-      },
-    })
-    if (error) throw error
-    return { isWebView: false }
+const signInWithGoogle = async () => {
+  if (isWebView()) {
+    redirectToExternalBrowser()
+    return { isWebView: true, redirecting: true }
   }
+
+  console.log("[GOOGLE AUTH] Starting OAuth flow...")
+  
+  const redirectUrl = `${window.location.origin}/auth/callback`
+  console.log("[GOOGLE AUTH] Redirect URL set to:", redirectUrl)
+
+  const { data, error } = await supabaseAuth.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: redirectUrl,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent',
+      }
+    },
+  })
+  
+  console.log("[GOOGLE AUTH] OAuth response:", data)
+  
+  if (error) {
+    console.error("[GOOGLE AUTH] Error:", error.message)
+    throw error
+  }
+  
+  return { isWebView: false }
+}
 
   const signUp = async (email, password, fullName) => {
     const { data: existingUser } = await supabaseAuth.from("profiles").select("id").eq("id", email).single()
