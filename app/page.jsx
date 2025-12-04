@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import AuthModal from "@/components/auth-modal"
 import Header from "@/components/header"
+import { supabaseAuth } from "@/lib/supabase-auth-client"
 
 function HeroVideoBackground({ isPlaying, isMuted }) {
   const videoRef = useRef(null)
@@ -253,7 +254,32 @@ function HomeContent() {
   const [selectedAesthetic, setSelectedAesthetic] = useState("")
   const [isVideoPlaying, setIsVideoPlaying] = useState(true)
   const [isVideoMuted, setIsVideoMuted] = useState(true)
+  const [userCredits, setUserCredits] = useState(0)
 
+  useEffect(() => {
+    const fetchCredits = async () => {
+      if (!user) {
+        setUserCredits(0)
+        return
+      }
+
+      try {
+        const { data, error } = await supabaseAuth.from("profiles").select("credits").eq("id", user.id).single()
+
+        if (data) {
+          setUserCredits(data.credits ?? 0)
+        }
+      } catch (err) {
+        console.error("Failed to fetch credits:", err)
+      }
+    }
+
+    fetchCredits()
+
+    // Listen for credit updates from other parts of the app
+    window.addEventListener("credits-updated", fetchCredits)
+    return () => window.removeEventListener("credits-updated", fetchCredits)
+  }, [user])
   const handleStartQuiz = () => {
     router.push("/quiz")
   }
@@ -450,7 +476,7 @@ function HomeContent() {
                       </div>
                       <div className="flex items-baseline gap-2 mb-2">
                         <span className="text-3xl sm:text-4xl font-serif text-neutral-900">
-                          {profile?.credits ?? 10}
+                          {userCredits}
                         </span>
                         <span className="text-xs sm:text-sm text-neutral-400">Credits</span>
                       </div>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import { Upload, Type, Check, X, Sparkles } from "lucide-react"
+import { Upload, Type, Check, X, Sparkles, Bell } from "lucide-react"
 import { storage } from "@/lib/storage"
 import { supabaseAuth } from "@/lib/supabase-auth-client"
 import { useAuth } from "@/components/auth-provider"
@@ -152,6 +152,7 @@ export function QuizFlow({ styledProfile }) {
   const [currentStep, setCurrentStep] = useState(0)
   const [isUploadMode, setIsUploadMode] = useState(false)
   const [showComingSoon, setShowComingSoon] = useState(false)
+  const [showServiceUnavailable, setShowServiceUnavailable] = useState(false)
   const fileInputRef = useRef(null)
 
   const [quizData, setQuizData] = useState({
@@ -186,6 +187,11 @@ export function QuizFlow({ styledProfile }) {
         setCurrentStep(currentStep + 1)
         return
       }
+    }
+
+    if (currentQuestion.id === "gender" && value !== "female") {
+      setShowServiceUnavailable(true)
+      return
     }
 
     if (currentQuestion.multiple) {
@@ -234,14 +240,12 @@ export function QuizFlow({ styledProfile }) {
       router.push("/generate")
     }
   }
-const handleBack = () => {
-  if (currentStep > 0) {
-    setCurrentStep(currentStep - 1);
-  } else {
-    // Go to home page
-    window.location.href = "/";
+
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1)
+    }
   }
-};
 
   const handleTextChange = (e) => {
     setQuizData({ ...quizData, [currentQuestion.id]: e.target.value })
@@ -317,6 +321,68 @@ const handleBack = () => {
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 animate-fade-in mt-20">
       <AnimatePresence>
+        {showServiceUnavailable && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowServiceUnavailable(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative mx-4 max-w-md w-full bg-white p-8 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowServiceUnavailable(false)}
+                className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-neutral-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="text-center">
+                <div className="mx-auto mb-6 w-16 h-16 bg-neutral-100 flex items-center justify-center">
+                  <Bell className="w-8 h-8 text-neutral-900" />
+                </div>
+
+                <h3 className="text-2xl font-serif font-medium text-neutral-900 mb-3">Service Currently Unavailable</h3>
+
+                <p className="text-neutral-600 mb-6 leading-relaxed">
+                  We're currently offering styling services exclusively for women's fashion. We'd be happy to notify you
+                  when we expand our services to include more options.
+                </p>
+
+                <div className="space-y-3">
+                  <Button
+                    onClick={() => {
+                      setShowServiceUnavailable(false)
+                      setQuizData({ ...quizData, gender: "female" })
+                      setTimeout(() => {
+                        setCurrentStep(currentStep + 1)
+                      }, 300)
+                    }}
+                    className="w-full bg-neutral-900 text-white hover:bg-neutral-800"
+                  >
+                    Continue with Women's Fashion
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowServiceUnavailable(false)}
+                    className="w-full border-neutral-300 text-neutral-600 hover:bg-neutral-50"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
         {showComingSoon && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -481,7 +547,7 @@ const handleBack = () => {
         <Button
           variant="outline"
           onClick={handleBack}
-          // disabled={currentStep === 0}
+          disabled={currentStep === 0}
           className="px-8 transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-30 bg-transparent border-border"
         >
           Back
@@ -494,14 +560,16 @@ const handleBack = () => {
             </Button>
           )}
 
-          <Button
-            onClick={handleNext}
-            disabled={!canProceed && !isOptional}
-            size="lg"
-            className="px-8 transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-30 bg-accent text-accent-foreground hover:bg-accent/90"
-          >
-            {currentStep === activeSteps.length - 1 ? "Generate Outfits" : "Continue"}
-          </Button>
+          {(currentStep === activeSteps.length - 1 || currentQuestion.multiple) && (
+            <Button
+              onClick={handleNext}
+              disabled={!canProceed && !isOptional}
+              size="lg"
+              className="px-8 transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-30 bg-accent text-accent-foreground hover:bg-accent/90"
+            >
+              {currentStep === activeSteps.length - 1 ? "Generate Outfits" : "Continue"}
+            </Button>
+          )}
         </div>
       </div>
     </div>
