@@ -46,6 +46,8 @@ export async function createLemonSqueezyCheckout({
   const attributes: Record<string, any> = {
     checkout_data: {
       custom: customData || {},
+            currency: "USD",               // <--- REQUIRED FOR PAYPAL
+
     },
     product_options: {
       redirect_url: redirectUrl,
