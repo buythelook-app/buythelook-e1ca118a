@@ -52,9 +52,7 @@ export function AuthProvider({ children }) {
     const { error } = await supabaseAuth.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo:
-          process.env.NEXT_PUBLIC_SUPABASE_AUTH_REDIRECT_URL ||
-          `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback`,
+        redirectTo:    `http://localhost:3000/auth/callback`,
       },
     })
     if (error) throw error
