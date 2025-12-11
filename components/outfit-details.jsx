@@ -24,6 +24,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { FindNearMeButton } from "@/components/find-near-me-button"
 
 function ProductDetailModal({ item, isOpen, onClose }) {
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -355,7 +356,6 @@ export function OutfitDetails({ id }) {
       </div>
     )
   }
-  // </CHANGE>
 
   const itemsArray = outfit.items.top ? [outfit.items.top, outfit.items.bottom, outfit.items.shoes] : outfit.items
 
@@ -615,22 +615,30 @@ export function OutfitDetails({ id }) {
                         </p>
                       </div>
 
-                      <div className="flex gap-2 mt-3">
-                        <Button variant="outline" size="sm" onClick={() => setSelectedItem(item)}>
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedItem(item)}
+                          className="text-xs sm:text-sm h-8 sm:h-9"
+                        >
                           <Info className="w-3 h-3 mr-1" /> View Details
                         </Button>
 
                         {linksUnlocked ? (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="bg-primary text-primary-foreground hover:bg-primary/90"
-                            asChild
-                          >
-                            <a href={productUrl} target="_blank" rel="noopener noreferrer">
-                              Shop Now <ExternalLink className="w-3 h-3 ml-2" />
-                            </a>
-                          </Button>
+                          <>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs sm:text-sm h-8 sm:h-9"
+                              asChild
+                            >
+                              <a href={productUrl} target="_blank" rel="noopener noreferrer">
+                                Shop Now <ExternalLink className="w-3 h-3 ml-1 sm:ml-2" />
+                              </a>
+                            </Button>
+                            <FindNearMeButton itemName={item.name} brand={item.brand} />
+                          </>
                         ) : (
                           <div className="text-xs text-muted-foreground flex items-center gap-1">
                             <Lock className="w-3 h-3" /> Unlock below ($5)

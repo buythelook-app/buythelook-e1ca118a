@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import { Upload, Type, Check, X, Sparkles, Bell } from "lucide-react"
+import { Upload, Type, Check, X, Sparkles, Bell, Mail, Loader2 } from "lucide-react"
 import { storage } from "@/lib/storage"
 import { supabaseAuth } from "@/lib/supabase-auth-client"
 import { useAuth } from "@/components/auth-provider"
@@ -153,6 +153,10 @@ export function QuizFlow({ styledProfile }) {
   const [isUploadMode, setIsUploadMode] = useState(false)
   const [showComingSoon, setShowComingSoon] = useState(false)
   const [showServiceUnavailable, setShowServiceUnavailable] = useState(false)
+  const [waitlistEmail, setWaitlistEmail] = useState("")
+  const [waitlistLoading, setWaitlistLoading] = useState(false)
+  const [waitlistSuccess, setWaitlistSuccess] = useState(false)
+  const [waitlistError, setWaitlistError] = useState("")
   const fileInputRef = useRef(null)
 
   const [quizData, setQuizData] = useState({
@@ -176,6 +180,37 @@ export function QuizFlow({ styledProfile }) {
   const activeSteps = getFilteredSteps()
   const currentQuestion = activeSteps[currentStep]
   const progress = ((currentStep + 1) / activeSteps.length) * 100
+
+  const handleWaitlistSubmit = async (e) => {
+    e.preventDefault()
+    if (!waitlistEmail || !waitlistEmail.includes("@")) {
+      setWaitlistError("Please enter a valid email address")
+      return
+    }
+
+    setWaitlistLoading(true)
+    setWaitlistError("")
+
+    try {
+      const response = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: waitlistEmail, category: "mens_fashion" }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setWaitlistSuccess(true)
+      } else {
+        setWaitlistError(data.error || "Failed to join waitlist")
+      }
+    } catch (err) {
+      setWaitlistError("Something went wrong. Please try again.")
+    } finally {
+      setWaitlistLoading(false)
+    }
+  }
 
   const handleSelect = (value) => {
     if (currentQuestion.id === "start") {
@@ -327,7 +362,11 @@ export function QuizFlow({ styledProfile }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-            onClick={() => setShowServiceUnavailable(false)}
+            onClick={() => {
+              setShowServiceUnavailable(false)
+              setWaitlistSuccess(false)
+              setWaitlistError("")
+            }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -338,7 +377,11 @@ export function QuizFlow({ styledProfile }) {
               onClick={(e) => e.stopPropagation()}
             >
               <button
-                onClick={() => setShowServiceUnavailable(false)}
+                onClick={() => {
+                  setShowServiceUnavailable(false)
+                  setWaitlistSuccess(false)
+                  setWaitlistError("")
+                }}
                 className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-neutral-600 transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -346,38 +389,90 @@ export function QuizFlow({ styledProfile }) {
 
               <div className="text-center">
                 <div className="mx-auto mb-6 w-16 h-16 bg-neutral-100 flex items-center justify-center">
-                  <Bell className="w-8 h-8 text-neutral-900" />
+                  {waitlistSuccess ? (
+                    <Check className="w-8 h-8 text-green-600" />
+                  ) : (
+                    <Bell className="w-8 h-8 text-neutral-900" />
+                  )}
                 </div>
 
-                <h3 className="text-2xl font-serif font-medium text-neutral-900 mb-3">Service Currently Unavailable</h3>
+                {waitlistSuccess ? (
+                  <>
+                    <h3 className="text-2xl font-serif font-medium text-neutral-900 mb-3">You're on the List!</h3>
+                    <p className="text-neutral-600 mb-6 leading-relaxed">
+                      We'll notify you at <strong>{waitlistEmail}</strong> when men's styling becomes available.
+                    </p>
+                    <Button
+                      onClick={() => {
+                        setShowServiceUnavailable(false)
+                        setQuizData({ ...quizData, gender: "female" })
+                        setTimeout(() => {
+                          setCurrentStep(currentStep + 1)
+                        }, 300)
+                      }}
+                      className="w-full bg-neutral-900 text-white hover:bg-neutral-800"
+                    >
+                      Continue with Women's Fashion
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-2xl font-serif font-medium text-neutral-900 mb-3">Coming Soon!</h3>
+                    <p className="text-neutral-600 mb-6 leading-relaxed">
+                      Men's styling is launching soon. We'd be happy to notify you when it becomes available.
+                    </p>
 
-                <p className="text-neutral-600 mb-6 leading-relaxed">
-                  We're currently offering styling services exclusively for women's fashion. We'd be happy to notify you
-                  when we expand our services to include more options.
-                </p>
+                    <form onSubmit={handleWaitlistSubmit} className="mb-6">
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                          <input
+                            type="email"
+                            value={waitlistEmail}
+                            onChange={(e) => setWaitlistEmail(e.target.value)}
+                            placeholder="Enter your email"
+                            className="w-full pl-10 pr-4 py-3 border border-neutral-300 focus:border-neutral-900 focus:outline-none transition-colors"
+                          />
+                        </div>
+                        <Button
+                          type="submit"
+                          disabled={waitlistLoading}
+                          className="px-6 bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+                        >
+                          {waitlistLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Notify Me"}
+                        </Button>
+                      </div>
+                      {waitlistError && <p className="text-red-500 text-sm mt-2 text-left">{waitlistError}</p>}
+                    </form>
 
-                <div className="space-y-3">
-                  <Button
-                    onClick={() => {
-                      setShowServiceUnavailable(false)
-                      setQuizData({ ...quizData, gender: "female" })
-                      setTimeout(() => {
-                        setCurrentStep(currentStep + 1)
-                      }, 300)
-                    }}
-                    className="w-full bg-neutral-900 text-white hover:bg-neutral-800"
-                  >
-                    Continue with Women's Fashion
-                  </Button>
+                    <div className="space-y-3">
+                      <Button
+                        onClick={() => {
+                          setShowServiceUnavailable(false)
+                          setQuizData({ ...quizData, gender: "female" })
+                          setTimeout(() => {
+                            setCurrentStep(currentStep + 1)
+                          }, 300)
+                        }}
+                        variant="outline"
+                        className="w-full border-neutral-300 text-neutral-600 hover:bg-neutral-50"
+                      >
+                        Continue with Women's Fashion
+                      </Button>
 
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowServiceUnavailable(false)}
-                    className="w-full border-neutral-300 text-neutral-600 hover:bg-neutral-50"
-                  >
-                    Close
-                  </Button>
-                </div>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setShowServiceUnavailable(false)
+                          setWaitlistError("")
+                        }}
+                        className="w-full text-neutral-500 hover:text-neutral-700"
+                      >
+                        Close
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             </motion.div>
           </motion.div>
