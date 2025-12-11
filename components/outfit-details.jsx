@@ -132,6 +132,8 @@ export function OutfitDetails({ id }) {
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
   const [userFeedback, setUserFeedback] = useState(null) // existing feedback
 
+  const [activeStoreSearch, setActiveStoreSearch] = useState(null) // { itemName, brand, stores }
+
   const ensureAbsoluteUrl = (url) => {
     if (!url) return "#"
     if (url.startsWith("http://") || url.startsWith("https://")) return url
@@ -434,65 +436,159 @@ export function OutfitDetails({ id }) {
       </Dialog>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 max-w-7xl mx-auto px-4 lg:px-0">
-        <div className="relative aspect-[3/4] bg-card overflow-hidden rounded-none border border-border group">
-          {itemsArray.map((item, itemIndex) => {
-            const images = item.images || [item.image]
-            const currentIndex = currentImageIndexes[itemIndex] || 0
-            const displayIndex = itemIndex * 10 + currentIndex
+        <div className="space-y-6">
+          <div className="relative aspect-[3/4] bg-card overflow-hidden rounded-none border border-border group">
+            {itemsArray.map((item, itemIndex) => {
+              const images = item.images || [item.image]
+              const currentIndex = currentImageIndexes[itemIndex] || 0
+              const displayIndex = itemIndex * 10 + currentIndex
 
-            return images.map((img, imgIndex) => {
-              const thisIndex = itemIndex * 10 + imgIndex
-              return (
-                <div
-                  key={`${itemIndex}-${imgIndex}`}
-                  className={`absolute inset-0 transition-all duration-700 ease-out ${
-                    thisIndex === mainImageIndex
-                      ? "translate-x-0 translate-y-0 opacity-100 scale-100"
-                      : thisIndex > mainImageIndex
-                        ? "translate-x-full translate-y-full opacity-0 scale-95"
-                        : "-translate-x-full -translate-y-full opacity-0 scale-95"
-                  }`}
-                  style={{
-                    transformOrigin: "bottom right",
-                  }}
-                >
-                  <Image
-                    src={img || "/placeholder.svg"}
-                    alt={`${item.name} - ${imgIndex + 1}`}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              )
-            })
-          })}
+              return images.map((img, imgIndex) => {
+                const thisIndex = itemIndex * 10 + imgIndex
+                return (
+                  <div
+                    key={`${itemIndex}-${imgIndex}`}
+                    className={`absolute inset-0 transition-all duration-700 ease-out ${
+                      thisIndex === mainImageIndex
+                        ? "translate-x-0 translate-y-0 opacity-100 scale-100"
+                        : thisIndex > mainImageIndex
+                          ? "translate-x-full translate-y-full opacity-0 scale-95"
+                          : "-translate-x-full -translate-y-full opacity-0 scale-95"
+                    }`}
+                    style={{
+                      transformOrigin: "bottom right",
+                    }}
+                  >
+                    <Image
+                      src={img || "/placeholder.svg"}
+                      alt={`${item.name} - ${imgIndex + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                )
+              })
+            })}
 
-          <div className="absolute top-4 right-4 flex gap-2 z-10">
-            <Button
-              variant="secondary"
-              size="icon"
-              className={`rounded-full shadow-lg backdrop-blur-md transition-all ${
-                userFeedback?.isLiked === true
-                  ? "bg-green-500 text-white hover:bg-green-600"
-                  : "bg-white/80 hover:bg-white text-black"
-              }`}
-              onClick={() => handleFeedbackClick("like")}
-            >
-              <ThumbsUp className="w-5 h-5" />
-            </Button>
-            <Button
-              variant="secondary"
-              size="icon"
-              className={`rounded-full shadow-lg backdrop-blur-md transition-all ${
-                userFeedback?.isLiked === false
-                  ? "bg-red-500 text-white hover:bg-red-600"
-                  : "bg-white/80 hover:bg-white text-black"
-              }`}
-              onClick={() => handleFeedbackClick("dislike")}
-            >
-              <ThumbsDown className="w-5 h-5" />
-            </Button>
+            <div className="absolute top-4 right-4 flex gap-2 z-10">
+              <Button
+                variant="secondary"
+                size="icon"
+                className={`rounded-full shadow-lg backdrop-blur-md transition-all ${
+                  userFeedback?.isLiked === true
+                    ? "bg-green-500 text-white hover:bg-green-600"
+                    : "bg-white/80 hover:bg-white text-black"
+                }`}
+                onClick={() => handleFeedbackClick("like")}
+              >
+                <ThumbsUp className="w-5 h-5" />
+              </Button>
+              <Button
+                variant="secondary"
+                size="icon"
+                className={`rounded-full shadow-lg backdrop-blur-md transition-all ${
+                  userFeedback?.isLiked === false
+                    ? "bg-red-500 text-white hover:bg-red-600"
+                    : "bg-white/80 hover:bg-white text-black"
+                }`}
+                onClick={() => handleFeedbackClick("dislike")}
+              >
+                <ThumbsDown className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
+
+          {activeStoreSearch && activeStoreSearch.stores && activeStoreSearch.stores.length > 0 && (
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="p-4 border-b border-border bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium text-foreground">Nearby {activeStoreSearch.brand} Stores</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {activeStoreSearch.stores.length} store{activeStoreSearch.stores.length !== 1 ? "s" : ""} found
+                      near you
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setActiveStoreSearch(null)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
+                {activeStoreSearch.stores.map((store, idx) => (
+                  <div key={idx} className="p-4 hover:bg-muted/30 transition-colors">
+                    <div className="flex gap-4">
+                      {/* Store image */}
+                      <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                        {store.photo ? (
+                          <img
+                            src={store.photo || "/placeholder.svg"}
+                            alt={store.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.style.display = "none"
+                              e.target.nextSibling.style.display = "flex"
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className={`w-full h-full items-center justify-center bg-muted ${store.photo ? "hidden" : "flex"}`}
+                        >
+                          <ShoppingBag className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                      </div>
+
+                      {/* Store info */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-foreground truncate">{store.name}</h4>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{store.address}</p>
+                        <div className="flex items-center gap-3 mt-2 text-sm">
+                          {store.rating && (
+                            <span className="flex items-center gap-1 text-yellow-500">
+                              <span>★</span> {store.rating}
+                            </span>
+                          )}
+                          {store.isOpen !== undefined && (
+                            <span className={store.isOpen ? "text-green-600" : "text-red-500"}>
+                              {store.isOpen ? "Open" : "Closed"}
+                            </span>
+                          )}
+                          {store.distance && <span className="text-muted-foreground">{store.distance}</span>}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex gap-2 mt-3">
+                      <Button size="sm" className="flex-1 bg-neutral-900 text-white hover:bg-neutral-800" asChild>
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(store.address)}&destination_place_id=${store.placeId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Get Directions
+                        </a>
+                      </Button>
+                      <Button variant="outline" size="sm" asChild>
+                        <a
+                          href={`https://www.google.com/maps/place/?q=place_id:${store.placeId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          View
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col justify-center space-y-6 lg:space-y-8">
@@ -598,9 +694,6 @@ export function OutfitDetails({ id }) {
                     <div className="flex-1 space-y-2">
                       <h4 className="text-foreground font-medium text-base lg:text-lg">{item.name}</h4>
                       <div className="space-y-1 text-sm text-muted-foreground">
-                        {/* <p>
-                          <span className="font-medium">Brand:</span> {item.brand}
-                        </p> */}
                         <p>
                           <span className="font-medium">Price:</span> ${item.price.toFixed(2)}
                         </p>
@@ -637,7 +730,17 @@ export function OutfitDetails({ id }) {
                                 Shop Now <ExternalLink className="w-3 h-3 ml-1 sm:ml-2" />
                               </a>
                             </Button>
-                            <FindNearMeButton itemName={item.name} brand={item.brand} />
+                            <FindNearMeButton
+                              itemName={item.name}
+                              brand={item.brand}
+                              onStoresFound={(stores) =>
+                                setActiveStoreSearch({
+                                  itemName: item.name,
+                                  brand: item.brand,
+                                  stores,
+                                })
+                              }
+                            />
                           </>
                         ) : (
                           <div className="text-xs text-muted-foreground flex items-center gap-1">
@@ -652,34 +755,32 @@ export function OutfitDetails({ id }) {
             </div>
           </div>
 
-          <div className="pt-4 space-y-4">
-            {!linksUnlocked ? (
-              <div className="space-y-3">
-                <div className="p-4 bg-muted/50 border border-border text-center rounded-lg">
-                  <Lock className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Unlock all shopping links for this outfit</p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className={`w-full border-2 border-black text-black hover:bg-black hover:text-white h-14 uppercase tracking-widest transition-all duration-300 font-medium bg-transparent ${
-                    !linksUnlocked ? "pulse-cta" : ""
-                  }`}
-                  onClick={handlePurchaseLinks}
-                  disabled={isPurchasing}
-                >
-                  <ShoppingBag className="mr-2 w-5 h-5" />
-                  {isPurchasing ? "Processing..." : "Unlock Shopping Links - $5.00"}
-                </Button>
+          {!linksUnlocked ? (
+            <div className="space-y-3">
+              <div className="p-4 bg-muted/50 border border-border text-center rounded-lg">
+                <Lock className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Unlock all shopping links for this outfit</p>
               </div>
-            ) : (
-              <div className="p-6 bg-green-500/10 border border-green-500/20 text-green-500 text-center rounded-lg space-y-2">
-                <CheckCircle2 className="w-8 h-8 mx-auto" />
-                <p className="font-medium">Shopping Links Unlocked!</p>
-                <p className="text-sm text-green-600">Click "Shop Now" on any item above to purchase</p>
-              </div>
-            )}
-          </div>
+              <Button
+                variant="outline"
+                size="lg"
+                className={`w-full border-2 border-black text-black hover:bg-black hover:text-white h-14 uppercase tracking-widest transition-all duration-300 font-medium bg-transparent ${
+                  !linksUnlocked ? "pulse-cta" : ""
+                }`}
+                onClick={handlePurchaseLinks}
+                disabled={isPurchasing}
+              >
+                <ShoppingBag className="mr-2 w-5 h-5" />
+                {isPurchasing ? "Processing..." : "Unlock Shopping Links - $5.00"}
+              </Button>
+            </div>
+          ) : (
+            <div className="p-6 bg-green-500/10 border border-green-500/20 text-green-500 text-center rounded-lg space-y-2">
+              <CheckCircle2 className="w-8 h-8 mx-auto" />
+              <p className="font-medium">Shopping Links Unlocked!</p>
+              <p className="text-sm text-green-600">Click "Shop Now" on any item above to purchase</p>
+            </div>
+          )}
         </div>
       </div>
     </>
