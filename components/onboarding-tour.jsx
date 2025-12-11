@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/components/auth-provider"
 import { supabaseAuth } from "@/lib/supabase-auth-client"
 
+const FAIRY_IMAGE = `<img src="/Edenfairy.png" alt="Stella the Style Fairy" class="w-16 h-16 mb-3 mx-auto object-contain" />`
+
 const QUIZ_TOUR_STEPS = [
   {
     element: "body",
     popover: {
       title: "Welcome, Gorgeous!",
-      description:
-        "I'm Stella, your personal style fairy! Let me guide you through creating your perfect fashion profile.",
+      description: `${FAIRY_IMAGE}<p>I'm Stella, your personal style fairy! Let me guide you through creating your perfect fashion profile.</p>`,
       side: "center",
       align: "center",
     },
@@ -58,7 +59,7 @@ const CREDITS_TOUR_STEPS = [
     element: "body",
     popover: {
       title: "Welcome to Credits!",
-      description: "This is where you can power up your style journey. Each credit unlocks AI-curated outfit magic!",
+      description: `${FAIRY_IMAGE}<p>This is where you can power up your style journey. Each credit unlocks AI-curated outfit magic!</p>`,
       side: "center",
       align: "center",
     },
@@ -88,8 +89,7 @@ const OUTFITS_TOUR_STEPS = [
     element: "body",
     popover: {
       title: "Your Fashion Collection!",
-      description:
-        "Welcome to your personal wardrobe, darling! Here you'll find all the fabulous outfits I've curated for you.",
+      description: `${FAIRY_IMAGE}<p>Welcome to your personal wardrobe, darling! Here you'll find all the fabulous outfits I've curated for you.</p>`,
       side: "center",
       align: "center",
     },
@@ -183,6 +183,9 @@ export default function OnboardingTour({ pageType = "quiz" }) {
           prevBtnText: "← BACK",
           showButtons: ["next", "previous", "close"],
           popoverClass: "btl-tour-popover",
+          popoverOptions: {
+            allowHTML: true,
+          },
           onDestroyStarted: () => {
             completeTour()
             driverInstance.destroy()
