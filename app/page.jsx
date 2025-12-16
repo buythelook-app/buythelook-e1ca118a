@@ -137,7 +137,9 @@ function ScrollIndicator() {
         transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
         className="flex flex-col items-center gap-2"
       >
-        <span className="text-[8px] sm:text-[9px] font-medium tracking-[0.3em] uppercase text-white/40">Scroll</span>
+        <span className="text-[8px] sm:text-[9px] md:text-[11px] font-medium tracking-[0.3em] uppercase text-white/60">
+          Scroll
+        </span>
         <div className="w-[1px] h-8 sm:h-12 bg-gradient-to-b from-white/40 to-transparent" />
       </motion.div>
     </motion.div>
@@ -365,7 +367,7 @@ function HomeContent() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.1 }}
-              className="text-sm sm:text-base md:text-lg text-white/60 font-light max-w-xs sm:max-w-md md:max-w-lg mx-auto mb-8 sm:mb-10 md:mb-12 leading-relaxed px-2"
+              className="text-sm sm:text-base md:text-xl lg:text-2xl text-white/75 font-light max-w-xs sm:max-w-md md:max-w-lg mx-auto mb-8 sm:mb-10 md:mb-12 leading-relaxed px-2"
             >
               Complete outfits curated for you. Shop instantly.
             </motion.p>
@@ -415,10 +417,10 @@ function HomeContent() {
                   { value: "Zero Effort", label: "Perfect outfits in minutes" },
                 ].map((stat, i) => (
                   <div key={stat.label} className="text-center">
-                    <div className="text-base sm:text-lg md:text-xl font-light text-white/80 tracking-wide whitespace-nowrap">
+                    <div className="text-base sm:text-lg md:text-2xl lg:text-3xl font-light text-white/90 tracking-wide whitespace-nowrap">
                       {stat.value}
                     </div>
-                    <div className="text-[8px] sm:text-[9px] tracking-[0.15em] sm:tracking-[0.2em] uppercase text-white/40 mt-1 max-w-[140px] sm:max-w-none mx-auto">
+                    <div className="text-[8px] sm:text-[9px] md:text-[10px] lg:text-[11px] tracking-[0.15em] sm:tracking-[0.2em] md:tracking-[0.25em] uppercase text-white/70 mt-1 max-w-[140px] sm:max-w-none mx-auto">
                       {stat.label}
                     </div>
                   </div>
@@ -475,7 +477,7 @@ function HomeContent() {
                         <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
                       <div className="flex items-baseline gap-2 mb-2">
-                        <span className="text-3xl sm:text-4xl font-serif text-neutral-900">
+                        <span className="text-3xl sm:text-4xl md:text-6xl font-serif text-neutral-900">
                           {userCredits}
                         </span>
                         <span className="text-xs sm:text-sm text-neutral-400">Credits</span>
@@ -785,7 +787,7 @@ function HomeContent() {
         </section>
       </main>
 
-      <Footer />
+  
 
       <AnimatePresence>
         {showAuthModal && <AuthModal mode={authMode} setMode={setAuthMode} onClose={() => setShowAuthModal(false)} />}
