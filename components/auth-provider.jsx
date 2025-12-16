@@ -52,7 +52,7 @@ export function AuthProvider({ children }) {
     const { error } = await supabaseAuth.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo:    `http://localhost:3000/auth/callback`,
+        redirectTo:    `https://buythelook.app/auth/callback`,
       },
     })
     if (error) throw error
