@@ -1,8 +1,9 @@
+'use server'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY // NOT anon key
+  process.env.NEXT_PUBLIC_SUPABASE_AUTH_URLL,
+  process.env.NEXT_PUBLIC_SUPABASE_AUTH_ANON_KEY // NOT anon key
 )
 
 export async function POST(req) {
