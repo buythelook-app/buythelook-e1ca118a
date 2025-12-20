@@ -862,7 +862,6 @@ function OutfitsContent() {
             </div>
           )}
         </motion.div>
-        <Footer />
       </div>
     </main>
   )

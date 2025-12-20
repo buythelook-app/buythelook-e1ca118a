@@ -8,32 +8,71 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { motion } from "framer-motion"
 import { getWebViewAppName } from "@/lib/webview-detect"
-import { ExternalLink } from "lucide-react"
+import { ExternalLink, AlertCircle, Eye, EyeOff } from "lucide-react"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [isRedirecting, setIsRedirecting] = useState(false)
   const { signIn, signInWithGoogle } = useAuth()
 
+  const validateEmail = (value) => {
+    if (!value) return "Email is required"
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(value)) return "Please enter a valid email address"
+    return ""
+  }
+
+  const validatePassword = (value) => {
+    if (!value) return "Password is required"
+    if (value.length < 6) return "Password must be at least 6 characters"
+    return ""
+  }
+
+  const handleEmailBlur = () => {
+    const error = validateEmail(email)
+    setErrors((prev) => ({ ...prev, email: error }))
+  }
+
+  const handlePasswordBlur = () => {
+    const error = validatePassword(password)
+    setErrors((prev) => ({ ...prev, password: error }))
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError("")
+
+    const emailError = validateEmail(email)
+    const passwordError = validatePassword(password)
+
+    if (emailError || passwordError) {
+      setErrors({
+        email: emailError,
+        password: passwordError,
+      })
+      return
+    }
+
+    setErrors({})
     setLoading(true)
+
     try {
       await signIn(email, password)
     } catch (e) {
-      setError(e.message)
+      setErrors({
+        submit: e.message || "Failed to sign in. Please check your credentials.",
+      })
     } finally {
       setLoading(false)
     }
   }
 
   const handleGoogleSignIn = async () => {
-    setError("")
+    setErrors({})
     setGoogleLoading(true)
     try {
       const result = await signInWithGoogle()
@@ -46,7 +85,7 @@ export default function LoginPage() {
         return
       }
     } catch (e) {
-      setError(e.message)
+      setErrors({ submit: e.message })
       setGoogleLoading(false)
     }
   }
@@ -54,16 +93,16 @@ export default function LoginPage() {
   if (isRedirecting) {
     const appName = getWebViewAppName()
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] p-4">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md bg-white p-8 border border-black/5 shadow-xl text-center"
+          className="w-full max-w-md bg-card p-8 rounded-lg border border-border shadow-lg text-center"
         >
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-            className="w-12 h-12 border-2 border-black border-t-transparent rounded-full mx-auto mb-6"
+            className="w-12 h-12 border-2 border-foreground border-t-transparent rounded-full mx-auto mb-6"
           />
           <h1 className="text-2xl font-serif mb-3">Opening Browser</h1>
           <p className="text-muted-foreground text-sm mb-6">
@@ -73,40 +112,39 @@ export default function LoginPage() {
             <ExternalLink className="w-4 h-4" />
             <span>Redirecting to external browser</span>
           </div>
-          <p className="text-xs text-muted-foreground mt-6">
-            If the browser doesn't open,{" "}
-            <button
-              onClick={() => {
-                setIsRedirecting(false)
-                setGoogleLoading(false)
-              }}
-              className="underline text-black"
-            >
-              tap here
-            </button>{" "}
-            and try email sign-in instead.
-          </p>
         </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] p-4">
-      <div className="w-full max-w-md bg-white p-8 border border-black/5 shadow-xl">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md bg-card p-8 rounded-lg border border-border shadow-lg">
+        {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-serif mb-2">Welcome Back</h1>
-          <p className="text-muted-foreground text-sm uppercase tracking-widest">Sign in to your account</p>
+          <h1 className="text-3xl font-serif mb-2 text-foreground">Welcome Back</h1>
+          <p className="text-muted-foreground text-sm">Sign in to your BuyTheLook account</p>
         </div>
 
-        {error && <div className="bg-red-50 text-red-500 text-sm p-4 mb-6 border border-red-100">{error}</div>}
+        {/* Submit Error */}
+        {errors.submit && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-destructive/10 border border-destructive/20 text-destructive text-sm p-4 rounded-lg mb-6 flex gap-2"
+          >
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <span>{errors.submit}</span>
+          </motion.div>
+        )}
 
+        {/* Google Sign In Button */}
         <Button
           type="button"
           variant="outline"
           onClick={handleGoogleSignIn}
           disabled={googleLoading}
-          className="w-full mb-6 h-12 rounded-none border-black/20 hover:bg-black/5 bg-transparent"
+          className="w-full mb-6 h-12 rounded-lg border-border hover:bg-accent bg-transparent"
         >
           {googleLoading ? (
             "Connecting..."
@@ -135,51 +173,89 @@ export default function LoginPage() {
           )}
         </Button>
 
+        {/* Divider */}
         <div className="relative mb-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-black/10"></div>
+            <div className="w-full border-t border-border"></div>
           </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-4 text-muted-foreground tracking-widest">Or continue with email</span>
+          <div className="relative flex justify-center text-xs">
+            <span className="bg-card px-3 text-muted-foreground">Or sign in with email</span>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Email/Password Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Email Field */}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="bg-transparent border-0 border-b border-black/20 rounded-none px-0 focus-visible:ring-0 focus-visible:border-black"
-            />
+            <Label htmlFor="email" className="text-foreground">
+              Email Address
+            </Label>
+            <div className="relative">
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onBlur={handleEmailBlur}
+                className={`h-11 rounded-lg ${
+                  errors.email ? "border-destructive focus-visible:ring-destructive/30" : "border-border"
+                }`}
+              />
+            </div>
+            {errors.email && (
+              <p className="text-destructive text-xs flex items-center gap-1 mt-1">
+                <AlertCircle className="w-3 h-3" /> {errors.email}
+              </p>
+            )}
           </div>
+
+          {/* Password Field */}
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="bg-transparent border-0 border-b border-black/20 rounded-none px-0 focus-visible:ring-0 focus-visible:border-black"
-            />
+            <Label htmlFor="password" className="text-foreground">
+              Password
+            </Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onBlur={handlePasswordBlur}
+                className={`h-11 rounded-lg pr-10 ${
+                  errors.password ? "border-destructive focus-visible:ring-destructive/30" : "border-border"
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            {errors.password && (
+              <p className="text-destructive text-xs flex items-center gap-1 mt-1">
+                <AlertCircle className="w-3 h-3" /> {errors.password}
+              </p>
+            )}
           </div>
+
+          {/* Submit Button */}
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-white hover:bg-black/90 uppercase tracking-widest text-xs h-12 rounded-none"
+            className="w-full h-11 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
           >
             {loading ? "Signing In..." : "Sign In"}
           </Button>
         </form>
 
+        {/* Sign Up Link */}
         <div className="mt-8 text-center text-sm text-muted-foreground">
           Don't have an account?{" "}
-          <Link href="/signup" className="text-black underline underline-offset-4 hover:opacity-70">
+          <Link href="/signup" className="text-primary font-medium hover:underline">
             Sign up
           </Link>
         </div>

@@ -1,6 +1,3 @@
-// Credit packages - source of truth for all credit purchases
-// These are validated server-side to prevent price manipulation
-
 export interface CreditPackage {
   id: string
   name: string
@@ -22,7 +19,7 @@ export const CREDIT_PACKAGES: CreditPackage[] = [
     id: "popular",
     name: "Style Pack",
     credits: 5,
-    priceInCents: 2000, // $9.99
+    priceInCents: 2000, // $20.00
     popular: true,
     description: "Most popular - Best value for regular users",
   },
@@ -30,7 +27,7 @@ export const CREDIT_PACKAGES: CreditPackage[] = [
     id: "pro",
     name: "Fashionista",
     credits: 10,
-    priceInCents: 3500, // $24.99
+    priceInCents: 3500, // $35.00
     description: "For the serious style enthusiast",
   },
 ]

@@ -256,47 +256,39 @@ export function PaymentSuccess() {
 
   const verifyPolarCredits = async (userId, credits, processedKey) => {
     try {
-      console.log(" Payment Success: Processing Polar credits...")
+      console.log("[v0] Payment Success: Processing Polar credits...")
 
       const numCredits = Number.parseInt(credits) || 0
-      const { data: profile, error: fetchError } = await supabaseAuth
-        .from("profiles")
-        .select("credits")
-        .eq("id", userId)
-        .single()
 
-      if (fetchError) throw fetchError
+      // Wait 2 seconds to allow webhook to process
+      await new Promise((resolve) => setTimeout(resolve, 2000))
 
-      const currentCredits = profile?.credits || 0
-      const newBalance = currentCredits + numCredits
+      const { data: profile, error } = await supabaseAuth.from("profiles").select("credits").eq("id", userId).single()
 
-      const { error: updateError } = await supabaseAuth
-        .from("profiles")
-        .update({ credits: newBalance })
-        .eq("id", userId)
+      if (profile && !error) {
+        setCreditsResult({
+          creditsAdded: numCredits,
+          newBalance: profile.credits || 0,
+          success: true,
+        })
+        setStatus("success")
 
-      if (updateError) throw updateError
-
-      setCreditsResult({
-        creditsAdded: numCredits,
-        newBalance: newBalance,
-        success: true,
-      })
-      setStatus("success")
-
-      sessionStorage.setItem(
-        processedKey,
-        JSON.stringify({
-          status: "success",
-          creditsResult: {
-            creditsAdded: numCredits,
-            newBalance: newBalance,
-          },
-          timestamp: Date.now(),
-        }),
-      )
+        sessionStorage.setItem(
+          processedKey,
+          JSON.stringify({
+            status: "success",
+            creditsResult: {
+              creditsAdded: numCredits,
+              newBalance: profile.credits || 0,
+            },
+            timestamp: Date.now(),
+          }),
+        )
+      } else {
+        throw new Error(error?.message || "Failed to fetch profile")
+      }
     } catch (error) {
-      console.error(" Payment Success: Error processing Polar credits:", error)
+      console.error("[v0] Payment Success: Error processing Polar credits:", error)
       setStatus("error")
     }
   }
@@ -305,17 +297,7 @@ export function PaymentSuccess() {
     try {
       console.log(" Payment Success: Processing Polar links unlock...")
 
-      const { error } = await supabaseAuth
-        .from("generated_outfits")
-        .update({
-          is_unlocked: true,
-          links_unlocked: true,
-        })
-        .eq("id", outfitId)
-        .eq("user_id", userId)
-
-      if (error) throw error
-
+      // For Polar, the webhook handles unlock, so we just verify
       setStatus("success")
 
       sessionStorage.setItem(

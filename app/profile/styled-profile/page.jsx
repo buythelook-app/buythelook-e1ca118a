@@ -283,7 +283,6 @@ export default function StyledProfilePage() {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
     )
   }
@@ -575,7 +574,6 @@ export default function StyledProfilePage() {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   )
 }
