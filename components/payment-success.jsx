@@ -283,10 +283,10 @@ export function PaymentSuccess() {
       const result = await response.json()
 
       if (result.success) {
-        console.log("[v0] Payment Success: Credits verified and added!", result)
+        console.log("[v0] Payment Success: Verification successful!", result)
         setCreditsResult({
-          creditsAdded: result.creditsAdded,
-          newBalance: result.newBalance,
+          creditsAdded: result.creditsAdded || Number.parseInt(credits) || 0,
+          newBalance: result.newBalance || 0,
           success: true,
         })
         setStatus("success")
@@ -295,7 +295,10 @@ export function PaymentSuccess() {
           processedKey,
           JSON.stringify({
             status: "success",
-            creditsResult: result,
+            creditsResult: {
+              creditsAdded: result.creditsAdded || Number.parseInt(credits) || 0,
+              newBalance: result.newBalance || 0,
+            },
             timestamp: Date.now(),
           }),
         )
@@ -304,7 +307,7 @@ export function PaymentSuccess() {
         setStatus("error")
       }
     } catch (error) {
-      console.error("[v0] Payment Success: Error verifying Polar credits:", error)
+      console.error("[v0] Payment Success: Error verifying credits:", error)
       setStatus("error")
     }
   }
