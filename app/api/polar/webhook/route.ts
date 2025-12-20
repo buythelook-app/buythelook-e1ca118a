@@ -4,14 +4,21 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin"
 
 async function verifyWebhookSignature(payload: string, signature: string): Promise<boolean> {
   const secret = process.env.POLAR_WEBHOOK_SECRET
+
   if (!secret) {
     console.error("[v0] Polar Webhook: POLAR_WEBHOOK_SECRET not configured")
     return false
   }
 
+  console.log("[v0] Polar Webhook: Secret length:", secret.length)
+  console.log("[v0] Polar Webhook: Signature from header:", signature.substring(0, 20) + "...")
+
   const hmac = crypto.createHmac("sha256", secret)
   hmac.update(payload)
   const expectedSignature = hmac.digest("hex")
+
+  console.log("[v0] Polar Webhook: Expected signature:", expectedSignature.substring(0, 20) + "...")
+  console.log("[v0] Polar Webhook: Signatures match:", signature === expectedSignature)
 
   return signature === expectedSignature
 }
@@ -22,18 +29,24 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get("x-polar-signature") || ""
 
     console.log("[v0] Polar Webhook: Received webhook")
-    console.log("[v0] Polar Webhook: Body:", body)
+    console.log("[v0] Polar Webhook: Headers:", {
+      "content-type": request.headers.get("content-type"),
+      "x-polar-signature": signature ? "present" : "missing",
+    })
 
     // Verify signature
     const isValid = await verifyWebhookSignature(body, signature)
     if (!isValid) {
-      console.error("[v0] Polar Webhook: Invalid signature")
+      console.error("[v0] Polar Webhook: Invalid signature - webhook rejected")
+      console.error("[v0] Polar Webhook: Check POLAR_WEBHOOK_SECRET in Vercel environment variables")
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
     }
 
+    console.log("[v0] Polar Webhook: Signature verified successfully")
+
     const event = JSON.parse(body)
     console.log("[v0] Polar Webhook: Event type:", event.type)
-    console.log("[v0] Polar Webhook: Event data:", JSON.stringify(event.data, null, 2))
+    console.log("[v0] Polar Webhook: Event ID:", event.id)
 
     const supabaseAdmin = getSupabaseAdmin()
 
@@ -49,17 +62,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true })
     }
 
-    // Handle order.created event
-    if (event.type === "order.created") {
+    if (event.type === "order.created" || event.type === "order.completed") {
       const order = event.data
       console.log("[v0] Polar Webhook: Processing order:", order.id)
-      console.log("[v0] Polar Webhook: Customer data:", JSON.stringify(order.customer, null, 2))
+      console.log("[v0] Polar Webhook: Order amount:", order.amount)
+      console.log("[v0] Polar Webhook: Customer external_id:", order.customer?.external_id)
       console.log("[v0] Polar Webhook: Metadata:", JSON.stringify(order.metadata, null, 2))
 
       const userId = order.customer?.external_id
       const metadata = order.metadata || {}
-
-      console.log("[v0] Polar Webhook: Extracted user ID:", userId)
 
       if (!userId) {
         console.error("[v0] Polar Webhook: No user ID found in customer external_id")
@@ -71,9 +82,7 @@ export async function POST(request: NextRequest) {
         const creditsString = metadata.credits
         const credits = creditsString ? Number.parseInt(creditsString) : 0
 
-        console.log("[v0] Polar Webhook: Credits purchase detected")
-        console.log("[v0] Polar Webhook: Credits string:", creditsString)
-        console.log("[v0] Polar Webhook: Credits parsed:", credits)
+        console.log("[v0] Polar Webhook: Credits purchase - User:", userId, "Credits:", credits)
 
         if (credits > 0) {
           const { data: profile, error: profileError } = await supabaseAdmin
@@ -82,16 +91,16 @@ export async function POST(request: NextRequest) {
             .eq("id", userId)
             .single()
 
-          console.log("[v0] Polar Webhook: Profile fetch error:", profileError)
-          console.log("[v0] Polar Webhook: Current profile:", JSON.stringify(profile, null, 2))
+          if (profileError) {
+            console.error("[v0] Polar Webhook: Profile fetch error:", profileError.message)
+            return NextResponse.json({ error: "Profile not found" }, { status: 400 })
+          }
+
+          console.log("[v0] Polar Webhook: Current credits:", profile.credits || 0)
 
           if (profile) {
             const currentCredits = profile.credits || 0
             const newCredits = currentCredits + credits
-
-            console.log("[v0] Polar Webhook: Current balance:", currentCredits)
-            console.log("[v0] Polar Webhook: Adding credits:", credits)
-            console.log("[v0] Polar Webhook: New balance will be:", newCredits)
 
             const { data: updateData, error: updateError } = await supabaseAdmin
               .from("profiles")
@@ -100,13 +109,17 @@ export async function POST(request: NextRequest) {
               .select()
 
             if (updateError) {
-              console.error("[v0] Polar Webhook: Failed to add credits - Error:", updateError)
+              console.error("[v0] Polar Webhook: Failed to update credits:", updateError.message)
             } else {
-              console.log("[v0] Polar Webhook: Credits updated successfully!")
-              console.log("[v0] Polar Webhook: Updated profile:", JSON.stringify(updateData, null, 2))
+              console.log(
+                "[v0] Polar Webhook: Credits updated successfully -",
+                currentCredits,
+                "+",
+                credits,
+                "=",
+                newCredits,
+              )
             }
-          } else {
-            console.error("[v0] Polar Webhook: Profile not found for user:", userId)
           }
         }
       }
@@ -114,28 +127,24 @@ export async function POST(request: NextRequest) {
       // Handle shopping links unlock
       if (metadata.type === "links_unlock") {
         const outfitId = metadata.outfit_id
-
-        console.log("[v0] Polar Webhook: Links unlock detected for outfit:", outfitId)
+        console.log("[v0] Polar Webhook: Links unlock - User:", userId, "Outfit:", outfitId)
 
         if (outfitId) {
-          const { data: updateData, error } = await supabaseAdmin
+          const { error } = await supabaseAdmin
             .from("generated_outfits")
             .update({ links_unlocked: true })
             .eq("id", outfitId)
             .eq("user_id", userId)
-            .select()
 
           if (error) {
-            console.error("[v0] Polar Webhook: Failed to unlock links:", error)
+            console.error("[v0] Polar Webhook: Failed to unlock links:", error.message)
           } else {
-            console.log("[v0] Polar Webhook: Links unlocked successfully!")
-            console.log("[v0] Polar Webhook: Updated outfit:", JSON.stringify(updateData, null, 2))
+            console.log("[v0] Polar Webhook: Links unlocked successfully")
           }
         }
       }
 
       // Record transaction
-      console.log("[v0] Polar Webhook: Recording transaction in database")
       const { error: txError } = await supabaseAdmin.from("payment_transactions").insert({
         user_id: userId,
         polar_order_id: order.id,
@@ -148,14 +157,15 @@ export async function POST(request: NextRequest) {
       })
 
       if (txError) {
-        console.error("[v0] Polar Webhook: Failed to record transaction:", txError)
+        console.error("[v0] Polar Webhook: Failed to record transaction:", txError.message)
       } else {
-        console.log("[v0] Polar Webhook: Transaction recorded successfully")
+        console.log("[v0] Polar Webhook: Transaction recorded")
       }
+    } else {
+      console.log("[v0] Polar Webhook: Event type not handled:", event.type)
     }
 
     // Log webhook
-    console.log("[v0] Polar Webhook: Logging webhook event to database")
     await supabaseAdmin.from("polar_webhooks").insert({
       event_id: event.id,
       event_type: event.type,
@@ -163,11 +173,10 @@ export async function POST(request: NextRequest) {
       metadata: event.data,
     })
 
-    console.log("[v0] Polar Webhook: Webhook processed successfully")
+    console.log("[v0] Polar Webhook: Webhook processed")
     return NextResponse.json({ received: true })
   } catch (error: any) {
-    console.error("[v0] Polar Webhook: Catch error:", error.message)
-    console.error("[v0] Polar Webhook: Stack trace:", error.stack)
+    console.error("[v0] Polar Webhook: Error:", error.message)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
