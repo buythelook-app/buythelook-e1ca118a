@@ -38,7 +38,10 @@ export function PaymentSuccess() {
     const processedKey =
       provider === "lemonsqueezy"
         ? `payment_processed_ls_${type}_${id || credits}_${userIdFromUrl}`
-        : `payment_processed_${sessionId}`
+        : provider === "polar"
+          ? `payment_processed_polar_${type}_${id || credits}_${userIdFromUrl}`
+          : `payment_processed_${sessionId}`
+
     const alreadyProcessed = sessionStorage.getItem(processedKey)
 
     if (alreadyProcessed) {
@@ -46,6 +49,20 @@ export function PaymentSuccess() {
       const cachedResult = JSON.parse(alreadyProcessed)
       setStatus(cachedResult.status)
       setCreditsResult(cachedResult.creditsResult)
+      return
+    }
+
+    if (provider === "polar") {
+      const effectiveUserId = userIdFromUrl || user?.id
+      if (effectiveUserId) {
+        if (type === "credits") {
+          verifyPolarCredits(effectiveUserId, credits, processedKey)
+        } else if (type === "links_unlock") {
+          verifyPolarLinksUnlock(effectiveUserId, id, processedKey)
+        }
+      } else if (!user) {
+        console.log(" Payment Success: Waiting for user auth...")
+      }
       return
     }
 
@@ -237,6 +254,83 @@ export function PaymentSuccess() {
     }
   }
 
+  const verifyPolarCredits = async (userId, credits, processedKey) => {
+    try {
+      console.log(" Payment Success: Processing Polar credits...")
+
+      const numCredits = Number.parseInt(credits) || 0
+      const { data: profile, error: fetchError } = await supabaseAuth
+        .from("profiles")
+        .select("credits")
+        .eq("id", userId)
+        .single()
+
+      if (fetchError) throw fetchError
+
+      const currentCredits = profile?.credits || 0
+      const newBalance = currentCredits + numCredits
+
+      const { error: updateError } = await supabaseAuth
+        .from("profiles")
+        .update({ credits: newBalance })
+        .eq("id", userId)
+
+      if (updateError) throw updateError
+
+      setCreditsResult({
+        creditsAdded: numCredits,
+        newBalance: newBalance,
+        success: true,
+      })
+      setStatus("success")
+
+      sessionStorage.setItem(
+        processedKey,
+        JSON.stringify({
+          status: "success",
+          creditsResult: {
+            creditsAdded: numCredits,
+            newBalance: newBalance,
+          },
+          timestamp: Date.now(),
+        }),
+      )
+    } catch (error) {
+      console.error(" Payment Success: Error processing Polar credits:", error)
+      setStatus("error")
+    }
+  }
+
+  const verifyPolarLinksUnlock = async (userId, outfitId, processedKey) => {
+    try {
+      console.log(" Payment Success: Processing Polar links unlock...")
+
+      const { error } = await supabaseAuth
+        .from("generated_outfits")
+        .update({
+          is_unlocked: true,
+          links_unlocked: true,
+        })
+        .eq("id", outfitId)
+        .eq("user_id", userId)
+
+      if (error) throw error
+
+      setStatus("success")
+
+      sessionStorage.setItem(
+        processedKey,
+        JSON.stringify({
+          status: "success",
+          timestamp: Date.now(),
+        }),
+      )
+    } catch (error) {
+      console.error(" Payment Success: Error processing Polar links unlock:", error)
+      setStatus("error")
+    }
+  }
+
   useEffect(() => {
     const fetchOutfit = async () => {
       if (status === "success" && outfitId && user) {
@@ -359,7 +453,7 @@ export function PaymentSuccess() {
               </p>
             </div>
             <div className="pt-4 border-t border-border space-y-1">
-              <p className="text-xs md:text-sm text-muted-foreground uppercase tracking-wider">New Balance</p>
+              <p className="text-xs md:text-sm text-muted-foreground uppercase tracking-widest">New Balance</p>
               <p className="text-2xl md:text-3xl font-serif">{creditsResult.newBalance} credits</p>
             </div>
           </motion.div>

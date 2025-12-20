@@ -143,7 +143,7 @@ export function OutfitDetails({ id }) {
   const handlePurchaseLinks = async () => {
     if (isPurchasing) return
 
-    console.log(" Links Unlock: Starting $5 payment flow for outfit:", id)
+    console.log("[v0] Links Unlock: Starting $5 payment flow for outfit:", id)
 
     if (!user) {
       toast({
@@ -157,26 +157,23 @@ export function OutfitDetails({ id }) {
     setIsPurchasing(true)
 
     try {
-      const response = await fetch("/api/lemonsqueezy/create-checkout", {
+      const response = await fetch("/api/polar/create-links-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: 500,
           outfitId: id,
-          description: "Shopping Links Access",
-          type: "links_unlock",
           userId: user.id,
         }),
       })
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error(" Links Unlock: Server responded with:", errorText)
+        console.error("[v0] Links Unlock: Server responded with:", errorText)
         throw new Error("Failed to create checkout session")
       }
 
       const data = await response.json()
-      console.log(" Links Unlock: Payment response:", data)
+      console.log("[v0] Links Unlock: Payment response:", data)
 
       if (data.url) {
         window.location.href = data.url
@@ -184,7 +181,7 @@ export function OutfitDetails({ id }) {
         throw new Error("Failed to create checkout session")
       }
     } catch (error) {
-      console.error(" Links Unlock: Payment error:", error)
+      console.error("[v0] Links Unlock: Payment error:", error)
       toast({
         title: "Payment Failed",
         description: "Unable to process payment. Please try again.",

@@ -25,7 +25,7 @@ export default function CreditsPage() {
     setIsProcessing(true)
 
     try {
-      const response = await fetch("/api/lemonsqueezy/create-credits-checkout", {
+      const response = await fetch("/api/polar/create-credits-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -165,7 +165,7 @@ export default function CreditsPage() {
           {/* FAQ / Info */}
           <div className="mt-16 text-center">
             <p className="text-sm text-muted-foreground">
-              Secure payment powered by LemonSqueezy. Credits are added instantly after payment.
+              Secure payment powered by Polar. Credits are added instantly after payment.
             </p>
           </div>
         </div>
