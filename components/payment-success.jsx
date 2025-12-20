@@ -257,18 +257,33 @@ export function PaymentSuccess() {
   const verifyPolarCredits = async (userId, credits, processedKey) => {
     try {
       console.log("[v0] Payment Success: Processing Polar credits...")
+      console.log("[v0] Payment Success: User ID:", userId)
+      console.log("[v0] Payment Success: Credits param:", credits)
 
       const numCredits = Number.parseInt(credits) || 0
+      console.log("[v0] Payment Success: Parsed credits:", numCredits)
 
-      // Wait 2 seconds to allow webhook to process
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Wait for webhook to process
+      console.log("[v0] Payment Success: Waiting 3 seconds for webhook to process...")
+      await new Promise((resolve) => setTimeout(resolve, 3000))
 
-      const { data: profile, error } = await supabaseAuth.from("profiles").select("credits").eq("id", userId).single()
+      console.log("[v0] Payment Success: Fetching fresh profile data...")
+      const { data: profile, error } = await supabaseAuth
+        .from("profiles")
+        .select("credits, id, email")
+        .eq("id", userId)
+        .single()
+
+      console.log("[v0] Payment Success: Profile fetch error:", error)
+      console.log("[v0] Payment Success: Fresh profile data:", JSON.stringify(profile, null, 2))
 
       if (profile && !error) {
+        const finalBalance = profile.credits || 0
+        console.log("[v0] Payment Success: Final balance from DB:", finalBalance)
+
         setCreditsResult({
           creditsAdded: numCredits,
-          newBalance: profile.credits || 0,
+          newBalance: finalBalance,
           success: true,
         })
         setStatus("success")
@@ -279,7 +294,7 @@ export function PaymentSuccess() {
             status: "success",
             creditsResult: {
               creditsAdded: numCredits,
-              newBalance: profile.credits || 0,
+              newBalance: finalBalance,
             },
             timestamp: Date.now(),
           }),
