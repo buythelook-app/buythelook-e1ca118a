@@ -258,16 +258,15 @@ export function PaymentSuccess() {
     try {
       console.log("[v0] Payment Success: Processing Polar credits...")
 
-      const searchParams = new URLSearchParams(window.location.search)
-      const orderId = searchParams.get("order_id")
+      const orderId = new URLSearchParams(window.location.search).get("order_id")
 
       if (!orderId) {
-        console.error("[v0] Payment Success: No order ID found")
+        console.error("[v0] Payment Success: No order ID in URL params")
         setStatus("error")
         return
       }
 
-      console.log("[v0] Payment Success: Order ID:", orderId)
+      console.log("[v0] Payment Success: Order ID:", orderId, "User ID:", userId)
 
       // Call verification endpoint to check order and add credits
       const response = await fetch("/api/polar/verify-order", {
@@ -314,11 +313,10 @@ export function PaymentSuccess() {
     try {
       console.log("[v0] Payment Success: Processing Polar links unlock...")
 
-      const searchParams = new URLSearchParams(window.location.search)
-      const orderId = searchParams.get("order_id")
+      const orderId = new URLSearchParams(window.location.search).get("order_id")
 
       if (!orderId) {
-        console.error("[v0] Payment Success: No order ID found")
+        console.error("[v0] Payment Success: No order ID in URL params")
         setStatus("error")
         return
       }

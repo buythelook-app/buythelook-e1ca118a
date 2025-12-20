@@ -34,7 +34,7 @@ export async function createPolarCheckout(options: PolarCheckoutOptions) {
   const body: Record<string, any> = {
     products: [productId],
     external_customer_id: options.externalCustomerId,
-    success_url: options.successUrl ? `${options.successUrl}?order_id={ORDER_ID}` : undefined,
+    success_url: options.successUrl || undefined,
     metadata: options.metadata || {},
   }
 
