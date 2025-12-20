@@ -8,6 +8,7 @@ export interface PolarCheckoutOptions {
   }
   externalCustomerId?: string
   successUrl?: string
+  metadata?: Record<string, any>
 }
 
 export async function createPolarCheckout(options: PolarCheckoutOptions) {
@@ -33,6 +34,8 @@ export async function createPolarCheckout(options: PolarCheckoutOptions) {
   const body: Record<string, any> = {
     products: [productId],
     external_customer_id: options.externalCustomerId,
+    success_url: options.successUrl,
+    metadata: options.metadata || {},
   }
 
   // Add ad-hoc pricing if custom price provided

@@ -50,6 +50,11 @@ export async function POST(request: Request) {
       },
       externalCustomerId: userId,
       successUrl: successUrl,
+      metadata: {
+        type: "credits",
+        credits: creditPackage.credits.toString(),
+        user_id: userId,
+      },
     })
 
     console.log("[v0] Polar Credits: Checkout URL created successfully")
