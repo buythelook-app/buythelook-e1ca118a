@@ -257,33 +257,37 @@ export function PaymentSuccess() {
   const verifyPolarCredits = async (userId, credits, processedKey) => {
     try {
       console.log("[v0] Payment Success: Processing Polar credits...")
-      console.log("[v0] Payment Success: User ID:", userId)
-      console.log("[v0] Payment Success: Credits param:", credits)
 
-      const numCredits = Number.parseInt(credits) || 0
-      console.log("[v0] Payment Success: Parsed credits:", numCredits)
+      const searchParams = new URLSearchParams(window.location.search)
+      const orderId = searchParams.get("order_id")
 
-      // Wait for webhook to process
-      console.log("[v0] Payment Success: Waiting 3 seconds for webhook to process...")
-      await new Promise((resolve) => setTimeout(resolve, 3000))
+      if (!orderId) {
+        console.error("[v0] Payment Success: No order ID found")
+        setStatus("error")
+        return
+      }
 
-      console.log("[v0] Payment Success: Fetching fresh profile data...")
-      const { data: profile, error } = await supabaseAuth
-        .from("profiles")
-        .select("credits, id, email")
-        .eq("id", userId)
-        .single()
+      console.log("[v0] Payment Success: Order ID:", orderId)
 
-      console.log("[v0] Payment Success: Profile fetch error:", error)
-      console.log("[v0] Payment Success: Fresh profile data:", JSON.stringify(profile, null, 2))
+      // Call verification endpoint to check order and add credits
+      const response = await fetch("/api/polar/verify-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          userId,
+          type: "credits",
+          credits,
+        }),
+      })
 
-      if (profile && !error) {
-        const finalBalance = profile.credits || 0
-        console.log("[v0] Payment Success: Final balance from DB:", finalBalance)
+      const result = await response.json()
 
+      if (result.success) {
+        console.log("[v0] Payment Success: Credits verified and added!", result)
         setCreditsResult({
-          creditsAdded: numCredits,
-          newBalance: finalBalance,
+          creditsAdded: result.creditsAdded,
+          newBalance: result.newBalance,
           success: true,
         })
         setStatus("success")
@@ -292,38 +296,64 @@ export function PaymentSuccess() {
           processedKey,
           JSON.stringify({
             status: "success",
-            creditsResult: {
-              creditsAdded: numCredits,
-              newBalance: finalBalance,
-            },
+            creditsResult: result,
             timestamp: Date.now(),
           }),
         )
       } else {
-        throw new Error(error?.message || "Failed to fetch profile")
+        console.error("[v0] Payment Success: Verification failed:", result.error)
+        setStatus("error")
       }
     } catch (error) {
-      console.error("[v0] Payment Success: Error processing Polar credits:", error)
+      console.error("[v0] Payment Success: Error verifying Polar credits:", error)
       setStatus("error")
     }
   }
 
   const verifyPolarLinksUnlock = async (userId, outfitId, processedKey) => {
     try {
-      console.log(" Payment Success: Processing Polar links unlock...")
+      console.log("[v0] Payment Success: Processing Polar links unlock...")
 
-      // For Polar, the webhook handles unlock, so we just verify
-      setStatus("success")
+      const searchParams = new URLSearchParams(window.location.search)
+      const orderId = searchParams.get("order_id")
 
-      sessionStorage.setItem(
-        processedKey,
-        JSON.stringify({
-          status: "success",
-          timestamp: Date.now(),
+      if (!orderId) {
+        console.error("[v0] Payment Success: No order ID found")
+        setStatus("error")
+        return
+      }
+
+      // Call verification endpoint to check order and unlock links
+      const response = await fetch("/api/polar/verify-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          userId,
+          type: "links_unlock",
+          outfitId,
         }),
-      )
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        console.log("[v0] Payment Success: Links unlocked!", result)
+        setStatus("success")
+
+        sessionStorage.setItem(
+          processedKey,
+          JSON.stringify({
+            status: "success",
+            timestamp: Date.now(),
+          }),
+        )
+      } else {
+        console.error("[v0] Payment Success: Verification failed:", result.error)
+        setStatus("error")
+      }
     } catch (error) {
-      console.error(" Payment Success: Error processing Polar links unlock:", error)
+      console.error("[v0] Payment Success: Error verifying Polar links:", error)
       setStatus("error")
     }
   }
