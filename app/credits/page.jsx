@@ -170,6 +170,7 @@ export default function CreditsPage() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   )
 }
