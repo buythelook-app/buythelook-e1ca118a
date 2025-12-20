@@ -83,15 +83,28 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      // Add credits to user
       const numCredits = Number.parseInt(credits) || 0
       console.log("[v0] Adding", numCredits, "credits to user", userId)
 
+      // Step 1: Get current credits
+      const { data: currentProfile, error: fetchError } = await supabase
+        .from("profiles")
+        .select("credits")
+        .eq("id", userId)
+        .single()
+
+      if (fetchError || !currentProfile) {
+        console.error("[v0] Error fetching profile:", fetchError)
+        return NextResponse.json({ success: false, error: "User profile not found" }, { status: 404 })
+      }
+
+      const newCredits = (currentProfile.credits || 0) + numCredits
+      console.log("[v0] Current credits:", currentProfile.credits, "Adding:", numCredits, "New total:", newCredits)
+
+      // Step 2: Update with new value
       const { data: profile, error: updateError } = await supabase
         .from("profiles")
-        .update({
-          credits: supabase.raw(`credits + ${numCredits}`),
-        })
+        .update({ credits: newCredits })
         .eq("id", userId)
         .select("credits")
         .single()
@@ -100,6 +113,8 @@ export async function POST(request: NextRequest) {
         console.error("[v0] Error updating profile:", updateError)
         return NextResponse.json({ success: false, error: "Failed to add credits" }, { status: 500 })
       }
+
+      console.log("[v0] Profile updated successfully. New balance:", profile?.credits)
 
       // Record transaction
       await supabase.from("payment_transactions").insert({
