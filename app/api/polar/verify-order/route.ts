@@ -101,6 +101,9 @@ export async function POST(request: NextRequest) {
       const newCredits = (currentProfile.credits || 0) + numCredits
       console.log("[v0] Current credits:", currentProfile.credits, "Adding:", numCredits, "New total:", newCredits)
 
+      console.log("[v0] BEFORE UPDATE - User ID:", userId, "Type:", typeof userId)
+      console.log("[v0] BEFORE UPDATE - New credits value:", newCredits, "Type:", typeof newCredits)
+
       // Step 2: Update with new value
       const { data: profile, error: updateError } = await supabase
         .from("profiles")
@@ -108,6 +111,8 @@ export async function POST(request: NextRequest) {
         .eq("id", userId)
         .select("credits")
         .single()
+
+      console.log("[v0] UPDATE RESPONSE - Data:", JSON.stringify(profile), "Error:", JSON.stringify(updateError))
 
       if (updateError) {
         console.error("[v0] Error updating profile:", updateError)
