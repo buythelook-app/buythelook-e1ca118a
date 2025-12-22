@@ -256,17 +256,17 @@ export function PaymentSuccess() {
 
   const verifyPolarCredits = async (userId, credits, processedKey) => {
     try {
-      console.log("[v0] Payment Success: Processing Polar credits...")
+      console.log(" Payment Success: Processing Polar credits...")
 
       const sessionToken = new URLSearchParams(window.location.search).get("customer_session_token")
 
       if (!sessionToken) {
-        console.error("[v0] Payment Success: No customer session token in URL params")
+        console.error(" Payment Success: No customer session token in URL params")
         setStatus("error")
         return
       }
 
-      console.log("[v0] Payment Success: Session Token:", sessionToken, "User ID:", userId)
+      console.log(" Payment Success: Session Token:", sessionToken, "User ID:", userId)
 
       const response = await fetch("/api/polar/verify-order", {
         method: "POST",
@@ -282,7 +282,7 @@ export function PaymentSuccess() {
       const result = await response.json()
 
       if (result.success) {
-        console.log("[v0] Payment Success: Credits verified and added!", result)
+        console.log(" Payment Success: Credits verified and added!", result)
         setCreditsResult({
           creditsAdded: result.creditsAdded,
           newBalance: result.newBalance,
@@ -290,11 +290,11 @@ export function PaymentSuccess() {
         })
         setStatus("success")
       } else {
-        console.error("[v0] Payment Success: Verification failed:", result.error)
+        console.error(" Payment Success: Verification failed:", result.error)
         setStatus("error")
       }
     } catch (error) {
-      console.error("[v0] Payment Success: Error verifying credits:", error)
+      console.error(" Payment Success: Error verifying credits:", error)
       setStatus("error")
     } finally {
       if (typeof window !== "undefined") {
@@ -312,17 +312,17 @@ export function PaymentSuccess() {
 
   const verifyPolarLinksUnlock = async (userId, outfitId, processedKey) => {
     try {
-      console.log("[v0] Payment Success: Processing Polar links unlock...")
+      console.log(" Payment Success: Processing Polar links unlock...")
 
       const sessionToken = new URLSearchParams(window.location.search).get("customer_session_token")
 
       if (!sessionToken) {
-        console.error("[v0] Payment Success: No customer session token in URL params")
+        console.error(" Payment Success: No customer session token in URL params")
         setStatus("error")
         return
       }
 
-      console.log("[v0] Payment Success: Session Token:", sessionToken, "User ID:", userId)
+      console.log(" Payment Success: Session Token:", sessionToken, "User ID:", userId)
 
       const response = await fetch("/api/polar/verify-order", {
         method: "POST",
@@ -338,14 +338,14 @@ export function PaymentSuccess() {
       const result = await response.json()
 
       if (result.success) {
-        console.log("[v0] Payment Success: Links unlocked!", result)
+        console.log(" Payment Success: Links unlocked!", result)
         setStatus("success")
       } else {
-        console.error("[v0] Payment Success: Unlock failed:", result.error)
+        console.error(" Payment Success: Unlock failed:", result.error)
         setStatus("error")
       }
     } catch (error) {
-      console.error("[v0] Payment Success: Error unlocking links:", error)
+      console.error(" Payment Success: Error unlocking links:", error)
       setStatus("error")
     } finally {
       if (typeof window !== "undefined") {

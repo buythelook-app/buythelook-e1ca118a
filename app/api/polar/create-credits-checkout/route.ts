@@ -3,13 +3,13 @@ import { createPolarCheckout, POLAR_CONFIG } from "@/lib/polar"
 import { getCreditPackageById } from "@/lib/credit-packages"
 
 export async function POST(request: Request) {
-  console.log("[v0] Polar Credits: Creating checkout session")
+  console.log(" Polar Credits: Creating checkout session")
 
   try {
     const { packageId, userId } = await request.json()
 
-    console.log("[v0] Polar Credits: Package ID:", packageId)
-    console.log("[v0] Polar Credits: User ID:", userId)
+    console.log(" Polar Credits: Package ID:", packageId)
+    console.log(" Polar Credits: User ID:", userId)
 
     // Validate inputs
     if (!userId) {
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     }
 
     console.log(
-      "[v0] Polar Credits: Package found:",
+      " Polar Credits: Package found:",
       creditPackage.name,
       creditPackage.credits,
       "credits for $",
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
 
     const productId = productIdMap[packageId]
     if (!productId) {
-      console.error("[v0] Polar: Missing product ID for package:", packageId)
+      console.error(" Polar: Missing product ID for package:", packageId)
       return NextResponse.json({ error: "Product not configured" }, { status: 500 })
     }
 
@@ -58,13 +58,13 @@ export async function POST(request: Request) {
       successUrl: successUrl,
     })
 
-    console.log("[v0] Polar Credits: Checkout URL created successfully")
+    console.log(" Polar Credits: Checkout URL created successfully")
 
     return NextResponse.json({
       url: checkoutUrl,
     })
   } catch (error: any) {
-    console.error("[v0] Polar Credits: Error creating checkout:", error.message)
+    console.error(" Polar Credits: Error creating checkout:", error.message)
     return NextResponse.json({ error: "Failed to create checkout session", details: error.message }, { status: 500 })
   }
 }

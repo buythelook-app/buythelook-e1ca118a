@@ -2,22 +2,22 @@ import { NextResponse } from "next/server"
 import { createPolarCheckout, POLAR_CONFIG } from "@/lib/polar"
 
 export async function POST(request: Request) {
-  console.log("[v0] Polar: Creating checkout session for links unlock")
+  console.log(" Polar: Creating checkout session for links unlock")
 
   try {
     const { outfitId, userId } = await request.json()
 
-    console.log("[v0] Polar: Amount: 500 cents ($5.00)")
-    console.log("[v0] Polar: Outfit ID:", outfitId)
-    console.log("[v0] Polar: User ID:", userId)
+    console.log(" Polar: Amount: 500 cents ($5.00)")
+    console.log(" Polar: Outfit ID:", outfitId)
+    console.log(" Polar: User ID:", userId)
 
     if (!userId) {
-      console.error("[v0] Polar: Missing user ID")
+      console.error(" Polar: Missing user ID")
       return NextResponse.json({ error: "User ID is required" }, { status: 400 })
     }
 
     if (!outfitId) {
-      console.error("[v0] Polar: Missing outfit ID")
+      console.error(" Polar: Missing outfit ID")
       return NextResponse.json({ error: "Outfit ID is required" }, { status: 400 })
     }
 
@@ -32,13 +32,13 @@ export async function POST(request: Request) {
       successUrl: successUrl,
     })
 
-    console.log("[v0] Polar: Checkout URL created")
+    console.log(" Polar: Checkout URL created")
 
     return NextResponse.json({
       url: checkoutUrl,
     })
   } catch (error: any) {
-    console.error("[v0] Polar: Error creating checkout:", error)
+    console.error(" Polar: Error creating checkout:", error)
     return NextResponse.json({ error: "Failed to create checkout session", details: error.message }, { status: 500 })
   }
 }

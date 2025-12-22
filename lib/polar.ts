@@ -55,7 +55,7 @@ export async function polarFetch(endpoint: string, options: RequestInit = {}) {
 
   if (!response.ok) {
     const errorText = await response.text()
-    console.error("[v0] Polar API error:", response.status, errorText)
+    console.error(" Polar API error:", response.status, errorText)
     throw new Error(`Polar API error: ${response.status}`)
   }
 

@@ -5,8 +5,8 @@ export async function POST(request: NextRequest) {
   try {
     const { sessionToken, userId, type, credits, outfitId } = await request.json()
 
-    console.log("[v0] Polar Verify Order: Processing with session token")
-    console.log("[v0] Polar Verify Order: Type:", type)
+    console.log(" Polar Verify Order: Processing with session token")
+    console.log(" Polar Verify Order: Type:", type)
 
     if (!sessionToken || !userId) {
       return NextResponse.json({ success: false, error: "Session token and User ID required" }, { status: 400 })
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     if (type === "credits") {
       const creditsToAdd = Number.parseInt(credits, 10)
-      console.log("[v0] Polar Verify Order: Adding", creditsToAdd, "credits to user", userId)
+      console.log(" Polar Verify Order: Adding", creditsToAdd, "credits to user", userId)
 
       const { data: existingTransaction } = await supabaseAdmin
         .from("payment_transactions")
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (existingTransaction) {
-        console.log("[v0] Polar Verify Order: Checkout already processed, preventing duplicate")
+        console.log(" Polar Verify Order: Checkout already processed, preventing duplicate")
         // Get current balance and return it
         const { data: profile } = await supabaseAdmin.from("profiles").select("credits").eq("id", userId).single()
 
@@ -47,14 +47,14 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (fetchError) {
-        console.error("[v0] Polar Verify Order: Error fetching profile:", fetchError)
+        console.error(" Polar Verify Order: Error fetching profile:", fetchError)
         return NextResponse.json({ success: false, error: "Failed to fetch user profile" }, { status: 500 })
       }
 
       const currentCredits = profile?.credits || 0
       const newCredits = currentCredits + creditsToAdd
 
-      console.log("[v0] Polar Verify Order: Current credits:", currentCredits, "-> New credits:", newCredits)
+      console.log(" Polar Verify Order: Current credits:", currentCredits, "-> New credits:", newCredits)
 
       // Update credits
       const { error: updateError } = await supabaseAdmin
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         .eq("id", userId)
 
       if (updateError) {
-        console.error("[v0] Polar Verify Order: Error updating credits:", updateError)
+        console.error(" Polar Verify Order: Error updating credits:", updateError)
         return NextResponse.json({ success: false, error: "Failed to update credits" }, { status: 500 })
       }
 
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         metadata: { credits: creditsToAdd, sessionToken: sessionToken },
       })
 
-      console.log("[v0] Polar Verify Order: Credits updated successfully!")
+      console.log(" Polar Verify Order: Credits updated successfully!")
 
       return NextResponse.json({
         success: true,
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (type === "links_unlock") {
-      console.log("[v0] Polar Verify Order: Processing links unlock for outfit:", outfitId)
+      console.log(" Polar Verify Order: Processing links unlock for outfit:", outfitId)
 
       const { data: existingTransaction } = await supabaseAdmin
         .from("payment_transactions")
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (existingTransaction) {
-        console.log("[v0] Polar Verify Order: Checkout already processed, preventing duplicate")
+        console.log(" Polar Verify Order: Checkout already processed, preventing duplicate")
         return NextResponse.json({ success: true, duplicate: true })
       }
 
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
         .eq("user_id", userId)
 
       if (unlockError) {
-        console.error("[v0] Polar Verify Order: Error unlocking links:", unlockError)
+        console.error(" Polar Verify Order: Error unlocking links:", unlockError)
         return NextResponse.json({ success: false, error: "Failed to unlock links" }, { status: 500 })
       }
 
@@ -127,13 +127,13 @@ export async function POST(request: NextRequest) {
         metadata: { outfitId: outfitId, sessionToken: sessionToken },
       })
 
-      console.log("[v0] Polar Verify Order: Links unlocked successfully")
+      console.log(" Polar Verify Order: Links unlocked successfully")
       return NextResponse.json({ success: true })
     }
 
     return NextResponse.json({ success: false, error: "Invalid order type" }, { status: 400 })
   } catch (error: any) {
-    console.error("[v0] Polar Verify Order: Error:", error.message)
+    console.error(" Polar Verify Order: Error:", error.message)
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : "Failed to verify payment" },
       { status: 500 },

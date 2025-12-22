@@ -49,12 +49,14 @@ export function AuthProvider({ children }) {
       return { isWebView: true, redirecting: true }
     }
 
-    const { error } = await supabaseAuth.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo:    `https://aqkeprwxxsryropnhfvm.supabase.co/auth/v1/callback`,
-      },
-    })
+   const { error } = await supabaseAuth.auth.signInWithOAuth({
+  provider: "google",
+  options: {
+    redirectTo: `${window.location.origin}/auth/callback`,
+    // Or if you prefer hardcoded for production:
+    // redirectTo: "https://www.buythelook.app/auth/callback",
+  },
+})
     if (error) throw error
     return { isWebView: false }
   }
