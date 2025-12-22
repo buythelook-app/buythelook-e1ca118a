@@ -10,6 +10,7 @@ import { Header } from "@/components/header"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/components/auth-provider"
 import { Footer } from "@/components/footer"
+import { Providers } from "./providers"
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -104,6 +105,7 @@ export default function RootLayout({
       <body
         className={`${lato.variable} ${playfair.variable} ${spaceMono.variable} font-sans antialiased bg-background text-foreground`}
       >
+        <Providers>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <AuthProvider>
             <CartProvider>
@@ -114,7 +116,9 @@ export default function RootLayout({
             </CartProvider>
           </AuthProvider>
         </ThemeProvider>
+
         <Analytics />
+        </Providers>
       </body>
     </html>
   )

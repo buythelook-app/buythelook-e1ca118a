@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import AuthModal from "@/components/auth-modal"
 import Header from "@/components/header"
 import { supabaseAuth } from "@/lib/supabase-auth-client"
+import { StackedImagesSection } from "@/components/stacked-images-section"
 
 function HeroVideoBackground({ isPlaying, isMuted }) {
   const videoRef = useRef(null)
@@ -647,6 +648,8 @@ function HomeContent() {
           </div>
         </section>
 
+        {/* <StackedImagesSection /> */}
+
         {/* ========== THE EXPERIENCE SECTION ========== */}
         <section className="py-20 sm:py-24 md:py-28 lg:py-36 bg-white overflow-hidden">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
@@ -787,7 +790,6 @@ function HomeContent() {
         </section>
       </main>
 
-  
 
       <AnimatePresence>
         {showAuthModal && <AuthModal mode={authMode} setMode={setAuthMode} onClose={() => setShowAuthModal(false)} />}
