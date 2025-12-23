@@ -124,6 +124,8 @@ export function OutfitDetails({ id }) {
   const [mainImageIndex, setMainImageIndex] = useState(0)
   const [selectedItem, setSelectedItem] = useState(null)
   const [isPurchasing, setIsPurchasing] = useState(false)
+  const [userCredits, setUserCredits] = useState(0)
+  const [isUnlockingWithCredit, setIsUnlockingWithCredit] = useState(false)
 
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const [feedbackType, setFeedbackType] = useState(null) // 'like' or 'dislike'
@@ -191,6 +193,69 @@ export function OutfitDetails({ id }) {
     }
   }
 
+  const handleUnlockWithCredit = async () => {
+    if (isUnlockingWithCredit) return
+
+    console.log("[v0] Outfit Details: Unlocking shopping links with 1 credit")
+
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to unlock shopping links.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (userCredits < 1) {
+      toast({
+        title: "Insufficient Credits",
+        description: "You need at least 1 credit to unlock shopping links.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsUnlockingWithCredit(true)
+
+    try {
+      const response = await fetch("/api/unlock-links-with-credit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          outfitId: id,
+          userId: user.id,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to unlock shopping links")
+      }
+
+      console.log("[v0] Outfit Details: Links unlocked with credit!", data)
+
+      // Update local state
+      setLinksUnlocked(true)
+      setUserCredits(data.newBalance)
+
+      toast({
+        title: "Shopping Links Unlocked!",
+        description: `1 credit used. ${data.newBalance} credits remaining.`,
+      })
+    } catch (error) {
+      console.error("[v0] Outfit Details: Credit unlock error:", error)
+      toast({
+        title: "Unlock Failed",
+        description: error.message || "Unable to unlock with credit. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUnlockingWithCredit(false)
+    }
+  }
+
   const handleItemClick = (itemIndex) => {
     setSelectedItem(
       outfit.items.top
@@ -229,49 +294,52 @@ export function OutfitDetails({ id }) {
       console.log(" Outfit Details: Loading outfit with ID:", id)
 
       if (user) {
-        const { data, error } = await supabaseAuth
-          .from("generated_outfits")
-          .select("*")
-          .eq("id", id)
-          .eq("user_id", user.id)
-          .single()
+        const [outfitResult, profileResult] = await Promise.all([
+          supabaseAuth.from("generated_outfits").select("*").eq("id", id).eq("user_id", user.id).single(),
+          supabaseAuth.from("profiles").select("credits").eq("id", user.id).single(),
+        ])
 
-        if (error) {
-          console.error(" Error fetching outfit from database:", error)
+        if (outfitResult.error) {
+          console.error(" Error fetching outfit from database:", outfitResult.error)
           setOutfit(null)
         } else {
-          console.log(" Outfit Details: Found outfit in database:", data)
+          console.log(" Outfit Details: Found outfit in database:", outfitResult.data)
           console.log(
             " Outfit Details: links_unlocked value:",
-            data.links_unlocked,
+            outfitResult.data.links_unlocked,
             "Type:",
-            typeof data.links_unlocked,
+            typeof outfitResult.data.links_unlocked,
           )
 
           const mappedOutfit = {
-            ...data,
-            whyItWorks: data.why_it_works,
-            stylistNotes: data.stylist_notes,
-            totalPrice: data.total_price,
+            ...outfitResult.data,
+            whyItWorks: outfitResult.data.why_it_works,
+            stylistNotes: outfitResult.data.stylist_notes,
+            totalPrice: outfitResult.data.total_price,
           }
           setOutfit(mappedOutfit)
-          setLinksUnlocked(data.links_unlocked || false)
+          setLinksUnlocked(outfitResult.data.links_unlocked || false)
 
-          if (data.is_liked !== null) {
+          if (outfitResult.data.is_liked !== null) {
             setUserFeedback({
-              isLiked: data.is_liked,
-              reason: data.feedback_reason,
-              text: data.feedback_text,
+              isLiked: outfitResult.data.is_liked,
+              reason: outfitResult.data.feedback_reason,
+              text: outfitResult.data.feedback_text,
             })
           }
 
-          if (data.items) {
+          if (outfitResult.data.items) {
             const indexes = {}
-            Object.keys(data.items).forEach((key, i) => {
+            Object.keys(outfitResult.data.items).forEach((key, i) => {
               indexes[i] = 0
             })
             setCurrentImageIndexes(indexes)
           }
+        }
+
+        if (profileResult.data) {
+          setUserCredits(profileResult.data.credits || 0)
+          console.log(" Outfit Details: User has", profileResult.data.credits, "credits")
         }
       } else {
         console.log(" No user logged in, outfit details require authentication")
@@ -758,11 +826,38 @@ export function OutfitDetails({ id }) {
                 <Lock className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">Unlock all shopping links for this outfit</p>
               </div>
+              {userCredits >= 1 ? (
+                <>
+                  <Button
+                    variant="default"
+                    size="lg"
+                    className="w-full h-14 uppercase tracking-widest transition-all duration-300 font-medium"
+                    onClick={handleUnlockWithCredit}
+                    disabled={isUnlockingWithCredit}
+                  >
+                    <Sparkles className="mr-2 w-5 h-5" />
+                    {isUnlockingWithCredit ? "Unlocking..." : `Unlock with 1 Credit (${userCredits} available)`}
+                  </Button>
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">Or</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="p-3 bg-orange-500/10 border border-orange-500/20 text-orange-600 text-center rounded-lg text-sm">
+                  <p className="font-medium">No credits available</p>
+                  <p className="text-xs mt-1">Purchase credits or unlock with payment below</p>
+                </div>
+              )}
               <Button
                 variant="outline"
                 size="lg"
                 className={`w-full border-2 border-black text-black hover:bg-black hover:text-white h-14 uppercase tracking-widest transition-all duration-300 font-medium bg-transparent ${
-                  !linksUnlocked ? "pulse-cta" : ""
+                  !linksUnlocked && userCredits < 1 ? "pulse-cta" : ""
                 }`}
                 onClick={handlePurchaseLinks}
                 disabled={isPurchasing}
