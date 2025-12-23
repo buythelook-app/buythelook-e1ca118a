@@ -2,96 +2,109 @@
 
 import Link from "next/link"
 import { Instagram, Twitter, Facebook } from "lucide-react"
-import Logo from './logo'
+import { Logo } from "@/components/logo"
+
 export function Footer() {
+  const shopLinks = [
+    { label: "Collections", href: "/collections" },
+    { label: "Style Quiz", href: "/quiz" },
+    { label: "Purchase Credits", href: "/buy-credits" },
+  ]
+
+  const supportLinks = [
+    { label: "Contact Us", href: "mailto:support@buythelook.com" },
+  ]
+
   return (
-    <footer className="border-t border-black/10 bg-white text-black">
-      <div className="max-w-[1600px] mx-auto px-6 md:px-12 py-16 md:py-24">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+    <footer className="bg-neutral-900 text-white">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-16 sm:py-20 lg:py-24">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
+          
           {/* Brand */}
-          <div className="md:col-span-2">
+          <div className="sm:col-span-2 lg:col-span-2">
             <Link href="/" className="inline-block mb-6">
-              <Logo className="h-16 w-auto" variant="dark" />
+              <Logo className="h-10 sm:h-12 w-auto" variant="light" />
             </Link>
-            <p className="text-sm leading-relaxed text-black/60 max-w-md mb-8">
-             AI styling. Instant shopping. Zero effort.
-
-
+            <p className="text-white/50 text-sm sm:text-base font-light leading-relaxed max-w-sm mb-8">
+              AI styling. Instant shopping. Zero effort.
             </p>
+            
+            {/* Social Links */}
             <div className="flex items-center gap-4">
-              <a
-                href="https://instagram.com/buy_the_look__"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-black/40 hover:text-black transition-colors"
-              >
-                <Instagram className="w-4 h-4" />
-              </a>
-              <a
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-black/40 hover:text-black transition-colors"
-              >
-                <Twitter className="w-4 h-4" />
-              </a>
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-black/40 hover:text-black transition-colors"
-              >
-                <Facebook className="w-4 h-4" />
-              </a>
+              {[
+                { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
+                { icon: Twitter, href: "https://twitter.com", label: "Twitter" },
+                { icon: Facebook, href: "https://facebook.com", label: "Facebook" },
+              ].map(({ icon: Icon, href, label }) => (
+                <a 
+                  key={label}
+                  href={href}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:border-white/40 hover:scale-110 transition-all duration-300"
+                  aria-label={label}
+                >
+                  <Icon className="w-4 h-4" />
+                </a>
+              ))}
             </div>
           </div>
 
           {/* Shop */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-[0.2em] mb-6 text-black/40">Shop</h4>
-            <ul className="space-y-3 text-sm">
-              <li>
-                <Link href="/outfits" className="hover:text-black/60 transition-colors">
-                  Collections
-                </Link>
-              </li>
-              <li>
-                <Link href="/quiz" className="hover:text-black/60 transition-colors">
-                  Style Quiz
-                </Link>
-              </li>
-              <li>
-                <Link href="/credits" className="hover:text-black/60 transition-colors">
-                  Purchase Credits
-                </Link>
-              </li>
+            <h4 className="text-xs uppercase tracking-[0.2em] text-white/40 mb-6 font-medium">
+              Shop
+            </h4>
+            <ul className="space-y-4">
+              {shopLinks.map((item) => (
+                <li key={item.label}>
+                  <Link
+                    href={item.href}
+                    className="text-white/70 hover:text-white text-sm transition-colors duration-300 hover:translate-x-1 inline-block"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
+          {/* Support */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-[0.2em] mb-6 text-black/40">Support</h4>
-            <ul className="space-y-3 text-sm">
-              <li>
-                <a href="mailto:support@buythelook.com" className="hover:text-black/60 transition-colors">
-                  Contact Us
-                </a>
-              </li>
-              {/* <li>
-                <Link href="/faq" className="hover:text-black/60 transition-colors">
-                  FAQs
-                </Link>
-              </li> */}
+            <h4 className="text-xs uppercase tracking-[0.2em] text-white/40 mb-6 font-medium">
+              Support
+            </h4>
+            <ul className="space-y-4">
+              {supportLinks.map((item) => (
+                <li key={item.label}>
+                  <a
+                    href={item.href}
+                    className="text-white/70 hover:text-white text-sm transition-colors duration-300 hover:translate-x-1 inline-block"
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-black/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-black/40">
-          <p>© 2025 BuyTheLook. All rights reserved.</p>
+        {/* Bottom */}
+        <div className="mt-16 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-white/40 text-xs sm:text-sm">
+            © 2025 BuyTheLook. All rights reserved.
+          </p>
           <div className="flex items-center gap-6">
-            <Link href="/privacy" className="hover:text-black transition-colors">
+            <Link
+              href="/privacy"
+              className="text-white/40 hover:text-white text-xs sm:text-sm transition-colors duration-300"
+            >
               Privacy Policy
             </Link>
-            <Link href="/terms" className="hover:text-black transition-colors">
+            <Link
+              href="/terms"
+              className="text-white/40 hover:text-white text-xs sm:text-sm transition-colors duration-300"
+            >
               Terms of Service
             </Link>
           </div>
@@ -100,3 +113,5 @@ export function Footer() {
     </footer>
   )
 }
+
+export default Footer

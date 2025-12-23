@@ -11,7 +11,8 @@ import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/components/auth-provider"
 import { Footer } from "@/components/footer"
 import { Providers } from "./providers"
-
+import { CustomCursor } from "@/components/animations/CustomCursor"
+import { NoiseOverlay, ScrollProgress } from "@/components/animations/VisualEffects"
 const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-serif",
@@ -106,6 +107,7 @@ export default function RootLayout({
         className={`${lato.variable} ${playfair.variable} ${spaceMono.variable} font-sans antialiased bg-background text-foreground`}
       >
         <Providers>
+          
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <AuthProvider>
             <CartProvider>

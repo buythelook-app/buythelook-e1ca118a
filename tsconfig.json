@@ -34,7 +34,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
-  ],
+, "components/animations/FadeInView.jsx", "components/ui/typewriter-input.jsx", "app/test/page.jsx", "components/sections/ExperienceSection.jsx", "components/sections/HowItWorksSection.jsx", "components/sections/CTASection.jsx"  ],
   "exclude": [
     "node_modules"
   ]
