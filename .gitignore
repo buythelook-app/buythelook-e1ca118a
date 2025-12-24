@@ -46,6 +46,7 @@ temp/
 # ❌ Exclude internal scripts
 scripts/
 
+
 # ❌ Exclude internal documentation
 AGENT_DOCUMENTATION.md
 AUTH_SYSTEM_GUIDE.md
@@ -53,3 +54,9 @@ SUPABASE_SETUP.md
 
 # ❌ Exclude SQL files (if private)
 database-indexes.sql
+
+
+# Ignore only these specific folders
+components/animations/
+components/sections/
+app/providers/
