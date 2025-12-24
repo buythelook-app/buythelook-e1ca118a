@@ -128,7 +128,7 @@ useEffect(() => {
                 Style Quiz
               </Link>
               <Link
-                href="/collections"
+                href="/outfits"
                 className={`text-xs font-semibold uppercase tracking-wider transition-colors ${
                   isTransparent ? "text-white/80 hover:text-white" : "text-neutral-600 hover:text-neutral-900"
                 }`}
@@ -253,7 +253,7 @@ useEffect(() => {
             <nav className="flex flex-col items-center gap-8">
               {[
                 { href: "/quiz", label: "Style Quiz" },
-                { href: "/collections", label: "Collections" },
+                { href: "/outfits", label: "Collections" },
                 ...(user ? [
                   { href: "/profile", label: "Profile" },
                   { href: "/credits", label: `Credits: ${credits}` }

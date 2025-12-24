@@ -23,7 +23,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import AuthModal from "@/components/auth-modal"
 import Header from "@/components/header"
 import { supabaseAuth } from "@/lib/supabase-auth-client"
-import { StackedImagesSection } from "@/components/stacked-images-section"
 
 function HeroVideoBackground({ isPlaying, isMuted }) {
   const videoRef = useRef(null)
@@ -358,9 +357,9 @@ function HomeContent() {
             />
 
             <h1 className="text-[11vw] xs:text-[10vw] sm:text-[9vw] md:text-[7vw] lg:text-[5.5rem] xl:text-[6.5rem] leading-[0.95] font-serif tracking-[-0.02em] text-white mb-4 sm:mb-6 md:mb-8">
-              <AnimatedHeroText delay={0.5}>Your AI Personal </AnimatedHeroText>
+              <AnimatedHeroText delay={0.5}>Stop scrolling.</AnimatedHeroText>
               <AnimatedHeroText delay={0.7}>
-                <span className="italic font-light text-white/95">Stylist</span>
+                <span className="italic font-light text-white/95">Get styled.</span>
               </AnimatedHeroText>
             </h1>
 
@@ -368,9 +367,9 @@ function HomeContent() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.1 }}
-              className="text-sm sm:text-base md:text-xl lg:text-2xl text-white/75 font-light max-w-xs sm:max-w-md md:max-w-lg mx-auto mb-8 sm:mb-10 md:mb-12 leading-relaxed px-2"
+              className="text-sm sm:text-base md:text-xl lg:text-2xl text-white/75 font-light max-w-xs sm:max-w-md md:max-w-2xl mx-auto mb-8 sm:mb-10 md:mb-12 leading-relaxed px-2"
             >
-              Complete outfits curated for you. Shop instantly.
+              Answer a few questions and get a complete, ready-to-shop outfit in minutes.
             </motion.p>
 
             <motion.div
@@ -385,22 +384,9 @@ function HomeContent() {
                 className="group w-full sm:w-auto h-12 sm:h-13 px-6 sm:px-8 bg-white text-neutral-900 hover:bg-white/95 text-sm font-medium tracking-wide transition-all duration-300"
               >
                 <span className="flex items-center justify-center gap-2">
-                  Get Styled Now
+                  Start Style Quiz
                   <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </span>
-              </Button>
-
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => {
-                  document.getElementById("howits")?.scrollIntoView({
-                    behavior: "smooth",
-                  })
-                }}
-                className="w-full sm:w-auto h-12 sm:h-13 px-6 sm:px-8 bg-transparent border border-white/30 text-white hover:bg-white/10 hover:border-white/50 text-sm font-medium tracking-wide transition-all duration-300"
-              >
-                How It Works
               </Button>
             </motion.div>
 
@@ -410,20 +396,14 @@ function HomeContent() {
               transition={{ duration: 0.8, delay: 1.8 }}
               className="mt-10 sm:mt-14 md:mt-16"
             >
-              {/* Mobile: vertical stack, Tablet+: horizontal */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8 md:gap-10 lg:gap-12">
                 {[
-                  { value: "AI-Powered", label: "Personalized to your style" },
-                  { value: "Instant Shopping", label: "Direct links to every piece" },
-                  { value: "Zero Effort", label: "Perfect outfits in minutes" },
+                  { label: "AI-powered personalization" },
+                  { label: "Instant shopping links" },
+                  { label: "Perfect outfits in minutes" },
                 ].map((stat, i) => (
                   <div key={stat.label} className="text-center">
-                    <div className="text-base sm:text-lg md:text-2xl lg:text-3xl font-light text-white/90 tracking-wide whitespace-nowrap">
-                      {stat.value}
-                    </div>
-                    <div className="text-[8px] sm:text-[9px] md:text-[10px] lg:text-[11px] tracking-[0.15em] sm:tracking-[0.2em] md:tracking-[0.25em] uppercase text-white/70 mt-1 max-w-[140px] sm:max-w-none mx-auto">
-                      {stat.label}
-                    </div>
+                    <div className="text-xs sm:text-sm md:text-base tracking-wide text-white/80">{stat.label}</div>
                   </div>
                 ))}
               </div>
@@ -431,102 +411,75 @@ function HomeContent() {
           </div>
         </section>
 
-        {/* ========== YOUR ACCOUNT SECTION (logged-in users only) ========== */}
-        {user && (
-          <section className="py-16 sm:py-20 md:py-24 lg:py-32 bg-white">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
-              <FadeInView>
-                <div className="text-center mb-10 sm:mb-14">
-                  <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-neutral-400 mb-3 sm:mb-4">
-                    Your Account
-                  </span>
-                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-neutral-900">
-                    Welcome Back,{" "}
-                    <span className="italic font-light">
-                      {user.user_metadata?.full_name?.split(" ")[0] || "Style Icon"}
-                    </span>
-                  </h2>
-                  <p className="text-sm sm:text-base text-neutral-500 mt-3 sm:mt-4 max-w-xl mx-auto px-4">
-                    View and edit your style profile, preferences, and account settings.
-                  </p>
-                </div>
-              </FadeInView>
+        {/* ========== HOW IT WORKS SECTION ========== */}
+        <section className="py-20 sm:py-24 md:py-28 lg:py-32 bg-white" id="howits">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8">
+            <FadeInView className="text-center mb-12 sm:mb-16">
+              <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-neutral-400 mb-4 sm:mb-5">
+                How It Works
+              </span>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-neutral-900 mb-4">
+                Three simple steps to your perfect outfit
+              </h2>
+            </FadeInView>
 
-              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-                <FadeInView delay={0.1}>
-                  <Link href="/profile" className="block group">
-                    <div className="p-6 sm:p-8 border border-neutral-200 bg-white hover:border-neutral-900 transition-all duration-300 h-full">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-neutral-900 text-white flex items-center justify-center mb-4 sm:mb-6">
-                        <User className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </div>
-                      <h3 className="font-serif text-lg sm:text-xl text-neutral-900 mb-2">View Profile</h3>
-                      <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">
-                        Manage your style DNA, measurements, and preferences.
-                      </p>
-                      <span className="inline-flex items-center text-xs uppercase tracking-wider text-neutral-400 group-hover:text-neutral-900 transition-colors">
-                        Edit Profile{" "}
-                        <ChevronRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
-                      </span>
+            <div className="grid sm:grid-cols-3 gap-8 sm:gap-6 md:gap-10 mb-12">
+              {[
+                {
+                  step: "1",
+                  title: "Answer a few questions",
+                  description: "Tell us your style, preferences, and the occasion",
+                },
+                {
+                  step: "2",
+                  title: "AI curates a complete outfit",
+                  description: "Our AI analyzes thousands of pieces to find your perfect match",
+                },
+                {
+                  step: "3",
+                  title: "Get a ready-to-shop look",
+                  description: "Receive your personalized outfit with direct shopping links",
+                },
+              ].map((item, i) => (
+                <FadeInView key={item.step} delay={i * 0.1}>
+                  <div className="text-center">
+                    <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-900 font-serif text-lg">
+                      {item.step}
                     </div>
-                  </Link>
+                    <h3 className="text-lg font-serif text-neutral-900 mb-2">{item.title}</h3>
+                    <p className="text-sm text-neutral-500 leading-relaxed">{item.description}</p>
+                  </div>
                 </FadeInView>
-
-                <FadeInView delay={0.2}>
-                  <Link href="/credits" className="block group">
-                    <div className="p-6 sm:p-8 border border-neutral-200 bg-white hover:border-neutral-900 transition-all duration-300 h-full">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-neutral-900 text-white flex items-center justify-center mb-4 sm:mb-6">
-                        <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </div>
-                      <div className="flex items-baseline gap-2 mb-2">
-                        <span className="text-3xl sm:text-4xl md:text-6xl font-serif text-neutral-900">
-                          {userCredits}
-                        </span>
-                        <span className="text-xs sm:text-sm text-neutral-400">Credits</span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">
-                        Purchase more credits to unlock outfits and shopping links.
-                      </p>
-                      <span className="inline-flex items-center text-xs uppercase tracking-wider text-neutral-400 group-hover:text-neutral-900 transition-colors">
-                        Buy Credits{" "}
-                        <ChevronRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
-                      </span>
-                    </div>
-                  </Link>
-                </FadeInView>
-
-                <FadeInView delay={0.3}>
-                  <Link href="/quiz" className="block group sm:col-span-2 md:col-span-1">
-                    <div className="p-6 sm:p-8 border border-neutral-200 bg-white hover:border-neutral-900 transition-all duration-300 h-full">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-neutral-900 text-white flex items-center justify-center mb-4 sm:mb-6">
-                        <Wand2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </div>
-                      <h3 className="font-serif text-lg sm:text-xl text-neutral-900 mb-2">Style Quiz</h3>
-                      <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">
-                        Update your style preferences and get better outfit recommendations.
-                      </p>
-                      <span className="inline-flex items-center text-xs uppercase tracking-wider text-neutral-400 group-hover:text-neutral-900 transition-colors">
-                        Take Quiz{" "}
-                        <ChevronRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
-                      </span>
-                    </div>
-                  </Link>
-                </FadeInView>
-              </div>
+              ))}
             </div>
-          </section>
-        )}
+
+            <FadeInView delay={0.3} className="text-center">
+              <Button
+                onClick={handleStartQuiz}
+                size="lg"
+                className="w-full sm:w-auto h-12 sm:h-13 px-6 sm:px-8 bg-neutral-900 text-white hover:bg-neutral-800 text-sm font-medium tracking-wide transition-all duration-300"
+              >
+                Start Style Quiz
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </FadeInView>
+          </div>
+        </section>
 
         {/* ========== PERSONAL ATELIER SECTION ========== */}
-        <section className="py-20 sm:py-24 md:py-28 lg:py-36 bg-[#faf9f7] border-y border-neutral-200">
+        <section className="py-20 sm:py-24 md:py-28 lg:py-32 bg-[#faf9f7] border-y border-neutral-200">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
             {/* Section Header */}
-            <FadeInView className="text-center mb-12 sm:mb-16">
+            <FadeInView className="text-center mb-12 sm:mb-14">
               <span className="inline-block text-[10px] tracking-[0.4em] uppercase text-neutral-400 mb-4 sm:mb-5">
-                Personal Atelier
+                Start Your Quiz
               </span>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif text-neutral-900">
                 Curate Your <span className="italic font-light">Look</span>
               </h2>
+              <p className="text-sm sm:text-base text-neutral-500 mt-4 max-w-xl mx-auto">
+                Get started by sharing your style vision, or jump straight into the full quiz.
+              </p>
             </FadeInView>
 
             {/* 3 Sections Layout */}
@@ -622,20 +575,13 @@ function HomeContent() {
 
               {/* SECTION 03: CTA Button */}
               <FadeInView delay={0.3} className="text-center">
-                <div className="mb-6 sm:mb-8">
-                  <span className="text-[11px] tracking-[0.25em] uppercase text-neutral-300 font-light">03</span>
-                  <h3 className="text-sm sm:text-base md:text-lg font-serif mt-2 text-neutral-600">
-                    Begin Your Journey
-                  </h3>
-                </div>
-
                 <Button
                   onClick={handleCurateMyLook}
                   className="group relative w-full sm:w-auto h-12 sm:h-14 px-8 sm:px-12 bg-neutral-900 text-white hover:bg-neutral-800 text-sm font-medium tracking-[0.1em] uppercase overflow-hidden transition-all duration-300"
                 >
                   <span className="relative z-10 flex items-center justify-center gap-2 sm:gap-3">
                     <Sparkles className="w-4 h-4" />
-                    Curate My Look
+                    Start Style Quiz
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
                   </span>
                 </Button>
@@ -648,121 +594,93 @@ function HomeContent() {
           </div>
         </section>
 
-        {/* <StackedImagesSection /> */}
-
-        {/* ========== THE EXPERIENCE SECTION ========== */}
-        <section className="py-20 sm:py-24 md:py-28 lg:py-36 bg-white overflow-hidden">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
-            <div className="grid lg:grid-cols-2 gap-12 sm:gap-14 lg:gap-20 items-center">
-              <div>
-                <FadeInView>
-                  <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-neutral-400 mb-4 sm:mb-5">
-                    The Experience
+        {/* ========== YOUR ACCOUNT SECTION (logged-in users only) ========== */}
+        {user && (
+          <section className="py-16 sm:py-20 md:py-24 lg:py-32 bg-white">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
+              <FadeInView>
+                <div className="text-center mb-10 sm:mb-14">
+                  <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-neutral-400 mb-3 sm:mb-4">
+                    Your Account
                   </span>
-                </FadeInView>
-
-                <FadeInView delay={0.1}>
-                  <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif leading-[1.15] text-neutral-900 mb-4 sm:mb-6">
-                    AI Meets Fashion. You Get Perfect Outfits.
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-neutral-900">
+                    Welcome Back,{" "}
+                    <span className="italic font-light">
+                      {user.user_metadata?.full_name?.split(" ")[0] || "Style Icon"}
+                    </span>
                   </h2>
+                  <p className="text-sm sm:text-base text-neutral-500 mt-3 sm:mt-4 max-w-xl mx-auto px-4">
+                    View and edit your style profile, preferences, and account settings.
+                  </p>
+                </div>
+              </FadeInView>
+
+              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+                <FadeInView delay={0.1}>
+                  <Link href="/profile" className="block group">
+                    <div className="p-6 sm:p-8 border border-neutral-200 bg-white hover:border-neutral-900 transition-all duration-300 h-full">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-neutral-900 text-white flex items-center justify-center mb-4 sm:mb-6">
+                        <User className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </div>
+                      <h3 className="font-serif text-lg sm:text-xl text-neutral-900 mb-2">View Profile</h3>
+                      <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">
+                        Manage your style DNA, measurements, and preferences.
+                      </p>
+                      <span className="inline-flex items-center text-xs uppercase tracking-wider text-neutral-400 group-hover:text-neutral-900 transition-colors">
+                        Edit Profile{" "}
+                        <ChevronRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
+                      </span>
+                    </div>
+                  </Link>
                 </FadeInView>
 
                 <FadeInView delay={0.2}>
-                  <p className="text-base sm:text-lg text-neutral-500 font-light leading-relaxed mb-6 sm:mb-8">
-                    Stop endless scrolling. Our AI analyzes your style, body type, and occasion to create complete looks
-                    you'll love—with one-click shopping for every piece.
-                  </p>
+                  <Link href="/credits" className="block group">
+                    <div className="p-6 sm:p-8 border border-neutral-200 bg-white hover:border-neutral-900 transition-all duration-300 h-full">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-neutral-900 text-white flex items-center justify-center mb-4 sm:mb-6">
+                        <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </div>
+                      <div className="flex items-baseline gap-2 mb-2">
+                        <span className="text-3xl sm:text-4xl md:text-6xl font-serif text-neutral-900">
+                          {userCredits}
+                        </span>
+                        <span className="text-xs sm:text-sm text-neutral-400">Credits</span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">
+                        Purchase more credits to unlock outfits and shopping links.
+                      </p>
+                      <span className="inline-flex items-center text-xs uppercase tracking-wider text-neutral-400 group-hover:text-neutral-900 transition-colors">
+                        Buy Credits{" "}
+                        <ChevronRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
+                      </span>
+                    </div>
+                  </Link>
                 </FadeInView>
 
                 <FadeInView delay={0.3}>
-                  <div className="flex flex-wrap gap-6 sm:gap-8">
-                    {[
-                      { number: "50K+", label: "Outfits Curated" },
-                      { number: "12", label: "Style Categories" },
-                      { number: "100%", label: "Personalized" },
-                    ].map((stat, i) => (
-                      <div key={i} className="text-center">
-                        <div className="text-xl sm:text-2xl md:text-3xl font-serif text-neutral-900">{stat.number}</div>
-                        <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-neutral-400 mt-1">
-                          {stat.label}
-                        </div>
+                  <Link href="/quiz" className="block group sm:col-span-2 md:col-span-1">
+                    <div className="p-6 sm:p-8 border border-neutral-200 bg-white hover:border-neutral-900 transition-all duration-300 h-full">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-neutral-900 text-white flex items-center justify-center mb-4 sm:mb-6">
+                        <Wand2 className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
-                    ))}
-                  </div>
+                      <h3 className="font-serif text-lg sm:text-xl text-neutral-900 mb-2">Style Quiz</h3>
+                      <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">
+                        Update your style preferences and get better outfit recommendations.
+                      </p>
+                      <span className="inline-flex items-center text-xs uppercase tracking-wider text-neutral-400 group-hover:text-neutral-900 transition-colors">
+                        Take Quiz{" "}
+                        <ChevronRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
+                      </span>
+                    </div>
+                  </Link>
                 </FadeInView>
               </div>
-
-              <FadeInView delay={0.2}>
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  <div className="col-span-2">
-                    <div className="aspect-[16/10] bg-neutral-100 relative overflow-hidden">
-                      <img
-                        src="/formal.jpg"
-                        alt="Luxury fashion editorial"
-                        className="w-full h-full object-cover object-top"
-                      />
-                    </div>
-                  </div>
-                  <div className="aspect-[3/4] bg-neutral-100 relative overflow-hidden">
-                    <img src="/Bohemian.jpg" alt="Minimalist fashion details" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="aspect-[3/4] bg-neutral-100 relative overflow-hidden">
-                    <img src="/street.jpg" alt="Modern streetwear" className="w-full h-full object-cover" />
-                  </div>
-                </div>
-              </FadeInView>
             </div>
-          </div>
-        </section>
-
-        {/* ========== HOW IT WORKS SECTION ========== */}
-        <section className="py-20 sm:py-24 md:py-28 lg:py-36 bg-[#faf9f7]" id="howits">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
-            <FadeInView className="text-center mb-12 sm:mb-16">
-              <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-neutral-400 mb-4 sm:mb-5">
-                How It Works
-              </span>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif text-neutral-900">
-                Get Styled in 3 <span className="italic font-light">steps</span>
-              </h2>
-            </FadeInView>
-
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-8 sm:gap-6 md:gap-8">
-              {[
-                {
-                  step: "01",
-                  title: "Share Your Style",
-                  description: "Quick quiz: preferences, body type, occasion",
-                },
-                {
-                  step: "02",
-                  title: "AI Curates Your Look",
-                  description: "Thousands of pieces analyzed in seconds",
-                },
-                {
-                  step: "03",
-                  title: "Shop Instantly",
-                  description: "One-click purchase for every item",
-                },
-              ].map((item, i) => (
-                <FadeInView key={item.step} delay={i * 0.1} className={i === 2 ? "sm:col-span-2 md:col-span-1" : ""}>
-                  <div className="group text-center sm:text-left">
-                    <div className="text-4xl sm:text-5xl md:text-6xl font-serif text-neutral-200 mb-4 sm:mb-5 group-hover:text-neutral-300 transition-colors duration-300">
-                      {item.step}
-                    </div>
-                    <h3 className="text-lg sm:text-xl font-serif text-neutral-900 mb-2 sm:mb-3">{item.title}</h3>
-                    <p className="text-sm sm:text-base text-neutral-500 font-light leading-relaxed">
-                      {item.description}
-                    </p>
-                  </div>
-                </FadeInView>
-              ))}
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* ========== CTA SECTION ========== */}
-        <section className="py-20 sm:py-24 md:py-28 lg:py-36 bg-white">
+        <section className="py-20 sm:py-24 md:py-28 lg:py-32 bg-white">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8 text-center">
             <FadeInView>
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif text-neutral-900 mb-4 sm:mb-6">
@@ -780,7 +698,7 @@ function HomeContent() {
               <Button
                 onClick={handleStartQuiz}
                 size="lg"
-                className="w-full sm:w-auto h-12 sm:h-14 px-8 sm:px-10 bg-neutral-900 text-white hover:bg-neutral-800 text-sm font-medium tracking-wide transition-all duration-300"
+                className="w-full sm:w-auto h-12 sm:h-13 px-8 sm:px-10 bg-neutral-900 text-white hover:bg-neutral-800 text-sm font-medium tracking-wide transition-all duration-300"
               >
                 Start Style Quiz
                 <ArrowRight className="w-4 h-4 ml-2 sm:ml-3" />
@@ -790,6 +708,7 @@ function HomeContent() {
         </section>
       </main>
 
+      {/* <Footer /> */}
 
       <AnimatePresence>
         {showAuthModal && <AuthModal mode={authMode} setMode={setAuthMode} onClose={() => setShowAuthModal(false)} />}

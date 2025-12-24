@@ -126,6 +126,7 @@ export function OutfitDetails({ id }) {
   const [isPurchasing, setIsPurchasing] = useState(false)
   const [userCredits, setUserCredits] = useState(0)
   const [isUnlockingWithCredit, setIsUnlockingWithCredit] = useState(false)
+  const [showLockAnimation, setShowLockAnimation] = useState(false)
 
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const [feedbackType, setFeedbackType] = useState(null) // 'like' or 'dislike'
@@ -137,9 +138,44 @@ export function OutfitDetails({ id }) {
   const [activeStoreSearch, setActiveStoreSearch] = useState(null) // { itemName, brand, stores }
 
   const ensureAbsoluteUrl = (url) => {
-    if (!url) return "#"
+    if (!url || url === "#" || url === "/" || url.trim() === "") return null
     if (url.startsWith("http://") || url.startsWith("https://")) return url
     return `https://${url}`
+  }
+
+  const openAllShoppingLinks = () => {
+    console.log("[v0] Opening all shopping links in new tabs")
+
+    const itemsArray = outfit.items.top ? [outfit.items.top, outfit.items.bottom, outfit.items.shoes] : outfit.items
+
+    const validLinks = itemsArray.filter((item) => {
+      const url = ensureAbsoluteUrl(item.product_url || item.url)
+      return url !== null
+    })
+
+    if (validLinks.length === 0) {
+      toast({
+        title: "No Shopping Links Available",
+        description: "Shopping links are not available for this outfit yet.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    validLinks.forEach((item, index) => {
+      const absoluteUrl = ensureAbsoluteUrl(item.product_url || item.url)
+      console.log(`[v0] Opening link ${index + 1}:`, absoluteUrl)
+
+      // Small delay between opening tabs to prevent browser blocking
+      setTimeout(() => {
+        window.open(absoluteUrl, "_blank", "noopener,noreferrer")
+      }, index * 200) // 200ms delay between each tab
+    })
+
+    toast({
+      title: "Shopping Links Opened!",
+      description: `${validLinks.length} product pages opened in new tabs.`,
+    })
   }
 
   const handlePurchaseLinks = async () => {
@@ -236,14 +272,17 @@ export function OutfitDetails({ id }) {
 
       console.log("[v0] Outfit Details: Links unlocked with credit!", data)
 
-      // Update local state
       setLinksUnlocked(true)
       setUserCredits(data.newBalance)
 
       toast({
         title: "Shopping Links Unlocked!",
-        description: `1 credit used. ${data.newBalance} credits remaining.`,
+        description: `1 credit used. ${data.newBalance} credits remaining. Opening links...`,
       })
+
+      setTimeout(() => {
+        openAllShoppingLinks()
+      }, 1000)
     } catch (error) {
       console.error("[v0] Outfit Details: Credit unlock error:", error)
       toast({
@@ -318,7 +357,14 @@ export function OutfitDetails({ id }) {
             totalPrice: outfitResult.data.total_price,
           }
           setOutfit(mappedOutfit)
-          setLinksUnlocked(outfitResult.data.links_unlocked || false)
+          const isUnlocked = outfitResult.data.links_unlocked || false
+          setLinksUnlocked(isUnlocked)
+
+          if (!isUnlocked) {
+            setTimeout(() => {
+              setShowLockAnimation(true)
+            }, 500) // Delay animation slightly after page load
+          }
 
           if (outfitResult.data.is_liked !== null) {
             setUserFeedback({
@@ -820,61 +866,99 @@ export function OutfitDetails({ id }) {
             </div>
           </div>
 
-          {!linksUnlocked ? (
-            <div className="space-y-3">
-              <div className="p-4 bg-muted/50 border border-border text-center rounded-lg">
-                <Lock className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Unlock all shopping links for this outfit</p>
-              </div>
-              {userCredits >= 1 ? (
-                <>
-                  <Button
-                    variant="default"
-                    size="lg"
-                    className="w-full h-14 uppercase tracking-widest transition-all duration-300 font-medium"
-                    onClick={handleUnlockWithCredit}
-                    disabled={isUnlockingWithCredit}
-                  >
-                    <Sparkles className="mr-2 w-5 h-5" />
-                    {isUnlockingWithCredit ? "Unlocking..." : `Unlock with 1 Credit (${userCredits} available)`}
-                  </Button>
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-border" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">Or</span>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="p-3 bg-orange-500/10 border border-orange-500/20 text-orange-600 text-center rounded-lg text-sm">
-                  <p className="font-medium">No credits available</p>
-                  <p className="text-xs mt-1">Purchase credits or unlock with payment below</p>
+          <div className={`transition-all duration-700 ${showLockAnimation ? "animate-pulse-slow" : ""}`}>
+            {!linksUnlocked ? (
+              <div className="space-y-3">
+                <div
+                  className={`p-6 bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-orange-950/20 dark:to-yellow-950/20 border-2 border-orange-300 dark:border-orange-700 text-center rounded-lg transition-all duration-500 ${showLockAnimation ? "scale-105 shadow-lg" : "scale-100"}`}
+                >
+                  <Lock
+                    className={`w-8 h-8 mx-auto mb-3 text-orange-600 dark:text-orange-400 transition-transform duration-500 ${showLockAnimation ? "animate-bounce" : ""}`}
+                  />
+                  <p className="text-base font-semibold text-orange-900 dark:text-orange-100 mb-2">
+                    🔒 Shopping Links Locked
+                  </p>
+                  <p className="text-sm text-orange-700 dark:text-orange-300">
+                    Unlock to get direct shopping links and purchase these items instantly!
+                  </p>
                 </div>
-              )}
-              <Button
-                variant="outline"
-                size="lg"
-                className={`w-full border-2 border-black text-black hover:bg-black hover:text-white h-14 uppercase tracking-widest transition-all duration-300 font-medium bg-transparent ${
-                  !linksUnlocked && userCredits < 1 ? "pulse-cta" : ""
-                }`}
-                onClick={handlePurchaseLinks}
-                disabled={isPurchasing}
-              >
-                <ShoppingBag className="mr-2 w-5 h-5" />
-                {isPurchasing ? "Processing..." : "Unlock Shopping Links - $5.00"}
-              </Button>
-            </div>
-          ) : (
-            <div className="p-6 bg-green-500/10 border border-green-500/20 text-green-500 text-center rounded-lg space-y-2">
-              <CheckCircle2 className="w-8 h-8 mx-auto" />
-              <p className="font-medium">Shopping Links Unlocked!</p>
-              <p className="text-sm text-green-600">Click "Shop Now" on any item above to purchase</p>
-            </div>
-          )}
+                {userCredits >= 1 ? (
+                  <>
+                    <Button
+                      variant="default"
+                      size="lg"
+                      className="w-full h-14 uppercase tracking-widest transition-all duration-300 font-medium"
+                      onClick={handleUnlockWithCredit}
+                      disabled={isUnlockingWithCredit}
+                    >
+                      <Sparkles className="mr-2 w-5 h-5" />
+                      {isUnlockingWithCredit ? "Unlocking..." : `Unlock with 1 Credit (${userCredits} available)`}
+                    </Button>
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-border" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-card px-2 text-muted-foreground">Or</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-3 bg-orange-500/10 border border-orange-500/20 text-orange-600 text-center rounded-lg text-sm">
+                    <p className="font-medium">No credits available</p>
+                    <p className="text-xs mt-1">Purchase credits or unlock with payment below</p>
+                  </div>
+                )}
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className={`w-full border-2 border-black text-black hover:bg-black hover:text-white h-14 uppercase tracking-widest transition-all duration-300 font-medium bg-transparent ${
+                    !linksUnlocked && userCredits < 1 ? "pulse-cta" : ""
+                  }`}
+                  onClick={handlePurchaseLinks}
+                  disabled={isPurchasing}
+                >
+                  <ShoppingBag className="mr-2 w-5 h-5" />
+                  {isPurchasing ? "Processing..." : "Unlock Shopping Links - $5.00"}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-2 border-green-300 dark:border-green-700 text-center rounded-lg space-y-3">
+                  <CheckCircle2 className="w-10 h-10 mx-auto text-green-600 dark:text-green-400" />
+                  <p className="text-lg font-semibold text-green-900 dark:text-green-100">Shopping Links Unlocked!</p>
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    Click "Shop Now" on any item above or open all links at once below
+                  </p>
+                </div>
+                <Button
+                  variant="default"
+                  size="lg"
+                  className="w-full h-14 bg-green-600 hover:bg-green-700 text-white uppercase tracking-widest transition-all duration-300 font-medium"
+                  onClick={openAllShoppingLinks}
+                >
+                  <ExternalLink className="mr-2 w-5 h-5" />
+                  Open All Shopping Links
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes pulse-slow {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.8;
+          }
+        }
+        .animate-pulse-slow {
+          animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) 3;
+        }
+      `}</style>
     </>
   )
 }
