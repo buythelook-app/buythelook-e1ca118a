@@ -145,13 +145,25 @@ export function OutfitDetails({ id }) {
 
   const openAllShoppingLinks = () => {
     console.log("[v0] Opening all shopping links in new tabs")
+    console.log("[v0] Outfit items structure:", outfit.items)
 
     const itemsArray = outfit.items.top ? [outfit.items.top, outfit.items.bottom, outfit.items.shoes] : outfit.items
+    console.log("[v0] Items array:", itemsArray)
 
     const validLinks = itemsArray.filter((item) => {
       const url = ensureAbsoluteUrl(item.product_url || item.url)
+      console.log(
+        "[v0] Checking item:",
+        item.product_name,
+        "URL:",
+        item.product_url || item.url,
+        "Valid:",
+        url !== null,
+      )
       return url !== null
     })
+
+    console.log(`[v0] Found ${validLinks.length} valid shopping links`)
 
     if (validLinks.length === 0) {
       toast({
@@ -162,20 +174,33 @@ export function OutfitDetails({ id }) {
       return
     }
 
+    let openedCount = 0
     validLinks.forEach((item, index) => {
       const absoluteUrl = ensureAbsoluteUrl(item.product_url || item.url)
       console.log(`[v0] Opening link ${index + 1}:`, absoluteUrl)
 
-      // Small delay between opening tabs to prevent browser blocking
-      setTimeout(() => {
-        window.open(absoluteUrl, "_blank", "noopener,noreferrer")
-      }, index * 200) // 200ms delay between each tab
+      // Open immediately - no async calls
+      const opened = window.open(absoluteUrl, "_blank", "noopener,noreferrer")
+      if (opened) {
+        openedCount++
+        console.log(`[v0] Link ${index + 1} opened successfully`)
+      } else {
+        console.log(`[v0] Link ${index + 1} was blocked by browser`)
+      }
     })
 
-    toast({
-      title: "Shopping Links Opened!",
-      description: `${validLinks.length} product pages opened in new tabs.`,
-    })
+    if (openedCount > 0) {
+      toast({
+        title: "Opening Shopping Links",
+        description: `Opened ${openedCount} product page${openedCount > 1 ? "s" : ""} in new tabs`,
+      })
+    } else {
+      toast({
+        title: "Popup Blocked",
+        description: "Please allow popups for this site to open shopping links.",
+        variant: "destructive",
+      })
+    }
   }
 
   const handlePurchaseLinks = async () => {
