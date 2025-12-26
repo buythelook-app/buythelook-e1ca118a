@@ -206,7 +206,7 @@ useEffect(() => {
                 </div>
               ) : (
                 <Link
-                  href="/auth"
+                  href="/login"
                   className={`text-xs font-semibold uppercase tracking-wider transition-colors ${
                     isTransparent ? "text-white/80 hover:text-white" : "text-neutral-600 hover:text-neutral-900"
                   }`}
@@ -258,7 +258,7 @@ useEffect(() => {
                   { href: "/profile", label: "Profile" },
                   { href: "/credits", label: `Credits: ${credits}` }
                 ] : []),
-                user ? { href: "#", label: "Sign Out", onClick: signOut } : { href: "/auth", label: "Sign In" }
+                user ? { href: "#", label: "Sign Out", onClick: signOut } : { href: "/login", label: "Sign In" }
               ].map((item, i) => (
                 <motion.div key={item.label} variants={linkVariants} custom={i}>
                   {item.onClick ? (
