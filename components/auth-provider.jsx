@@ -75,7 +75,7 @@ export function AuthProvider({ children }) {
         data: {
           full_name: fullName,
         },
-        emailRedirectTo: `https://buythelook.app/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     })
 

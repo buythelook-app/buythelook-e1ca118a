@@ -1,60 +1,98 @@
-import { createServerClient } from "@/lib/supabase-server"
+import { supabaseAuth } from "@/lib/supabase-auth-client"
 import { type NextRequest, NextResponse } from "next/server"
 
-// GET /api/admin/blogs/:id - Get single blog (admin only)
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+// GET /api/admin/blogs - List all blogs (admin only)
+export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient()
+    console.log("[v0] Admin Blogs API: GET request received")
 
-    // Check if user is admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const searchParams = request.nextUrl.searchParams
+    const userId = searchParams.get("user_id")
+
+    console.log("[v0] Admin Blogs API: User check", { hasUserId: !!userId, userId })
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized - user_id required" }, { status: 401 })
     }
 
-    const { data: userData } = await supabase.from("users").select("is_admin").eq("id", user.id).single()
+    const { data: profile, error: profileError } = await supabaseAuth
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", userId)
+      .single()
 
-    if (!userData?.is_admin) {
+    console.log("[v0] Admin Blogs API: Profile check", {
+      hasProfile: !!profile,
+      isAdmin: profile?.is_admin,
+      error: profileError,
+    })
+
+    if (profileError || !profile?.is_admin) {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 })
     }
 
-    const { data: blog, error } = await supabase
+    // Get query params for pagination
+    const page = Number.parseInt(searchParams.get("page") || "1")
+    const limit = Number.parseInt(searchParams.get("limit") || "10")
+    const offset = (page - 1) * limit
+
+    // Get total count
+    const { count } = await supabaseAuth.from("blog_posts").select("*", { count: "exact", head: true })
+
+    // Get blogs with relationships
+    const { data: blogs, error } = await supabaseAuth
       .from("blog_posts_with_relationships")
       .select("*")
-      .eq("id", params.id)
-      .single()
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1)
 
     if (error) throw error
 
-    return NextResponse.json({ blog })
+    return NextResponse.json({
+      blogs,
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
+      },
+    })
   } catch (error: any) {
-    console.error("[v0] Error fetching blog:", error)
+    console.error("[v0] Error fetching blogs:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
-// PUT /api/admin/blogs/:id - Update blog (admin only)
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+// POST /api/admin/blogs - Create new blog (admin only)
+export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerClient()
+    console.log("[v0] Admin Blogs API: POST request received")
 
-    // Check if user is admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const body = await request.json()
+    const { user_id, ...blogData } = body
+
+    console.log("[v0] Admin Blogs API: User check for POST", { hasUserId: !!user_id, userId: user_id })
+
+    if (!user_id) {
+      return NextResponse.json({ error: "Unauthorized - user_id required" }, { status: 401 })
     }
 
-    const { data: userData } = await supabase.from("users").select("is_admin").eq("id", user.id).single()
+    const { data: profile, error: profileError } = await supabaseAuth
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", user_id)
+      .single()
 
-    if (!userData?.is_admin) {
+    console.log("[v0] Admin Blogs API: Profile check for POST", {
+      hasProfile: !!profile,
+      isAdmin: profile?.is_admin,
+      error: profileError,
+    })
+
+    if (profileError || !profile?.is_admin) {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 })
     }
 
-    const body = await request.json()
     const {
       title,
       slug,
@@ -67,94 +105,57 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       reading_time,
       category_ids,
       tag_ids,
-    } = body
+    } = blogData
 
-    // Update blog post
-    const { data: blog, error: blogError } = await supabase
+    // Validate required fields
+    if (!title || !slug || !excerpt || !content) {
+      return NextResponse.json({ error: "Missing required fields: title, slug, excerpt, content" }, { status: 400 })
+    }
+
+    // Create blog post
+    const { data: blog, error: blogError } = await supabaseAuth
       .from("blog_posts")
-      .update({
+      .insert({
         title,
         slug,
         excerpt,
         content,
         featured_image_url,
-        meta_description,
+        meta_description: meta_description || excerpt,
         meta_keywords,
-        published,
+        published: published || false,
         reading_time,
+        author_id: user_id, // Use user_id from request body
         published_at: published ? new Date().toISOString() : null,
       })
-      .eq("id", params.id)
       .select()
       .single()
 
     if (blogError) throw blogError
 
-    // Update categories
-    if (category_ids !== undefined) {
-      // Delete existing categories
-      await supabase.from("blog_posts_categories").delete().eq("blog_post_id", params.id)
+    // Add categories if provided
+    if (category_ids && category_ids.length > 0) {
+      const categoryRelations = category_ids.map((cat_id: string) => ({
+        blog_post_id: blog.id,
+        category_id: cat_id,
+      }))
 
-      // Add new categories
-      if (category_ids.length > 0) {
-        const categoryRelations = category_ids.map((cat_id: string) => ({
-          blog_post_id: params.id,
-          category_id: cat_id,
-        }))
-
-        await supabase.from("blog_posts_categories").insert(categoryRelations)
-      }
+      await supabaseAuth.from("blog_posts_categories").insert(categoryRelations)
     }
 
-    // Update tags
-    if (tag_ids !== undefined) {
-      // Delete existing tags
-      await supabase.from("blog_posts_tags").delete().eq("blog_post_id", params.id)
+    // Add tags if provided
+    if (tag_ids && tag_ids.length > 0) {
+      const tagRelations = tag_ids.map((tag_id: string) => ({
+        blog_post_id: blog.id,
+        tag_id: tag_id,
+      }))
 
-      // Add new tags
-      if (tag_ids.length > 0) {
-        const tagRelations = tag_ids.map((tag_id: string) => ({
-          blog_post_id: params.id,
-          tag_id: tag_id,
-        }))
-
-        await supabase.from("blog_posts_tags").insert(tagRelations)
-      }
+      await supabaseAuth.from("blog_posts_tags").insert(tagRelations)
     }
 
-    return NextResponse.json({ blog })
+    return NextResponse.json({ blog }, { status: 201 })
   } catch (error: any) {
-    console.error("[v0] Error updating blog:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-}
-
-// DELETE /api/admin/blogs/:id - Delete blog (admin only)
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
-  try {
-    const supabase = createServerClient()
-
-    // Check if user is admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const { data: userData } = await supabase.from("users").select("is_admin").eq("id", user.id).single()
-
-    if (!userData?.is_admin) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 })
-    }
-
-    const { error } = await supabase.from("blog_posts").delete().eq("id", params.id)
-
-    if (error) throw error
-
-    return NextResponse.json({ message: "Blog deleted successfully" })
-  } catch (error: any) {
-    console.error("[v0] Error deleting blog:", error)
+    console.error("[v0] Error creating blog:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

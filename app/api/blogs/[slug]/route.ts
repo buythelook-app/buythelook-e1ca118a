@@ -1,16 +1,16 @@
-import { createServerClient } from "@/lib/supabase-server"
+import { supabaseAuth } from "@/lib/supabase-auth-client"
 import { type NextRequest, NextResponse } from "next/server"
 
 // GET /api/blogs/:slug - Get single blog by slug (public)
-export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
-    const supabase = createServerClient()
+    const { slug } = await params
 
     // Get blog by slug
-    const { data: blog, error } = await supabase
+    const { data: blog, error } = await supabaseAuth
       .from("blog_posts_with_relationships")
       .select("*")
-      .eq("slug", params.slug)
+      .eq("slug", slug)
       .eq("published", true)
       .single()
 
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
     }
 
     // Increment view count
-    await supabase
+    await supabaseAuth
       .from("blog_posts")
       .update({ view_count: (blog.view_count || 0) + 1 })
       .eq("id", blog.id)

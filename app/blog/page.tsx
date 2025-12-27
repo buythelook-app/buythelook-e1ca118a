@@ -18,9 +18,10 @@ export const metadata: Metadata = {
 export default async function BlogPage({
   searchParams,
 }: {
-  searchParams: { page?: string }
+  searchParams: Promise<{ page?: string }>
 }) {
-  const page = Number.parseInt(searchParams.page || "1")
+  const params = await searchParams
+  const page = Number.parseInt(params.page || "1")
   const limit = 12
 
   const supabase = await createServerClient()

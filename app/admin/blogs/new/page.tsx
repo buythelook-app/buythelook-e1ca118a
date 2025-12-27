@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,6 +14,7 @@ import Link from "next/link"
 
 export default function NewBlogPage() {
   const router = useRouter()
+  const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -44,25 +46,61 @@ export default function NewBlogPage() {
     setLoading(true)
     setError("")
 
+    console.log("[v0] ========== EXTREME USER DEBUG ==========")
+    console.log("[v0] Full user object:", user)
+    console.log("[v0] user?.id:", user?.id)
+    console.log("[v0] User object keys:", user ? Object.keys(user) : "NO USER")
+    console.log("[v0] User object type:", typeof user)
+
+    // Try multiple ways to get the ID
+    const userId = user?.id || user?.user_id || (user as any)?.uid
+    console.log("[v0] Extracted userId:", userId)
+    console.log("[v0] ==========================================")
+
+    if (!userId) {
+      setError("Unable to identify user. Please refresh and try again.")
+      setLoading(false)
+      return
+    }
+
     try {
+      const payload = {
+        ...formData,
+        user_id: userId,
+      }
+
+      console.log("[v0] Sending payload:", payload)
+
       const response = await fetch("/api/admin/blogs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
+
+      console.log("[v0] Response status:", response.status)
 
       if (!response.ok) {
         const data = await response.json()
+        console.log("[v0] Error response:", data)
         throw new Error(data.error || "Failed to create blog")
       }
 
       const { data } = await response.json()
       router.push("/admin/blogs")
     } catch (err: any) {
+      console.error("[v0] Error creating blog:", err)
       setError(err.message)
     } finally {
       setLoading(false)
     }
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    )
   }
 
   return (
