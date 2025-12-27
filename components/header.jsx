@@ -14,6 +14,7 @@ export function Header() {
   const pathname = usePathname()
   const { totalItems } = useCart()
   const [credits, setCredits] = useState(0)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
@@ -26,10 +27,10 @@ export function Header() {
 
   const isHomePage = pathname === "/" || pathname === "/test"
 
-useEffect(() => {
+  useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY
-      
+
       // Header is transparent when at top of homepage, solid everywhere else
       if (isHomePage) {
         // Stay transparent for the entire viewport height (hero section)
@@ -62,11 +63,31 @@ useEffect(() => {
     const fetchCredits = async () => {
       if (!user) {
         setCredits(0)
+        setIsAdmin(false)
         return
       }
       try {
-        const { data } = await supabaseAuth.from("profiles").select("credits").eq("id", user.id).single()
-        if (data) setCredits(data.credits ?? 0)
+        // First, try to fetch credits and is_admin (if column exists)
+        const { data, error } = await supabaseAuth
+          .from("profiles")
+          .select("credits, is_admin")
+          .eq("id", user.id)
+          .single()
+
+        if (error) {
+          // If is_admin column doesn't exist, fall back to just credits
+          if (error.message?.includes("is_admin")) {
+            const { data: creditsData } = await supabaseAuth
+              .from("profiles")
+              .select("credits")
+              .eq("id", user.id)
+              .single()
+            if (creditsData) setCredits(creditsData.credits ?? 0)
+          }
+        } else if (data) {
+          setCredits(data.credits ?? 0)
+          setIsAdmin(data.is_admin ?? false)
+        }
       } catch (err) {
         console.error("Failed to fetch credits:", err)
       }
@@ -91,32 +112,31 @@ useEffect(() => {
 
   const menuVariants = {
     closed: { clipPath: "circle(0% at calc(100% - 40px) 40px)" },
-    open: { clipPath: "circle(150% at calc(100% - 40px) 40px)", transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } }
+    open: {
+      clipPath: "circle(150% at calc(100% - 40px) 40px)",
+      transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
+    },
   }
 
   const linkVariants = {
     closed: { opacity: 0, y: 20 },
-    open: (i) => ({ opacity: 1, y: 0, transition: { delay: 0.3 + i * 0.1, duration: 0.5 } })
+    open: (i) => ({ opacity: 1, y: 0, transition: { delay: 0.3 + i * 0.1, duration: 0.5 } }),
   }
 
   return (
     <>
       {/* Desktop Header */}
-     <motion.header
-  initial={{ y: -100 }}
-  animate={{ y: isVisible ? 0 : -100 }}
-  transition={{ duration: 0.3, ease: "easeInOut" }}
-  className={[
-    "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
-    isTransparent
-      ? "bg-transparent"
-      : "bg-background/95 backdrop-blur-md border-b border-border/10 shadow-sm",
-  ].join(" ")}
->
-
+      <motion.header
+        initial={{ y: -100 }}
+        animate={{ y: isVisible ? 0 : -100 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        className={[
+          "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
+          isTransparent ? "bg-transparent" : "bg-background/95 backdrop-blur-md border-b border-border/10 shadow-sm",
+        ].join(" ")}
+      >
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
-            
             {/* Left Nav */}
             <nav className="hidden lg:flex items-center gap-8">
               <Link
@@ -135,26 +155,43 @@ useEffect(() => {
               >
                 Collections
               </Link>
+              <Link
+                href="/blog"
+                className={`text-xs font-semibold uppercase tracking-wider transition-colors ${
+                  isTransparent ? "text-white/80 hover:text-white" : "text-neutral-600 hover:text-neutral-900"
+                }`}
+              >
+                Blog
+              </Link>
             </nav>
 
             {/* Center Logo */}
-              {/* Center Logo */}
             <Link href="/" className="absolute left-1/2 -translate-x-1/2">
-              <Logo 
-                variant={isTransparent ? "light" : "dark"}
-                className="h-12 transition-all duration-500" 
-              />
+              <Logo variant={isTransparent ? "light" : "dark"} className="h-12 transition-all duration-500" />
             </Link>
 
             {/* Right Actions */}
             <div className="hidden lg:flex items-center gap-6">
               {user && (
-                <div className={`flex items-center gap-2 text-xs font-semibold ${
-                  isTransparent ? "text-white/80" : "text-neutral-600"
-                }`}>
+                <div
+                  className={`flex items-center gap-2 text-xs font-semibold ${
+                    isTransparent ? "text-white/80" : "text-neutral-600"
+                  }`}
+                >
                   <Coins className="w-4 h-4" />
                   {credits} Credits
                 </div>
+              )}
+
+              {user && isAdmin && (
+                <Link
+                  href="/admin"
+                  className={`text-xs font-semibold uppercase tracking-wider transition-colors ${
+                    isTransparent ? "text-white/80 hover:text-white" : "text-neutral-600 hover:text-neutral-900"
+                  }`}
+                >
+                  Admin
+                </Link>
               )}
 
               {user ? (
@@ -194,7 +231,10 @@ useEffect(() => {
                           Buy Credits
                         </Link>
                         <button
-                          onClick={() => { signOut(); setProfileMenuOpen(false) }}
+                          onClick={() => {
+                            signOut()
+                            setProfileMenuOpen(false)
+                          }}
                           className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left hover:bg-neutral-50 transition-colors text-red-600"
                         >
                           <LogOut className="w-4 h-4" />
@@ -254,16 +294,23 @@ useEffect(() => {
               {[
                 { href: "/quiz", label: "Style Quiz" },
                 { href: "/outfits", label: "Collections" },
-                ...(user ? [
-                  { href: "/profile", label: "Profile" },
-                  { href: "/credits", label: `Credits: ${credits}` }
-                ] : []),
-                user ? { href: "#", label: "Sign Out", onClick: signOut } : { href: "/login", label: "Sign In" }
+                { href: "/blog", label: "Blog" },
+                ...(user
+                  ? [
+                      { href: "/profile", label: "Profile" },
+                      { href: "/credits", label: `Credits: ${credits}` },
+                      ...(isAdmin ? [{ href: "/admin", label: "Admin" }] : []),
+                    ]
+                  : []),
+                user ? { href: "#", label: "Sign Out", onClick: signOut } : { href: "/login", label: "Sign In" },
               ].map((item, i) => (
                 <motion.div key={item.label} variants={linkVariants} custom={i}>
                   {item.onClick ? (
                     <button
-                      onClick={() => { item.onClick(); setIsMenuOpen(false) }}
+                      onClick={() => {
+                        item.onClick()
+                        setIsMenuOpen(false)
+                      }}
                       className="text-4xl md:text-5xl font-serif tracking-tight text-neutral-900 hover:text-neutral-500 transition-colors"
                     >
                       {item.label}
@@ -282,9 +329,7 @@ useEffect(() => {
             </nav>
 
             <div className="absolute bottom-12 left-0 right-0 text-center">
-              <p className="text-sm text-neutral-400 tracking-widest uppercase">
-                AI Styling • Instant Shopping
-              </p>
+              <p className="text-sm text-neutral-400 tracking-widest uppercase">AI Styling • Instant Shopping</p>
             </div>
           </motion.div>
         )}
