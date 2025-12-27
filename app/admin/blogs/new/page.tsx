@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth-provider"
@@ -11,6 +10,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft, Save } from "lucide-react"
 import Link from "next/link"
+import dynamic from "next/dynamic"
+import "react-quill-new/dist/quill.snow.css"
+
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false })
 
 export default function NewBlogPage() {
   const router = useRouter()
@@ -26,10 +29,22 @@ export default function NewBlogPage() {
     meta_description: "",
     meta_keywords: "",
     featured_image_url: "",
+    category: "",
     published: false,
   })
 
-  // Auto-generate slug from title
+  const quillModules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      ["blockquote", "code-block"],
+      [{ align: [] }],
+      ["link", "image"],
+      ["clean"],
+    ],
+  }
+
   const handleTitleChange = (title: string) => {
     setFormData({
       ...formData,
@@ -46,16 +61,7 @@ export default function NewBlogPage() {
     setLoading(true)
     setError("")
 
-    console.log("[v0] ========== EXTREME USER DEBUG ==========")
-    console.log("[v0] Full user object:", user)
-    console.log("[v0] user?.id:", user?.id)
-    console.log("[v0] User object keys:", user ? Object.keys(user) : "NO USER")
-    console.log("[v0] User object type:", typeof user)
-
-    // Try multiple ways to get the ID
-    const userId = user?.id || user?.user_id || (user as any)?.uid
-    console.log("[v0] Extracted userId:", userId)
-    console.log("[v0] ==========================================")
+    const userId = user?.id
 
     if (!userId) {
       setError("Unable to identify user. Please refresh and try again.")
@@ -69,19 +75,14 @@ export default function NewBlogPage() {
         user_id: userId,
       }
 
-      console.log("[v0] Sending payload:", payload)
-
       const response = await fetch("/api/admin/blogs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
 
-      console.log("[v0] Response status:", response.status)
-
       if (!response.ok) {
         const data = await response.json()
-        console.log("[v0] Error response:", data)
         throw new Error(data.error || "Failed to create blog")
       }
 
@@ -105,9 +106,9 @@ export default function NewBlogPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-4xl px-4 py-12">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <Link
             href="/admin/blogs"
             className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
@@ -115,8 +116,10 @@ export default function NewBlogPage() {
             <ArrowLeft className="h-4 w-4" />
             Back to Blogs
           </Link>
-          <h1 className="font-serif text-4xl mb-2">Create New Blog Post</h1>
-          <p className="text-muted-foreground">Fill in the details below to create your blog post</p>
+          <h1 className="font-serif text-3xl sm:text-4xl mb-2">Create New Blog Post</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
+            Fill in the details below to create your blog post
+          </p>
         </div>
 
         {/* Error Message */}
@@ -127,10 +130,10 @@ export default function NewBlogPage() {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
           {/* Basic Info */}
-          <div className="space-y-4 rounded-lg border bg-card p-6">
-            <h2 className="text-xl font-semibold">Basic Information</h2>
+          <div className="space-y-4 rounded-lg border bg-card p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-semibold">Basic Information</h2>
 
             <div>
               <Label htmlFor="title">Title *</Label>
@@ -140,6 +143,7 @@ export default function NewBlogPage() {
                 onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="Enter blog title..."
                 required
+                className="text-lg"
               />
             </div>
 
@@ -171,26 +175,53 @@ export default function NewBlogPage() {
             </div>
 
             <div>
-              <Label htmlFor="content">Content *</Label>
-              <Textarea
-                id="content"
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                placeholder="Write your blog content here (HTML supported)..."
-                rows={15}
-                required
-                className="font-mono text-sm"
-              />
+              <Label htmlFor="category">Category</Label>
+              <select
+                id="category"
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="">Select a category...</option>
+                <option value="fashion-tips">Fashion Tips</option>
+                <option value="style-guide">Style Guide</option>
+                <option value="trends">Trends</option>
+                <option value="ai-fashion">AI Fashion</option>
+                <option value="outfit-ideas">Outfit Ideas</option>
+                <option value="seasonal">Seasonal</option>
+                <option value="how-to">How To</option>
+              </select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Help readers find your content by selecting a category
+              </p>
             </div>
 
             <div>
-              <Label htmlFor="featured_image_url">Featured Image URL</Label>
+              <Label htmlFor="content">Content *</Label>
+              <div className="mt-2 bg-white rounded-lg overflow-hidden border">
+                <ReactQuill
+                  theme="snow"
+                  value={formData.content}
+                  onChange={(value) => setFormData({ ...formData, content: value })}
+                  modules={quillModules}
+                  placeholder="Write your blog content here..."
+                  className="min-h-[300px] sm:min-h-[400px]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="featured_image_url">Featured Image URL *</Label>
               <Input
                 id="featured_image_url"
                 value={formData.featured_image_url}
                 onChange={(e) => setFormData({ ...formData, featured_image_url: e.target.value })}
                 placeholder="https://example.com/image.jpg"
+                required
               />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Recommended: 1200x630px for optimal social media sharing
+              </p>
             </div>
           </div>
 
@@ -208,7 +239,7 @@ export default function NewBlogPage() {
                 rows={3}
                 required
               />
-              <p className="mt-1 text-xs text-muted-foreground">{formData.meta_description.length} characters</p>
+              <p className="mt-1 text-xs text-muted-foreground">{formData.meta_description.length}/160 characters</p>
             </div>
 
             <div>
@@ -242,13 +273,13 @@ export default function NewBlogPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-4">
-            <Button type="submit" disabled={loading} className="gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+            <Button type="submit" disabled={loading} className="gap-2 w-full sm:w-auto">
               <Save className="h-4 w-4" />
               {loading ? "Creating..." : "Create Blog Post"}
             </Button>
-            <Link href="/admin/blogs">
-              <Button type="button" variant="outline">
+            <Link href="/admin/blogs" className="w-full sm:w-auto">
+              <Button type="button" variant="outline" className="w-full bg-transparent">
                 Cancel
               </Button>
             </Link>

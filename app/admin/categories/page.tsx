@@ -1,12 +1,51 @@
-import { redirect } from "next/navigation"
-import { checkIsAdmin } from "@/lib/check-admin"
-import Link from "next/link"
+"use client"
 
-export default async function AdminCategoriesPage() {
-  const { isAdmin } = await checkIsAdmin()
+import { useAuth } from "@/components/auth-provider"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import Link from "next/link"
+import { supabaseAuth } from "@/lib/supabase-auth-client"
+
+export default function AdminCategoriesPage() {
+  const { user } = useAuth()
+  const router = useRouter()
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function checkAdmin() {
+      if (!user) {
+        router.push("/sign-in")
+        return
+      }
+
+      // Check if user is admin
+      const { data: profile } = await supabaseAuth.from("profiles").select("is_admin").eq("id", user.id).single()
+
+      if (profile?.is_admin) {
+        setIsAdmin(true)
+      } else {
+        router.push("/sign-in")
+      }
+      setLoading(false)
+    }
+
+    checkAdmin()
+  }, [user, router])
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!isAdmin) {
-    redirect("/sign-in")
+    return null
   }
 
   return (
