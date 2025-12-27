@@ -19,10 +19,10 @@ export default function AdminBlogsPage() {
 
   useEffect(() => {
     async function checkAdmin() {
-      console.log("[v0] AdminBlogsPage: Checking admin status")
+      console.log(" AdminBlogsPage: Checking admin status")
 
       if (!loading && !user) {
-        console.log("[v0] AdminBlogsPage: No user, redirecting")
+        console.log(" AdminBlogsPage: No user, redirecting")
         router.push("/login")
         return
       }
@@ -35,10 +35,10 @@ export default function AdminBlogsPage() {
             .eq("id", user.id)
             .single()
 
-          console.log("[v0] AdminBlogsPage: Profile check", { profile, error })
+          console.log(" AdminBlogsPage: Profile check", { profile, error })
 
           if (error || !profile?.is_admin) {
-            console.log("[v0] AdminBlogsPage: Not admin, redirecting")
+            console.log(" AdminBlogsPage: Not admin, redirecting")
             router.push("/login")
             return
           }
@@ -46,7 +46,7 @@ export default function AdminBlogsPage() {
           setIsAdmin(true)
           fetchBlogs()
         } catch (err) {
-          console.error("[v0] AdminBlogsPage: Error:", err)
+          console.error(" AdminBlogsPage: Error:", err)
           router.push("/login")
         }
 
@@ -65,7 +65,7 @@ export default function AdminBlogsPage() {
         .select("*")
         .order("created_at", { ascending: false })
 
-      console.log("[v0] AdminBlogsPage: Fetched blogs", { data, error })
+      console.log(" AdminBlogsPage: Fetched blogs", { data, error })
 
       if (error) {
         setError(error.message)
@@ -73,7 +73,7 @@ export default function AdminBlogsPage() {
         setBlogs(data || [])
       }
     } catch (err) {
-      console.error("[v0] AdminBlogsPage: Error fetching blogs:", err)
+      console.error(" AdminBlogsPage: Error fetching blogs:", err)
       setError("Failed to load blogs")
     } finally {
       setBlogsLoading(false)
@@ -95,7 +95,7 @@ export default function AdminBlogsPage() {
       // Refresh blogs list
       fetchBlogs()
     } catch (err) {
-      console.error("[v0] AdminBlogsPage: Error deleting blog:", err)
+      console.error(" AdminBlogsPage: Error deleting blog:", err)
       alert("Failed to delete blog post")
     }
   }

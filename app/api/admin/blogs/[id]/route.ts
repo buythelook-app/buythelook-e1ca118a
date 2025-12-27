@@ -12,7 +12,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ blog })
   } catch (error: any) {
-    console.error("[v0] Error fetching blog:", error)
+    console.error(" Error fetching blog:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
@@ -87,7 +87,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ blog })
   } catch (error: any) {
-    console.error("[v0] Error updating blog:", error)
+    console.error(" Error updating blog:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
@@ -97,19 +97,19 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   try {
     const { id } = await params
 
-    console.log("[v0] Deleting blog:", id)
+    console.log(" Deleting blog:", id)
 
     const { error } = await supabaseAuth.from("blog_posts").delete().eq("id", id)
 
     if (error) {
-      console.error("[v0] Error deleting blog:", error)
+      console.error(" Error deleting blog:", error)
       throw error
     }
 
-    console.log("[v0] Blog deleted successfully")
+    console.log(" Blog deleted successfully")
     return NextResponse.json({ message: "Blog deleted successfully" })
   } catch (error: any) {
-    console.error("[v0] Error deleting blog:", error)
+    console.error(" Error deleting blog:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

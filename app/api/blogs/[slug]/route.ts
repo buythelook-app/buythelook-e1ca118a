@@ -28,7 +28,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ blog })
   } catch (error: any) {
-    console.error("[v0] Error fetching blog:", error)
+    console.error(" Error fetching blog:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

@@ -24,7 +24,7 @@ export async function lemonSqueezyFetch(endpoint: string, options: RequestInit =
 
   if (!response.ok) {
     const errorText = await response.text()
-    console.error("[v0] LemonSqueezy API error:", response.status, errorText)
+    console.error(" LemonSqueezy API error:", response.status, errorText)
     throw new Error(`LemonSqueezy API error: ${response.status}`)
   }
 

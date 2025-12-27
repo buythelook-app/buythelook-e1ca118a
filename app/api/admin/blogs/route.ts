@@ -4,12 +4,12 @@ import { type NextRequest, NextResponse } from "next/server"
 // GET /api/admin/blogs - List all blogs (admin only)
 export async function GET(request: NextRequest) {
   try {
-    console.log("[v0] Admin Blogs API: GET request received")
+    console.log(" Admin Blogs API: GET request received")
 
     const searchParams = request.nextUrl.searchParams
     const userId = searchParams.get("user_id")
 
-    console.log("[v0] Admin Blogs API: User check", { hasUserId: !!userId, userId })
+    console.log(" Admin Blogs API: User check", { hasUserId: !!userId, userId })
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized - user_id required" }, { status: 401 })
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error: any) {
-    console.error("[v0] Error fetching blogs:", error)
+    console.error(" Error fetching blogs:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
@@ -49,12 +49,12 @@ export async function GET(request: NextRequest) {
 // POST /api/admin/blogs - Create new blog (admin only)
 export async function POST(request: NextRequest) {
   try {
-    console.log("[v0] Admin Blogs API: POST request received")
+    console.log(" Admin Blogs API: POST request received")
 
     const body = await request.json()
     const { user_id, ...blogData } = body
 
-    console.log("[v0] Creating blog for user_id:", user_id)
+    console.log(" Creating blog for user_id:", user_id)
 
     if (!user_id) {
       return NextResponse.json({ error: "Unauthorized - user_id required" }, { status: 401 })
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields: title, slug, excerpt, content" }, { status: 400 })
     }
 
-    console.log("[v0] Inserting blog post:", { title, slug, published })
+    console.log(" Inserting blog post:", { title, slug, published })
 
     // Create blog post
     const { data: blog, error: blogError } = await supabaseAuth
@@ -101,11 +101,11 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (blogError) {
-      console.error("[v0] Blog insert error:", blogError)
+      console.error(" Blog insert error:", blogError)
       throw blogError
     }
 
-    console.log("[v0] Blog created successfully:", blog.id)
+    console.log(" Blog created successfully:", blog.id)
 
     // Add categories if provided
     if (category_ids && category_ids.length > 0) {
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ blog }, { status: 201 })
   } catch (error: any) {
-    console.error("[v0] Error creating blog:", error)
+    console.error(" Error creating blog:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

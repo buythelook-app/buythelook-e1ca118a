@@ -89,7 +89,7 @@ export default function NewBlogPage() {
       const { data } = await response.json()
       router.push("/admin/blogs")
     } catch (err: any) {
-      console.error("[v0] Error creating blog:", err)
+      console.error(" Error creating blog:", err)
       setError(err.message)
     } finally {
       setLoading(false)

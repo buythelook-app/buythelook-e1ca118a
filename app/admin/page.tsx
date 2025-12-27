@@ -15,16 +15,16 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     async function checkAdmin() {
-      console.log("[v0] AdminDashboard: Checking if user is logged in", { user: user?.email, loading })
+      console.log(" AdminDashboard: Checking if user is logged in", { user: user?.email, loading })
 
       if (!loading && !user) {
-        console.log("[v0] AdminDashboard: No user, redirecting to login")
+        console.log(" AdminDashboard: No user, redirecting to login")
         router.push("/login")
         return
       }
 
       if (user) {
-        console.log("[v0] AdminDashboard: User logged in, checking admin status")
+        console.log(" AdminDashboard: User logged in, checking admin status")
 
         try {
           const { data: profile, error } = await supabaseAuth
@@ -33,10 +33,10 @@ export default function AdminDashboard() {
             .eq("id", user.id)
             .single()
 
-          console.log("[v0] AdminDashboard: Profile query result", { profile, error })
+          console.log(" AdminDashboard: Profile query result", { profile, error })
 
           if (error) {
-            console.error("[v0] AdminDashboard: Error fetching profile:", error)
+            console.error(" AdminDashboard: Error fetching profile:", error)
             // If column doesn't exist, assume not admin
             setIsAdmin(false)
             setChecking(false)
@@ -45,14 +45,14 @@ export default function AdminDashboard() {
           }
 
           if (profile?.is_admin) {
-            console.log("[v0] AdminDashboard: User is admin!")
+            console.log(" AdminDashboard: User is admin!")
             setIsAdmin(true)
           } else {
-            console.log("[v0] AdminDashboard: User is NOT admin, redirecting")
+            console.log(" AdminDashboard: User is NOT admin, redirecting")
             router.push("/login")
           }
         } catch (err) {
-          console.error("[v0] AdminDashboard: Catch error:", err)
+          console.error(" AdminDashboard: Catch error:", err)
           router.push("/login")
         }
 
