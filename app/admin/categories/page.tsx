@@ -49,7 +49,7 @@ export default function AdminCategoriesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background mt-20">
       <div className="mx-auto max-w-7xl px-4 py-12">
         <h1 className="font-serif text-4xl mb-2">Categories & Tags</h1>
         <p className="text-muted-foreground mb-8">Manage blog categories and tags (Coming Soon)</p>

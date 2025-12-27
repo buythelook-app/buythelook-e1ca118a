@@ -113,7 +113,7 @@ export default function AdminBlogsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background mt-20">
       <div className="mx-auto max-w-7xl px-4 py-12">
         <div className="mb-8 flex items-center justify-between">
           <div>
@@ -164,9 +164,9 @@ export default function AdminBlogsPage() {
                       </Button>
                     </Link>
                   )}
-                  <Button variant="ghost" size="icon" onClick={() => alert("Edit feature coming soon")}>
+                  {/* <Button variant="ghost" size="icon" onClick={() => alert("Edit feature coming soon")}>
                     <Edit className="h-4 w-4" />
-                  </Button>
+                  </Button> */}
                   <Button variant="ghost" size="icon" onClick={() => deleteBlog(blog.id)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
