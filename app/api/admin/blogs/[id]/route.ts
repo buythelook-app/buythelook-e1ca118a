@@ -2,7 +2,7 @@ import { supabaseAuth } from "@/lib/supabase-auth-client"
 import { type NextRequest, NextResponse } from "next/server"
 
 // GET /api/admin/blogs/:id - Get single blog (admin only)
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = await params
 
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 // PUT /api/admin/blogs/:id - Update blog (admin only)
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = await params
     const body = await request.json()
@@ -92,8 +92,41 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
+// PATCH /api/admin/blogs/:id - Update blog status (admin only)
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const { id } = await params
+    const body = await request.json()
+    const { published } = body
+
+    console.log(" Updating blog status:", id, published)
+
+    // Update only the published status
+    const { data: blog, error } = await supabaseAuth
+      .from("blog_posts")
+      .update({
+        published,
+        published_at: published ? new Date().toISOString() : null,
+      })
+      .eq("id", id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error(" Error updating blog status:", error)
+      throw error
+    }
+
+    console.log(" Blog status updated successfully")
+    return NextResponse.json({ blog })
+  } catch (error: any) {
+    console.error(" Error updating blog status:", error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
 // DELETE /api/admin/blogs/:id - Delete blog (admin only)
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = await params
 

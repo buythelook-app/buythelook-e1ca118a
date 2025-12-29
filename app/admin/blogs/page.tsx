@@ -100,6 +100,29 @@ export default function AdminBlogsPage() {
     }
   }
 
+  async function togglePublish(id, currentStatus) {
+    const action = currentStatus ? "unpublish" : "publish"
+    if (!confirm(`Are you sure you want to ${action} this blog post?`)) return
+
+    try {
+      const response = await fetch(`/api/admin/blogs/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ published: !currentStatus }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to ${action} blog`)
+      }
+
+      // Refresh blogs list
+      fetchBlogs()
+    } catch (err) {
+      console.error(` AdminBlogsPage: Error ${action}ing blog:`, err)
+      alert(`Failed to ${action} blog post`)
+    }
+  }
+
   if (loading || checking || blogsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -164,9 +187,23 @@ export default function AdminBlogsPage() {
                       </Button>
                     </Link>
                   )}
-                  {/* <Button variant="ghost" size="icon" onClick={() => alert("Edit feature coming soon")}>
-                    <Edit className="h-4 w-4" />
-                  </Button> */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => togglePublish(blog.id, blog.published)}
+                    title={blog.published ? "Unpublish" : "Publish"}
+                  >
+                    {blog.published ? (
+                      <FileText className="h-4 w-4 text-yellow-600" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-green-600" />
+                    )}
+                  </Button>
+                  <Link href={`/admin/blogs/edit/${blog.id}`}>
+                    <Button variant="ghost" size="icon" title="Edit blog">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </Link>
                   <Button variant="ghost" size="icon" onClick={() => deleteBlog(blog.id)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>

@@ -65,7 +65,7 @@ export default async function BlogPage({
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbData) }} />
 
-      <main className="min-h-screen bg-background">
+      <main className="min-h-screen bg-background mt-20">
         <section className="border-b border-border py-12 sm:py-16 lg:py-24 bg-gradient-to-b from-muted/50 to-background">
           <div className="container mx-auto px-4 sm:px-6 text-center">
             <div className="inline-flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
@@ -204,7 +204,7 @@ export default async function BlogPage({
                 )}
               </>
             ) : (
-              <div className="text-center py-20">
+              <div className="text-center py-20 ">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-6">
                   <TrendingUp className="w-8 h-8 text-muted-foreground" />
                 </div>
