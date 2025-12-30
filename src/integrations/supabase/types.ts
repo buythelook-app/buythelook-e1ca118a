@@ -107,6 +107,227 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      blog_posts: {
+        Row: {
+          author_id: string | null
+          content: string
+          created_at: string | null
+          excerpt: string | null
+          featured_image_url: string | null
+          id: string
+          meta_description: string | null
+          meta_keywords: string | null
+          published: boolean | null
+          published_at: string | null
+          reading_time: number | null
+          slug: string
+          title: string
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          author_id?: string | null
+          content: string
+          created_at?: string | null
+          excerpt?: string | null
+          featured_image_url?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_keywords?: string | null
+          published?: boolean | null
+          published_at?: string | null
+          reading_time?: number | null
+          slug: string
+          title: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          author_id?: string | null
+          content?: string
+          created_at?: string | null
+          excerpt?: string | null
+          featured_image_url?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_keywords?: string | null
+          published?: boolean | null
+          published_at?: string | null
+          reading_time?: number | null
+          slug?: string
+          title?: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blog_posts_categories: {
+        Row: {
+          blog_post_id: string
+          category_id: string
+          created_at: string | null
+        }
+        Insert: {
+          blog_post_id: string
+          category_id: string
+          created_at?: string | null
+        }
+        Update: {
+          blog_post_id?: string
+          category_id?: string
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_posts_categories_blog_post_id_fkey"
+            columns: ["blog_post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_posts_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "blog_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blog_posts_tags: {
+        Row: {
+          blog_post_id: string
+          created_at: string | null
+          tag_id: string
+        }
+        Insert: {
+          blog_post_id: string
+          created_at?: string | null
+          tag_id: string
+        }
+        Update: {
+          blog_post_id?: string
+          created_at?: string | null
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_posts_tags_blog_post_id_fkey"
+            columns: ["blog_post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_posts_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "blog_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blog_tags: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      brightdata_sync_history: {
+        Row: {
+          error_details: Json | null
+          id: number
+          job_id: string | null
+          logs: Json | null
+          processed_count: number | null
+          progress_percentage: number | null
+          status: string | null
+          sync_method: string
+          sync_timestamp: string | null
+          total_added: number | null
+          total_failed: number | null
+          total_processed: number | null
+          total_updated: number | null
+        }
+        Insert: {
+          error_details?: Json | null
+          id?: number
+          job_id?: string | null
+          logs?: Json | null
+          processed_count?: number | null
+          progress_percentage?: number | null
+          status?: string | null
+          sync_method: string
+          sync_timestamp?: string | null
+          total_added?: number | null
+          total_failed?: number | null
+          total_processed?: number | null
+          total_updated?: number | null
+        }
+        Update: {
+          error_details?: Json | null
+          id?: number
+          job_id?: string | null
+          logs?: Json | null
+          processed_count?: number | null
+          progress_percentage?: number | null
+          status?: string | null
+          sync_method?: string
+          sync_timestamp?: string | null
+          total_added?: number | null
+          total_failed?: number | null
+          total_processed?: number | null
+          total_updated?: number | null
+        }
+        Relationships: []
+      }
       calendar_events: {
         Row: {
           created_at: string
@@ -510,7 +731,9 @@ export type Database = {
           created_at: string
           currency: string | null
           id: string
+          lemonsqueezy_order_id: string | null
           metadata: Json | null
+          outfit_id: string | null
           payment_type: string | null
           status: string | null
           stripe_payment_intent_id: string | null
@@ -522,7 +745,9 @@ export type Database = {
           created_at?: string
           currency?: string | null
           id?: string
+          lemonsqueezy_order_id?: string | null
           metadata?: Json | null
+          outfit_id?: string | null
           payment_type?: string | null
           status?: string | null
           stripe_payment_intent_id?: string | null
@@ -534,7 +759,9 @@ export type Database = {
           created_at?: string
           currency?: string | null
           id?: string
+          lemonsqueezy_order_id?: string | null
           metadata?: Json | null
+          outfit_id?: string | null
           payment_type?: string | null
           status?: string | null
           stripe_payment_intent_id?: string | null
@@ -543,6 +770,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "payment_transactions_outfit_id_fkey"
+            columns: ["outfit_id"]
+            isOneToOne: false
+            referencedRelation: "generated_outfits"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "payment_transactions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -550,6 +784,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      price_history: {
+        Row: {
+          changed_at: string | null
+          id: number
+          new_price: number | null
+          old_price: number | null
+          product_id: number
+          product_name: string | null
+          store_name: string | null
+        }
+        Insert: {
+          changed_at?: string | null
+          id?: number
+          new_price?: number | null
+          old_price?: number | null
+          product_id: number
+          product_name?: string | null
+          store_name?: string | null
+        }
+        Update: {
+          changed_at?: string | null
+          id?: number
+          new_price?: number | null
+          old_price?: number | null
+          product_id?: number
+          product_name?: string | null
+          store_name?: string | null
+        }
+        Relationships: []
       }
       product_cache: {
         Row: {
@@ -620,9 +884,12 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          credits: number | null
           credits_tour_completed: boolean | null
           email: string | null
+          full_name: string | null
           id: string
+          is_admin: boolean | null
           name: string | null
           onboarding_completed: boolean | null
           outfits_tour_completed: boolean | null
@@ -633,9 +900,12 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          credits?: number | null
           credits_tour_completed?: boolean | null
           email?: string | null
+          full_name?: string | null
           id: string
+          is_admin?: boolean | null
           name?: string | null
           onboarding_completed?: boolean | null
           outfits_tour_completed?: boolean | null
@@ -646,9 +916,12 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          credits?: number | null
           credits_tour_completed?: boolean | null
           email?: string | null
+          full_name?: string | null
           id?: string
+          is_admin?: boolean | null
           name?: string | null
           onboarding_completed?: boolean | null
           outfits_tour_completed?: boolean | null
@@ -757,6 +1030,72 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_history: {
+        Row: {
+          changed_at: string | null
+          id: number
+          new_status: string | null
+          old_status: string | null
+          product_id: number
+          product_name: string | null
+          store_name: string | null
+        }
+        Insert: {
+          changed_at?: string | null
+          id?: number
+          new_status?: string | null
+          old_status?: string | null
+          product_id: number
+          product_name?: string | null
+          store_name?: string | null
+        }
+        Update: {
+          changed_at?: string | null
+          id?: number
+          new_status?: string | null
+          old_status?: string | null
+          product_id?: number
+          product_name?: string | null
+          store_name?: string | null
+        }
+        Relationships: []
+      }
+      store_cache: {
+        Row: {
+          brand: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          latitude: number
+          location_hash: string
+          longitude: number
+          stores: Json
+          user_id: string | null
+        }
+        Insert: {
+          brand: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          latitude: number
+          location_hash: string
+          longitude: number
+          stores?: Json
+          user_id?: string | null
+        }
+        Update: {
+          brand?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          latitude?: number
+          location_hash?: string
+          longitude?: number
+          stores?: Json
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       style_quiz_results: {
         Row: {
           body_shape: string | null
@@ -848,12 +1187,14 @@ export type Database = {
       }
       styled_profiles: {
         Row: {
+          age: number | null
           avoided_colors: Json | null
           body_type: string | null
           created_at: string
           default_budget: string | null
           default_occasion: string | null
           face_shape: string | null
+          gender: string | null
           height_cm: number | null
           preferred_colors: Json | null
           skin_tone: string | null
@@ -862,12 +1203,14 @@ export type Database = {
           weight_kg: number | null
         }
         Insert: {
+          age?: number | null
           avoided_colors?: Json | null
           body_type?: string | null
           created_at?: string
           default_budget?: string | null
           default_occasion?: string | null
           face_shape?: string | null
+          gender?: string | null
           height_cm?: number | null
           preferred_colors?: Json | null
           skin_tone?: string | null
@@ -876,12 +1219,14 @@ export type Database = {
           weight_kg?: number | null
         }
         Update: {
+          age?: number | null
           avoided_colors?: Json | null
           body_type?: string | null
           created_at?: string
           default_budget?: string | null
           default_occasion?: string | null
           face_shape?: string | null
+          gender?: string | null
           height_cm?: number | null
           preferred_colors?: Json | null
           skin_tone?: string | null
@@ -898,6 +1243,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sync_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: number
+          products_added: number | null
+          products_removed: number | null
+          products_updated: number | null
+          status: string | null
+          store_name: string
+          store_url: string
+          sync_timestamp: string | null
+          total_products_synced: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: number
+          products_added?: number | null
+          products_removed?: number | null
+          products_updated?: number | null
+          status?: string | null
+          store_name: string
+          store_url: string
+          sync_timestamp?: string | null
+          total_products_synced?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: number
+          products_added?: number | null
+          products_removed?: number | null
+          products_updated?: number | null
+          status?: string | null
+          store_name?: string
+          store_url?: string
+          sync_timestamp?: string | null
+          total_products_synced?: number | null
+        }
+        Relationships: []
       }
       user_feedback: {
         Row: {
@@ -1109,6 +1496,33 @@ export type Database = {
         }
         Relationships: []
       }
+      waitlist: {
+        Row: {
+          category: string
+          created_at: string | null
+          email: string
+          id: string
+          notified: boolean | null
+          notified_at: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string | null
+          email: string
+          id?: string
+          notified?: boolean | null
+          notified_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          email?: string
+          id?: string
+          notified?: boolean | null
+          notified_at?: string | null
+        }
+        Relationships: []
+      }
       zara_cloth: {
         Row: {
           availability: boolean | null
@@ -1223,6 +1637,129 @@ export type Database = {
           updated_at?: string | null
           url?: string | null
           you_may_also_like?: Json | null
+        }
+        Relationships: []
+      }
+      zara_cloth_test: {
+        Row: {
+          availability: boolean | null
+          care: Json | null
+          category_id: string | null
+          category_name: string | null
+          colour: string | null
+          colour_code: string
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          dimension: string | null
+          flags: string[] | null
+          id: number
+          image: Json | null
+          images: Json | null
+          is_active: boolean | null
+          last_synced: string | null
+          last_synced_by: string | null
+          low_on_stock: boolean | null
+          match_products: Json | null
+          materials: Json | null
+          materials_description: string | null
+          price: number | null
+          product_family: string | null
+          product_family_en: string | null
+          product_id: number
+          product_name: string | null
+          product_subfamily: string | null
+          section: string | null
+          seo_category_id: string | null
+          similar_products: Json | null
+          size: string
+          sku: string | null
+          source: string | null
+          source_priority: number | null
+          sync_method: string | null
+          updated_at: string | null
+          url: string | null
+          you_may_also_like: string | null
+        }
+        Insert: {
+          availability?: boolean | null
+          care?: Json | null
+          category_id?: string | null
+          category_name?: string | null
+          colour?: string | null
+          colour_code?: string
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          dimension?: string | null
+          flags?: string[] | null
+          id?: number
+          image?: Json | null
+          images?: Json | null
+          is_active?: boolean | null
+          last_synced?: string | null
+          last_synced_by?: string | null
+          low_on_stock?: boolean | null
+          match_products?: Json | null
+          materials?: Json | null
+          materials_description?: string | null
+          price?: number | null
+          product_family?: string | null
+          product_family_en?: string | null
+          product_id: number
+          product_name?: string | null
+          product_subfamily?: string | null
+          section?: string | null
+          seo_category_id?: string | null
+          similar_products?: Json | null
+          size?: string
+          sku?: string | null
+          source?: string | null
+          source_priority?: number | null
+          sync_method?: string | null
+          updated_at?: string | null
+          url?: string | null
+          you_may_also_like?: string | null
+        }
+        Update: {
+          availability?: boolean | null
+          care?: Json | null
+          category_id?: string | null
+          category_name?: string | null
+          colour?: string | null
+          colour_code?: string
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          dimension?: string | null
+          flags?: string[] | null
+          id?: number
+          image?: Json | null
+          images?: Json | null
+          is_active?: boolean | null
+          last_synced?: string | null
+          last_synced_by?: string | null
+          low_on_stock?: boolean | null
+          match_products?: Json | null
+          materials?: Json | null
+          materials_description?: string | null
+          price?: number | null
+          product_family?: string | null
+          product_family_en?: string | null
+          product_id?: number
+          product_name?: string | null
+          product_subfamily?: string | null
+          section?: string | null
+          seo_category_id?: string | null
+          similar_products?: Json | null
+          size?: string
+          sku?: string | null
+          source?: string | null
+          source_priority?: number | null
+          sync_method?: string | null
+          updated_at?: string | null
+          url?: string | null
+          you_may_also_like?: string | null
         }
         Relationships: []
       }
@@ -1380,6 +1917,7 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_expired_store_cache: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1387,6 +1925,85 @@ export type Database = {
         }
         Returns: boolean
       }
+      upsert_zara_cloth_test:
+        | {
+            Args: {
+              p_availability: boolean
+              p_brand: string
+              p_care: Json
+              p_care_info: string
+              p_category: string
+              p_category_id: number
+              p_category_path: string
+              p_color: string
+              p_colour: string
+              p_colour_code: string
+              p_currency: string
+              p_description: string
+              p_dimension: string
+              p_id: string
+              p_image: Json
+              p_images: Json
+              p_low_on_stock: boolean
+              p_materials: Json[]
+              p_materials_description: string
+              p_price: number
+              p_product_family: string
+              p_product_family_en: string
+              p_product_id: string
+              p_product_name: string
+              p_product_subfamily: string
+              p_product_url: string
+              p_scrape_type: string
+              p_scraped_category: string
+              p_section: string
+              p_size: string[]
+              p_sku: string
+              p_stock_status: string
+              p_url: string
+              p_you_may_also_like: string[]
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_availability: boolean
+              p_brand: string
+              p_care: Json
+              p_care_info: string
+              p_category: string
+              p_category_id: string
+              p_category_path: string
+              p_color: string
+              p_colour: string
+              p_colour_code: string
+              p_currency: string
+              p_description: string
+              p_dimension: string
+              p_id: string
+              p_image: Json
+              p_images: Json
+              p_low_on_stock: boolean
+              p_materials: Json[]
+              p_materials_description: string
+              p_price: number
+              p_product_family: string
+              p_product_family_en: string
+              p_product_id: string
+              p_product_name: string
+              p_product_subfamily: string
+              p_product_url: string
+              p_scrape_type: string
+              p_scraped_category: string
+              p_section: string
+              p_size: string[]
+              p_sku: string
+              p_stock_status: string
+              p_url: string
+              p_you_may_also_like: string[]
+            }
+            Returns: undefined
+          }
       upsert_zara_product: {
         Args: {
           _brand: string
@@ -1486,6 +2103,85 @@ export type Database = {
         }
         Returns: string
       }
+      upsert_zara_product_test:
+        | {
+            Args: {
+              p_availability: boolean
+              p_brand: string
+              p_care: Json
+              p_care_info: string
+              p_category: string
+              p_category_id: number
+              p_category_path: string
+              p_color: string
+              p_colour: string
+              p_colour_code: number
+              p_currency: string
+              p_description: string
+              p_dimension: string
+              p_id: string
+              p_image: Json
+              p_images: Json
+              p_low_on_stock: boolean
+              p_materials: Json[]
+              p_materials_description: string
+              p_price: number
+              p_product_family: string
+              p_product_family_en: string
+              p_product_id: number
+              p_product_name: string
+              p_product_subfamily: string
+              p_product_url: string
+              p_scrape_type: string
+              p_scraped_category: string
+              p_section: string
+              p_size: string[]
+              p_sku: string
+              p_stock_status: string
+              p_url: string
+              p_you_may_also_like: Json
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_availability: string
+              p_brand: string
+              p_care: Json
+              p_care_info: string
+              p_category: string
+              p_category_id: string
+              p_category_path: string
+              p_color: string
+              p_colour: string
+              p_colour_code: string
+              p_currency: string
+              p_description: string
+              p_dimension: string
+              p_id: string
+              p_image: Json
+              p_images: Json
+              p_low_on_stock: boolean
+              p_materials: Json[]
+              p_materials_description: string
+              p_price: number
+              p_product_family: string
+              p_product_family_en: string
+              p_product_id: string
+              p_product_name: string
+              p_product_subfamily: string
+              p_product_url: string
+              p_scrape_type: string
+              p_scraped_category: string
+              p_section: string
+              p_size: string[]
+              p_sku: string
+              p_stock_status: string
+              p_url: string
+              p_you_may_also_like: Json
+            }
+            Returns: string
+          }
       upsert_zara_product_text: {
         Args: {
           _brand: string
