@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     const searchBrand = brand && brand !== "N/A" ? brand : "fashion clothing store"
     const locationHash = generateLocationHash(latitude, longitude)
 
-    console.log(`[v0] Store search - Brand: "${searchBrand}", Location: ${locationHash}`)
+    console.log(` Store search - Brand: "${searchBrand}", Location: ${locationHash}`)
 
     const { data: cachedResult } = await supabase
       .from("store_cache")
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (cachedResult) {
-      console.log(`[v0] Cache HIT - Returning ${cachedResult.stores.length} cached stores`)
+      console.log(` Cache HIT - Returning ${cachedResult.stores.length} cached stores`)
       return NextResponse.json({
         stores: cachedResult.stores,
         cached: true,
@@ -48,11 +48,11 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    console.log(`[v0] Cache MISS - Calling Google Places API`)
+    console.log(` Cache MISS - Calling Google Places API`)
 
     const apiKey = process.env.GOOGLE_PLACES_API_KEY
     if (!apiKey) {
-      console.error("[v0] GOOGLE_PLACES_API_KEY is not set")
+      console.error(" GOOGLE_PLACES_API_KEY is not set")
       return NextResponse.json({ error: "Store locator is not configured" }, { status: 500 })
     }
 
@@ -68,10 +68,10 @@ export async function POST(request: NextRequest) {
     const textResponse = await fetch(`${TEXT_SEARCH_API_URL}?${textSearchParams}`)
     const textData = await textResponse.json()
 
-    console.log(`[v0] Text Search API status: ${textData.status}, found ${textData.results?.length || 0} results`)
+    console.log(` Text Search API status: ${textData.status}, found ${textData.results?.length || 0} results`)
 
     if (textData.status === "REQUEST_DENIED") {
-      console.error("[v0] Google Places API error:", textData.error_message)
+      console.error(" Google Places API error:", textData.error_message)
       return NextResponse.json({ error: "API configuration error. Check API key restrictions." }, { status: 500 })
     }
 
@@ -81,11 +81,11 @@ export async function POST(request: NextRequest) {
         (place: any) =>
           place.name.toLowerCase().includes(brandLower) || place.formatted_address?.toLowerCase().includes(brandLower),
       )
-      console.log(`[v0] Filtered to ${results.length} stores containing "${searchBrand}"`)
+      console.log(` Filtered to ${results.length} stores containing "${searchBrand}"`)
     }
 
     if (results.length === 0) {
-      console.log(`[v0] No exact matches, trying nearby search...`)
+      console.log(` No exact matches, trying nearby search...`)
       const nearbyParams = new URLSearchParams({
         location: `${latitude},${longitude}`,
         radius: "20000", // 20km for fallback
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       if (nearbyData.results?.length > 0) {
         const brandLower = searchBrand.toLowerCase()
         results = nearbyData.results.filter((place: any) => place.name.toLowerCase().includes(brandLower))
-        console.log(`[v0] Nearby search found ${results.length} matching stores`)
+        console.log(` Nearby search found ${results.length} matching stores`)
       }
     }
 
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
     // Sort by distance
     stores.sort((a: any, b: any) => a.distance - b.distance)
 
-    console.log(`[v0] Returning ${stores.length} stores for "${searchBrand}"`)
+    console.log(` Returning ${stores.length} stores for "${searchBrand}"`)
 
     // Cache save code
     if (stores.length > 0) {
@@ -138,12 +138,12 @@ export async function POST(request: NextRequest) {
         stores,
         expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       })
-      console.log(`[v0] Cached ${stores.length} stores for "${searchBrand}" at ${locationHash}`)
+      console.log(` Cached ${stores.length} stores for "${searchBrand}" at ${locationHash}`)
     }
 
     return NextResponse.json({ stores, cached: false })
   } catch (error) {
-    console.error("[v0] Error fetching nearby stores:", error)
+    console.error(" Error fetching nearby stores:", error)
     return NextResponse.json({ error: "Failed to fetch nearby stores" }, { status: 500 })
   }
 }

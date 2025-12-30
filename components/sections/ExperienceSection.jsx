@@ -119,7 +119,7 @@ export function ExperienceSection() {
                 >
                   
                   <motion.img 
-                    src="/style-bohemian.jpg" 
+                    src="/Bohemian.jpg" 
                     alt="Bohemian style fashion" 
                     className="w-full h-full object-cover"
                     initial={{ scale: 1.3 }}
@@ -138,7 +138,7 @@ export function ExperienceSection() {
                   transition={{ duration: 1.2, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <motion.img 
-                    src="/style-minimalist.jpg" 
+                    src="/imagess.png" 
                     alt="Minimalist fashion details" 
                     className="w-full h-full object-cover"
                     initial={{ scale: 1.3 }}

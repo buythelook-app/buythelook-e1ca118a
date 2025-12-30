@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       .select()
 
     if (error) {
-      console.error("[v0] Waitlist insert error:", error)
+      console.error(" Waitlist insert error:", error)
       // Check if it's a duplicate
       if (error.code === "23505") {
         return NextResponse.json({ success: true, message: "You're already on the waitlist!" })
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: "Successfully joined the waitlist!" })
   } catch (error) {
-    console.error("[v0] Waitlist error:", error)
+    console.error(" Waitlist error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

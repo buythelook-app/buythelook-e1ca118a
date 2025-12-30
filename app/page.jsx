@@ -10,6 +10,7 @@ import AuthModal from "@/components/auth-modal"
 import Header from "@/components/header"
 import { supabaseAuth } from "@/lib/supabase-auth-client"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import Image from "next/image"
 
 const pulseAnimation = `
   @keyframes pulse-glow {
@@ -33,6 +34,39 @@ const buttonShimmerAnimation = `
   }
 `
 
+const stepPulseAnimation = `
+  @keyframes stepPulse {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+  }
+`
+
+const stepGlowAnimation = `
+  @keyframes stepGlow {
+    0%, 100% {
+      opacity: 0;
+    }
+    50% {
+      opacity: 0.3;
+    }
+  }
+`
+
+const ctaPulseAnimation = `
+  @keyframes ctaPulse {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+  }
+`
+
 function HeroVideoBackground({ isPlaying, isMuted }) {
   const videoRef = useRef(null)
   const [isLoaded, setIsLoaded] = useState(false)
@@ -47,13 +81,13 @@ function HeroVideoBackground({ isPlaying, isMuted }) {
         await video.play()
         setIsLoaded(true)
       } catch (err) {
-        console.log("[v0] Video autoplay failed, trying again...")
+        console.log(" Video autoplay failed, trying again...")
         setTimeout(async () => {
           try {
             await video.play()
             setIsLoaded(true)
           } catch (e) {
-            console.log("[v0] Video play retry failed")
+            console.log(" Video play retry failed")
           }
         }, 500)
       }
@@ -142,14 +176,23 @@ function ScrollIndicator() {
       className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center"
     >
       <motion.div
-        animate={{ y: [0, 10, 0] }}
-        transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+        animate={{
+          y: [0, 20, 0],
+          scale: [1, 1.1, 1],
+        }}
+        transition={{ duration: 2.5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
         className="flex flex-col items-center gap-2"
       >
-        <span className="text-[8px] sm:text-[9px] md:text-[11px] font-medium tracking-[0.3em] uppercase text-white/60">
+        <span className="text-[9px] sm:text-[10px] md:text-xs font-semibold tracking-[0.3em] uppercase text-white/80">
           Scroll
         </span>
-        <div className="w-[1px] h-8 sm:h-12 bg-gradient-to-b from-white/40 to-transparent" />
+        <motion.div
+          className="w-[2px] h-10 sm:h-14 bg-gradient-to-b from-white/60 to-transparent"
+          animate={{
+            opacity: [0.6, 1, 0.6],
+          }}
+          transition={{ duration: 2.5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+        />
       </motion.div>
     </motion.div>
   )
@@ -319,6 +362,9 @@ function HomeContent() {
       <style jsx global>{`
         ${pulseAnimation}
         ${buttonShimmerAnimation}
+        ${stepPulseAnimation}
+        ${stepGlowAnimation}
+        ${ctaPulseAnimation}
         .animate-pulse-glow {
           animation: pulse-glow 2s ease-in-out infinite;
         }
@@ -441,7 +487,7 @@ function HomeContent() {
         </section>
 
         {/* ========== HOW IT WORKS SECTION ========== */}
-        <section className="py-20 sm:py-24 md:py-28 lg:py-32 bg-white" id="howits">
+        <section className="py-20 sm:py-24 md:py-28 lg:py-32 bg-neutral-50" id="howits">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8">
             <FadeInView className="text-center mb-12 sm:mb-16">
               <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-neutral-400 mb-4 sm:mb-5">
@@ -472,8 +518,19 @@ function HomeContent() {
               ].map((item, i) => (
                 <FadeInView key={item.step} delay={i * 0.1}>
                   <div className="text-center">
-                    <div className="w-12 h-12 mx-auto mb-4 sm:mb-6 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-600 font-serif text-base">
-                      {item.step}
+                    <div
+                      className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 rounded-full bg-neutral-900 flex items-center justify-center text-white font-serif text-2xl sm:text-3xl relative overflow-hidden"
+                      style={{
+                        animation: `stepPulse 6s ease-in-out ${i * 2}s infinite`,
+                      }}
+                    >
+                      <span className="relative z-10">{item.step}</span>
+                      <div
+                        className="absolute inset-0 bg-white opacity-0"
+                        style={{
+                          animation: `stepGlow 6s ease-in-out ${i * 2}s infinite`,
+                        }}
+                      />
                     </div>
                     <h3 className="text-lg font-serif text-neutral-900 mb-2">{item.title}</h3>
                     <p className="text-sm text-neutral-500 leading-relaxed">{item.description}</p>
@@ -486,36 +543,109 @@ function HomeContent() {
               <Button
                 onClick={handleStartQuiz}
                 size="lg"
-                className="group w-full sm:w-auto min-h-[56px] px-8 sm:px-10 bg-neutral-900 text-white hover:bg-neutral-800 hover:scale-105 active:scale-100 text-base font-medium tracking-wide transition-all duration-300 touch-manipulation"
+                className="group relative w-full sm:w-auto min-h-[56px] px-8 sm:px-10 bg-neutral-900 text-white text-base font-medium tracking-wide touch-manipulation overflow-hidden
+                  hover:shadow-2xl hover:shadow-neutral-900/30
+                  transition-all duration-500 ease-out
+                  before:absolute before:inset-0 before:bg-white before:opacity-0 before:transition-opacity before:duration-500
+                  hover:before:opacity-10
+                  active:scale-95"
+                style={{
+                  animation: "ctaPulse 3s ease-in-out infinite",
+                }}
               >
-                Start Style Quiz
-                <ArrowRight className="w-5 h-5 ml-2 sm:ml-3 transition-transform duration-500 ease-in-out group-hover:translate-x-1" />
+                <span className="relative z-10 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+                  Start Style Quiz
+                  <ArrowRight className="w-5 h-5 ml-2 sm:ml-3 transition-all duration-500 ease-out group-hover:translate-x-2 group-hover:scale-110" />
+                </span>
               </Button>
             </FadeInView>
           </div>
         </section>
 
         {/* ========== THE EXPERIENCE SECTION ========== */}
-        <section className="relative py-32 sm:py-40 md:py-48 lg:py-56 bg-neutral-900 overflow-hidden">
-          <div className="absolute inset-0 z-0">
-            <video autoPlay loop muted playsInline className="w-full h-full object-cover opacity-20">
-              <source src="/video/fashion-bg.mp4" type="video/mp4" />
-            </video>
-            <div className="absolute inset-0 bg-gradient-to-b from-neutral-900/80 via-neutral-900/60 to-neutral-900/80" />
-          </div>
+        <section className="relative py-20 sm:py-24 md:py-28 lg:py-36 bg-background overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+            <div className="grid lg:grid-cols-2 gap-12 sm:gap-14 lg:gap-20 items-center">
+              {/* Left Column - Text Content */}
+              <div>
+                <FadeInView>
+                  <div className="h-[1px] w-10 bg-foreground/20 mb-4" />
+                  <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-4 sm:mb-5">
+                    The Experience
+                  </span>
+                </FadeInView>
 
-          <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 md:px-8 text-center">
-            <FadeInView>
-              <span className="inline-block text-[10px] tracking-[0.4em] uppercase text-neutral-400 mb-6 sm:mb-8">
-                The Experience
-              </span>
-              <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif text-white mb-6 sm:mb-8 leading-tight">
-                Where Fashion <span className="italic font-light">Meets</span> You
-              </h2>
-              <p className="text-base sm:text-lg text-neutral-300 max-w-2xl mx-auto leading-relaxed">
-                Every outfit is a reflection of your unique style DNA—curated by AI, crafted for you, ready to wear.
-              </p>
-            </FadeInView>
+                <FadeInView delay={0.1}>
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif leading-[1.15] text-foreground mb-4 sm:mb-6">
+                    AI Meets Fashion. You Get <span className="italic font-light">Perfect</span> Outfits.
+                  </h2>
+                </FadeInView>
+
+                <FadeInView delay={0.2}>
+                  <p className="text-base sm:text-lg text-muted-foreground font-light leading-relaxed mb-8 sm:mb-12">
+                    Stop endless scrolling. Our AI analyzes your style, body type, and occasion to create complete looks
+                    you'll love—with one-click shopping for every piece.
+                  </p>
+                </FadeInView>
+
+                <FadeInView delay={0.3}>
+                  <div className="flex flex-wrap gap-8 sm:gap-12 lg:gap-16">
+                    {[
+                      { number: "50000+", label: "Outfits Curated" },
+                      { number: "12", label: "Style Categories" },
+                      { number: "100%", label: "Personalized" },
+                    ].map((stat, i) => (
+                      <div key={i} className="text-left">
+                        <div className="text-3xl sm:text-4xl md:text-5xl font-serif text-foreground mb-1">
+                          {stat.number}
+                        </div>
+                        <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground">
+                          {stat.label}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </FadeInView>
+              </div>
+
+              {/* Right Column - Image Grid */}
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                {/* Large Image - Top Full Width */}
+                <FadeInView delay={0.4} className="col-span-2">
+                  <div className="aspect-[16/10] bg-neutral-100 relative overflow-hidden group">
+                    <Image
+                      src="/formal.jpg"
+                      alt="Luxury fashion editorial"
+                      fill
+                      className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                    />
+                  </div>
+                </FadeInView>
+
+                {/* Two Smaller Images - Bottom Row */}
+                <FadeInView delay={0.5}>
+                  <div className="aspect-[3/4] bg-neutral-100 relative overflow-hidden group">
+                    <Image
+                      src="/Bohemian.jpg"
+                      alt="Bohemian style fashion"
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  </div>
+                </FadeInView>
+
+                <FadeInView delay={0.6}>
+                  <div className="aspect-[3/4] bg-neutral-100 relative overflow-hidden group">
+                    <Image
+                      src="/imagess.png"
+                      alt="Minimalist fashion details"
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  </div>
+                </FadeInView>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -630,12 +760,17 @@ function HomeContent() {
               <FadeInView delay={0.3} className="text-center">
                 <Button
                   onClick={handleCurateMyLook}
-                  className="group relative w-full sm:w-auto h-12 sm:h-14 px-8 sm:px-12 bg-neutral-900 text-white hover:bg-neutral-800 text-sm font-medium tracking-[0.1em] uppercase overflow-hidden transition-all duration-300"
+                  className="group relative w-full sm:w-auto h-12 sm:h-14 px-8 sm:px-12 bg-neutral-900 text-white text-sm font-medium tracking-[0.1em] uppercase overflow-hidden
+                    hover:shadow-2xl hover:shadow-neutral-900/30
+                    transition-all duration-500 ease-out
+                    before:absolute before:inset-0 before:bg-white before:opacity-0 before:transition-opacity before:duration-500
+                    hover:before:opacity-10
+                    active:scale-95"
                 >
-                  <span className="relative z-10 flex items-center justify-center gap-2 sm:gap-3">
-                    <Sparkles className="w-4 h-4" />
+                  <span className="relative z-10 flex items-center justify-center gap-2 sm:gap-3 transition-transform duration-300 group-hover:scale-105">
+                    <Sparkles className="w-4 h-4 transition-transform duration-500 group-hover:rotate-180" />
                     Start Style Quiz
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+                    <ArrowRight className="w-4 h-4 transition-all duration-500 ease-out group-hover:translate-x-2 group-hover:scale-110" />
                   </span>
                 </Button>
 
@@ -788,10 +923,20 @@ function HomeContent() {
               <Button
                 onClick={handleStartQuiz}
                 size="lg"
-                className="group w-full sm:w-auto min-h-[56px] sm:min-h-[60px] px-8 sm:px-10 bg-neutral-900 text-white hover:bg-neutral-800 hover:scale-105 active:scale-100 text-base font-medium tracking-wide transition-all duration-300 touch-manipulation"
+                className="group relative w-full sm:w-auto min-h-[56px] sm:min-h-[60px] px-8 sm:px-10 bg-neutral-900 text-white text-base font-medium tracking-wide touch-manipulation overflow-hidden
+                  hover:shadow-2xl hover:shadow-neutral-900/30
+                  transition-all duration-500 ease-out
+                  before:absolute before:inset-0 before:bg-white before:opacity-0 before:transition-opacity before:duration-500
+                  hover:before:opacity-10
+                  active:scale-95"
+                style={{
+                  animation: "ctaPulse 3s ease-in-out infinite",
+                }}
               >
-                Start Style Quiz
-                <ArrowRight className="w-5 h-5 ml-2 sm:ml-3 transition-transform duration-500 ease-in-out group-hover:translate-x-1" />
+                <span className="relative z-10 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+                  Start Style Quiz
+                  <ArrowRight className="w-5 h-5 ml-2 sm:ml-3 transition-all duration-500 ease-out group-hover:translate-x-2 group-hover:scale-110" />
+                </span>
               </Button>
             </FadeInView>
           </div>

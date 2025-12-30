@@ -11,6 +11,43 @@ export async function POST(request: Request) {
     console.log(" Outfit Picker: Profile received")
     console.log(" Outfit Picker: Styled Profile received:", !!styledProfile)
 
+    // 🔥 FILTER OUT PRODUCTS WITHOUT VALID IMAGES
+    const filterValidProducts = (items: any[], category: string) => {
+      const validItems = items.filter((item: any) => {
+        const hasValidImage = item.images && 
+                             Array.isArray(item.images) && 
+                             item.images.length > 0 && 
+                             item.images[0] && 
+                             item.images[0] !== "/placeholder.svg" &&
+                             item.images[0].startsWith("http")
+        
+        if (!hasValidImage) {
+          console.warn(` ⚠️ Filtered out ${category}: "${item.name}" - No valid image`)
+        }
+        return hasValidImage
+      })
+      
+      console.log(` ✅ ${category}: ${validItems.length}/${items.length} have valid images`)
+      return validItems
+    }
+
+    const validTops = filterValidProducts(products.tops, "TOPS")
+    const validBottoms = filterValidProducts(products.bottoms, "BOTTOMS")
+    const validShoes = filterValidProducts(products.shoes, "SHOES")
+
+    console.log(
+      " Outfit Picker: Valid products - Tops:",
+      validTops.length,
+      "Bottoms:",
+      validBottoms.length,
+      "Shoes:",
+      validShoes.length,
+    )
+
+    if (validTops.length === 0 || validBottoms.length === 0 || validShoes.length === 0) {
+      throw new Error("Not enough products with valid images to create outfits")
+    }
+
     let feedbackHistory = ""
     if (styledProfile && styledProfile.user_id) {
       console.log(" Outfit Picker: Fetching feedback history for user:", styledProfile.user_id)
@@ -44,44 +81,23 @@ ${dislikes || "None yet"}
       }
     }
 
-    console.log(
-      " Outfit Picker: Products count - Tops:",
-      products.tops?.length,
-      "Bottoms:",
-      products.bottoms?.length,
-      "Shoes:",
-      products.shoes?.length,
-    )
-
-    console.log(" Outfit Picker: === SAMPLE PRODUCTS ===")
-    if (products.tops?.[0]) {
-      console.log(" Outfit Picker: Sample TOP:", JSON.stringify(products.tops[0], null, 2))
-    }
-    if (products.bottoms?.[0]) {
-      console.log(" Outfit Picker: Sample BOTTOM:", JSON.stringify(products.bottoms[0], null, 2))
-    }
-    if (products.shoes?.[0]) {
-      console.log(" Outfit Picker: Sample SHOE:", JSON.stringify(products.shoes[0], null, 2))
-    }
-    console.log(" Outfit Picker: ========================")
-
     // Minimize product data for token efficiency
     const minimizedProducts = {
-      tops: products.tops.slice(0, 15).map((p: any) => ({
+      tops: validTops.slice(0, 15).map((p: any) => ({
         id: p.id,
         name: p.name,
         price: p.price,
         brand: p.brand,
         color: p.color,
       })),
-      bottoms: products.bottoms.slice(0, 15).map((p: any) => ({
+      bottoms: validBottoms.slice(0, 15).map((p: any) => ({
         id: p.id,
         name: p.name,
         price: p.price,
         brand: p.brand,
         color: p.color,
       })),
-      shoes: products.shoes.slice(0, 15).map((p: any) => ({
+      shoes: validShoes.slice(0, 15).map((p: any) => ({
         id: p.id,
         name: p.name,
         price: p.price,
@@ -89,15 +105,6 @@ ${dislikes || "None yet"}
         color: p.color,
       })),
     }
-
-    console.log(
-      " Outfit Picker: Minimized products - Tops:",
-      minimizedProducts.tops.length,
-      "Bottoms:",
-      minimizedProducts.bottoms.length,
-      "Shoes:",
-      minimizedProducts.shoes.length,
-    )
 
     const profileSection = styledProfile
       ? `
@@ -114,6 +121,32 @@ CLIENT STYLE PREFERENCES:
 `
       : ""
 
+    // 🔥 DETERMINE BUDGET TIER FOR SMART TARGETING
+    const budgetMin = profile.priceRange?.min || 50
+    const budgetMax = profile.priceRange?.max || 200
+    const isUnlimited = profile.priceRange?.isUnlimited === true || budgetMax === 99999
+    
+    let budgetTier = 'budget'
+    let targetPercentage = '55-65%'
+    let strategyNote = 'Find best value'
+    
+    if (isUnlimited || budgetMin >= 500) {
+      budgetTier = 'luxury'
+      targetPercentage = '80-100%'
+      strategyNote = 'Select premium, high-quality items - price is secondary to quality'
+    } else if (budgetMin >= 300) {
+      budgetTier = 'premium'
+      targetPercentage = '75-85%'
+      strategyNote = 'Choose high-quality items near upper range - users EXPECT premium products'
+    } else if (budgetMin >= 150) {
+      budgetTier = 'moderate'
+      targetPercentage = '65-75%'
+      strategyNote = 'Balance quality and price - aim for mid-to-upper range'
+    }
+
+    console.log(` Outfit Picker: Budget tier: ${budgetTier}`)
+    console.log(` Outfit Picker: Target spending: ${targetPercentage} of max`)
+
     const prompt = `You are an expert personal stylist with deep knowledge of body proportions and color theory.
 
 ${profileSection}
@@ -124,7 +157,8 @@ CLIENT PROFILE:
 - Style: ${profile.styleKeywords?.aesthetic?.join(", ") || "casual"}
 - Occasion: ${profile.occasionGuidelines?.occasion || "everyday"}
 - Colors: ${profile.colorStrategy?.primary?.join(", ") || "black, white, navy"}
-- Budget: $${profile.priceRange?.min || 50}-$${profile.priceRange?.max || 200} per outfit (STRICT)
+- Budget Tier: ${budgetTier.toUpperCase()}
+- Budget Range: $${budgetMin}-${isUnlimited ? 'UNLIMITED' : '$' + budgetMax} per COMPLETE outfit
 
 ${styledProfile ? "IMPORTANT: Use the physical profile data above to recommend flattering cuts, proportions, and colors that complement the client's body type, face shape, and skin tone." : ""}
 
@@ -141,18 +175,48 @@ ${JSON.stringify(minimizedProducts.shoes, null, 2)}
 
 CREATE 9 COMPLETE OUTFITS for comparison.
 
-RULES:
-1. Each outfit needs: 1 top + 1 bottom + 1 pair of shoes
+🎯 CRITICAL BUDGET TARGETING STRATEGY:
+Budget Tier: ${budgetTier.toUpperCase()}
+Total Outfit Budget: $${budgetMin}-${isUnlimited ? 'UNLIMITED' : '$' + budgetMax}
+Target Spending: ${targetPercentage} of maximum budget
+Strategy: ${strategyNote}
+
+${isUnlimited ? `
+💎 LUXURY TIER RULES:
+- No upper limit - QUALITY is priority #1
+- Select premium items $${budgetMin}+ each
+- Don't hesitate to use expensive items
+- Aim for outfit totals $${Math.round(budgetMin * 2)}+
+` : budgetTier === 'premium' ? `
+💰 PREMIUM TIER RULES ($${budgetMin}-$${budgetMax}):
+- Target outfit total: $${Math.round(budgetMax * 0.75)}-$${Math.round(budgetMax * 0.85)} (75-85% of max)
+- Users EXPECT high-quality, premium items
+- Don't be conservative - use the upper price range
+- Example: If max is $500, aim for $375-$425 outfits
+- Minimum acceptable: $${Math.round(budgetMin * 0.90)} (90% of min)
+` : budgetTier === 'moderate' ? `
+📊 MODERATE TIER RULES ($${budgetMin}-$${budgetMax}):
+- Target outfit total: $${Math.round(budgetMax * 0.65)}-$${Math.round(budgetMax * 0.75)} (65-75% of max)
+- Balance quality with value
+- Aim for mid-to-upper range pricing
+- Minimum acceptable: $${Math.round(budgetMin * 0.90)} (90% of min)
+` : `
+💵 BUDGET TIER RULES ($${budgetMin}-$${budgetMax}):
+- Target outfit total: $${Math.round(budgetMax * 0.55)}-$${Math.round(budgetMax * 0.65)} (55-65% of max)
+- Find best value for money
+- Aim for mid-range pricing
+- Minimum acceptable: $${Math.round(budgetMin * 0.85)} (85% of min)
+`}
+
+OUTFIT CREATION RULES:
+1. Each outfit = 1 top + 1 bottom + 1 shoes
 2. Use ONLY product IDs from the lists above
 3. Colors must complement each other
 4. NO product can appear in multiple outfits
-5. Calculate accurate total price
+5. totalPrice = top.price + bottom.price + shoes.price
 6. Create diverse options (different styles, colors, price points)
-7. **CRITICAL BUDGET RULE**: Each outfit's TOTAL PRICE must be within or as close as possible to $${profile.priceRange?.min || 50}-$${profile.priceRange?.max || 200}
-   - FIRST PRIORITY: Find outfits within the exact budget range
-   - SECOND PRIORITY: If not possible, choose items closest to the budget (prefer slightly under budget over over budget)
-   - Each outfit should have totalPrice calculated as: top.price + bottom.price + shoes.price
-   - Aim for AT LEAST 6 out of 9 outfits to be within the budget range
+7. **AIM HIGH within budget** - don't be conservative!
+8. At LEAST 6 out of 9 outfits should hit the target range
 
 Return ONLY valid JSON with 9 outfits:
 {
@@ -169,9 +233,9 @@ Return ONLY valid JSON with 9 outfits:
       "shoes": {
         "id": "product_id_from_list"
       },
-      "totalPrice": 165,
+      "totalPrice": ${budgetTier === 'premium' ? Math.round(budgetMax * 0.80) : budgetTier === 'moderate' ? Math.round(budgetMax * 0.70) : Math.round(budgetMax * 0.60)},
       "withinBudget": true,
-      "whyItWorks": "2-3 sentences explaining the outfit",
+      "whyItWorks": "2-3 sentences explaining why this outfit is worth the price and flatters the client",
       "stylistNotes": [
         "Styling tip 1",
         "Styling tip 2"
@@ -182,7 +246,7 @@ Return ONLY valid JSON with 9 outfits:
   ]
 }
 
-CRITICAL: Create exactly 9 diverse outfits using different products! Prioritize staying within the budget of $${profile.priceRange?.min || 50}-$${profile.priceRange?.max || 200} per outfit.`
+REMEMBER: For ${budgetTier.toUpperCase()} tier, aim for ${targetPercentage} of max budget. ${strategyNote}!`
 
     console.log(" Outfit Picker: Calling OpenAI for 9 outfit generation...")
     const response = await callOpenAI({
@@ -200,57 +264,54 @@ CRITICAL: Create exactly 9 diverse outfits using different products! Prioritize 
     console.log(" Outfit Picker: Enriching outfits with full product data...")
     const enrichedOutfits = outfitData.outfits
       .map((outfit: any, index: number) => {
-        console.log(" Outfit Picker: Processing outfit", index + 1)
-        console.log(" Outfit Picker: Looking for top ID:", outfit.top?.id)
-        console.log(" Outfit Picker: Looking for bottom ID:", outfit.bottom?.id)
-        console.log(" Outfit Picker: Looking for shoes ID:", outfit.shoes?.id)
+        const topProduct = validTops.find((p: any) => p.id === outfit.top?.id)
+        const bottomProduct = validBottoms.find((p: any) => p.id === outfit.bottom?.id)
+        const shoesProduct = validShoes.find((p: any) => p.id === outfit.shoes?.id)
 
-        const topProduct = products.tops.find((p: any) => p.id === outfit.top?.id)
-        const bottomProduct = products.bottoms.find((p: any) => p.id === outfit.bottom?.id)
-        const shoesProduct = products.shoes.find((p: any) => p.id === outfit.shoes?.id)
-
-        console.log(" Outfit Picker: Top found:", !!topProduct)
-        console.log(" Outfit Picker: Bottom found:", !!bottomProduct)
-        console.log(" Outfit Picker: Shoes found:", !!shoesProduct)
-
-        // If any product not found, use fallback
+        // If any product not found, use fallback with VALID IMAGES
         if (!topProduct || !bottomProduct || !shoesProduct) {
           console.warn(` Outfit Picker: Missing product in outfit ${outfit.outfitNumber}, using fallbacks`)
           return {
             id: `outfit-${index + 1}`,
             name: outfit.name || `Curated Look ${index + 1}`,
             totalPrice:
-              (products.tops[index]?.price || 50) +
-              (products.bottoms[index]?.price || 50) +
-              (products.shoes[index]?.price || 50),
+              (validTops[index]?.price || 50) +
+              (validBottoms[index]?.price || 50) +
+              (validShoes[index]?.price || 50),
             withinBudget: false,
             qualityScore: outfit.confidenceScore || 85,
             items: [
               {
-                id: products.tops[index]?.id || `top-${index}`,
-                name: products.tops[index]?.name || "Stylish Top",
-                brand: products.tops[index]?.brand || "ASOS",
-                price: products.tops[index]?.price || 50,
-                image: products.tops[index]?.image || "/placeholder.svg",
-                url: products.tops[index]?.url || "#",
+                id: validTops[index]?.id || `top-${index}`,
+                name: validTops[index]?.name || "Stylish Top",
+                brand: validTops[index]?.brand || "Zara",
+                price: validTops[index]?.price || 50,
+                images: validTops[index]?.images || ["/placeholder.svg"],
+                image: validTops[index]?.image || "/placeholder.svg",
+                url: validTops[index]?.url || "#",
+                product_url: validTops[index]?.product_url || "#",
                 category: "top",
               },
               {
-                id: products.bottoms[index]?.id || `bottom-${index}`,
-                name: products.bottoms[index]?.name || "Classic Bottom",
-                brand: products.bottoms[index]?.brand || "ASOS",
-                price: products.bottoms[index]?.price || 50,
-                image: products.bottoms[index]?.image || "/placeholder.svg",
-                url: products.bottoms[index]?.url || "#",
+                id: validBottoms[index]?.id || `bottom-${index}`,
+                name: validBottoms[index]?.name || "Classic Bottom",
+                brand: validBottoms[index]?.brand || "Zara",
+                price: validBottoms[index]?.price || 50,
+                images: validBottoms[index]?.images || ["/placeholder.svg"],
+                image: validBottoms[index]?.image || "/placeholder.svg",
+                url: validBottoms[index]?.url || "#",
+                product_url: validBottoms[index]?.product_url || "#",
                 category: "bottom",
               },
               {
-                id: products.shoes[index]?.id || `shoes-${index}`,
-                name: products.shoes[index]?.name || "Elegant Shoes",
-                brand: products.shoes[index]?.brand || "ASOS",
-                price: products.shoes[index]?.price || 50,
-                image: products.shoes[index]?.image || "/placeholder.svg",
-                url: products.shoes[index]?.url || "#",
+                id: validShoes[index]?.id || `shoes-${index}`,
+                name: validShoes[index]?.name || "Elegant Shoes",
+                brand: validShoes[index]?.brand || "Zara",
+                price: validShoes[index]?.price || 50,
+                images: validShoes[index]?.images || ["/placeholder.svg"],
+                image: validShoes[index]?.image || "/placeholder.svg",
+                url: validShoes[index]?.url || "#",
+                product_url: validShoes[index]?.product_url || "#",
                 category: "shoes",
               },
             ],
@@ -260,8 +321,7 @@ CRITICAL: Create exactly 9 diverse outfits using different products! Prioritize 
         }
 
         const totalPrice = topProduct.price + bottomProduct.price + shoesProduct.price
-        const withinBudget =
-          totalPrice >= (profile.priceRange?.min || 50) && totalPrice <= (profile.priceRange?.max || 200)
+        const withinBudget = totalPrice >= budgetMin && totalPrice <= budgetMax
 
         const enriched = {
           id: `outfit-${index + 1}`,
@@ -314,16 +374,19 @@ CRITICAL: Create exactly 9 diverse outfits using different products! Prioritize 
           stylistNotes: outfit.stylistNotes,
         }
 
-        console.log(
-          " Outfit Picker: Outfit enriched with",
-          enriched.items.reduce((sum, item) => sum + (item.images?.length || 0), 0),
-          "total images",
-        )
         return enriched
       })
       .filter(Boolean)
 
     console.log(" Outfit Picker: Total enriched outfits:", enrichedOutfits.length)
+    
+    // Log budget performance
+    const avgPrice = enrichedOutfits.reduce((sum: number, o: any) => sum + o.totalPrice, 0) / enrichedOutfits.length
+    const withinBudgetCount = enrichedOutfits.filter((o: any) => o.withinBudget).length
+    console.log(` 💰 Budget Performance:`)
+    console.log(`    Target: $${budgetMin}-${budgetMax}`)
+    console.log(`    Average outfit: $${Math.round(avgPrice)}`)
+    console.log(`    Within budget: ${withinBudgetCount}/${enrichedOutfits.length}`)
 
     return NextResponse.json({
       success: true,

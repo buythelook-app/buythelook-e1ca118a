@@ -181,6 +181,42 @@ export function QuizFlow({ styledProfile }) {
   const currentQuestion = activeSteps[currentStep]
   const progress = ((currentStep + 1) / activeSteps.length) * 100
 
+  const getDisplayLabel = (stepId, value) => {
+    const step = QUIZ_STEPS.find((s) => s.id === stepId)
+    if (!step) return value
+
+    if (Array.isArray(value)) {
+      return value
+        .map((v) => {
+          const option = step.options.find((opt) => opt.value === v)
+          return option ? option.label : v
+        })
+        .join(", ")
+    }
+
+    const option = step.options.find((opt) => opt.value === value)
+    return option ? option.label : value
+  }
+
+  const getCompletedSteps = () => {
+    const completed = []
+    activeSteps.forEach((step, index) => {
+      if (index < currentStep) {
+        const value = quizData[step.id]
+        if (value && (Array.isArray(value) ? value.length > 0 : value)) {
+          completed.push({
+            question: step.question,
+            value: getDisplayLabel(step.id, value),
+            id: step.id,
+          })
+        }
+      }
+    })
+    return completed
+  }
+
+  const completedSteps = getCompletedSteps()
+
   const handleWaitlistSubmit = async (e) => {
     e.preventDefault()
     if (!waitlistEmail || !waitlistEmail.includes("@")) {
@@ -241,6 +277,11 @@ export function QuizFlow({ styledProfile }) {
       setTimeout(() => {
         if (currentStep < activeSteps.length - 1) {
           setCurrentStep(currentStep + 1)
+        } else {
+          saveQuizToDatabase()
+          storage.saveProfile(quizData)
+          storage.saveSelectionStatus(false)
+          router.push("/generate")
         }
       }, 300)
     }
@@ -354,7 +395,7 @@ export function QuizFlow({ styledProfile }) {
   }
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8 animate-fade-in mt-20">
+    <div className="container mx-auto max-w-7xl px-4 py-8 animate-fade-in mt-20 min-h-screen">
       <AnimatePresence>
         {showServiceUnavailable && (
           <motion.div
@@ -541,130 +582,163 @@ export function QuizFlow({ styledProfile }) {
 
       <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
 
-      <div className="mb-12" data-tour="progress-bar">
-        <div className="mb-3 flex items-center justify-between">
-          <span className="text-sm font-medium tracking-wide text-foreground/80">
-            Step {currentStep + 1} of {activeSteps.length}
-          </span>
-          <span className="text-sm font-medium tracking-wide text-accent">{Math.round(progress)}%</span>
-        </div>
-        <div className="relative h-1 overflow-hidden bg-muted">
-          <div
-            className="h-full bg-gradient-to-r from-accent via-accent/80 to-accent transition-all duration-700 ease-out-quart animate-shimmer"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
-
-      <div className="mb-12 animate-fade-up" data-tour="quiz-start">
-        <h1 className="mb-3 text-4xl font-bold tracking-tight text-foreground md:text-5xl text-balance font-serif">
-          {currentQuestion.question}
-        </h1>
-        {currentQuestion.multiple && (
-          <p className="text-base text-muted-foreground font-light tracking-wide">
-            Selected: {(quizData[currentQuestion.id] || []).length} / {currentQuestion.maxSelections}
-          </p>
+      <div className="flex flex-col lg:flex-row gap-8">
+        {completedSteps.length > 0 && (
+          <motion.aside initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="lg:w-80 shrink-0">
+            <div className="sticky top-24 bg-muted/30 border border-border/50 p-6 rounded-lg">
+              <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
+                <Check className="w-5 h-5 text-accent" />
+                Your Selections
+              </h3>
+              <div className="space-y-4">
+                {completedSteps.map((step, index) => (
+                  <motion.div
+                    key={step.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="pb-4 border-b border-border/30 last:border-0"
+                  >
+                    <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wide">{step.question}</p>
+                    <p className="text-sm font-medium text-foreground">{step.value}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.aside>
         )}
-      </div>
 
-      {currentQuestion.type === "text" ? (
-        <div className="mb-12 animate-fade-up">
-          <Textarea
-            placeholder={currentQuestion.placeholder}
-            value={quizData[currentQuestion.id] || ""}
-            onChange={handleTextChange}
-            className="min-h-[150px] text-lg p-6 border-2 focus-visible:ring-accent"
-          />
-        </div>
-      ) : (
-        <div className="mb-12 grid gap-4 md:grid-cols-2" data-tour="quiz-options">
-          {currentQuestion.options.map((option, index) => {
-            const isSelected = currentQuestion.multiple
-              ? (quizData[currentQuestion.id] || []).includes(option.value)
-              : quizData[currentQuestion.id] === option.value
+        <div className="flex-1">
+          <div className="mb-12" data-tour="progress-bar">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm font-medium tracking-wide text-foreground/80">
+                Step {currentStep + 1} of {activeSteps.length}
+              </span>
+              <span className="text-sm font-medium tracking-wide text-accent">{Math.round(progress)}%</span>
+            </div>
+            <div className="relative h-1 overflow-hidden bg-muted">
+              <div
+                className="h-full bg-gradient-to-r from-accent to-accent/80 transition-all duration-500 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
 
-            return (
-              <Card
-                key={option.value}
-                className={`group cursor-pointer border p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl animate-fade-up ${
-                  isSelected
-                    ? "border-accent bg-accent/5 shadow-lg shadow-accent/10"
-                    : "border-border/50 hover:border-accent/50"
-                }`}
-                style={{ animationDelay: `${index * 50}ms` }}
-                onClick={() => handleSelect(option.value)}
-              >
-                {option.image && (
-                  <div className="relative w-full h-72 mb-4 overflow-hidden rounded-lg">
-                    <Image
-                      src={option.image || "/placeholder.svg"}
-                      alt={option.label}
-                      fill
-                      className="object-cover object-top"
-                    />
-                  </div>
-                )}
-                <div className="flex items-start gap-4">
-                  {option.icon && !option.image && (
-                    <span className="text-4xl transition-transform duration-300 group-hover:scale-110 flex items-center justify-center">
-                      {option.icon}
-                    </span>
-                  )}
-                  {option.color && (
-                    <div
-                      className="relative h-14 w-14 shrink-0 border border-border transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg overflow-hidden"
-                      style={{ backgroundColor: option.color }}
-                    >
-                      {isSelected && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 animate-fade-in">
-                          <Check className="h-6 w-6 text-white" />
+          <div className="mb-8 animate-fade-up" data-tour="question-title">
+            <h2 className="text-3xl font-serif font-medium tracking-tight text-foreground mb-2">
+              {currentQuestion.question}
+            </h2>
+            {currentQuestion.multiple && (
+              <p className="text-sm text-muted-foreground">
+                Selected: {(quizData[currentQuestion.id] || []).length} / {currentQuestion.maxSelections || 3}
+              </p>
+            )}
+          </div>
+
+          {currentQuestion.type === "text" ? (
+            <div className="mb-8 animate-fade-up">
+              <Textarea
+                value={quizData[currentQuestion.id] || ""}
+                onChange={handleTextChange}
+                placeholder="Share your thoughts..."
+                className="min-h-[150px] resize-none border-border/50 focus:border-accent"
+              />
+            </div>
+          ) : (
+            <div
+              className={`mb-12 grid gap-4 ${
+                currentQuestion.id === "style" || currentQuestion.id === "colors"
+                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                  : "md:grid-cols-2"
+              }`}
+              data-tour="quiz-options"
+            >
+              {currentQuestion.options.map((option, index) => {
+                const isSelected = currentQuestion.multiple
+                  ? (quizData[currentQuestion.id] || []).includes(option.value)
+                  : quizData[currentQuestion.id] === option.value
+
+                return (
+                  <Card
+                    key={option.value}
+                    className={`group cursor-pointer border p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl animate-fade-up ${
+                      isSelected
+                        ? "border-accent bg-accent/5 shadow-lg shadow-accent/10"
+                        : "border-border/50 hover:border-accent/50"
+                    }`}
+                    style={{ animationDelay: `${index * 50}ms` }}
+                    onClick={() => handleSelect(option.value)}
+                  >
+                    {option.image && (
+                      <div className="relative w-full h-72 mb-4 overflow-hidden rounded-lg">
+                        <Image
+                          src={option.image || "/placeholder.svg"}
+                          alt={option.label}
+                          fill
+                          className="object-cover object-top"
+                        />
+                      </div>
+                    )}
+                    <div className="flex items-start gap-4">
+                      {option.icon && !option.image && (
+                        <span className="text-4xl transition-transform duration-300 group-hover:scale-110 flex items-center justify-center">
+                          {option.icon}
+                        </span>
+                      )}
+                      {option.color && (
+                        <div
+                          className="relative h-14 w-14 shrink-0 border border-border transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg overflow-hidden"
+                          style={{ backgroundColor: option.color }}
+                        >
+                          {isSelected && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 animate-fade-in">
+                              <Check className="h-6 w-6 text-white" />
+                            </div>
+                          )}
                         </div>
                       )}
+                      <div className="flex-1">
+                        <h3 className="mb-1 text-lg font-medium text-card-foreground tracking-tight">{option.label}</h3>
+                        {option.description && (
+                          <p className="text-sm text-muted-foreground font-light leading-relaxed">
+                            {option.description}
+                          </p>
+                        )}
+                      </div>
+                      {isSelected && !option.color && !option.image && (
+                        <Check className="h-6 w-6 shrink-0 text-accent animate-scale-in" />
+                      )}
                     </div>
-                  )}
-                  <div className="flex-1">
-                    <h3 className="mb-1 text-lg font-medium text-card-foreground tracking-tight">{option.label}</h3>
-                    {option.description && (
-                      <p className="text-sm text-muted-foreground font-light leading-relaxed">{option.description}</p>
-                    )}
-                  </div>
-                  {isSelected && !option.color && !option.image && (
-                    <Check className="h-6 w-6 shrink-0 text-accent animate-scale-in" />
-                  )}
-                </div>
-              </Card>
-            )
-          })}
-        </div>
-      )}
-
-      <div className="flex items-center justify-between" data-tour="quiz-navigation">
-        <Button
-          variant="outline"
-          onClick={handleBack}
-          disabled={currentStep === 0}
-          className="px-8 transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-30 bg-transparent border-border"
-        >
-          Back
-        </Button>
-
-        <div className="flex gap-3">
-          {isOptional && (
-            <Button variant="ghost" onClick={handleSkip} className="px-6 text-muted-foreground hover:text-foreground">
-              Skip
-            </Button>
+                  </Card>
+                )
+              })}
+            </div>
           )}
 
-          {(currentStep === activeSteps.length - 1 || currentQuestion.multiple) && (
+          <div className="flex items-center justify-between gap-4" data-tour="navigation-buttons">
             <Button
-              onClick={handleNext}
-              disabled={!canProceed && !isOptional}
-              size="lg"
-              className="px-8 transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-30 bg-accent text-accent-foreground hover:bg-accent/90"
+              variant="outline"
+              onClick={handleBack}
+              disabled={currentStep === 0}
+              className="border-border/50 hover:border-accent/50 disabled:opacity-40 bg-transparent"
             >
-              {currentStep === activeSteps.length - 1 ? "Generate Outfits" : "Continue"}
+              Back
             </Button>
-          )}
+
+            <div className="flex items-center gap-4">
+              {isOptional && (
+                <Button variant="ghost" onClick={handleSkip} className="text-muted-foreground hover:text-foreground">
+                  Skip
+                </Button>
+              )}
+
+              {currentStep === activeSteps.length - 1 && (
+                <Button onClick={handleNext} disabled={!canProceed && !isOptional} className="min-w-[120px]">
+                  Finish
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

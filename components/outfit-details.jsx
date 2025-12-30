@@ -144,16 +144,16 @@ export function OutfitDetails({ id }) {
   }
 
   const openAllShoppingLinks = () => {
-    console.log("[v0] Opening all shopping links in new tabs")
-    console.log("[v0] Outfit items structure:", outfit.items)
+    console.log(" Opening all shopping links in new tabs")
+    console.log(" Outfit items structure:", outfit.items)
 
     const itemsArray = outfit.items.top ? [outfit.items.top, outfit.items.bottom, outfit.items.shoes] : outfit.items
-    console.log("[v0] Items array:", itemsArray)
+    console.log(" Items array:", itemsArray)
 
     const validLinks = itemsArray.filter((item) => {
       const url = ensureAbsoluteUrl(item.product_url || item.url)
       console.log(
-        "[v0] Checking item:",
+        " Checking item:",
         item.product_name,
         "URL:",
         item.product_url || item.url,
@@ -163,7 +163,7 @@ export function OutfitDetails({ id }) {
       return url !== null
     })
 
-    console.log(`[v0] Found ${validLinks.length} valid shopping links`)
+    console.log(` Found ${validLinks.length} valid shopping links`)
 
     if (validLinks.length === 0) {
       toast({
@@ -177,15 +177,15 @@ export function OutfitDetails({ id }) {
     let openedCount = 0
     validLinks.forEach((item, index) => {
       const absoluteUrl = ensureAbsoluteUrl(item.product_url || item.url)
-      console.log(`[v0] Opening link ${index + 1}:`, absoluteUrl)
+      console.log(` Opening link ${index + 1}:`, absoluteUrl)
 
       // Open immediately - no async calls
       const opened = window.open(absoluteUrl, "_blank", "noopener,noreferrer")
       if (opened) {
         openedCount++
-        console.log(`[v0] Link ${index + 1} opened successfully`)
+        console.log(` Link ${index + 1} opened successfully`)
       } else {
-        console.log(`[v0] Link ${index + 1} was blocked by browser`)
+        console.log(` Link ${index + 1} was blocked by browser`)
       }
     })
 
@@ -206,7 +206,7 @@ export function OutfitDetails({ id }) {
   const handlePurchaseLinks = async () => {
     if (isPurchasing) return
 
-    console.log("[v0] Links Unlock: Starting $5 payment flow for outfit:", id)
+    console.log(" Links Unlock: Starting $5 payment flow for outfit:", id)
 
     if (!user) {
       toast({
@@ -231,12 +231,12 @@ export function OutfitDetails({ id }) {
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error("[v0] Links Unlock: Server responded with:", errorText)
+        console.error(" Links Unlock: Server responded with:", errorText)
         throw new Error("Failed to create checkout session")
       }
 
       const data = await response.json()
-      console.log("[v0] Links Unlock: Payment response:", data)
+      console.log(" Links Unlock: Payment response:", data)
 
       if (data.url) {
         window.location.href = data.url
@@ -244,7 +244,7 @@ export function OutfitDetails({ id }) {
         throw new Error("Failed to create checkout session")
       }
     } catch (error) {
-      console.error("[v0] Links Unlock: Payment error:", error)
+      console.error(" Links Unlock: Payment error:", error)
       toast({
         title: "Payment Failed",
         description: "Unable to process payment. Please try again.",
@@ -257,7 +257,7 @@ export function OutfitDetails({ id }) {
   const handleUnlockWithCredit = async () => {
     if (isUnlockingWithCredit) return
 
-    console.log("[v0] Outfit Details: Unlocking shopping links with 1 credit")
+    console.log(" Outfit Details: Unlocking shopping links with 1 credit")
 
     if (!user) {
       toast({
@@ -295,7 +295,7 @@ export function OutfitDetails({ id }) {
         throw new Error(data.error || "Failed to unlock shopping links")
       }
 
-      console.log("[v0] Outfit Details: Links unlocked with credit!", data)
+      console.log(" Outfit Details: Links unlocked with credit!", data)
 
       setLinksUnlocked(true)
       setUserCredits(data.newBalance)
@@ -309,7 +309,7 @@ export function OutfitDetails({ id }) {
         openAllShoppingLinks()
       }, 1000)
     } catch (error) {
-      console.error("[v0] Outfit Details: Credit unlock error:", error)
+      console.error(" Outfit Details: Credit unlock error:", error)
       toast({
         title: "Unlock Failed",
         description: error.message || "Unable to unlock with credit. Please try again.",
@@ -571,7 +571,7 @@ export function OutfitDetails({ id }) {
         </DialogContent>
       </Dialog>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 max-w-7xl mx-auto px-4 lg:px-0">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 max-w-7xl mx-auto px-4 lg:px-0 mt-20">
         <div className="space-y-6">
           <div className="relative aspect-[3/4] bg-card overflow-hidden rounded-none border border-border group">
             {itemsArray.map((item, itemIndex) => {
@@ -866,7 +866,7 @@ export function OutfitDetails({ id }) {
                                 Shop Now <ExternalLink className="w-3 h-3 ml-1 sm:ml-2" />
                               </a>
                             </Button>
-                            <FindNearMeButton
+                            {/* <FindNearMeButton
                               itemName={item.name}
                               brand={item.brand}
                               onStoresFound={(stores) =>
@@ -876,7 +876,7 @@ export function OutfitDetails({ id }) {
                                   stores,
                                 })
                               }
-                            />
+                            /> */}
                           </>
                         ) : (
                           <div className="text-xs text-muted-foreground flex items-center gap-1">
