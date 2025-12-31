@@ -257,32 +257,32 @@ export function QuizFlow({ styledProfile }) {
     if (currentQuestion.id === "style") {
       const styleOptions = currentQuestion.options
 
-      console.log("[v0] Style Comparison Debug:")
-      console.log("[v0] styleComparisonIndex:", styleComparisonIndex)
-      console.log("[v0] selected value:", value)
+      console.log(" Style Comparison Debug:")
+      console.log(" styleComparisonIndex:", styleComparisonIndex)
+      console.log(" selected value:", value)
 
       // Find the selected option object
       const selectedOption = styleOptions.find((opt) => opt.value === value)
-      console.log("[v0] selectedOption:", selectedOption)
+      console.log(" selectedOption:", selectedOption)
 
       // Add to finalists
       const newFinalists = [...styleFinalists, selectedOption]
       setStyleFinalists(newFinalists)
 
-      console.log("[v0] newFinalists:", newFinalists)
+      console.log(" newFinalists:", newFinalists)
 
       // Move to next pair
       const nextIndex = styleComparisonIndex + 2
-      console.log("[v0] nextIndex:", nextIndex)
-      console.log("[v0] styleOptions.length:", styleOptions.length)
+      console.log(" nextIndex:", nextIndex)
+      console.log(" styleOptions.length:", styleOptions.length)
 
       if (nextIndex < styleOptions.length) {
         // More pairs to show
-        console.log("[v0] Moving to next pair")
+        console.log(" Moving to next pair")
         setStyleComparisonIndex(nextIndex)
       } else {
         // All pairs shown - save the first finalist as the final choice
-        console.log("[v0] Tournament complete, saving:", newFinalists[0].value)
+        console.log(" Tournament complete, saving:", newFinalists[0].value)
         setQuizData({ ...quizData, [currentQuestion.id]: newFinalists[0].value })
 
         // Reset state
@@ -722,14 +722,14 @@ export function QuizFlow({ styledProfile }) {
                     const styleOptions = currentQuestion.options
                     const currentPair = styleOptions.slice(styleComparisonIndex, styleComparisonIndex + 2)
 
-                    console.log("[v0] Rendering Style Step:")
-                    console.log("[v0] styleOptions:", styleOptions)
-                    console.log("[v0] styleComparisonIndex:", styleComparisonIndex)
-                    console.log("[v0] currentPair:", currentPair)
-                    console.log("[v0] currentPair.length:", currentPair.length)
+                    console.log(" Rendering Style Step:")
+                    console.log(" styleOptions:", styleOptions)
+                    console.log(" styleComparisonIndex:", styleComparisonIndex)
+                    console.log(" currentPair:", currentPair)
+                    console.log(" currentPair.length:", currentPair.length)
 
                     return currentPair.map((option, pairIndex) => {
-                      console.log("[v0] Rendering option:", option)
+                      console.log(" Rendering option:", option)
 
                       return (
                         <Card
