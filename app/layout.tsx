@@ -45,6 +45,11 @@ export const metadata: Metadata = {
     "outfit ideas",
     "style advice"
   ],
+  verification: {
+    other: {
+      "p:domain_verify": "e59f6dfea631614c83c7a37ae681c5f3",
+    },
+  },
    icons: {
     icon: [
       {
