@@ -1165,3 +1165,316 @@ html {
     border-bottom-color: rgb(64, 64, 64);
   }
 }
+
+/* Adding smooth button hover animations per */
+
+/* ====================================
+   MEDIUM-STYLE EDITORIAL LAYOUT
+   ==================================== */
+
+.medium-article-content {
+  /* Base typography - Medium uses 21px body text with 1.58 line height */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue",
+    sans-serif;
+  font-size: 21px;
+  line-height: 1.58;
+  color: rgba(0, 0, 0, 0.84);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.dark .medium-article-content {
+  color: rgba(255, 255, 255, 0.84);
+}
+
+/* Paragraphs - Generous spacing like Medium */
+.medium-article-content p {
+  margin-bottom: 30px;
+  font-size: 21px;
+  line-height: 1.58;
+  letter-spacing: -0.003em;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Headings - Clean hierarchy */
+.medium-article-content h1 {
+  font-family: var(--font-serif);
+  font-size: 40px;
+  line-height: 1.2;
+  font-weight: 700;
+  margin-top: 56px;
+  margin-bottom: 16px;
+  letter-spacing: -0.022em;
+}
+
+.medium-article-content h2 {
+  font-family: var(--font-serif);
+  font-size: 34px;
+  line-height: 1.25;
+  font-weight: 700;
+  margin-top: 48px;
+  margin-bottom: 12px;
+  letter-spacing: -0.019em;
+}
+
+.medium-article-content h3 {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  line-height: 1.3;
+  font-weight: 700;
+  margin-top: 40px;
+  margin-bottom: 10px;
+  letter-spacing: -0.016em;
+}
+
+.medium-article-content h4 {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  line-height: 1.35;
+  font-weight: 600;
+  margin-top: 32px;
+  margin-bottom: 8px;
+  letter-spacing: -0.012em;
+}
+
+/* Links - Medium green with underline */
+.medium-article-content a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  transition: text-decoration-color 0.2s ease;
+}
+
+.medium-article-content a:hover {
+  text-decoration-color: rgba(0, 0, 0, 0.3);
+}
+
+.dark .medium-article-content a:hover {
+  text-decoration-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Strong - Bold text */
+.medium-article-content strong,
+.medium-article-content b {
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.84);
+}
+
+.dark .medium-article-content strong,
+.dark .medium-article-content b {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* Emphasis - Italic text */
+.medium-article-content em,
+.medium-article-content i {
+  font-style: italic;
+}
+
+/* Blockquotes - Left border style like Medium */
+.medium-article-content blockquote {
+  margin: 32px 0;
+  padding-left: 23px;
+  border-left: 3px solid rgba(0, 0, 0, 0.84);
+  font-style: italic;
+  font-size: 21px;
+  line-height: 1.58;
+  color: rgba(0, 0, 0, 0.68);
+}
+
+.dark .medium-article-content blockquote {
+  border-left-color: rgba(255, 255, 255, 0.84);
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.medium-article-content blockquote p {
+  margin-bottom: 0;
+}
+
+/* Code - Inline and blocks */
+.medium-article-content code {
+  font-family: "SF Mono", Monaco, "Inconsolata", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+  font-size: 18px;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 3px 6px;
+  border-radius: 3px;
+  word-break: break-word;
+}
+
+.dark .medium-article-content code {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.medium-article-content pre {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  padding: 20px;
+  margin: 32px 0;
+  overflow-x: auto;
+  font-family: "SF Mono", Monaco, "Inconsolata", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.dark .medium-article-content pre {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.medium-article-content pre code {
+  background: transparent;
+  padding: 0;
+  font-size: 16px;
+}
+
+/* Lists - Clean spacing */
+.medium-article-content ul,
+.medium-article-content ol {
+  margin: 24px 0;
+  padding-left: 30px;
+}
+
+.medium-article-content li {
+  margin-bottom: 14px;
+  line-height: 1.58;
+  word-break: break-word;
+}
+
+.medium-article-content ul li {
+  list-style-type: disc;
+}
+
+.medium-article-content ol li {
+  list-style-type: decimal;
+}
+
+.medium-article-content li p {
+  margin-bottom: 14px;
+}
+
+/* Nested lists */
+.medium-article-content li > ul,
+.medium-article-content li > ol {
+  margin-top: 14px;
+  margin-bottom: 14px;
+}
+
+/* Images - Full width with caption support */
+.medium-article-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 40px auto;
+}
+
+.medium-article-content figure {
+  margin: 40px 0;
+}
+
+.medium-article-content figcaption {
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.4;
+  color: rgba(0, 0, 0, 0.54);
+  margin-top: 10px;
+}
+
+.dark .medium-article-content figcaption {
+  color: rgba(255, 255, 255, 0.54);
+}
+
+/* Horizontal rules */
+.medium-article-content hr {
+  margin: 48px 0;
+  border: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.dark .medium-article-content hr {
+  border-top-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Tables - Clean responsive tables */
+.medium-article-content table {
+  width: 100%;
+  margin: 32px 0;
+  border-collapse: collapse;
+  font-size: 18px;
+  overflow-x: auto;
+  display: block;
+}
+
+.medium-article-content th {
+  text-align: left;
+  font-weight: 600;
+  padding: 12px;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark .medium-article-content th {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.medium-article-content td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  word-break: break-word;
+}
+
+.dark .medium-article-content td {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .medium-article-content {
+    font-size: 18px;
+  }
+
+  .medium-article-content p {
+    font-size: 18px;
+    margin-bottom: 24px;
+  }
+
+  .medium-article-content h1 {
+    font-size: 32px;
+    margin-top: 40px;
+  }
+
+  .medium-article-content h2 {
+    font-size: 28px;
+    margin-top: 36px;
+  }
+
+  .medium-article-content h3 {
+    font-size: 24px;
+    margin-top: 32px;
+  }
+
+  .medium-article-content h4 {
+    font-size: 20px;
+    margin-top: 28px;
+  }
+
+  .medium-article-content blockquote {
+    font-size: 18px;
+    margin: 24px 0;
+    padding-left: 16px;
+  }
+
+  .medium-article-content pre {
+    padding: 16px;
+    font-size: 14px;
+  }
+
+  .medium-article-content code {
+    font-size: 16px;
+  }
+}
+
+/* ====================================
+   END MEDIUM-STYLE EDITORIAL LAYOUT
+   ==================================== */
+

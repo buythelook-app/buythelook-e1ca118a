@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { createServerClient } from "@/lib/supabase-server"
 import Image from "next/image"
 import Link from "next/link"
-import { Calendar, Clock, ArrowLeft, Eye } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -69,8 +69,6 @@ export default async function BlogPostPage({ params }: Props) {
     notFound()
   }
 
-  console.log(`[v0] Rendering post: ${blog.title}, Image URL: ${blog.featured_image_url}`)
-
   // Increment view count
   await supabase
     .from("blog_posts")
@@ -110,122 +108,80 @@ export default async function BlogPostPage({ params }: Props) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
 
-      <main className="min-h-screen bg-background mt-20 overflow-x-hidden">
+      <main className="min-h-screen bg-white dark:bg-neutral-950">
         <link rel="canonical" href={canonicalUrl} />
 
-        <div className="border-b border-border bg-gradient-to-b from-muted/30 to-background">
-          <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
+        {/* Back Navigation */}
+        <div className="border-b border-neutral-200 dark:border-neutral-800">
+          <div className="max-w-[680px] mx-auto px-5 sm:px-8 py-6">
             <Link
               href="/blog"
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Blog
+              All Articles
             </Link>
           </div>
         </div>
 
-        {/* Featured Image */}
-        {blog.featured_image_url && (
-          <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] max-h-[400px] sm:max-h-[500px] bg-muted overflow-hidden">
-            <Image
-              src={blog.featured_image_url || "/placeholder.svg"}
-              alt={blog.title}
-              fill
-              priority
-              className="object-cover"
-              sizes="100vw"
-              unoptimized
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
-          </div>
-        )}
-
-        <article className="py-8 sm:py-12 lg:py-16">
-          <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
-            {/* Category Badge */}
-            {blog.category && (
-              <div className="mb-4">
-                <span className="inline-block px-3 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
-                  {blog.category
-                    .split("-")
-                    .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(" ")}
-                </span>
-              </div>
-            )}
-
-            <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold mb-4 sm:mb-6 text-balance leading-tight hyphens-auto" style={{ wordBreak: 'normal', overflowWrap: 'break-word' }}>
+        <article className="py-12 sm:py-16">
+          {/* Optimal reading width: 680px like Medium */}
+          <div className="max-w-[680px] mx-auto px-5 sm:px-8">
+            {/* Title - Large, serif, bold */}
+            <h1 className="font-serif text-[32px] sm:text-[42px] leading-[1.15] font-bold text-neutral-900 dark:text-neutral-100 mb-3 tracking-tight">
               {blog.title}
             </h1>
 
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-border">
-              <span className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                <Calendar className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                <span className="hidden sm:inline">
-                  {new Date(blog.published_at || blog.created_at).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </span>
-                <span className="sm:hidden whitespace-nowrap">
-                  {new Date(blog.published_at || blog.created_at).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </span>
-              </span>
-              {blog.reading_time && (
-                <span className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                  <Clock className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                  <span className="whitespace-nowrap">{blog.reading_time} min</span>
-                </span>
-              )}
-              <span className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                <Eye className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                <span className="whitespace-nowrap">{blog.view_count || 0} views</span>
-              </span>
-            </div>
-
+            {/* Subtitle/Excerpt - Slightly larger than body, lighter weight */}
             {blog.excerpt && (
-              <div className="mb-8 sm:mb-10 p-4 sm:p-6 bg-muted/50 rounded-lg border-l-4 border-primary">
-                <p className="text-base sm:text-lg text-muted-foreground italic leading-relaxed hyphens-auto" style={{ wordBreak: 'normal', overflowWrap: 'break-word' }}>{blog.excerpt}</p>
-              </div>
+              <p className="text-[20px] sm:text-[24px] leading-[1.4] text-neutral-600 dark:text-neutral-400 mb-8 font-normal">
+                {blog.excerpt}
+              </p>
             )}
 
-            <div
-              className="prose prose-sm sm:prose-base lg:prose-lg prose-slate max-w-none 
-                prose-headings:font-serif prose-headings:scroll-mt-20 prose-headings:hyphens-auto
-                prose-h1:text-2xl sm:prose-h1:text-3xl lg:prose-h1:text-4xl prose-h1:mb-4 prose-h1:font-semibold
-                prose-h2:text-xl sm:prose-h2:text-2xl lg:prose-h2:text-3xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:font-semibold
-                prose-h3:text-lg sm:prose-h3:text-xl lg:prose-h3:text-2xl prose-h3:mt-6 prose-h3:mb-3 prose-h3:font-medium
-                prose-h4:text-base sm:prose-h4:text-lg lg:prose-h4:text-xl prose-h4:font-medium
-                prose-h5:text-sm sm:prose-h5:text-base lg:prose-h5:text-lg prose-h5:font-medium
-                prose-p:leading-relaxed prose-p:mb-4 sm:prose-p:mb-6 prose-p:text-foreground/90 prose-p:hyphens-auto
-                prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-a:font-medium
-                prose-strong:text-foreground prose-strong:font-semibold
-                prose-ul:my-4 prose-ol:my-4 prose-li:my-2
-                prose-img:rounded-lg sm:prose-img:rounded-xl prose-img:shadow-lg prose-img:w-full prose-img:my-8 prose-img:max-w-full prose-img:h-auto
-                prose-blockquote:border-l-4 prose-blockquote:border-l-primary prose-blockquote:bg-muted/50 
-                prose-blockquote:py-2 sm:prose-blockquote:py-4 prose-blockquote:px-4 sm:prose-blockquote:px-6
-                prose-blockquote:my-6 prose-blockquote:not-italic prose-blockquote:font-normal
-                prose-code:bg-muted prose-code:px-1.5 sm:prose-code:px-2 prose-code:py-0.5 sm:prose-code:py-1 
-                prose-code:rounded prose-code:text-xs sm:prose-code:text-sm prose-code:font-mono
-                prose-code:before:content-none prose-code:after:content-none
-                prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-pre:overflow-x-auto prose-pre:max-w-full
-                [&_*]:max-w-full [&_*]:box-border"
-              style={{ 
-                wordBreak: 'normal', 
-                overflowWrap: 'break-word',
-                hyphens: 'auto',
-                WebkitHyphens: 'auto',
-                MozHyphens: 'auto',
-                msHyphens: 'auto'
-              }}
-              dangerouslySetInnerHTML={{ __html: blog.content }}
-            />
+            {/* Meta Information */}
+            <div className="flex flex-wrap items-center gap-4 text-[14px] text-neutral-500 dark:text-neutral-500 mb-10 pb-10 border-b border-neutral-200 dark:border-neutral-800">
+              <time dateTime={blog.published_at || blog.created_at}>
+                {new Date(blog.published_at || blog.created_at).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </time>
+              {blog.reading_time && <span>·</span>}
+              {blog.reading_time && <span>{blog.reading_time} min read</span>}
+              <span>·</span>
+              <span>{blog.view_count || 0} views</span>
+            </div>
+
+            {/* Featured Image - Full width within column */}
+            {blog.featured_image_url && (
+              <figure className="mb-12 -mx-5 sm:-mx-8">
+                <div className="relative aspect-[16/9] w-full">
+                  <Image
+                    src={blog.featured_image_url || "/placeholder.svg"}
+                    alt={blog.title}
+                    fill
+                    priority
+                    className="object-cover"
+                  />
+                </div>
+              </figure>
+            )}
+
+            {/* Blog Content - Medium typography style */}
+            <div className="medium-article-content" dangerouslySetInnerHTML={{ __html: blog.content }} />
+
+            {/* Back to Blog */}
+            <div className="mt-16 pt-10 border-t border-neutral-200 dark:border-neutral-800">
+              <Link
+                href="/blog"
+                className="inline-flex items-center gap-2 text-neutral-900 dark:text-neutral-100 font-medium hover:gap-3 transition-all"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                Read More Articles
+              </Link>
+            </div>
           </div>
         </article>
       </main>
