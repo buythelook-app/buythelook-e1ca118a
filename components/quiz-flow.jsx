@@ -257,28 +257,28 @@ export function QuizFlow({ styledProfile }) {
     if (currentQuestion.id === "style") {
       const styleOptions = currentQuestion.options
 
-      console.log("[v0] Style Knockout Debug:")
-      console.log("[v0] styleComparisonIndex:", styleComparisonIndex)
-      console.log("[v0] selected value:", value)
-      console.log("[v0] current winner:", styleWinner)
+      console.log(" Style Knockout Debug:")
+      console.log(" styleComparisonIndex:", styleComparisonIndex)
+      console.log(" selected value:", value)
+      console.log(" current winner:", styleWinner)
 
       // Find the selected option object
       const selectedOption = styleOptions.find((opt) => opt.value === value)
-      console.log("[v0] selectedOption:", selectedOption)
+      console.log(" selectedOption:", selectedOption)
 
       setStyleWinner(selectedOption)
 
       const nextIndex = styleComparisonIndex + 1
-      console.log("[v0] nextIndex:", nextIndex)
-      console.log("[v0] styleOptions.length:", styleOptions.length)
+      console.log(" nextIndex:", nextIndex)
+      console.log(" styleOptions.length:", styleOptions.length)
 
       if (nextIndex < styleOptions.length) {
         // More challengers to face
-        console.log("[v0] Moving to next challenger")
+        console.log(" Moving to next challenger")
         setStyleComparisonIndex(nextIndex)
       } else {
         // Tournament complete - save the winner
-        console.log("[v0] Tournament complete, saving:", selectedOption.value)
+        console.log(" Tournament complete, saving:", selectedOption.value)
         setQuizData({ ...quizData, [currentQuestion.id]: selectedOption.value })
 
         // Reset state
@@ -635,25 +635,45 @@ export function QuizFlow({ styledProfile }) {
 
       <div className="flex flex-col lg:flex-row gap-8">
         {completedSteps.length > 0 && (
-          <motion.aside initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="lg:w-80 shrink-0">
-            <div className="sticky top-24 bg-muted/30 border border-border/50 p-6 rounded-lg">
-              <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
-                <Check className="w-5 h-5 text-accent" />
-                Your Selections
-              </h3>
-              <div className="space-y-4">
+          <motion.aside
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4 }}
+            className="lg:w-80 shrink-0"
+          >
+            <div className="sticky top-24 bg-gradient-to-br from-background to-muted/50 border border-border/60 shadow-lg backdrop-blur-sm p-6 rounded-2xl">
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-border/40">
+                <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
+                  <Check className="w-4 h-4 text-accent" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground">Your Selections</h3>
+              </div>
+              <div className="space-y-3">
                 {completedSteps.map((step, index) => (
                   <motion.div
                     key={step.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="pb-4 border-b border-border/30 last:border-0"
+                    transition={{ delay: index * 0.08, duration: 0.3 }}
+                    className="group relative p-4 rounded-xl bg-card/50 border border-border/40 hover:border-accent/50 hover:bg-card/80 transition-all duration-300"
                   >
-                    <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wide">{step.question}</p>
-                    <p className="text-sm font-medium text-foreground">{step.value}</p>
+                    <div className="absolute inset-0 bg-gradient-to-r from-accent/0 via-accent/5 to-accent/0 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity duration-300" />
+                    <div className="relative">
+                      <p className="text-[10px] text-muted-foreground/80 mb-1.5 uppercase tracking-wider font-medium">
+                        {step.question}
+                      </p>
+                      <p className="text-sm font-semibold text-foreground leading-snug">{step.value}</p>
+                    </div>
                   </motion.div>
                 ))}
+              </div>
+              <div className="mt-6 pt-4 border-t border-border/30">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>
+                    {completedSteps.length} {completedSteps.length === 1 ? "answer" : "answers"}
+                  </span>
+                  <span className="text-accent font-medium">{Math.round(progress)}% complete</span>
+                </div>
               </div>
             </div>
           </motion.aside>
@@ -720,14 +740,14 @@ export function QuizFlow({ styledProfile }) {
                       currentPair = []
                     }
 
-                    console.log("[v0] Rendering Style Step:")
-                    console.log("[v0] styleOptions:", styleOptions)
-                    console.log("[v0] styleWinner:", styleWinner)
-                    console.log("[v0] styleComparisonIndex:", styleComparisonIndex)
-                    console.log("[v0] currentPair:", currentPair)
+                    console.log(" Rendering Style Step:")
+                    console.log(" styleOptions:", styleOptions)
+                    console.log(" styleWinner:", styleWinner)
+                    console.log(" styleComparisonIndex:", styleComparisonIndex)
+                    console.log(" currentPair:", currentPair)
 
                     return currentPair.map((option, pairIndex) => {
-                      console.log("[v0] Rendering option:", option)
+                      console.log(" Rendering option:", option)
 
                       return (
                         <Card
@@ -865,7 +885,7 @@ export function QuizFlow({ styledProfile }) {
 
               {currentStep === activeSteps.length - 1 && (
                 <Button onClick={handleNext} disabled={!canProceed && !isOptional} className="min-w-[120px]">
-                  Get Your Look
+                  Get The Look
                 </Button>
               )}
             </div>
