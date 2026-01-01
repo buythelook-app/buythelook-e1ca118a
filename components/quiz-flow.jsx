@@ -160,7 +160,7 @@ export function QuizFlow({ styledProfile }) {
   const fileInputRef = useRef(null)
 
   const [styleComparisonIndex, setStyleComparisonIndex] = useState(0)
-  const [styleFinalists, setStyleFinalists] = useState([])
+  const [styleWinner, setStyleWinner] = useState(null)
 
   const [quizData, setQuizData] = useState({
     gender: "",
@@ -257,52 +257,41 @@ export function QuizFlow({ styledProfile }) {
     if (currentQuestion.id === "style") {
       const styleOptions = currentQuestion.options
 
-      console.log(" Style Comparison Debug:")
-      console.log(" styleComparisonIndex:", styleComparisonIndex)
-      console.log(" selected value:", value)
+      console.log("[v0] Style Knockout Debug:")
+      console.log("[v0] styleComparisonIndex:", styleComparisonIndex)
+      console.log("[v0] selected value:", value)
+      console.log("[v0] current winner:", styleWinner)
 
       // Find the selected option object
       const selectedOption = styleOptions.find((opt) => opt.value === value)
-      console.log(" selectedOption:", selectedOption)
+      console.log("[v0] selectedOption:", selectedOption)
 
-      // Add to finalists
-      const newFinalists = [...styleFinalists, selectedOption]
-      setStyleFinalists(newFinalists)
+      setStyleWinner(selectedOption)
 
-      console.log(" newFinalists:", newFinalists)
-
-      // Move to next pair
-      const nextIndex = styleComparisonIndex + 2
-      console.log(" nextIndex:", nextIndex)
-      console.log(" styleOptions.length:", styleOptions.length)
+      const nextIndex = styleComparisonIndex + 1
+      console.log("[v0] nextIndex:", nextIndex)
+      console.log("[v0] styleOptions.length:", styleOptions.length)
 
       if (nextIndex < styleOptions.length) {
-        // More pairs to show
-        console.log(" Moving to next pair")
+        // More challengers to face
+        console.log("[v0] Moving to next challenger")
         setStyleComparisonIndex(nextIndex)
       } else {
-        // All pairs shown - save the first finalist as the final choice
-        console.log(" Tournament complete, saving:", newFinalists[0].value)
-        setQuizData({ ...quizData, [currentQuestion.id]: newFinalists[0].value })
+        // Tournament complete - save the winner
+        console.log("[v0] Tournament complete, saving:", selectedOption.value)
+        setQuizData({ ...quizData, [currentQuestion.id]: selectedOption.value })
 
         // Reset state
         setStyleComparisonIndex(0)
-        setStyleFinalists([])
+        setStyleWinner(null)
 
         // Move to next step
         setTimeout(() => {
           if (currentStep < activeSteps.length - 1) {
             setCurrentStep(currentStep + 1)
-          } else {
-            saveQuizToDatabase()
-            storage.saveProfile(quizData)
-            storage.saveSelectionStatus(false)
-            router.push("/generate")
           }
         }, 300)
-        return
       }
-
       return
     }
 
@@ -379,7 +368,7 @@ export function QuizFlow({ styledProfile }) {
       const currentQuestion = activeSteps[currentStep]
       if (currentQuestion.id === "style") {
         setStyleComparisonIndex(0)
-        setStyleFinalists([])
+        setStyleWinner(null)
       }
       setCurrentStep(currentStep - 1)
     }
@@ -720,16 +709,25 @@ export function QuizFlow({ styledProfile }) {
               {currentQuestion.id === "style"
                 ? (() => {
                     const styleOptions = currentQuestion.options
-                    const currentPair = styleOptions.slice(styleComparisonIndex, styleComparisonIndex + 2)
+                    let currentPair
+                    if (styleWinner && styleComparisonIndex < styleOptions.length) {
+                      // Winner vs next challenger
+                      currentPair = [styleWinner, styleOptions[styleComparisonIndex]]
+                    } else if (!styleWinner && styleComparisonIndex === 0) {
+                      // First matchup: option 0 vs option 1
+                      currentPair = styleOptions.slice(0, 2)
+                    } else {
+                      currentPair = []
+                    }
 
-                    console.log(" Rendering Style Step:")
-                    console.log(" styleOptions:", styleOptions)
-                    console.log(" styleComparisonIndex:", styleComparisonIndex)
-                    console.log(" currentPair:", currentPair)
-                    console.log(" currentPair.length:", currentPair.length)
+                    console.log("[v0] Rendering Style Step:")
+                    console.log("[v0] styleOptions:", styleOptions)
+                    console.log("[v0] styleWinner:", styleWinner)
+                    console.log("[v0] styleComparisonIndex:", styleComparisonIndex)
+                    console.log("[v0] currentPair:", currentPair)
 
                     return currentPair.map((option, pairIndex) => {
-                      console.log(" Rendering option:", option)
+                      console.log("[v0] Rendering option:", option)
 
                       return (
                         <Card
@@ -754,6 +752,18 @@ export function QuizFlow({ styledProfile }) {
                                 {option.icon}
                               </span>
                             )}
+                            {option.color && (
+                              <div
+                                className="relative h-14 w-14 shrink-0 border border-border transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg overflow-hidden"
+                                style={{ backgroundColor: option.color }}
+                              >
+                                {styleWinner === option && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 animate-fade-in">
+                                    <Check className="h-6 w-6 text-white" />
+                                  </div>
+                                )}
+                              </div>
+                            )}
                             <div className="flex-1">
                               <h3 className="mb-1 text-lg font-medium text-card-foreground tracking-tight">
                                 {option.label}
@@ -764,6 +774,9 @@ export function QuizFlow({ styledProfile }) {
                                 </p>
                               )}
                             </div>
+                            {styleWinner === option && !option.color && !option.image && (
+                              <Check className="h-6 w-6 shrink-0 text-accent animate-scale-in" />
+                            )}
                           </div>
                         </Card>
                       )
@@ -852,7 +865,7 @@ export function QuizFlow({ styledProfile }) {
 
               {currentStep === activeSteps.length - 1 && (
                 <Button onClick={handleNext} disabled={!canProceed && !isOptional} className="min-w-[120px]">
-                  Finish
+                  Get Your Look
                 </Button>
               )}
             </div>
