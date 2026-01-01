@@ -4,7 +4,7 @@ import type { MetadataRoute } from "next"
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   console.log(" Generating sitemap...")
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://buythelook.app"
   console.log(" Base URL:", baseUrl)
 
   try {
