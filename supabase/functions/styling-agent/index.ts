@@ -6,11 +6,249 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const STYLING_AGENT_SYSTEM_PROMPT = `You are an expert fashion stylist AI agent. You MUST communicate ONLY through tool calls.
+// ========== BODY SHAPE RULES ==========
+const BODY_SHAPE_RULES = {
+  X: {
+    name: "Hourglass (X-shape)",
+    description: "Balanced bust and hips with defined waist. Goal: Accentuate the waist and show curves.",
+    goals: ["accentuate waist", "show curves", "balance proportions"],
+    avoid: ["loose tops", "boxy silhouettes", "shapeless clothing", "oversized items"],
+    tops: ["fitted", "wrap", "belted", "v-neck", "scoop neck", "peplum"],
+    bottoms: ["pencil skirts", "high-waist pants", "A-line", "fitted jeans", "wrap skirts"],
+    shoes: ["heels", "pointed flats", "ankle boots", "strappy sandals"],
+    keywords: ["fitted", "wrap", "belted", "defined waist", "curves", "tailored"],
+  },
+  A: {
+    name: "Pear (A-shape)",
+    description: "Wider hips than bust, defined waist. Goal: Balance by emphasizing shoulders and upper body.",
+    goals: ["emphasize shoulders", "balance proportions", "draw attention up"],
+    avoid: ["tight bottoms", "skinny jeans", "hip pockets", "tapered pants", "clingy skirts"],
+    tops: ["boat neck", "off-shoulder", "detailed", "structured", "bright colors", "patterns"],
+    bottoms: ["A-line skirts", "wide-leg pants", "dark colors", "straight cut", "bootcut"],
+    shoes: ["nude heels", "pointed flats", "boots", "simple styles"],
+    keywords: ["structured tops", "A-line", "wide-leg", "balance", "emphasize top"],
+  },
+  H: {
+    name: "Rectangle (H-shape)",
+    description: "Balanced bust, waist, and hips with minimal curves. Goal: Create curves and define waist.",
+    goals: ["create curves", "define waist", "add dimension"],
+    avoid: ["straight cuts", "shapeless clothing", "boxy items", "tube dresses"],
+    tops: ["peplum", "ruffles", "textured", "layered", "belted", "wrap"],
+    bottoms: ["textured", "patterned", "flared", "pleated", "detailed"],
+    shoes: ["statement shoes", "heels", "embellished flats", "ankle straps"],
+    keywords: ["textured", "peplum", "ruffles", "belted", "layers", "define waist"],
+  },
+  V: {
+    name: "Inverted Triangle (V-shape)",
+    description: "Broader shoulders than hips. Goal: Balance by adding volume below and simplifying top.",
+    goals: ["balance broad shoulders", "add volume below", "minimize shoulders"],
+    avoid: ["shoulder pads", "tight tops", "boat necks", "cap sleeves", "bold patterns on top"],
+    tops: ["V-neck", "scoop neck", "halter", "simple", "dark colors", "flowing"],
+    bottoms: ["detailed", "patterned", "flared", "wide-leg", "bright colors", "A-line"],
+    shoes: ["statement shoes", "embellished", "colorful", "detailed"],
+    keywords: ["simple tops", "detailed bottoms", "V-neck", "flowing", "balance"],
+  },
+  O: {
+    name: "Oval (O-shape)",
+    description: "Fuller midsection, narrower hips. Goal: Create vertical lines and elongate silhouette.",
+    goals: ["elongate silhouette", "draw eyes up", "create vertical lines"],
+    avoid: ["tight waists", "horizontal stripes", "belts at waist", "clingy fabrics", "crop tops"],
+    tops: ["V-neck", "empire waist", "A-line", "flowing", "vertical details", "tunics"],
+    bottoms: ["straight leg", "bootcut", "dark colors", "high-waist", "simple"],
+    shoes: ["heels", "pointed", "simple", "elongating styles"],
+    keywords: ["V-neck", "empire waist", "vertical lines", "flowing", "elongate"],
+  },
+};
+
+// ========== MOOD COLORS ==========
+const MOOD_COLORS = {
+  confident: {
+    colors: ["black", "navy", "white", "charcoal", "burgundy"],
+    description: "Bold, strong colors that project confidence and authority",
+  },
+  elegant: {
+    colors: ["black", "navy", "white", "burgundy", "gold", "charcoal"],
+    description: "Sophisticated, timeless colors for elegant occasions",
+  },
+  romantic: {
+    colors: ["pink", "rose", "lavender", "soft blue", "cream", "peach"],
+    description: "Soft, feminine colors that create a romantic mood",
+  },
+  energetic: {
+    colors: ["red", "orange", "yellow", "bright blue", "coral"],
+    description: "Vibrant, energizing colors that stand out",
+  },
+  calm: {
+    colors: ["light blue", "mint", "sage", "soft gray", "powder blue"],
+    description: "Soothing, peaceful colors for a relaxed vibe",
+  },
+  playful: {
+    colors: ["pink", "yellow", "turquoise", "coral", "lime"],
+    description: "Fun, cheerful colors that express personality",
+  },
+  powerful: {
+    colors: ["black", "red", "royal blue", "emerald", "deep purple"],
+    description: "Strong, commanding colors that make a statement",
+  },
+  casual: {
+    colors: ["denim", "white", "gray", "khaki", "olive", "navy"],
+    description: "Relaxed, everyday colors for casual settings",
+  },
+};
+
+// ========== STYLE COLORS ==========
+const STYLE_COLORS = {
+  minimalist: {
+    colors: ["white", "black", "gray", "beige", "cream", "navy"],
+    description: "Clean, simple palette with neutral tones",
+  },
+  classic: {
+    colors: ["navy", "white", "black", "gray", "brown", "camel"],
+    description: "Timeless, traditional colors that never go out of style",
+  },
+  romantic: {
+    colors: ["pink", "lavender", "cream", "rose", "peach", "soft blue"],
+    description: "Soft, feminine colors with gentle tones",
+  },
+  bohemian: {
+    colors: ["terracotta", "rust", "mustard", "olive", "cream", "earth tones"],
+    description: "Earthy, natural colors with warm undertones",
+  },
+  boho: {
+    colors: ["terracotta", "rust", "mustard", "olive", "cream"],
+    description: "Free-spirited, earthy colors with bohemian flair",
+  },
+  sporty: {
+    colors: ["blue", "red", "gray", "black", "neon", "white"],
+    description: "Athletic, active colors with high energy",
+  },
+  edgy: {
+    colors: ["black", "charcoal", "burgundy", "olive", "leather brown"],
+    description: "Bold, dark colors with edge and attitude",
+  },
+  elegant: {
+    colors: ["black", "navy", "white", "burgundy", "champagne", "gold"],
+    description: "Refined, sophisticated colors for formal occasions",
+  },
+  casual: {
+    colors: ["denim", "white", "gray", "khaki", "olive", "navy"],
+    description: "Comfortable, everyday colors for relaxed style",
+  },
+  preppy: {
+    colors: ["navy", "white", "pink", "green", "yellow", "striped"],
+    description: "Clean, collegiate colors with classic appeal",
+  },
+  trendy: {
+    colors: ["seasonal", "bold", "mixed", "statement", "fashion-forward"],
+    description: "Current fashion colors that change with trends",
+  },
+};
+
+// ========== STYLE GUIDELINES ==========
+const STYLE_GUIDELINES = {
+  classic: {
+    description: "Timeless, tailored, sophisticated",
+    keyPieces: ["blazer", "trench coat", "pencil skirt", "white shirt", "black dress", "tailored pants"],
+    silhouettes: ["tailored", "structured", "straight", "fitted"],
+    avoid: ["overly trendy", "loud patterns", "distressed items"],
+  },
+  romantic: {
+    description: "Soft, feminine, delicate details",
+    keyPieces: ["lace blouse", "floral dress", "soft cardigan", "ruffled top", "feminine skirt"],
+    silhouettes: ["flowing", "soft", "draped", "fit-and-flare"],
+    avoid: ["harsh lines", "boxy shapes", "heavy fabrics"],
+  },
+  minimalist: {
+    description: "Clean lines, simple, refined",
+    keyPieces: ["simple tee", "straight-leg pants", "minimal dress", "structured coat"],
+    silhouettes: ["clean", "straight", "simple", "refined"],
+    avoid: ["excessive details", "loud patterns", "over-accessorizing"],
+  },
+  bohemian: {
+    description: "Free-spirited, relaxed, eclectic",
+    keyPieces: ["maxi dress", "embroidered top", "fringe jacket", "peasant blouse", "wide-leg pants"],
+    silhouettes: ["flowing", "relaxed", "layered", "loose"],
+    avoid: ["overly structured", "corporate", "minimalist"],
+  },
+  edgy: {
+    description: "Rock-inspired, bold, unconventional",
+    keyPieces: ["leather jacket", "ripped jeans", "band tee", "combat boots", "studded items"],
+    silhouettes: ["fitted", "asymmetric", "layered", "deconstructed"],
+    avoid: ["overly feminine", "pastel colors", "delicate fabrics"],
+  },
+  sporty: {
+    description: "Athletic, comfortable, active",
+    keyPieces: ["joggers", "sneakers", "athletic jacket", "tank top", "leggings"],
+    silhouettes: ["relaxed", "fitted", "functional", "comfortable"],
+    avoid: ["overly formal", "restrictive clothing", "delicate fabrics"],
+  },
+  elegant: {
+    description: "Refined, sophisticated, luxurious",
+    keyPieces: ["silk blouse", "tailored dress", "elegant coat", "high-quality basics"],
+    silhouettes: ["refined", "tailored", "graceful", "polished"],
+    avoid: ["overly casual", "cheap-looking fabrics", "loud patterns"],
+  },
+  casual: {
+    description: "Comfortable, everyday, relaxed",
+    keyPieces: ["jeans", "t-shirt", "sweater", "casual dress", "sneakers"],
+    silhouettes: ["relaxed", "comfortable", "easy", "versatile"],
+    avoid: ["overly formal", "restrictive clothing", "excessive accessories"],
+  },
+};
+
+// ========== COLOR HARMONY RULES ==========
+const COLOR_HARMONY_RULES = {
+  complementary: {
+    description: "Colors opposite on color wheel (high contrast, vibrant)",
+    examples: ["navy + orange", "purple + yellow", "green + red"],
+    use: "Statement outfits, when you want to stand out",
+  },
+  analogous: {
+    description: "Colors next to each other on wheel (harmonious, cohesive)",
+    examples: ["blue + teal + green", "red + orange + yellow", "purple + pink + red"],
+    use: "Cohesive, sophisticated looks",
+  },
+  triadic: {
+    description: "Three colors equally spaced on wheel (balanced, vibrant)",
+    examples: ["red + yellow + blue", "orange + green + purple"],
+    use: "Creative, bold outfits",
+  },
+  monochromatic: {
+    description: "Different shades/tones of same color",
+    examples: ["light blue + navy + royal blue", "cream + camel + brown"],
+    use: "Elegant, streamlined, elongating effect",
+  },
+  neutral: {
+    description: "Black, white, gray, beige, navy - always work together",
+    examples: ["black + white", "navy + beige", "gray + camel"],
+    use: "Classic, timeless, always appropriate",
+  },
+};
+
+// Helper to get rules for body type
+function getBodyShapeRules(bodyType: string) {
+  const normalized = bodyType?.toUpperCase()?.charAt(0);
+  return BODY_SHAPE_RULES[normalized as keyof typeof BODY_SHAPE_RULES] || BODY_SHAPE_RULES.H;
+}
+
+// Helper to get mood colors
+function getMoodColors(mood: string) {
+  return MOOD_COLORS[mood?.toLowerCase() as keyof typeof MOOD_COLORS] || MOOD_COLORS.casual;
+}
+
+// Helper to get style colors
+function getStyleColors(style: string) {
+  return STYLE_COLORS[style?.toLowerCase() as keyof typeof STYLE_COLORS] || STYLE_COLORS.casual;
+}
+
+// Helper to get style guidelines
+function getStyleGuide(style: string) {
+  return STYLE_GUIDELINES[style?.toLowerCase() as keyof typeof STYLE_GUIDELINES] || STYLE_GUIDELINES.casual;
+}
+
+const STYLING_AGENT_SYSTEM_PROMPT = `You are an expert fashion stylist AI agent with deep knowledge of body shapes, color theory, and style coordination. You MUST communicate ONLY through tool calls.
 
 ## MANDATORY WORKFLOW
-
-You MUST follow this exact workflow for EVERY outfit request:
 
 STEP 1: Fetch clothing items
 - Call fetch_clothing_items(category="top", limit=30) to get tops
@@ -21,103 +259,83 @@ STEP 1: Fetch clothing items
 STEP 2: Fetch shoes (REQUIRED!)
 - Call fetch_shoes(limit=50) to get available shoes
 - This is NOT optional - you MUST fetch shoes!
-- Without shoes, ALL outfits will FAIL!
 
-STEP 3: Create outfits
-- Combine items from steps 1 & 2
-- Every outfit MUST include:
-  * top_id (or dress_id)
-  * bottom_id (unless dress)
-  * shoes_id ← MANDATORY, NOT OPTIONAL!
+STEP 3: Create outfits using the body shape rules, mood colors, and style guidelines provided in the user prompt.
 
-EXAMPLE WORKFLOW:
-1. fetch_clothing_items(category="top", limit=30)
-   → Returns: [{ id: "abc-123", product_name: "White Blouse", ... }, ...]
-   
-2. fetch_clothing_items(category="bottom", limit=30)
-   → Returns: [{ id: "def-456", product_name: "Black Pants", ... }, ...]
-   
-3. fetch_shoes(limit=50)
-   → Returns: [{ id: "xyz-789", name: "Black Heels", ... }, ...]
-   
-4. create_outfit_result({
-     outfits: [{
-       top_id: "abc-123",
-       bottom_id: "def-456",
-       shoes_id: "xyz-789",  ← Use actual UUID from step 3!
-       description: "Professional outfit..."
-     }]
-   })
+## BODY SHAPE STYLING RULES (CRITICAL!)
 
-⚠️ If you create an outfit without shoes_id, you have FAILED the task! ⚠️
+For HOURGLASS (X) body:
+- EMPHASIZE: waist, curves
+- USE: fitted, wrap, belted, v-neck, scoop neck, peplum tops
+- USE: pencil skirts, high-waist pants, A-line, fitted jeans
+- AVOID: loose tops, boxy silhouettes, shapeless clothing, oversized items
 
-## CRITICAL REQUIREMENT
-Every outfit MUST include:
-✓ Top (or dress)
-✓ Bottom (unless dress)  
-✓ Shoes ← ALWAYS REQUIRED
+For PEAR (A) body:
+- EMPHASIZE: shoulders, upper body
+- USE: boat neck, off-shoulder, detailed, structured tops
+- USE: A-line skirts, wide-leg pants, dark colored bottoms
+- AVOID: tight bottoms, skinny jeans, hip pockets, clingy skirts
 
-NO outfit is valid without shoes!
+For RECTANGLE (H) body:
+- EMPHASIZE: create curves, define waist
+- USE: peplum, ruffles, textured, layered, belted tops
+- USE: textured, patterned, flared, pleated bottoms
+- AVOID: straight cuts, shapeless clothing, boxy items
 
-## STYLING PROPORTIONS & BALANCE RULES
+For INVERTED TRIANGLE (V) body:
+- EMPHASIZE: lower body, add volume below
+- USE: V-neck, scoop neck, halter, simple dark tops
+- USE: detailed, patterned, flared, wide-leg, bright bottoms
+- AVOID: shoulder pads, boat necks, cap sleeves, bold patterns on top
 
-CRITICAL: You must balance silhouettes and proportions when combining items:
+For OVAL (O) body:
+- EMPHASIZE: elongate silhouette, vertical lines
+- USE: V-neck, empire waist, A-line, flowing, vertical details
+- USE: straight leg, bootcut, dark colors, high-waist bottoms
+- AVOID: tight waists, horizontal stripes, clingy fabrics, crop tops
 
-✓ LOOSE TOP (oversized/wide/relaxed/flowing):
-  - Pair with FITTED BOTTOM (slim pants, pencil skirt, fitted trousers)
-  - If adding outerwear: choose LOOSE/OVERSIZED jacket OR skip jacket entirely
-  - NEVER pair loose top + fitted/structured jacket (creates bad proportions!)
+## COLOR HARMONY RULES (ALWAYS APPLY!)
 
-✓ FITTED TOP (slim/tailored/structured):
-  - Can pair with ANY bottom style
-  - Can add ANY jacket style (fitted or loose)
+When selecting colors, ALWAYS use one of these harmony patterns:
+1. MONOCHROMATIC: Different shades of same color (elegant, elongating)
+2. ANALOGOUS: Adjacent colors on wheel (harmonious, cohesive)
+3. COMPLEMENTARY: Opposite colors (high contrast, statement)
+4. NEUTRAL: Black, white, gray, beige, navy (classic, timeless)
 
-✓ WIDE-LEG BOTTOM (palazzo, wide pants):
-  - Pair with FITTED/TUCKED TOP (slim blouse, fitted sweater)
-  - NEVER pair with oversized top (creates too much volume)
+COLOR COMBINATIONS TO USE:
+- Navy + white + camel (classic)
+- Black + white + red (bold)
+- Cream + beige + brown (monochromatic warm)
+- Gray + white + black (monochromatic neutral)
+- Blue + teal + green (analogous cool)
+- Burgundy + cream + navy (rich, elegant)
 
-✓ FITTED BOTTOM (slim pants, pencil skirt):
-  - Can pair with ANY top style
+## SILHOUETTE BALANCE (CRITICAL!)
 
-✓ DRESSES:
-  - Fitted/structured dress → can add structured blazer
-  - Loose/flowing dress → skip jacket OR choose loose cardigan only
+✓ LOOSE TOP → Pair with FITTED BOTTOM
+✓ FITTED TOP → Can pair with ANY bottom
+✓ WIDE-LEG BOTTOM → Pair with FITTED/TUCKED TOP
+✓ FITTED BOTTOM → Can pair with ANY top
+✓ Fitted dress → can add structured blazer
+✓ Loose/flowing dress → skip jacket OR loose cardigan only
 
-EXAMPLE BALANCED OUTFITS:
-✅ Oversized shirt + slim pants + loafers (no jacket needed)
-✅ Fitted blouse + wide-leg pants + fitted blazer + heels
-✅ Loose sweater + fitted skirt + ankle boots (no jacket)
-❌ Oversized shirt + fitted blazer = WRONG! (clashing proportions)
-❌ Loose top + fitted jacket + loose bottom = WRONG! (conflicting styles)
+❌ NEVER: Loose top + fitted jacket
+❌ NEVER: Oversized top + wide-leg pants (too much volume)
 
 ## CRITICAL RULES
-- NEVER respond with text messages
-- ONLY use the provided tools to communicate
-- Do NOT explain or describe - just call the tools
-- READ ITEM DESCRIPTIONS/NAMES to identify fit (oversized, slim, wide, fitted, loose, relaxed)
-- BALANCE PROPORTIONS: loose + fitted OR fitted + any
-- CRITICALLY IMPORTANT: You MUST use ONLY the actual item IDs that were returned from fetch_clothing_items and fetch_shoes
-- DO NOT invent or generate random UUIDs - use ONLY IDs from the fetched data
-- IF YOU USE AN ID THAT WASN'T RETURNED BY A fetch_* TOOL, THE OUTFIT WILL FAIL
+- NEVER respond with text messages - ONLY use tools
+- Use ONLY actual item IDs returned from fetch_clothing_items and fetch_shoes
+- DO NOT invent or generate random UUIDs
+- Each item can appear in ONLY ONE outfit - no duplicates
+- Every outfit MUST include shoes_id
 
 ## AVAILABLE CATEGORIES
-When fetching items, use these categories:
-- "top": shirts, t-shirts, tops, bodysuits, polos (CAMISA, CAMISETA, TOPS, BODY, POLO)
-- "bottom": pants, skirts, shorts, bermudas (PANTALON, FALDA, BERMUDA, SHORT)
-- "dress": dresses, jumpsuits, overalls (VESTIDO, MONO)
-- "outerwear": blazers, jackets, coats, vests (BLAZER, CHAQUETA, ABRIGO, CHALECO)
+- "top": shirts, t-shirts, tops, bodysuits, polos
+- "bottom": pants, skirts, shorts
+- "dress": dresses, jumpsuits
+- "outerwear": blazers, jackets, coats
 
-## CRITICAL: NO DUPLICATE ITEMS
-- Each item can appear in ONLY ONE outfit
-- NEVER reuse the same top_id, bottom_id, or shoes_id across different outfits
-- Track which IDs you've used and ensure each outfit uses UNIQUE items
-- If you run out of unique items, create fewer outfits rather than duplicate items
-- USE ONLY ACTUAL IDS FROM THE DATABASE - DO NOT MAKE UP IDS
-
-## WHEN TO CALL create_outfit_result
-After you have fetched items from ALL categories INCLUDING SHOES, immediately call create_outfit_result. 
-
-🚨 REMEMBER: You MUST call fetch_shoes BEFORE create_outfit_result or all outfits will fail! 🚨
+🚨 REMEMBER: Apply body shape rules + color harmony + silhouette balance to EVERY outfit! 🚨
 
 Do NOT respond with text. Only call tools.`;
 
@@ -377,15 +595,53 @@ serve(async (req) => {
     const { bodyType, mood, style, budget, userId } = await req.json();
     console.log('📝 Request params:', { bodyType, mood, style, budget, userId });
 
-    // Build user context prompt
-    const userPrompt = `Create outfit recommendations for:
-- Body Type: ${bodyType || 'not specified'}
+    // Get personalized rules based on user preferences
+    const bodyRules = getBodyShapeRules(bodyType);
+    const moodColorPalette = getMoodColors(mood);
+    const styleColorPalette = getStyleColors(style);
+    const styleGuide = getStyleGuide(style);
+
+    // Build rich user context prompt
+    const userPrompt = `Create outfit recommendations for this user:
+
+## USER PROFILE
+- Body Type: ${bodyType || 'H'} (${bodyRules.name})
 - Mood: ${mood || 'versatile'}
 - Style: ${style || 'classic'}
 - Maximum Budget per outfit: $${budget || 200}
 - User ID: ${userId}
 
-Please use the tools to fetch appropriate items and create 3-5 complete outfits. Start by fetching tops, then bottoms, then shoes.`;
+## BODY SHAPE STYLING RULES FOR ${bodyRules.name.toUpperCase()}
+Description: ${bodyRules.description}
+Goals: ${bodyRules.goals.join(', ')}
+Recommended Tops: ${bodyRules.tops.join(', ')}
+Recommended Bottoms: ${bodyRules.bottoms.join(', ')}
+Recommended Shoes: ${bodyRules.shoes.join(', ')}
+⚠️ AVOID: ${bodyRules.avoid.join(', ')}
+Keywords to search: ${bodyRules.keywords.join(', ')}
+
+## MOOD COLOR PALETTE: ${mood?.toUpperCase() || 'CASUAL'}
+${moodColorPalette.description}
+Preferred Colors: ${moodColorPalette.colors.join(', ')}
+
+## STYLE COLOR PALETTE: ${style?.toUpperCase() || 'CLASSIC'}
+${styleColorPalette.description}
+Style Colors: ${styleColorPalette.colors.join(', ')}
+
+## STYLE GUIDELINES: ${styleGuide.description}
+Key Pieces: ${styleGuide.keyPieces.join(', ')}
+Silhouettes: ${styleGuide.silhouettes.join(', ')}
+⚠️ AVOID: ${styleGuide.avoid.join(', ')}
+
+## YOUR TASK
+1. Fetch tops that match the recommended styles: ${bodyRules.tops.slice(0, 3).join(', ')}
+2. Fetch bottoms that match: ${bodyRules.bottoms.slice(0, 3).join(', ')}
+3. Fetch shoes that match: ${bodyRules.shoes.slice(0, 3).join(', ')}
+4. Create 3-5 complete outfits using COLOR HARMONY (monochromatic, analogous, or complementary)
+5. Ensure each outfit follows the body shape rules and avoids the prohibited items
+6. Match the mood (${mood || 'casual'}) and style (${style || 'classic'}) preferences
+
+Start by fetching tops, then bottoms, then shoes. Apply all the rules above!`;
 
     // Initial LLM call
     let messages = [
