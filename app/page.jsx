@@ -2,16 +2,15 @@
 import { useState, useEffect, useRef, Suspense } from "react"
 import { motion, AnimatePresence, useInView } from "framer-motion"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowRight, Sparkles, Play, Pause, Volume2, VolumeX } from "lucide-react"
+import { ArrowRight, Sparkles, Play, Pause, Volume2, VolumeX, ShoppingBag, ExternalLink } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
-import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import AuthModal from "@/components/auth-modal"
 import Header from "@/components/header"
 import { supabaseAuth } from "@/lib/supabase-auth-client"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import Image from "next/image"
-
+import StyleGapSection from '@/components/StyleGapSection'
 const pulseAnimation = `
   @keyframes pulse-glow {
     0%, 100% {
@@ -295,6 +294,67 @@ function TypewriterInput({ value, onChange, placeholder, className }) {
   )
 }
 
+function InfiniteProductCarousel({ products }) {
+  return (
+    <div className="relative overflow-hidden">
+      <style jsx>{`
+        @keyframes scroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+        .animate-scroll {
+          animation: scroll 40s linear infinite;
+        }
+        .animate-scroll:hover {
+          animation-play-state: paused;
+        }
+      `}</style>
+
+      <div className="flex animate-scroll">
+        {/* Duplicate the products array twice for seamless loop */}
+        {[...products, ...products].map((product, index) => (
+          <div key={`${product.id}-${index}`} className="flex-shrink-0 w-[280px] sm:w-[320px] mx-3 group">
+            <a href={product.product_url} target="_blank" rel="noopener noreferrer" className="block">
+              <div className="relative aspect-[3/4] bg-neutral-100 overflow-hidden mb-4">
+                <Image
+                  src={product.image || "/placeholder.svg"}
+                  alt={product.name}
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  sizes="320px"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+
+                {/* Shop now overlay on hover */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="bg-white px-6 py-3 text-sm font-bold tracking-wider uppercase flex items-center gap-2">
+                    <ShoppingBag className="w-4 h-4" />
+                    Shop Now
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-xs font-bold tracking-[0.2em] text-neutral-400 uppercase">{product.brand}</p>
+                <h3 className="text-base font-medium text-neutral-900 line-clamp-2 group-hover:text-neutral-600 transition-colors">
+                  {product.name}
+                </h3>
+                <p className="text-lg font-bold text-neutral-900">${product.price.toFixed(2)}</p>
+                <p className="text-xs text-neutral-500 uppercase tracking-wider">{product.category}</p>
+              </div>
+            </a>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function HomeContent() {
   const { user, profile, loading } = useAuth()
   const router = useRouter()
@@ -309,7 +369,8 @@ function HomeContent() {
   const [isVideoPlaying, setIsVideoPlaying] = useState(true)
   const [isVideoMuted, setIsVideoMuted] = useState(true)
   const [userCredits, setUserCredits] = useState(0)
-
+  const [featuredProducts, setFeaturedProducts] = useState([])
+const [hasUserOutfits, setHasUserOutfits] = useState(false)
   useEffect(() => {
     const fetchCredits = async () => {
       if (!user) {
@@ -334,6 +395,86 @@ function HomeContent() {
     window.addEventListener("credits-updated", fetchCredits)
     return () => window.removeEventListener("credits-updated", fetchCredits)
   }, [user])
+
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      console.log("/luxury-fashion-hero.jpg Fetching featured products for Recently Styled section")
+      console.log("/luxury-fashion-hero.jpg User logged in:", !!user)
+
+      try {
+        if (user) {
+          // Fetch items from user's unlocked outfits
+          console.log("/luxury-fashion-hero.jpg Fetching user's unlocked outfit items")
+          const { data: outfits, error } = await supabaseAuth
+            .from("generated_outfits")
+            .select("items")
+            .eq("user_id", user.id)
+            .eq("links_unlocked", true)
+            .order("created_at", { ascending: false })
+            .limit(10)
+
+          if (error) {
+            console.error("/luxury-fashion-hero.jpg Error fetching user outfits:", error)
+            throw error
+          }
+
+          console.log("/luxury-fashion-hero.jpg Found", outfits?.length || 0, "unlocked outfits")
+
+          // Extract all items from all outfits into a flat array
+          const allItems = []
+          outfits?.forEach((outfit) => {
+            if (outfit.items && Array.isArray(outfit.items)) {
+              outfit.items.forEach((item) => {
+                // Only include items with valid product URLs
+                if (item.product_url && item.image) {
+                  allItems.push({
+                    id: item.id || `${item.name}-${Math.random()}`,
+                    name: item.name,
+                    brand: item.brand || "Designer",
+                    price: item.price || 0,
+                    image: item.image || item.image_url,
+                    product_url: item.product_url,
+                    category: item.category || "Fashion",
+                  })
+                }
+              })
+            }
+          })
+
+          console.log("/luxury-fashion-hero.jpg Extracted", allItems.length, "shoppable items from outfits")
+
+          if (allItems.length > 0) {
+  setFeaturedProducts(allItems)
+  setHasUserOutfits(true)
+  return
+}
+
+setHasUserOutfits(false)
+setFeaturedProducts([])
+
+          console.log("/luxury-fashion-hero.jpg No shoppable items found in user's outfits, falling back to sample products")
+        }
+
+        // Fallback: Fetch sample products from database (for non-logged-in or users without outfits)
+        console.log("/luxury-fashion-hero.jpg Fetching sample products from database")
+        const { searchProductsFromDB } = await import("@/lib/supabase-products")
+
+        const products = await searchProductsFromDB(
+          ["blazer", "dress", "sneaker", "jacket", "heel", "shirt", "jean", "boot"],
+          { limit: 20, categoryType: "general" },
+        )
+
+        console.log("/luxury-fashion-hero.jpg Fetched", products.length, "sample products")
+        setFeaturedProducts(products)
+      } catch (error) {
+        console.error("/luxury-fashion-hero.jpg Failed to fetch featured products:", error)
+        setFeaturedProducts([])
+      }
+    }
+
+    fetchFeaturedProducts()
+  }, [user])
+
   const handleStartQuiz = () => {
     router.push("/quiz")
   }
@@ -431,9 +572,9 @@ function HomeContent() {
             />
 
             <h1 className="text-[11vw] xs:text-[10vw] sm:text-[9vw] md:text-[7vw] lg:text-[5.5rem] xl:text-[6.5rem] leading-[0.95] font-serif tracking-[-0.02em] text-white mb-4 sm:mb-6 md:mb-8">
-              <AnimatedHeroText delay={0.5}>Stop scrolling.</AnimatedHeroText>
+              <AnimatedHeroText delay={0.5}>Stop Scrolling.</AnimatedHeroText>
               <AnimatedHeroText delay={0.7}>
-                <span className="italic font-light text-white/95">Get styled.</span>
+                <span className="italic font-light text-white/95">Start Wearing.</span>
               </AnimatedHeroText>
             </h1>
 
@@ -443,7 +584,8 @@ function HomeContent() {
               transition={{ duration: 0.8, delay: 1.1 }}
               className="text-sm sm:text-base md:text-xl lg:text-2xl text-white/75 font-light max-w-xs sm:max-w-md md:max-w-2xl mx-auto mb-8 sm:mb-10 md:mb-12 leading-relaxed px-2"
             >
-              Answer 10 questions and get a complete, ready-to-shop outfit in minutes.
+              Your perfect look is 10 questions away. Get a complete, head-to-toe outfit curated by AI for your unique
+              body, budget, and occasion.
             </motion.p>
 
             <motion.div
@@ -459,7 +601,7 @@ function HomeContent() {
               >
                 <span className="absolute inset-0 animate-button-shimmer" />
                 <span className="relative z-10 flex items-center justify-center gap-2 sm:gap-3">
-                  Start Style Quiz
+                  Start Your Style Quiz
                   <ArrowRight className="w-5 h-5 transition-transform duration-500 ease-in-out group-hover:translate-x-1" />
                 </span>
               </Button>
@@ -473,9 +615,9 @@ function HomeContent() {
             >
               <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8 md:gap-10 lg:gap-12">
                 {[
-                  { label: "AI-powered personalization" },
-                  { label: "Instant shopping links" },
-                  { label: "Perfect outfits in minutes" },
+                  { label: "Connected with 500+ Global Brands" },
+                  { label: "100k+ Outfits Curated" },
+                  { label: "Secure One-Click Checkout" },
                 ].map((stat, i) => (
                   <div key={stat.label} className="text-center">
                     <div className="text-xs sm:text-sm md:text-base tracking-wide text-white/80">{stat.label}</div>
@@ -486,34 +628,36 @@ function HomeContent() {
           </div>
         </section>
 
-        {/* ========== HOW IT WORKS SECTION ========== */}
-        <section className="py-20 sm:py-24 md:py-28 lg:py-32 bg-neutral-50" id="howits">
+   <StyleGapSection/>
+        <section className="py-6 sm:py-8 md:py-12 bg-neutral-50" id="howits">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8">
-            <FadeInView className="text-center mb-12 sm:mb-16">
+            <FadeInView className="text-center mb-10 sm:mb-12">
               <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-neutral-400 mb-4 sm:mb-5">
                 How It Works
               </span>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-neutral-900 mb-4">
-                Three simple steps to your perfect outfit
+                Three Simple Steps to Your Perfect Outfit.
               </h2>
             </FadeInView>
 
-            <div className="grid sm:grid-cols-3 gap-8 sm:gap-6 md:gap-10 mb-12">
+            <div className="grid sm:grid-cols-3 gap-8 sm:gap-6 md:gap-10 mb-10">
               {[
                 {
                   step: "1",
-                  title: "Answer a few questions",
-                  description: "Tell us your style, preferences, and the occasion",
+                  title: "Define Your Profile",
+                  description: "Take a 60-second quiz. Tell us about the event, your body type, and your budget.",
                 },
                 {
                   step: "2",
-                  title: "AI curates a complete outfit",
-                  description: "Our AI analyzes thousands of pieces to find your perfect match",
+                  title: "AI Personal Curation",
+                  description:
+                    "Our engine scans thousands of brands to build a cohesive look where every piece – from shoes to accessories – complements the next.",
                 },
                 {
                   step: "3",
-                  title: "Get a ready-to-shop look",
-                  description: "Receive your personalized outfit with direct shopping links",
+                  title: "One-Click Transformation",
+                  description:
+                    "View your personalized style board and purchase the entire look directly on our platform: one cart, one checkout, zero stress.",
                 },
               ].map((item, i) => (
                 <FadeInView key={item.step} delay={i * 0.1}>
@@ -554,7 +698,7 @@ function HomeContent() {
                 }}
               >
                 <span className="relative z-10 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
-                  Start Style Quiz
+                  Find My Perfect Outfit
                   <ArrowRight className="w-5 h-5 ml-2 sm:ml-3 transition-all duration-500 ease-out group-hover:translate-x-2 group-hover:scale-110" />
                 </span>
               </Button>
@@ -562,41 +706,67 @@ function HomeContent() {
           </div>
         </section>
 
-        {/* ========== THE EXPERIENCE SECTION ========== */}
-        <section className="relative py-20 sm:py-24 md:py-28 lg:py-36 bg-background overflow-hidden">
+        <section className="relative py-2 sm:py-4 md:py-8 bg-background overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-            <div className="grid lg:grid-cols-2 gap-12 sm:gap-14 lg:gap-20 items-center">
-              {/* Left Column - Text Content */}
-              <div>
-                <FadeInView>
-                  <div className="h-[1px] w-10 bg-foreground/20 mb-4" />
-                  <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-4 sm:mb-5">
-                    The Experience
-                  </span>
-                </FadeInView>
+            {/* Section Header */}
+            <FadeInView className="text-center mb-10 sm:mb-12">
+              <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-neutral-400 mb-4">
+                AI Meets Elegance
+              </span>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif text-neutral-900">
+                Personal Styling, <span className="italic font-light">Democratized</span>.
+              </h2>
+            </FadeInView>
 
+            {/* Two-Column Layout */}
+            <div className="grid lg:grid-cols-2 gap-10 sm:gap-12 md:gap-16 items-center">
+              {/* Left Column - Content */}
+              <div className="space-y-6 sm:space-y-8">
                 <FadeInView delay={0.1}>
-                  <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif leading-[1.15] text-foreground mb-4 sm:mb-6">
-                    AI Meets Fashion. You Get <span className="italic font-light">Perfect</span> Outfits.
-                  </h2>
-                </FadeInView>
-
-                <FadeInView delay={0.2}>
-                  <p className="text-base sm:text-lg text-muted-foreground font-light leading-relaxed mb-8 sm:mb-12">
-                    Stop endless scrolling. Our AI analyzes your style, body type, and occasion to create complete looks
-                    you'll love—with one-click shopping for every piece.
+                  <p className="text-base sm:text-lg text-neutral-600 leading-relaxed">
+                    Our platform is directly connected to the inventory of the world's leading brands. This means your
+                    recommendations are always in stock, perfectly sized for your silhouette, and aligned with your
+                    spending goals.
                   </p>
                 </FadeInView>
 
-                <FadeInView delay={0.3}>
-                  <div className="flex flex-wrap gap-8 sm:gap-12 lg:gap-16">
+                <FadeInView delay={0.2}>
+                  <div className="space-y-4 sm:space-y-5">
                     {[
-                      { number: "50000+", label: "Outfits Curated" },
-                      { number: "12", label: "Style Categories" },
-                      { number: "100%", label: "Personalized" },
-                    ].map((stat, i) => (
-                      <div key={i} className="text-left">
-                        <div className="text-3xl sm:text-4xl md:text-5xl font-serif text-foreground mb-1">
+                      {
+                        title: "Unified Checkout",
+                        description: "Buy multiple brands in one single transaction on our platform.",
+                      },
+                      {
+                        title: "Real-Time Inventory",
+                        description: "If you see it, you can wear it.",
+                      },
+                      {
+                        title: "Precision Fit",
+                        description: "Our AI analyzes fit data to ensure your 'perfect match' actually fits.",
+                      },
+                    ].map((feature, i) => (
+                      <div key={feature.title} className="flex items-start gap-3 sm:gap-4">
+                        <div className="w-1.5 h-1.5 bg-neutral-900 mt-2.5 flex-shrink-0" />
+                        <div>
+                          <h3 className="font-serif text-base sm:text-lg text-neutral-900 mb-1">{feature.title}:</h3>
+                          <p className="text-sm sm:text-base text-neutral-600">{feature.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </FadeInView>
+
+                {/* Stats Row */}
+                <FadeInView delay={0.3}>
+                  <div className="grid grid-cols-3 gap-6 sm:gap-8 pt-6 sm:pt-8 border-t border-neutral-200">
+                    {[
+                      { number: "500+", label: "Global Brands" },
+                      { number: "100k+", label: "Outfits Curated" },
+                      { number: "1-Click", label: "Checkout" },
+                    ].map((stat) => (
+                      <div key={stat.label} className="text-center">
+                        <div className="text-2xl sm:text-3xl md:text-4xl font-serif text-neutral-900 mb-1">
                           {stat.number}
                         </div>
                         <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -648,25 +818,47 @@ function HomeContent() {
             </div>
           </div>
         </section>
+{user && hasUserOutfits && featuredProducts.length > 0 && (<> <section className="py-6 sm:py-8 md:py-12 bg-neutral-50">
+          <div className="max-w-8xl mx-auto px-4 sm:px-6 md:px-8">
+            <FadeInView className="text-center mb-10 sm:mb-12">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif text-neutral-900 mb-4">
+                Recently <span className="italic font-light">Styled</span>
+              </h2>
+              <p className="text-base sm:text-lg text-neutral-600">
+                Shop individual pieces from our curated collection – every item is shoppable now.
+              </p>
+            </FadeInView>
 
-        {/* ========== PERSONAL ATELIER SECTION ========== */}
-        <section className="py-20 sm:py-24 md:py-28 lg:py-32 bg-[#faf9f7] border-y border-neutral-200">
+            <FadeInView delay={0.1}>
+              {featuredProducts.length > 0 ? (
+                <InfiniteProductCarousel products={featuredProducts} />
+              ) : (
+                <div className="flex items-center justify-center py-20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neutral-900"></div>
+                </div>
+              )}
+            </FadeInView>
+          </div>
+        </section></>)}
+       
+
+        <section className="py-6 sm:py-8 md:py-12 bg-[#faf9f7] border-y border-neutral-200">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
             {/* Section Header */}
-            <FadeInView className="text-center mb-12 sm:mb-14">
+            <FadeInView className="text-center mb-10 sm:mb-12">
               <span className="inline-block text-[10px] tracking-[0.4em] uppercase text-neutral-400 mb-4 sm:mb-5">
-                Start Your Quiz
+                Personal Styling
               </span>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif text-neutral-900">
                 Curate Your <span className="italic font-light">Look</span>
               </h2>
               <p className="text-sm sm:text-base text-neutral-500 mt-4 max-w-xl mx-auto">
-                Get started by sharing your style vision, or jump straight into the full quiz.
+                Share your style vision, or jump straight into the full quiz.
               </p>
             </FadeInView>
 
             {/* 3 Sections Layout */}
-            <div className="space-y-12 sm:space-y-16">
+            <div className="space-y-10 sm:space-y-12">
               {/* SECTION 01: Vision Input */}
               <FadeInView delay={0.1}>
                 <div className="text-center mb-4 sm:mb-6">
@@ -756,7 +948,6 @@ function HomeContent() {
                 </div>
               </FadeInView>
 
-              {/* SECTION 03: CTA Button */}
               <FadeInView delay={0.3} className="text-center">
                 <Button
                   onClick={handleCurateMyLook}
@@ -768,8 +959,8 @@ function HomeContent() {
                     active:scale-95"
                 >
                   <span className="relative z-10 flex items-center justify-center gap-2 sm:gap-3 transition-transform duration-300 group-hover:scale-105">
-                    <Sparkles className="w-4 h-4 transition-transform duration-500 group-hover:rotate-180" />
-                    Start Style Quiz
+                    <Sparkles className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
+                    Get a look
                     <ArrowRight className="w-4 h-4 transition-all duration-500 ease-out group-hover:translate-x-2 group-hover:scale-110" />
                   </span>
                 </Button>
@@ -782,167 +973,234 @@ function HomeContent() {
           </div>
         </section>
 
-        {/* ========== YOUR ACCOUNT SECTION ========== */}
-        {user && (
-          <section className="py-20 sm:py-24 md:py-28 lg:py-32 bg-white border-t border-neutral-200">
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8">
-              <FadeInView className="text-center mb-12 sm:mb-16">
-                <span className="inline-block text-[10px] tracking-[0.4em] uppercase text-neutral-400 mb-4 sm:mb-5">
-                  Your Account
-                </span>
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif text-neutral-900 mb-4">
-                  Welcome Back, <span className="italic font-light">{profile?.name || user?.email?.split("@")[0]}</span>
-                </h2>
-                <p className="text-sm sm:text-base text-neutral-500 font-light mt-4 sm:mt-5 max-w-2xl mx-auto leading-relaxed">
-                  View and edit your style profile, preferences, and account settings.
-                </p>
+       {user ?( <section className="py-2 sm:py-4 md:py-8 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+            <FadeInView className="text-center mb-10 sm:mb-12">
+              <span className="inline-block text-[10px] tracking-[0.4em] uppercase text-neutral-400 mb-4 sm:mb-5">
+                Your Account
+              </span>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif text-neutral-900 mb-4">
+                Welcome Back, <span className="italic font-light">{profile?.name || user?.email?.split("@")[0]}</span>
+              </h2>
+              <p className="text-sm sm:text-base text-neutral-500 font-light mt-4 sm:mt-5 max-w-2xl mx-auto leading-relaxed">
+                View and edit your style profile, preferences, and account settings.
+              </p>
+            </FadeInView>
+
+            <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
+              {/* View Profile Card */}
+              <FadeInView delay={0.1}>
+                <div className="group bg-white border border-neutral-200 p-6 sm:p-8 hover:shadow-lg hover:scale-105 transition-all duration-300 flex flex-col h-full">
+                  <div className="w-12 h-12 bg-neutral-900 flex items-center justify-center mb-6 flex-shrink-0">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="white"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-serif text-neutral-900 mb-3">View Profile</h3>
+                  <p className="text-sm text-neutral-500 mb-6 leading-relaxed flex-grow">
+                    Manage your style DNA, measurements, and preferences.
+                  </p>
+                  <button
+                    onClick={() => router.push("/profile")}
+                    className="text-sm text-neutral-500 hover:text-neutral-900 flex items-center gap-2 group-hover:gap-3 transition-all duration-300 mt-auto"
+                  >
+                    Edit Profile
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
               </FadeInView>
 
-              <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
-                {/* View Profile Card */}
-                <FadeInView delay={0.1}>
-                  <div className="group bg-white border border-neutral-200 p-6 sm:p-8 hover:shadow-lg hover:scale-105 transition-all duration-300">
-                    <div className="w-12 h-12 bg-neutral-900 flex items-center justify-center mb-6">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-serif text-neutral-900 mb-3">View Profile</h3>
-                    <p className="text-sm text-neutral-500 mb-6 leading-relaxed">
-                      Manage your style DNA, measurements, and preferences.
-                    </p>
-                    <button
-                      onClick={() => router.push("/profile")}
-                      className="text-sm text-neutral-500 hover:text-neutral-900 flex items-center gap-2 group-hover:gap-3 transition-all duration-300"
+              {/* Credits Card */}
+              <FadeInView delay={0.2}>
+                <div className="group bg-white border border-neutral-200 p-6 sm:p-8 hover:shadow-lg hover:scale-105 transition-all duration-300 flex flex-col h-full">
+                  <div className="w-12 h-12 bg-neutral-900 flex items-center justify-center mb-6 flex-shrink-0">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="white"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     >
-                      Edit Profile
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
+                      <rect width="20" height="14" x="2" y="5" rx="2" />
+                      <line x1="2" x2="22" y1="10" y2="10" />
+                    </svg>
                   </div>
-                </FadeInView>
+                  <h3 className="text-lg font-serif text-neutral-900 mb-3">Credits</h3>
+                  <p className="text-sm text-neutral-500 mb-6 leading-relaxed flex-grow">
+                    You have <span className="font-semibold text-neutral-900">{userCredits}</span> credits available for
+                    outfit generation.
+                  </p>
+                  <button
+                    onClick={() => router.push("/credits")}
+                    className="text-sm text-neutral-500 hover:text-neutral-900 flex items-center gap-2 group-hover:gap-3 transition-all duration-300 mt-auto"
+                  >
+                    Buy Credits
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </FadeInView>
 
-                {/* Credits Card */}
-                <FadeInView delay={0.2}>
-                  <div className="group bg-white border border-neutral-200 p-6 sm:p-8 hover:shadow-lg hover:scale-105 transition-all duration-300">
-                    <div className="w-12 h-12 bg-neutral-900 flex items-center justify-center mb-6">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect width="20" height="14" x="2" y="5" rx="2" />
-                        <line x1="2" x2="22" y1="10" y2="10" />
-                      </svg>
-                    </div>
-                    <h3 className="text-4xl font-serif text-neutral-900 mb-1">{userCredits}</h3>
-                    <p className="text-sm text-neutral-400 mb-1">Credits</p>
-                    <p className="text-sm text-neutral-500 mb-6 leading-relaxed">
-                      Purchase more credits to unlock outfits and shopping links.
-                    </p>
-                    <button
-                      onClick={() => router.push("/credits")}
-                      className="text-sm text-neutral-500 hover:text-neutral-900 flex items-center gap-2 group-hover:gap-3 transition-all duration-300"
-                    >
-                      Buy Credits
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
+              {/* Style Quiz Card */}
+              <FadeInView delay={0.3}>
+                <div className="group bg-white border border-neutral-200 p-6 sm:p-8 hover:shadow-lg hover:scale-105 transition-all duration-300 flex flex-col h-full">
+                  <div className="w-12 h-12 bg-neutral-900 flex items-center justify-center mb-6 flex-shrink-0">
+                    <Sparkles className="w-5 h-5 text-white" />
                   </div>
-                </FadeInView>
-
-                {/* Style Quiz Card */}
-                <FadeInView delay={0.3}>
-                  <div className="group bg-white border border-neutral-200 p-6 sm:p-8 hover:shadow-lg hover:scale-105 transition-all duration-300">
-                    <div className="w-12 h-12 bg-neutral-900 flex items-center justify-center mb-6">
-                      <Sparkles className="w-5 h-5 text-white" />
-                    </div>
-                    <h3 className="text-lg font-serif text-neutral-900 mb-3">Style Quiz</h3>
-                    <p className="text-sm text-neutral-500 mb-6 leading-relaxed">
-                      Update your style preferences and get better outfit recommendations.
-                    </p>
-                    <button
-                      onClick={() => router.push("/quiz")}
-                      className="text-sm text-neutral-500 hover:text-neutral-900 flex items-center gap-2 group-hover:gap-3 transition-all duration-300"
-                    >
-                      Take Quiz
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </FadeInView>
-              </div>
+                  <h3 className="text-lg font-serif text-neutral-900 mb-3">Style Quiz</h3>
+                  <p className="text-sm text-neutral-500 mb-6 leading-relaxed flex-grow">
+                    Update your style preferences and get better outfit recommendations.
+                  </p>
+                  <button
+                    onClick={() => router.push("/quiz")}
+                    className="text-sm text-neutral-500 hover:text-neutral-900 flex items-center gap-2 group-hover:gap-3 transition-all duration-300 mt-auto"
+                  >
+                    Take Quiz
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </FadeInView>
             </div>
-          </section>
-        )}
+          </div>
+        </section>):(<></>)}
 
-        {/* ========== OUR PHILOSOPHY SECTION ========== */}
-        <section className="py-16 sm:py-20 md:py-24 bg-white">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8 text-center">
-            <FadeInView>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-neutral-900 mb-4 sm:mb-6">
-                Our Philosophy
+       <section className="py-16 sm:py-20 md:py-24 bg-neutral-50">
+  <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
+    <FadeInView className="text-center">
+      <h2 className="text-4xl sm:text-5xl md:text-6xl font-serif text-neutral-900 mb-8 leading-tight">
+        Style Should Be <span className="italic font-light">Effortless</span>.
+      </h2>
+      <p className="text-lg sm:text-xl md:text-2xl text-neutral-600 font-light leading-relaxed max-w-4xl mx-auto">
+        We believe everyone deserves to look their best without the guesswork. Great style isn't about how much
+        you spend; it's about the harmony of the right pieces. We are here to remove the barriers to fashion,
+        making "Best Dressed" an everyday reality for everybody.
+      </p>
+    </FadeInView>
+  </div>
+</section>
+
+        <section className="py-2 sm:py-4 md:py-8 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+            <FadeInView className="text-center mb-10 sm:mb-12">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif text-neutral-900 mb-4">
+                What Our Users <span className="italic font-light">Say</span>
               </h2>
-              <p className="text-base sm:text-lg text-neutral-600 font-normal leading-relaxed max-w-2xl mx-auto">
-                Style should be effortless. We believe everyone deserves to look their best without the guesswork.
-              </p>
             </FadeInView>
+
+            <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
+              {[
+                {
+                  quote:
+                    "The navy power suit it found for me is a total game-changer. I had a week of outfits ready in minutes.",
+                  author: "Sarah J.",
+                },
+                {
+                  quote:
+                    "I found a dress for a summer wedding that actually fits my curves. Having everything linked in one place saved me hours.",
+                  author: "Elena R.",
+                },
+                {
+                  quote: "I hate shopping, but I love looking good. The results are scarily accurate.",
+                  author: "Jordan M.",
+                },
+              ].map((testimonial, i) => (
+                <FadeInView key={i} delay={0.1 * i}>
+                  <div className="bg-white p-6 sm:p-8 border border-neutral-200 h-full flex flex-col">
+                    <p className="text-base sm:text-lg text-neutral-600 leading-relaxed mb-6 flex-grow italic">
+                      "{testimonial.quote}"
+                    </p>
+                    <div className="text-sm text-neutral-900 font-medium">— {testimonial.author}</div>
+                  </div>
+                </FadeInView>
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* ========== CTA SECTION ========== */}
-        <section className="py-20 sm:py-24 md:py-28 lg:py-32 bg-white">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8 text-center">
-            <FadeInView>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif text-neutral-900 mb-4 sm:mb-6">
-                Ready for Your Perfect <span className="italic font-light">Wardrobe</span>?
+        <section className="py-2 sm:py-4 md:py-8 bg-neutral-50">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8 ">
+            <FadeInView className="text-center mb-10 sm:mb-12">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif text-neutral-900 mb-4">
+                Frequently Asked <span className="italic font-light">Questions</span>
               </h2>
             </FadeInView>
 
-            <FadeInView delay={0.1}>
-              <p className="text-base sm:text-lg text-neutral-500 font-light mb-8 sm:mb-10 max-w-2xl mx-auto">
-                Join thousands getting AI-styled daily.
-              </p>
-            </FadeInView>
-
-            <FadeInView delay={0.2}>
-              <Button
-                onClick={handleStartQuiz}
-                size="lg"
-                className="group relative w-full sm:w-auto min-h-[56px] sm:min-h-[60px] px-8 sm:px-10 bg-neutral-900 text-white text-base font-medium tracking-wide touch-manipulation overflow-hidden
-                  hover:shadow-2xl hover:shadow-neutral-900/30
-                  transition-all duration-500 ease-out
-                  before:absolute before:inset-0 before:bg-white before:opacity-0 before:transition-opacity before:duration-500
-                  hover:before:opacity-10
-                  active:scale-95"
-                style={{
-                  animation: "ctaPulse 3s ease-in-out infinite",
-                }}
-              >
-                <span className="relative z-10 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
-                  Start Style Quiz
-                  <ArrowRight className="w-5 h-5 ml-2 sm:ml-3 transition-all duration-500 ease-out group-hover:translate-x-2 group-hover:scale-110" />
-                </span>
-              </Button>
-            </FadeInView>
+            <div className="space-y-8">
+              {[
+                {
+                  question: "Do I have to pay a styling fee?",
+                  answer:
+                    "There's no subscription required. You can choose the option that fits you best and make a one-time purchase. Pricing is flexible, and you only pay when you decide to use the service and buy items.",
+                },
+                {
+                  question: "Can I buy just part of the outfit?",
+                  answer: "Absolutely. Your cart is fully customizable. Buy the full look or just the pieces you love.",
+                },
+                {
+                  question: "How do returns work?",
+                  answer:
+                    "Returns are handled directly with the brand you purchased from, exactly like a regular online purchase. Each order follows the standard return policy of the specific brand.",
+                },
+                {
+                  question: "How personalized is this?",
+                  answer:
+                    "We cross-reference your body shape, skin tone, budget, and occasion against 500+ global brands for a truly unique curation.",
+                },
+              ].map((faq, i) => (
+                <FadeInView key={i} delay={0.05 * i}>
+                  <div className="border-b border-neutral-200 pb-6">
+                    <h3 className="text-lg font-serif text-neutral-900 mb-3 ">{faq.question}</h3>
+                    <p className="text-base text-neutral-600 leading-relaxed">{faq.answer}</p>
+                  </div>
+                </FadeInView>
+              ))}
+            </div>
           </div>
         </section>
+
+     <section className="py-20 sm:py-24 md:py-32 bg-white">
+  <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12 text-center">
+    <FadeInView>
+      <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif mb-6 sm:mb-8 leading-tight text-neutral-900">
+        Ready to meet your new <span className="italic font-light">favorite outfit</span>?
+      </h2>
+    </FadeInView>
+
+    <FadeInView delay={0.1}>
+      <p className="text-lg sm:text-xl md:text-2xl text-neutral-600 font-light mb-10 sm:mb-12 max-w-3xl mx-auto leading-relaxed">
+        Join thousands of users who have skipped the scroll.
+      </p>
+    </FadeInView>
+
+    <FadeInView delay={0.2}>
+      <Button
+        onClick={handleStartQuiz}
+        size="lg"
+        className="group relative w-full sm:w-auto min-h-[60px] sm:min-h-[68px] px-10 sm:px-14 bg-neutral-900 text-white hover:bg-neutral-800 hover:scale-105 active:scale-100 text-base sm:text-lg font-medium tracking-wide touch-manipulation overflow-hidden transition-all duration-300 shadow-xl hover:shadow-2xl"
+      >
+        <span className="relative z-10 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+          Get My Curated Look
+          <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 ml-3 transition-all duration-500 ease-out group-hover:translate-x-2 group-hover:scale-110" />
+        </span>
+      </Button>
+    </FadeInView>
+  </div>
+</section>
       </main>
-
 
       <AnimatePresence>
         {showAuthModal && <AuthModal mode={authMode} setMode={setAuthMode} onClose={() => setShowAuthModal(false)} />}
