@@ -1,3 +1,5 @@
+
+// generat/page.jsx
 "use client"
 
 import { useEffect, useState, useRef } from "react"
@@ -100,6 +102,13 @@ export default function GeneratePage() {
         addLog(`Style DNA: ${profile.styleKeywords?.aesthetic?.join(", ") || "Modern, Versatile"}`)
 
         // STEP 3: Product Search from Supabase
+console.log('🔍 PROFILE DEBUG:\n\n\n\n\n', {
+  style: profile.style,
+  occasion: profile.occasion,
+  styleKeywords: profile.styleKeywords,
+  occasionGuidelines: profile.occasionGuidelines
+})
+addLog(`Style DNA: ${profile.styleKeywords?.aesthetic?.join(", ") || "Modern, Versatile"}`)
         setCurrentStep(2 + stepOffset)
         addLog("Searching your product database...")
 
