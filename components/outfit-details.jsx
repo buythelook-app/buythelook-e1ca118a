@@ -15,6 +15,8 @@ import {
   CheckCircle2,
   ThumbsUp,
   ThumbsDown,
+  Play,
+  Pause,
 } from "lucide-react"
 import { supabaseAuth } from "@/lib/supabase-auth-client"
 import { useAuth } from "@/components/auth-provider"
@@ -136,6 +138,7 @@ export function OutfitDetails({ id }) {
   const [userFeedback, setUserFeedback] = useState(null) // existing feedback
 
   const [activeStoreSearch, setActiveStoreSearch] = useState(null) // { itemName, brand, stores }
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false) // Auto-play toggle
 
   const ensureAbsoluteUrl = (url) => {
     if (!url || url === "#" || url === "/" || url.trim() === "") return null
@@ -423,6 +426,38 @@ export function OutfitDetails({ id }) {
     loadOutfit()
   }, [id, user])
 
+  // Auto-play effect - cycles through items and their images
+  useEffect(() => {
+    if (!isAutoPlaying || !outfit) return
+
+    const itemsArray = outfit.items.top ? [outfit.items.top, outfit.items.bottom, outfit.items.shoes] : outfit.items
+    
+    const interval = setInterval(() => {
+      setCurrentImageIndexes(prev => {
+        const currentItem = itemsArray[mainImageIndex]
+        const images = currentItem?.images || [currentItem?.image]
+        const currentImgIdx = prev[mainImageIndex] || 0
+        
+        // If we're at the last image of current item, move to next item
+        if (currentImgIdx >= images.length - 1) {
+          // Move to next item (or loop back to first)
+          const nextItemIdx = (mainImageIndex + 1) % itemsArray.length
+          setMainImageIndex(nextItemIdx)
+          // Start from the last 2 images (or first if less than 2)
+          const nextItem = itemsArray[nextItemIdx]
+          const nextImages = nextItem?.images || [nextItem?.image]
+          const startIdx = Math.max(0, nextImages.length - 2)
+          return { ...prev, [nextItemIdx]: startIdx }
+        }
+        
+        // Otherwise, move to next image in current item
+        return { ...prev, [mainImageIndex]: currentImgIdx + 1 }
+      })
+    }, 2500) // 2.5 seconds per image
+
+    return () => clearInterval(interval)
+  }, [isAutoPlaying, outfit, mainImageIndex])
+
   const handleFeedbackClick = (type) => {
     setFeedbackType(type)
     setFeedbackOpen(true)
@@ -496,6 +531,7 @@ export function OutfitDetails({ id }) {
   }
 
   const itemsArray = outfit.items.top ? [outfit.items.top, outfit.items.bottom, outfit.items.shoes] : outfit.items
+  const itemLabels = ["Top", "Bottom", "Shoes"]
 
   return (
     <>
@@ -573,64 +609,187 @@ export function OutfitDetails({ id }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 max-w-7xl mx-auto px-4 lg:px-0 mt-20">
         <div className="space-y-6">
-          <div className="relative aspect-[3/4] bg-card overflow-hidden rounded-none border border-border group">
-            {itemsArray.map((item, itemIndex) => {
-              const images = item.images || [item.image]
-              const currentIndex = currentImageIndexes[itemIndex] || 0
-              const displayIndex = itemIndex * 10 + currentIndex
+          {/* Premium Hero Gallery with Side Thumbnails */}
+          <div className="relative bg-card overflow-hidden rounded-xl shadow-2xl">
+            <div className="flex flex-col md:flex-row h-[500px] sm:h-[600px] md:h-[650px] lg:h-[750px]">
+              
+              {/* Main Hero Image */}
+              <div className="relative flex-1 h-full bg-neutral-100 dark:bg-neutral-900 group overflow-hidden">
+                {(() => {
+                  const activeItem = itemsArray[mainImageIndex] || itemsArray[0]
+                  const images = activeItem?.images || [activeItem?.image]
+                  const currentImgIndex = currentImageIndexes[mainImageIndex] || 0
+                  const hasMultipleImages = images.length > 1
 
-              return images.map((img, imgIndex) => {
-                const thisIndex = itemIndex * 10 + imgIndex
-                return (
-                  <div
-                    key={`${itemIndex}-${imgIndex}`}
-                    className={`absolute inset-0 transition-all duration-700 ease-out ${
-                      thisIndex === mainImageIndex
-                        ? "translate-x-0 translate-y-0 opacity-100 scale-100"
-                        : thisIndex > mainImageIndex
-                          ? "translate-x-full translate-y-full opacity-0 scale-95"
-                          : "-translate-x-full -translate-y-full opacity-0 scale-95"
-                    }`}
-                    style={{
-                      transformOrigin: "bottom right",
-                    }}
-                  >
-                    <Image
-                      src={img || "/placeholder.svg"}
-                      alt={`${item.name} - ${imgIndex + 1}`}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                )
-              })
-            })}
+                  return (
+                    <>
+                      {/* Main Image */}
+                      <Image
+                        src={images[currentImgIndex] || "/placeholder.svg"}
+                        alt={activeItem?.name}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                        priority
+                      />
 
-            <div className="absolute top-4 right-4 flex gap-2 z-10">
-              <Button
-                variant="secondary"
-                size="icon"
-                className={`rounded-full shadow-lg backdrop-blur-md transition-all ${
-                  userFeedback?.isLiked === true
-                    ? "bg-green-500 text-white hover:bg-green-600"
-                    : "bg-white/80 hover:bg-white text-black"
-                }`}
-                onClick={() => handleFeedbackClick("like")}
+                      {/* Gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+
+                      {/* Feedback buttons + Auto-play toggle - top left */}
+                      <div className="absolute top-4 left-4 flex gap-2 z-20">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className={`w-10 h-10 rounded-full shadow-lg backdrop-blur-md transition-all hover:scale-110 ${
+                            userFeedback?.isLiked === true
+                              ? "bg-green-500 text-white hover:bg-green-600"
+                              : "bg-white/90 hover:bg-white text-black"
+                          }`}
+                          onClick={() => handleFeedbackClick("like")}
+                        >
+                          <ThumbsUp className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className={`w-10 h-10 rounded-full shadow-lg backdrop-blur-md transition-all hover:scale-110 ${
+                            userFeedback?.isLiked === false
+                              ? "bg-red-500 text-white hover:bg-red-600"
+                              : "bg-white/90 hover:bg-white text-black"
+                          }`}
+                          onClick={() => handleFeedbackClick("dislike")}
+                        >
+                          <ThumbsDown className="w-4 h-4" />
+                        </Button>
+                      </div>
+
+                      {/* Auto-play toggle - top right */}
+                      <div className="absolute top-4 right-4 z-20">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className={`w-10 h-10 rounded-full shadow-lg backdrop-blur-md transition-all hover:scale-110 ${
+                            isAutoPlaying
+                              ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                              : "bg-white/90 hover:bg-white text-black"
+                          }`}
+                          onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+                          title={isAutoPlaying ? "Pause auto-play" : "Start auto-play"}
+                        >
+                          {isAutoPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+                        </Button>
+                      </div>
+
+                      {/* Navigation Arrows - centered vertically, inside main image only */}
+                      {hasMultipleImages && (
+                        <>
+                          <button
+                            onClick={() => prevImage(mainImageIndex)}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white hover:bg-white text-black rounded-full shadow-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 z-20"
+                            aria-label="Previous image"
+                          >
+                            <ChevronLeft className="w-6 h-6" />
+                          </button>
+                          <button
+                            onClick={() => nextImage(mainImageIndex)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white hover:bg-white text-black rounded-full shadow-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 z-20"
+                            aria-label="Next image"
+                          >
+                            <ChevronRight className="w-6 h-6" />
+                          </button>
+                        </>
+                      )}
+
+                      {/* Product Info Overlay - bottom left */}
+                      <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6 md:p-8 z-10">
+                        <span className="inline-block bg-white/25 backdrop-blur-sm text-white text-[10px] sm:text-xs uppercase tracking-[0.2em] font-medium px-3 py-1.5 rounded-full mb-3">
+                          {itemLabels[mainImageIndex]}
+                        </span>
+                        <h3 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold tracking-tight leading-tight max-w-[80%]">
+                          {activeItem?.name}
+                        </h3>
+                        <p className="text-white/90 text-base sm:text-lg md:text-xl font-bold mt-2">
+                          ${activeItem?.price?.toFixed(2)}
+                        </p>
+                        
+                        {/* Image Counter - inline with price */}
+                        {hasMultipleImages && (
+                          <div className="absolute bottom-5 sm:bottom-6 md:bottom-8 right-5 sm:right-6 md:right-8">
+                            <div className="bg-black/60 backdrop-blur-sm text-white text-sm sm:text-base font-medium px-4 py-2 rounded-full min-w-[60px] text-center">
+                              {currentImgIndex + 1} / {images.length}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Click to view details overlay */}
+                      <button
+                        onClick={() => handleItemClick(mainImageIndex)}
+                        className="absolute inset-0 z-10 cursor-pointer"
+                        aria-label="View item details"
+                      />
+                    </>
+                  )
+                })()}
+              </div>
+
+              {/* Vertical Thumbnails - fills full height */}
+              <div className="flex md:flex-col w-full md:w-[120px] lg:w-[140px] h-[100px] md:h-full bg-neutral-50 dark:bg-neutral-900/80">
+                {itemsArray.map((item, idx) => {
+                  const images = item.images || [item.image]
+                  const currentIndex = currentImageIndexes[idx] || 0
+                  const isActive = mainImageIndex === idx
+
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => setMainImageIndex(idx)}
+                      className={`relative flex-1 overflow-hidden transition-all duration-300 group/thumb ${
+                        isActive 
+                          ? "ring-2 ring-inset ring-black dark:ring-white" 
+                          : "opacity-60 hover:opacity-100"
+                      }`}
+                    >
+                      <Image
+                        src={images[currentIndex] || "/placeholder.svg"}
+                        alt={item.name}
+                        fill
+                        className="object-cover"
+                      />
+                      
+                      {/* Hover/Active overlay with info */}
+                      <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-0 group-hover/thumb:opacity-100"}`}>
+                        <div className="absolute bottom-2 md:bottom-3 left-2 md:left-3 right-2 md:right-3">
+                          <span className="text-white text-[9px] md:text-[10px] font-bold uppercase tracking-wider">
+                            {itemLabels[idx]}
+                          </span>
+                          <p className="text-white text-[10px] md:text-xs font-semibold mt-0.5">
+                            ${item.price?.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Active dot indicator */}
+                      {isActive && (
+                        <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-black dark:bg-white rounded-full shadow-lg" />
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Bottom hint bar */}
+            <div className="bg-neutral-100 dark:bg-neutral-800 py-3 px-4 flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                Click thumbnails to switch • Tap image for details
+              </p>
+              <button
+                onClick={() => handleItemClick(mainImageIndex)}
+                className="text-xs font-semibold text-foreground hover:text-primary flex items-center gap-1.5 transition-colors"
               >
-                <ThumbsUp className="w-5 h-5" />
-              </Button>
-              <Button
-                variant="secondary"
-                size="icon"
-                className={`rounded-full shadow-lg backdrop-blur-md transition-all ${
-                  userFeedback?.isLiked === false
-                    ? "bg-red-500 text-white hover:bg-red-600"
-                    : "bg-white/80 hover:bg-white text-black"
-                }`}
-                onClick={() => handleFeedbackClick("dislike")}
-              >
-                <ThumbsDown className="w-5 h-5" />
-              </Button>
+                View Details <ExternalLink className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
 
