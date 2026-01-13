@@ -1,4 +1,3 @@
-// quiz-flow.jsx >frontend
 "use client"
 
 import { useState, useRef } from "react"
@@ -63,7 +62,8 @@ const QUIZ_STEPS = [
   },
   {
     id: "style",
-    question: "What is your style?",
+    question: "What is your style? (Select one)",
+    multiple: false,
     options: [
       {
         value: "Nordic",
@@ -160,9 +160,6 @@ export function QuizFlow({ styledProfile }) {
   const [waitlistError, setWaitlistError] = useState("")
   const fileInputRef = useRef(null)
 
-  const [styleComparisonIndex, setStyleComparisonIndex] = useState(0)
-  const [styleWinner, setStyleWinner] = useState(null)
-
   const [quizData, setQuizData] = useState({
     gender: "",
     height: "",
@@ -255,47 +252,6 @@ export function QuizFlow({ styledProfile }) {
   const handleSelect = (value) => {
     const currentQuestion = activeSteps[currentStep]
 
-    if (currentQuestion.id === "style") {
-      const styleOptions = currentQuestion.options
-
-      console.log(" Style Knockout Debug:")
-      console.log(" styleComparisonIndex:", styleComparisonIndex)
-      console.log(" selected value:", value)
-      console.log(" current winner:", styleWinner)
-
-      // Find the selected option object
-      const selectedOption = styleOptions.find((opt) => opt.value === value)
-      console.log(" selectedOption:", selectedOption)
-
-      setStyleWinner(selectedOption)
-
-      const nextIndex = styleComparisonIndex + 1
-      console.log(" nextIndex:", nextIndex)
-      console.log(" styleOptions.length:", styleOptions.length)
-
-      if (nextIndex < styleOptions.length) {
-        // More challengers to face
-        console.log(" Moving to next challenger")
-        setStyleComparisonIndex(nextIndex)
-      } else {
-        // Tournament complete - save the winner
-        console.log(" Tournament complete, saving:", selectedOption.value)
-        setQuizData({ ...quizData, [currentQuestion.id]: selectedOption.value })
-
-        // Reset state
-        setStyleComparisonIndex(0)
-        setStyleWinner(null)
-
-        // Move to next step
-        setTimeout(() => {
-          if (currentStep < activeSteps.length - 1) {
-            setCurrentStep(currentStep + 1)
-          }
-        }, 300)
-      }
-      return
-    }
-
     if (currentQuestion.id === "start") {
       if (value === "upload") {
         setShowComingSoon(true)
@@ -366,11 +322,6 @@ export function QuizFlow({ styledProfile }) {
 
   const handleBack = () => {
     if (currentStep > 0) {
-      const currentQuestion = activeSteps[currentStep]
-      if (currentQuestion.id === "style") {
-        setStyleComparisonIndex(0)
-        setStyleWinner(null)
-      }
       setCurrentStep(currentStep - 1)
     }
   }
@@ -720,150 +671,72 @@ export function QuizFlow({ styledProfile }) {
             <div
               className={`mb-12 grid gap-4 ${
                 currentQuestion.id === "style"
-                  ? "grid-cols-1 md:grid-cols-2"
+                  ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
                   : currentQuestion.id === "colors"
-                    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 min-h-[calc(100vh-300px)] flex items-start content-start"
                     : "md:grid-cols-2"
               }`}
               data-tour="quiz-options"
             >
-              {currentQuestion.id === "style"
-                ? (() => {
-                    const styleOptions = currentQuestion.options
-                    let currentPair
-                    if (styleWinner && styleComparisonIndex < styleOptions.length) {
-                      // Winner vs next challenger
-                      currentPair = [styleWinner, styleOptions[styleComparisonIndex]]
-                    } else if (!styleWinner && styleComparisonIndex === 0) {
-                      // First matchup: option 0 vs option 1
-                      currentPair = styleOptions.slice(0, 2)
-                    } else {
-                      currentPair = []
-                    }
+              {currentQuestion.options.map((option, index) => {
+                const isSelected = currentQuestion.multiple
+                  ? (quizData[currentQuestion.id] || []).includes(option.value)
+                  : quizData[currentQuestion.id] === option.value
 
-                    console.log(" Rendering Style Step:")
-                    console.log(" styleOptions:", styleOptions)
-                    console.log(" styleWinner:", styleWinner)
-                    console.log(" styleComparisonIndex:", styleComparisonIndex)
-                    console.log(" currentPair:", currentPair)
-
-                    return currentPair.map((option, pairIndex) => {
-                      console.log(" Rendering option:", option)
-
-                      return (
-                        <Card
-                          key={option.value}
-                          className={`group cursor-pointer border p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl animate-fade-up`}
-                          style={{ animationDelay: `${pairIndex * 100}ms` }}
-                          onClick={() => handleSelect(option.value)}
+                return (
+                  <Card
+                    key={option.value}
+                    className={`group cursor-pointer border p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl animate-fade-up ${
+                      isSelected
+                        ? "border-accent bg-accent/5 shadow-lg shadow-accent/10"
+                        : "border-border/50 hover:border-accent/50"
+                    }`}
+                    style={{ animationDelay: `${index * 50}ms` }}
+                    onClick={() => handleSelect(option.value)}
+                  >
+                    {option.image && (
+                      <div className="relative w-full h-72 mb-4 overflow-hidden rounded-lg">
+                        <Image
+                          src={option.image || "/placeholder.svg"}
+                          alt={option.label}
+                          fill
+                          className="object-cover object-top"
+                        />
+                      </div>
+                    )}
+                    <div className="flex items-start gap-4">
+                      {option.icon && !option.image && (
+                        <span className="text-4xl transition-transform duration-300 group-hover:scale-110 flex items-center justify-center">
+                          {option.icon}
+                        </span>
+                      )}
+                      {option.color && (
+                        <div
+                          className="relative h-14 w-14 shrink-0 border border-border transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg overflow-hidden"
+                          style={{ backgroundColor: option.color }}
                         >
-                          {option.image && (
-                            <div className="relative w-full h-72 mb-4 overflow-hidden rounded-lg">
-                              <Image
-                                src={option.image || "/placeholder.svg"}
-                                alt={option.label}
-                                fill
-                                className="object-cover object-top"
-                              />
+                          {isSelected && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 animate-fade-in">
+                              <Check className="h-6 w-6 text-white" />
                             </div>
-                          )}
-                          <div className="flex items-start gap-4">
-                            {option.icon && !option.image && (
-                              <span className="text-4xl transition-transform duration-300 group-hover:scale-110 flex items-center justify-center">
-                                {option.icon}
-                              </span>
-                            )}
-                            {option.color && (
-                              <div
-                                className="relative h-14 w-14 shrink-0 border border-border transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg overflow-hidden"
-                                style={{ backgroundColor: option.color }}
-                              >
-                                {styleWinner === option && (
-                                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 animate-fade-in">
-                                    <Check className="h-6 w-6 text-white" />
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            <div className="flex-1">
-                              <h3 className="mb-1 text-lg font-medium text-card-foreground tracking-tight">
-                                {option.label}
-                              </h3>
-                              {option.description && (
-                                <p className="text-sm text-muted-foreground font-light leading-relaxed">
-                                  {option.description}
-                                </p>
-                              )}
-                            </div>
-                            {styleWinner === option && !option.color && !option.image && (
-                              <Check className="h-6 w-6 shrink-0 text-accent animate-scale-in" />
-                            )}
-                          </div>
-                        </Card>
-                      )
-                    })
-                  })()
-                : currentQuestion.options.map((option, index) => {
-                    const isSelected = currentQuestion.multiple
-                      ? (quizData[currentQuestion.id] || []).includes(option.value)
-                      : quizData[currentQuestion.id] === option.value
-
-                    return (
-                      <Card
-                        key={option.value}
-                        className={`group cursor-pointer border p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl animate-fade-up ${
-                          isSelected
-                            ? "border-accent bg-accent/5 shadow-lg shadow-accent/10"
-                            : "border-border/50 hover:border-accent/50"
-                        }`}
-                        style={{ animationDelay: `${index * 50}ms` }}
-                        onClick={() => handleSelect(option.value)}
-                      >
-                        {option.image && (
-                          <div className="relative w-full h-72 mb-4 overflow-hidden rounded-lg">
-                            <Image
-                              src={option.image || "/placeholder.svg"}
-                              alt={option.label}
-                              fill
-                              className="object-cover object-top"
-                            />
-                          </div>
-                        )}
-                        <div className="flex items-start gap-4">
-                          {option.icon && !option.image && (
-                            <span className="text-4xl transition-transform duration-300 group-hover:scale-110 flex items-center justify-center">
-                              {option.icon}
-                            </span>
-                          )}
-                          {option.color && (
-                            <div
-                              className="relative h-14 w-14 shrink-0 border border-border transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg overflow-hidden"
-                              style={{ backgroundColor: option.color }}
-                            >
-                              {isSelected && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 animate-fade-in">
-                                  <Check className="h-6 w-6 text-white" />
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          <div className="flex-1">
-                            <h3 className="mb-1 text-lg font-medium text-card-foreground tracking-tight">
-                              {option.label}
-                            </h3>
-                            {option.description && (
-                              <p className="text-sm text-muted-foreground font-light leading-relaxed">
-                                {option.description}
-                              </p>
-                            )}
-                          </div>
-                          {isSelected && !option.color && !option.image && (
-                            <Check className="h-6 w-6 shrink-0 text-accent animate-scale-in" />
                           )}
                         </div>
-                      </Card>
-                    )
-                  })}
+                      )}
+                      <div className="flex-1">
+                        <h3 className="mb-1 text-lg font-medium text-card-foreground tracking-tight">{option.label}</h3>
+                        {option.description && (
+                          <p className="text-sm text-muted-foreground font-light leading-relaxed">
+                            {option.description}
+                          </p>
+                        )}
+                      </div>
+                      {isSelected && !option.color && !option.image && (
+                        <Check className="h-6 w-6 shrink-0 text-accent animate-scale-in" />
+                      )}
+                    </div>
+                  </Card>
+                )
+              })}
             </div>
           )}
 

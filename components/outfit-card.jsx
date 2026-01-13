@@ -282,7 +282,7 @@ export function OutfitCard({ outfit, isUnlocked, hasLinksUnlocked, onUnlock, hid
 
   {/* Button Content */}
   <span className="relative z-10 flex items-center justify-center gap-2">
-    <Lock className="w-3.5 h-3.5" /> Buy Your Look (1 Credit)
+    <Lock className="w-3.5 h-3.5" /> View the Look (1 Credit)
   </span>
 </button>
 
