@@ -355,6 +355,7 @@ function InfiniteProductCarousel({ products }) {
   )
 }
 
+
 function HomeContent() {
   const { user, profile, loading } = useAuth()
   const router = useRouter()
@@ -425,16 +426,22 @@ function HomeContent() {
           outfits?.forEach((outfit) => {
             if (outfit.items && Array.isArray(outfit.items)) {
               outfit.items.forEach((item) => {
-                // Only include items with valid product URLs
-                if (item.product_url && item.image) {
+                if (item.product_url && (item.image || item.images)) {
+                  let productImage = item.image || item.image_url
+                  if (item.images && Array.isArray(item.images) && item.images.length > 0) {
+                    // Last image is typically the product-only image without model
+                    productImage = item.images[item.images.length - 2]
+                  }
+
                   allItems.push({
                     id: item.id || `${item.name}-${Math.random()}`,
                     name: item.name,
                     brand: item.brand || "Designer",
                     price: item.price || 0,
-                    image: item.image || item.image_url,
+                    image: productImage,
                     product_url: item.product_url,
                     category: item.category || "Fashion",
+                    outfitDate: outfit.created_at, // Track when outfit was created
                   })
                 }
               })
@@ -459,7 +466,7 @@ function HomeContent() {
 
         // Fallback: Fetch sample products from database (for non-logged-in or users without outfits)
         console.log("/luxury-fashion-hero.jpg Fetching sample products from database")
-        const { searchProductsFromDB } = await import("@/lib/supabase-products")
+        const { searchProductsFromDB } = await import("@/lib/home")
 
         const products = await searchProductsFromDB(
           ["blazer", "dress", "sneaker", "jacket", "heel", "shirt", "jean", "boot"],
