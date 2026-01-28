@@ -5,14 +5,31 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { supabaseAuth } from "@/lib/supabase-auth-client"
 import Link from "next/link"
-import { Sparkles, FileText, BarChart, Loader2, Users, Save, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
+import { 
+  Sparkles, 
+  FileText, 
+  BarChart, 
+  Loader2, 
+  Users, 
+  Save, 
+  RefreshCw, 
+  ChevronLeft, 
+  ChevronRight,
+  Search,
+  Filter,
+  ArrowUpDown,
+  Shield,
+  User,
+  Calendar,
+  X
+} from "lucide-react"
 
 export default function AdminDashboard() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const [isAdmin, setIsAdmin] = useState(false)
   const [checking, setChecking] = useState(true)
-  const [activeTab, setActiveTab] = useState("overview") // overview, users, blogs, categories
+  const [activeTab, setActiveTab] = useState("overview")
 
   useEffect(() => {
     async function checkAdmin() {
@@ -65,9 +82,9 @@ export default function AdminDashboard() {
 
   if (loading || checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-primary" />
           <p className="text-muted-foreground">Loading admin dashboard...</p>
         </div>
       </div>
@@ -78,66 +95,57 @@ export default function AdminDashboard() {
     return null
   }
 
+  const tabs = [
+    { id: "overview", label: "Overview", icon: BarChart },
+    { id: "users", label: "Users", icon: Users },
+    { id: "blogs", label: "Blogs", icon: FileText },
+    { id: "categories", label: "Categories", icon: Sparkles },
+  ]
+
   return (
-    <div className="min-h-screen bg-background mt-20">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 mt-20">
       <div className="mx-auto max-w-7xl px-4 py-12">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-serif text-4xl mb-2">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back, {user?.email}</p>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Shield className="h-6 w-6 text-primary" />
+            </div>
+            <h1 className="font-serif text-4xl">Admin Dashboard</h1>
+          </div>
+          <p className="text-muted-foreground ml-14">Welcome back, {user?.email}</p>
         </div>
 
         {/* Tabs */}
-        <div className="border-b mb-8">
-          <div className="flex gap-8">
-            <button
-              onClick={() => setActiveTab("overview")}
-              className={`pb-4 px-1 border-b-2 transition-colors ${
-                activeTab === "overview"
-                  ? "border-primary text-primary font-semibold"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Overview
-            </button>
-            <button
-              onClick={() => setActiveTab("users")}
-              className={`pb-4 px-1 border-b-2 transition-colors ${
-                activeTab === "users"
-                  ? "border-primary text-primary font-semibold"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Users
-            </button>
-            <button
-              onClick={() => setActiveTab("blogs")}
-              className={`pb-4 px-1 border-b-2 transition-colors ${
-                activeTab === "blogs"
-                  ? "border-primary text-primary font-semibold"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Blogs
-            </button>
-            <button
-              onClick={() => setActiveTab("categories")}
-              className={`pb-4 px-1 border-b-2 transition-colors ${
-                activeTab === "categories"
-                  ? "border-primary text-primary font-semibold"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Categories
-            </button>
+        <div className="bg-card border rounded-xl mb-8 p-2 shadow-sm">
+          <div className="flex gap-2">
+            {tabs.map((tab) => {
+              const Icon = tab.icon
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${
+                    activeTab === tab.id
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              )
+            })}
           </div>
         </div>
 
         {/* Tab Content */}
-        {activeTab === "overview" && <OverviewTab />}
-        {activeTab === "users" && <UsersTab />}
-        {activeTab === "blogs" && <BlogsTab />}
-        {activeTab === "categories" && <CategoriesTab />}
+        <div className="animate-in fade-in duration-300">
+          {activeTab === "overview" && <OverviewTab />}
+          {activeTab === "users" && <UsersTab />}
+          {activeTab === "blogs" && <BlogsTab />}
+          {activeTab === "categories" && <CategoriesTab />}
+        </div>
       </div>
     </div>
   )
@@ -147,69 +155,133 @@ export default function AdminDashboard() {
 // OVERVIEW TAB
 // ========================================
 function OverviewTab() {
+  const [stats, setStats] = useState({ totalUsers: 0, adminUsers: 0, regularUsers: 0 })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchStats() {
+      const { data: users } = await supabaseAuth
+        .from("profiles")
+        .select("is_admin")
+
+      if (users) {
+        setStats({
+          totalUsers: users.length,
+          adminUsers: users.filter(u => u.is_admin).length,
+          regularUsers: users.filter(u => !u.is_admin).length,
+        })
+      }
+      setLoading(false)
+    }
+    fetchStats()
+  }, [])
+
   return (
-    <div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <div className="rounded-lg border bg-card p-6">
-          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-            <Users className="h-6 w-6 text-primary" />
+    <div className="space-y-8">
+      {/* Stats Cards */}
+      <div className="grid gap-6 md:grid-cols-3">
+        <div className="bg-card border rounded-xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-lg bg-blue-500/10">
+              <Users className="h-6 w-6 text-blue-500" />
+            </div>
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            ) : (
+              <span className="text-3xl font-bold">{stats.totalUsers}</span>
+            )}
           </div>
-          <h3 className="mb-2 text-xl font-semibold">User Management</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Manage user accounts, credits, and permissions
-          </p>
+          <h3 className="font-semibold text-lg mb-1">Total Users</h3>
+          <p className="text-sm text-muted-foreground">All registered users</p>
         </div>
 
-        <Link
-          href="/admin/blogs"
-          className="group block rounded-lg border bg-card p-6 transition-all hover:shadow-lg hover:scale-[1.02]"
-        >
-          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-            <FileText className="h-6 w-6 text-primary" />
+        <div className="bg-card border rounded-xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-lg bg-purple-500/10">
+              <Shield className="h-6 w-6 text-purple-500" />
+            </div>
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            ) : (
+              <span className="text-3xl font-bold">{stats.adminUsers}</span>
+            )}
           </div>
-          <h3 className="mb-2 text-xl font-semibold">Blog Posts</h3>
-          <p className="text-sm text-muted-foreground">
-            Create, edit, and manage blog posts with full SEO control
-          </p>
-        </Link>
+          <h3 className="font-semibold text-lg mb-1">Admins</h3>
+          <p className="text-sm text-muted-foreground">Administrator accounts</p>
+        </div>
 
-        <Link
-          href="/admin/categories"
-          className="group block rounded-lg border bg-card p-6 transition-all hover:shadow-lg hover:scale-[1.02]"
-        >
-          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-            <Sparkles className="h-6 w-6 text-primary" />
+        <div className="bg-card border rounded-xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-lg bg-green-500/10">
+              <User className="h-6 w-6 text-green-500" />
+            </div>
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            ) : (
+              <span className="text-3xl font-bold">{stats.regularUsers}</span>
+            )}
           </div>
-          <h3 className="mb-2 text-xl font-semibold">Categories & Tags</h3>
-          <p className="text-sm text-muted-foreground">
-            Organize your content with categories and tags
-          </p>
-        </Link>
-
-        <div className="rounded-lg border bg-card p-6 opacity-60">
-          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
-            <BarChart className="h-6 w-6 text-muted-foreground" />
-          </div>
-          <h3 className="mb-2 text-xl font-semibold">Analytics</h3>
-          <p className="text-sm text-muted-foreground">
-            View blog performance and traffic stats (Coming Soon)
-          </p>
+          <h3 className="font-semibold text-lg mb-1">Regular Users</h3>
+          <p className="text-sm text-muted-foreground">Standard accounts</p>
         </div>
       </div>
 
-      <div className="mt-12">
-        <h2 className="mb-4 text-2xl font-serif">Quick Actions</h2>
+      {/* Quick Access Cards */}
+      <div>
+        <h2 className="text-2xl font-serif mb-4">Quick Access</h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Link
+            href="/admin/blogs"
+            className="group bg-card border rounded-xl p-6 shadow-sm transition-all hover:shadow-lg hover:scale-[1.02] hover:border-primary/50"
+          >
+            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
+              <FileText className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="mb-2 text-xl font-semibold">Blog Posts</h3>
+            <p className="text-sm text-muted-foreground">
+              Create, edit, and manage blog posts with full SEO control
+            </p>
+          </Link>
+
+          <Link
+            href="/admin/categories"
+            className="group bg-card border rounded-xl p-6 shadow-sm transition-all hover:shadow-lg hover:scale-[1.02] hover:border-primary/50"
+          >
+            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
+              <Sparkles className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="mb-2 text-xl font-semibold">Categories & Tags</h3>
+            <p className="text-sm text-muted-foreground">
+              Organize your content with categories and tags
+            </p>
+          </Link>
+
+          <div className="bg-card border rounded-xl p-6 shadow-sm opacity-60">
+            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
+              <BarChart className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <h3 className="mb-2 text-xl font-semibold">Analytics</h3>
+            <p className="text-sm text-muted-foreground">
+              View blog performance and traffic stats (Coming Soon)
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div>
+        <h2 className="text-2xl font-serif mb-4">Quick Actions</h2>
         <div className="flex gap-4 flex-wrap">
           <Link
             href="/admin/blogs/new"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg"
           >
             <FileText className="h-4 w-4" />
             Create New Blog Post
           </Link>
           <Link
             href="/blog"
-            className="inline-flex items-center gap-2 rounded-lg border px-6 py-3 transition-colors hover:bg-accent"
+            className="inline-flex items-center gap-2 rounded-lg border bg-card px-6 py-3 shadow-sm transition-all hover:bg-accent hover:shadow-md"
           >
             View Live Blog
           </Link>
@@ -220,7 +292,7 @@ function OverviewTab() {
 }
 
 // ========================================
-// USERS TAB WITH PAGINATION
+// USERS TAB WITH FILTERS & SORTING
 // ========================================
 function UsersTab() {
   const [users, setUsers] = useState([])
@@ -230,8 +302,13 @@ function UsersTab() {
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(10)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  
+  // Filters & Search
   const [searchQuery, setSearchQuery] = useState("")
+  const [roleFilter, setRoleFilter] = useState("all") // all, admin, user
+  const [sortBy, setSortBy] = useState("date-desc") // date-desc, date-asc, email-asc, email-desc
+  const [showFilters, setShowFilters] = useState(false)
 
   // Fetch users
   async function fetchUsers() {
@@ -281,11 +358,35 @@ function UsersTab() {
     setSavingId(null)
   }
 
-  // Filter users by search
-  const filteredUsers = users.filter(u => 
-    u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.id.includes(searchQuery)
-  )
+  // Apply filters
+  let filteredUsers = users.filter(u => {
+    // Search filter
+    const matchesSearch = u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         u.id.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    // Role filter
+    const matchesRole = roleFilter === "all" || 
+                       (roleFilter === "admin" && u.is_admin) ||
+                       (roleFilter === "user" && !u.is_admin)
+    
+    return matchesSearch && matchesRole
+  })
+
+  // Apply sorting
+  filteredUsers.sort((a, b) => {
+    switch (sortBy) {
+      case "date-desc":
+        return new Date(b.created_at) - new Date(a.created_at)
+      case "date-asc":
+        return new Date(a.created_at) - new Date(b.created_at)
+      case "email-asc":
+        return (a.email || "").localeCompare(b.email || "")
+      case "email-desc":
+        return (b.email || "").localeCompare(a.email || "")
+      default:
+        return 0
+    }
+  })
 
   // Pagination logic
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
@@ -293,118 +394,264 @@ function UsersTab() {
   const endIndex = startIndex + itemsPerPage
   const currentUsers = filteredUsers.slice(startIndex, endIndex)
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, roleFilter, sortBy])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     )
   }
 
   return (
-    <div>
-      {/* Header with search and refresh */}
-      <div className="flex items-center justify-between mb-6 gap-4">
-        <div className="flex-1">
-          <input
-            type="text"
-            placeholder="Search by email or ID..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value)
-              setCurrentPage(1) // Reset to first page on search
-            }}
-            className="w-full max-w-md px-4 py-2 rounded-lg border bg-background"
-          />
+    <div className="space-y-6">
+      {/* Header with Stats */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <div className="bg-card border rounded-lg p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-blue-500/10">
+              <Users className="h-5 w-5 text-blue-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{users.length}</p>
+              <p className="text-xs text-muted-foreground">Total Users</p>
+            </div>
+          </div>
         </div>
         
-        <div className="flex items-center gap-4">
-          <p className="text-sm text-muted-foreground">
-            Total: {filteredUsers.length} users
-          </p>
+        <div className="bg-card border rounded-lg p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-purple-500/10">
+              <Shield className="h-5 w-5 text-purple-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{users.filter(u => u.is_admin).length}</p>
+              <p className="text-xs text-muted-foreground">Admins</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-card border rounded-lg p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-green-500/10">
+              <User className="h-5 w-5 text-green-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{users.filter(u => !u.is_admin).length}</p>
+              <p className="text-xs text-muted-foreground">Regular Users</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-card border rounded-lg p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-orange-500/10">
+              <Filter className="h-5 w-5 text-orange-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{filteredUsers.length}</p>
+              <p className="text-xs text-muted-foreground">Filtered Results</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Search and Filters Bar */}
+      <div className="bg-card border rounded-xl p-4 shadow-sm space-y-4">
+        <div className="flex items-center gap-4 flex-wrap">
+          {/* Search */}
+          <div className="flex-1 min-w-[300px]">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search by email or ID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 rounded-lg border bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Filter Toggle */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
+              showFilters ? 'bg-primary text-primary-foreground' : 'bg-background hover:bg-accent'
+            }`}
+          >
+            <Filter className="h-4 w-4" />
+            Filters
+          </button>
+
+          {/* Refresh */}
           <button
             onClick={fetchUsers}
             disabled={refreshing}
-            className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 transition-colors hover:bg-accent disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border bg-background hover:bg-accent transition-all disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
           </button>
         </div>
+
+        {/* Advanced Filters (Collapsible) */}
+        {showFilters && (
+          <div className="pt-4 border-t grid gap-4 md:grid-cols-3 animate-in slide-in-from-top duration-300">
+            {/* Role Filter */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Role</label>
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              >
+                <option value="all">All Users</option>
+                <option value="admin">Admins Only</option>
+                <option value="user">Regular Users Only</option>
+              </select>
+            </div>
+
+            {/* Sort By */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Sort By</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              >
+                <option value="date-desc">Newest First</option>
+                <option value="date-asc">Oldest First</option>
+                <option value="email-asc">Email (A-Z)</option>
+                <option value="email-desc">Email (Z-A)</option>
+              </select>
+            </div>
+
+            {/* Items Per Page */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Show</label>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                className="w-full px-3 py-2 rounded-lg border bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              >
+                <option value={5}>5 per page</option>
+                <option value={10}>10 per page</option>
+                <option value={25}>25 per page</option>
+                <option value={50}>50 per page</option>
+                <option value={100}>100 per page</option>
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Users table */}
+      {/* Users Table */}
       {currentUsers.length === 0 ? (
-        <div className="border rounded-lg p-12 text-center">
+        <div className="bg-card border rounded-xl p-12 text-center shadow-sm">
+          <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-semibold mb-2">No users found</h3>
           <p className="text-muted-foreground">
-            {searchQuery ? "No users found matching your search" : "No users found"}
+            {searchQuery || roleFilter !== "all" 
+              ? "Try adjusting your filters or search query" 
+              : "No users in the database yet"}
           </p>
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto border rounded-lg">
-            <table className="w-full text-sm">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="p-3 text-left">Email</th>
-                  <th className="p-3 text-left">ID</th>
-                  <th className="p-3 text-left">Credits</th>
-                  <th className="p-3 text-left">Role</th>
-                  <th className="p-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentUsers.map((u) => (
-                  <UserRow
-                    key={u.id}
-                    user={u}
-                    onUpdate={updateCredits}
-                    isSaving={savingId === u.id}
-                  />
-                ))}
-              </tbody>
-            </table>
+          <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-muted/50 border-b">
+                  <tr>
+                    <th className="p-4 text-left text-sm font-semibold">User</th>
+                    <th className="p-4 text-left text-sm font-semibold">ID</th>
+                    <th className="p-4 text-left text-sm font-semibold">Credits</th>
+                    <th className="p-4 text-left text-sm font-semibold">Role</th>
+                    <th className="p-4 text-left text-sm font-semibold">Joined</th>
+                    <th className="p-4 text-right text-sm font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {currentUsers.map((u) => (
+                    <UserRow
+                      key={u.id}
+                      user={u}
+                      onUpdate={updateCredits}
+                      isSaving={savingId === u.id}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6">
+            <div className="flex items-center justify-between bg-card border rounded-xl p-4 shadow-sm">
               <p className="text-sm text-muted-foreground">
-                Showing {startIndex + 1} to {Math.min(endIndex, filteredUsers.length)} of {filteredUsers.length} users
+                Showing <span className="font-semibold text-foreground">{startIndex + 1}</span> to{" "}
+                <span className="font-semibold text-foreground">{Math.min(endIndex, filteredUsers.length)}</span> of{" "}
+                <span className="font-semibold text-foreground">{filteredUsers.length}</span> users
               </p>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="inline-flex items-center gap-1 rounded-lg border px-3 py-2 transition-colors hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 transition-all hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft className="h-4 w-4" />
-                  Previous
+                  <span className="hidden sm:inline">Previous</span>
                 </button>
 
                 <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-2 rounded-lg transition-colors ${
-                        currentPage === page
-                          ? 'bg-primary text-primary-foreground'
-                          : 'hover:bg-accent'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    let pageNum
+                    if (totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-3 py-2 rounded-lg transition-all min-w-[40px] ${
+                          currentPage === pageNum
+                            ? 'bg-primary text-primary-foreground shadow-md'
+                            : 'hover:bg-accent'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  })}
                 </div>
 
                 <button
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="inline-flex items-center gap-1 rounded-lg border px-3 py-2 transition-colors hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 transition-all hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Next
+                  <span className="hidden sm:inline">Next</span>
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
@@ -419,38 +666,90 @@ function UsersTab() {
 // User Row Component
 function UserRow({ user, onUpdate, isSaving }) {
   const [credits, setCredits] = useState(user.credits)
+  const [isEditing, setIsEditing] = useState(false)
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    })
+  }
 
   return (
-    <tr className="border-t hover:bg-muted/50">
-      <td className="p-3">
-        <div className="font-medium">{user.email || "No email"}</div>
+    <tr className="hover:bg-muted/30 transition-colors">
+      <td className="p-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+            <span className="text-sm font-semibold text-primary">
+              {user.email?.charAt(0).toUpperCase() || "?"}
+            </span>
+          </div>
+          <div>
+            <div className="font-medium">{user.email || "No email"}</div>
+            <div className="text-xs text-muted-foreground">User account</div>
+          </div>
+        </div>
       </td>
-      <td className="p-3">
-        <div className="text-xs text-muted-foreground font-mono">{user.id.slice(0, 8)}...</div>
+      <td className="p-4">
+        <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
+          {user.id.slice(0, 8)}...
+        </code>
       </td>
-      <td className="p-3">
-        <input
-          type="number"
-          value={credits}
-          onChange={(e) => setCredits(e.target.value)}
-          className="w-24 rounded border px-2 py-1 bg-background"
-          disabled={isSaving}
-        />
+      <td className="p-4">
+        {isEditing ? (
+          <input
+            type="number"
+            value={credits}
+            onChange={(e) => setCredits(e.target.value)}
+            onBlur={() => setIsEditing(false)}
+            autoFocus
+            className="w-24 px-3 py-1.5 rounded-lg border bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            disabled={isSaving}
+          />
+        ) : (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="px-3 py-1.5 rounded-lg hover:bg-muted transition-colors font-medium"
+          >
+            {credits}
+          </button>
+        )}
       </td>
-      <td className="p-3">
-        <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${
+      <td className="p-4">
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
           user.is_admin 
-            ? 'bg-primary/10 text-primary' 
-            : 'bg-muted text-muted-foreground'
+            ? 'bg-purple-500/10 text-purple-700 dark:text-purple-300' 
+            : 'bg-blue-500/10 text-blue-700 dark:text-blue-300'
         }`}>
-          {user.is_admin ? "Admin" : "User"}
+          {user.is_admin ? (
+            <>
+              <Shield className="h-3 w-3" />
+              Admin
+            </>
+          ) : (
+            <>
+              <User className="h-3 w-3" />
+              User
+            </>
+          )}
         </span>
       </td>
-      <td className="p-3 text-right">
+      <td className="p-4">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Calendar className="h-4 w-4" />
+          {formatDate(user.created_at)}
+        </div>
+      </td>
+      <td className="p-4 text-right">
         <button
-          onClick={() => onUpdate(user.id, credits)}
-          disabled={isSaving}
-          className="inline-flex items-center gap-2 rounded bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+          onClick={() => {
+            onUpdate(user.id, credits)
+            setIsEditing(false)
+          }}
+          disabled={isSaving || credits === user.credits}
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSaving ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -469,16 +768,22 @@ function UserRow({ user, onUpdate, isSaving }) {
 // ========================================
 function BlogsTab() {
   return (
-    <div className="border rounded-lg p-12 text-center">
-      <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-      <h3 className="text-xl font-semibold mb-2">Blog Management</h3>
-      <p className="text-muted-foreground mb-6">Manage your blog posts here</p>
-      <Link
-        href="/admin/blogs"
-        className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-primary-foreground hover:bg-primary/90"
-      >
-        Go to Blog Management
-      </Link>
+    <div className="bg-card border rounded-xl p-12 text-center shadow-sm">
+      <div className="max-w-md mx-auto">
+        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+          <FileText className="h-8 w-8 text-primary" />
+        </div>
+        <h3 className="text-2xl font-serif mb-3">Blog Management</h3>
+        <p className="text-muted-foreground mb-8">
+          Create, edit, and manage your blog posts with full SEO control
+        </p>
+        <Link
+          href="/admin/blogs"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg"
+        >
+          Go to Blog Management
+        </Link>
+      </div>
     </div>
   )
 }
@@ -488,16 +793,22 @@ function BlogsTab() {
 // ========================================
 function CategoriesTab() {
   return (
-    <div className="border rounded-lg p-12 text-center">
-      <Sparkles className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-      <h3 className="text-xl font-semibold mb-2">Categories & Tags</h3>
-      <p className="text-muted-foreground mb-6">Organize your content</p>
-      <Link
-        href="/admin/categories"
-        className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-primary-foreground hover:bg-primary/90"
-      >
-        Go to Categories
-      </Link>
+    <div className="bg-card border rounded-xl p-12 text-center shadow-sm">
+      <div className="max-w-md mx-auto">
+        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+          <Sparkles className="h-8 w-8 text-primary" />
+        </div>
+        <h3 className="text-2xl font-serif mb-3">Categories & Tags</h3>
+        <p className="text-muted-foreground mb-8">
+          Organize your content with categories and tags
+        </p>
+        <Link
+          href="/admin/categories"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg"
+        >
+          Go to Categories
+        </Link>
+      </div>
     </div>
   )
 }
