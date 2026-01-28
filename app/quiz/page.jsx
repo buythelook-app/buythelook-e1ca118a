@@ -2,7 +2,7 @@
 
 import { QuizFlow } from "@/components/quiz-flow"
 import { useAuth } from "@/components/auth-provider"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Loader2 } from "lucide-react"
 import { supabaseAuth } from "@/lib/supabase-auth-client"
@@ -14,6 +14,7 @@ import OnboardingTour from "@/components/onboarding-tour"
 export default function QuizPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [styledProfile, setStyledProfile] = useState(null)
   const [loadingProfile, setLoadingProfile] = useState(true)
   const [useProfile, setUseProfile] = useState(null)
@@ -23,6 +24,9 @@ export default function QuizPage() {
     occasion: "",
     additionalNotes: "",
   })
+
+  // Check if should skip profile prompt
+  const skipProfilePrompt = searchParams.get("noshowform") === "true"
 
   useEffect(() => {
     if (!loading && !user) {
@@ -37,13 +41,18 @@ export default function QuizPage() {
 
         setStyledProfile(data)
         setLoadingProfile(false)
+        
+        // If skipProfilePrompt parameter exists, automatically skip to quiz form
+        if (skipProfilePrompt) {
+          setUseProfile(false) // Go directly to quiz form without using profile
+        }
       }
     }
 
     if (user) {
       fetchProfile()
     }
-  }, [user])
+  }, [user, skipProfilePrompt])
 
   const handleUseProfileClick = () => {
     // setShowQuickForm(true)
@@ -80,7 +89,7 @@ export default function QuizPage() {
         storage.saveQuizId(data.id)
         storage.saveStyledProfile(styledProfile)
       } catch (error) {
-        console.error(" Error saving quick quiz:", error)
+        console.error("❌ Error saving quick quiz:", error)
       }
     }
 
@@ -99,7 +108,8 @@ export default function QuizPage() {
     return null
   }
 
-  if (styledProfile && useProfile === null && !showQuickForm) {
+  // Skip profile prompt if noshowform parameter is present
+  if (styledProfile && useProfile === null && !showQuickForm && !skipProfilePrompt) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
         <div className="max-w-lg w-full space-y-6 text-center">
