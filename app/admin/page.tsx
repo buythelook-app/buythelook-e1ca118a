@@ -811,8 +811,6 @@ function CategoriesTab() {
       </div>
     </div>
   )
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 6d8a377c95d862fe2b8c54f8b15384f8c64ba20a
+
+
