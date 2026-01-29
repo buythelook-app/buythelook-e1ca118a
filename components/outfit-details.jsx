@@ -80,9 +80,6 @@ function ProductDetailModal({ item, isOpen, onClose }) {
         <div className="p-6 space-y-4">
           <h3 className="text-2xl font-serif text-foreground">{item.name}</h3>
           <div className="space-y-2 text-muted-foreground">
-            {/* <p>
-              <span className="font-medium text-foreground">Brand:</span> {item.brand}
-            </p> */}
             <p>
               <span className="font-medium text-foreground">Price:</span> ${item.price.toFixed(2)}
             </p>
@@ -131,16 +128,15 @@ export function OutfitDetails({ id }) {
   const [showLockAnimation, setShowLockAnimation] = useState(false)
 
   const [feedbackOpen, setFeedbackOpen] = useState(false)
-  const [feedbackType, setFeedbackType] = useState(null) // 'like' or 'dislike'
+  const [feedbackType, setFeedbackType] = useState(null)
   const [feedbackReason, setFeedbackReason] = useState("")
   const [feedbackText, setFeedbackText] = useState("")
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
-  const [userFeedback, setUserFeedback] = useState(null) // existing feedback
+  const [userFeedback, setUserFeedback] = useState(null)
 
-  const [activeStoreSearch, setActiveStoreSearch] = useState(null) // { itemName, brand, stores }
-  const [isAutoPlaying, setIsAutoPlaying] = useState(false) // Auto-play toggle
+  const [activeStoreSearch, setActiveStoreSearch] = useState(null)
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false)
 
-  // NEW: State for shopping links popup
   const [showLinksPopup, setShowLinksPopup] = useState(false)
 
   const ensureAbsoluteUrl = (url) => {
@@ -185,7 +181,6 @@ export function OutfitDetails({ id }) {
       const absoluteUrl = ensureAbsoluteUrl(item.product_url || item.url)
       console.log(`🌐 Opening link ${index + 1}:`, absoluteUrl)
 
-      // Open immediately - no async calls
       const opened = window.open(absoluteUrl, "_blank", "noopener,noreferrer")
       if (opened) {
         openedCount++
@@ -200,7 +195,6 @@ export function OutfitDetails({ id }) {
         title: "Opening Shopping Links",
         description: `Opened ${openedCount} product page${openedCount > 1 ? "s" : ""} in new tabs`,
       })
-      // Close the popup after opening links
       setShowLinksPopup(false)
     } else {
       toast({
@@ -313,7 +307,6 @@ export function OutfitDetails({ id }) {
         description: `1 credit used. ${data.newBalance} credits remaining.`,
       })
 
-      // Show the popup instead of immediately opening links
       setTimeout(() => {
         setShowLinksPopup(true)
       }, 500)
@@ -397,7 +390,7 @@ export function OutfitDetails({ id }) {
           if (!isUnlocked) {
             setTimeout(() => {
               setShowLockAnimation(true)
-            }, 500) // Delay animation slightly after page load
+            }, 500)
           }
 
           if (outfitResult.data.is_liked !== null) {
@@ -432,7 +425,6 @@ export function OutfitDetails({ id }) {
     loadOutfit()
   }, [id, user])
 
-  // Auto-play effect - cycles through items and their images
   useEffect(() => {
     if (!isAutoPlaying || !outfit) return
 
@@ -444,22 +436,18 @@ export function OutfitDetails({ id }) {
         const images = currentItem?.images || [currentItem?.image]
         const currentImgIdx = prev[mainImageIndex] || 0
         
-        // If we're at the last image of current item, move to next item
         if (currentImgIdx >= images.length - 1) {
-          // Move to next item (or loop back to first)
           const nextItemIdx = (mainImageIndex + 1) % itemsArray.length
           setMainImageIndex(nextItemIdx)
-          // Start from the last 2 images (or first if less than 2)
           const nextItem = itemsArray[nextItemIdx]
           const nextImages = nextItem?.images || [nextItem?.image]
           const startIdx = Math.max(0, nextImages.length - 2)
           return { ...prev, [nextItemIdx]: startIdx }
         }
         
-        // Otherwise, move to next image in current item
         return { ...prev, [mainImageIndex]: currentImgIdx + 1 }
       })
-    }, 2500) // 2.5 seconds per image
+    }, 2500)
 
     return () => clearInterval(interval)
   }, [isAutoPlaying, outfit, mainImageIndex])
@@ -467,7 +455,6 @@ export function OutfitDetails({ id }) {
   const handleFeedbackClick = (type) => {
     setFeedbackType(type)
     setFeedbackOpen(true)
-    // Reset form
     setFeedbackReason("")
     setFeedbackText("")
   }
@@ -530,7 +517,7 @@ export function OutfitDetails({ id }) {
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="text-center space-y-4">
           <h2 className="text-2xl font-serif text-foreground">Outfit Not Found</h2>
-          <p className="text-muted-foreground">We couldn't find the outfit you're looking for.</p>
+          <p className="text-muted-foreground">{"We couldn't find the outfit you're looking for."}</p>
         </div>
       </div>
     )
@@ -539,7 +526,6 @@ export function OutfitDetails({ id }) {
   const itemsArray = outfit.items.top ? [outfit.items.top, outfit.items.bottom, outfit.items.shoes] : outfit.items
   const itemLabels = ["Top", "Bottom", "Shoes"]
 
-  // Get valid shopping links for the popup
   const getValidShoppingLinks = () => {
     return itemsArray
       .map((item, index) => ({
@@ -554,7 +540,6 @@ export function OutfitDetails({ id }) {
     <>
       <ProductDetailModal item={selectedItem} isOpen={!!selectedItem} onClose={() => setSelectedItem(null)} />
 
-      {/* Feedback Dialog */}
       <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -625,7 +610,6 @@ export function OutfitDetails({ id }) {
         </DialogContent>
       </Dialog>
 
-      {/* NEW: Shopping Links Popup Dialog */}
       <Dialog open={showLinksPopup} onOpenChange={setShowLinksPopup}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -638,36 +622,36 @@ export function OutfitDetails({ id }) {
             <p className="text-sm text-muted-foreground">
               Your shopping links are ready. Click on any item below to visit the product page:
             </p>
-         <div className="space-y-2 max-h-[400px] overflow-y-auto">
-  {getValidShoppingLinks().map((item, index) => (
-    <a
-      key={index} // key must be on the outermost element in map
-      href={item.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors group"
-    >
-      <div className="relative w-16 h-16 bg-muted rounded overflow-hidden flex-shrink-0">
-        <Image
-          src={item.images?.[0] || item.image || "/placeholder.svg"}
-          alt={item.name}
-          fill
-          className="object-cover"
-        />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate">
-          {item.name}
-        </p>
-        <p className="text-xs text-muted-foreground">{item.label}</p>
-        <p className="text-sm font-semibold text-foreground mt-1">
-          ${item.price?.toFixed(2)}
-        </p>
-      </div>
-      <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
-    </a>
-  ))}
-</div>
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              {getValidShoppingLinks().map((item, index) => (
+                <a
+                  key={index}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors group"
+                >
+                  <div className="relative w-16 h-16 bg-muted rounded overflow-hidden flex-shrink-0">
+                    <Image
+                      src={item.images?.[0] || item.image || "/placeholder.svg"}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate">
+                      {item.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{item.label}</p>
+                    <p className="text-sm font-semibold text-foreground mt-1">
+                      ${item.price?.toFixed(2)}
+                    </p>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                </a>
+              ))}
+            </div>
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
@@ -690,11 +674,9 @@ export function OutfitDetails({ id }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 max-w-7xl mx-auto px-4 lg:px-0 mt-20">
         <div className="space-y-6">
-          {/* Premium Hero Gallery with Side Thumbnails */}
           <div className="relative bg-card overflow-hidden rounded-xl shadow-2xl">
             <div className="flex flex-col md:flex-row h-[500px] sm:h-[600px] md:h-[650px] lg:h-[750px]">
               
-              {/* Main Hero Image */}
               <div className="relative flex-1 h-full bg-neutral-100 dark:bg-neutral-900 group overflow-hidden">
                 {(() => {
                   const activeItem = itemsArray[mainImageIndex] || itemsArray[0]
@@ -704,7 +686,6 @@ export function OutfitDetails({ id }) {
 
                   return (
                     <>
-                      {/* Main Image */}
                       <Image
                         src={images[currentImgIndex] || "/placeholder.svg"}
                         alt={activeItem?.name}
@@ -713,10 +694,8 @@ export function OutfitDetails({ id }) {
                         priority
                       />
 
-                      {/* Gradient overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
 
-                      {/* Feedback buttons + Auto-play toggle - top left */}
                       <div className="absolute top-4 left-4 flex gap-2 z-20">
                         <Button
                           variant="secondary"
@@ -744,7 +723,6 @@ export function OutfitDetails({ id }) {
                         </Button>
                       </div>
 
-                      {/* Auto-play toggle - top right */}
                       <div className="absolute top-4 right-4 z-20">
                         <Button
                           variant="secondary"
@@ -761,7 +739,6 @@ export function OutfitDetails({ id }) {
                         </Button>
                       </div>
 
-                      {/* Navigation Arrows - centered vertically, inside main image only */}
                       {hasMultipleImages && (
                         <>
                           <button
@@ -781,7 +758,6 @@ export function OutfitDetails({ id }) {
                         </>
                       )}
 
-                      {/* Product Info Overlay - bottom left */}
                       <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6 md:p-8 z-10">
                         <span className="inline-block bg-white/25 backdrop-blur-sm text-white text-[10px] sm:text-xs uppercase tracking-[0.2em] font-medium px-3 py-1.5 rounded-full mb-3">
                           {itemLabels[mainImageIndex]}
@@ -793,7 +769,6 @@ export function OutfitDetails({ id }) {
                           ${activeItem?.price?.toFixed(2)}
                         </p>
                         
-                        {/* Image Counter - inline with price */}
                         {hasMultipleImages && (
                           <div className="absolute bottom-5 sm:bottom-6 md:bottom-8 right-5 sm:right-6 md:right-8">
                             <div className="bg-black/60 backdrop-blur-sm text-white text-sm sm:text-base font-medium px-4 py-2 rounded-full min-w-[60px] text-center">
@@ -803,7 +778,6 @@ export function OutfitDetails({ id }) {
                         )}
                       </div>
 
-                      {/* Click to view details overlay */}
                       <button
                         onClick={() => handleItemClick(mainImageIndex)}
                         className="absolute inset-0 z-10 cursor-pointer"
@@ -814,7 +788,6 @@ export function OutfitDetails({ id }) {
                 })()}
               </div>
 
-              {/* Vertical Thumbnails - fills full height */}
               <div className="flex md:flex-col w-full md:w-[120px] lg:w-[140px] h-[100px] md:h-full bg-neutral-50 dark:bg-neutral-900/80">
                 {itemsArray.map((item, idx) => {
                   const images = item.images || [item.image]
@@ -838,7 +811,6 @@ export function OutfitDetails({ id }) {
                         className="object-cover"
                       />
                       
-                      {/* Hover/Active overlay with info */}
                       <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-0 group-hover/thumb:opacity-100"}`}>
                         <div className="absolute bottom-2 md:bottom-3 left-2 md:left-3 right-2 md:right-3">
                           <span className="text-white text-[9px] md:text-[10px] font-bold uppercase tracking-wider">
@@ -850,7 +822,6 @@ export function OutfitDetails({ id }) {
                         </div>
                       </div>
 
-                      {/* Active dot indicator */}
                       {isActive && (
                         <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-black dark:bg-white rounded-full shadow-lg" />
                       )}
@@ -860,10 +831,9 @@ export function OutfitDetails({ id }) {
               </div>
             </div>
 
-            {/* Bottom hint bar */}
             <div className="bg-neutral-100 dark:bg-neutral-800 py-3 px-4 flex items-center justify-between">
               <p className="text-xs text-muted-foreground">
-                Click thumbnails to switch • Tap image for details
+                {"Click thumbnails to switch • Tap image for details"}
               </p>
               <button
                 onClick={() => handleItemClick(mainImageIndex)}
@@ -899,7 +869,6 @@ export function OutfitDetails({ id }) {
                 {activeStoreSearch.stores.map((store, idx) => (
                   <div key={idx} className="p-4 hover:bg-muted/30 transition-colors">
                     <div className="flex gap-4">
-                      {/* Store image */}
                       <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                         {store.photo ? (
                           <img
@@ -919,7 +888,6 @@ export function OutfitDetails({ id }) {
                         </div>
                       </div>
 
-                      {/* Store info */}
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-foreground truncate">{store.name}</h4>
                         <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{store.address}</p>
@@ -939,7 +907,6 @@ export function OutfitDetails({ id }) {
                       </div>
                     </div>
 
-                    {/* Action buttons */}
                     <div className="flex gap-2 mt-3">
                       <Button size="sm" className="flex-1 bg-neutral-900 text-white hover:bg-neutral-800" asChild>
                         <a
@@ -1106,17 +1073,6 @@ export function OutfitDetails({ id }) {
                                 Shop Now <ExternalLink className="w-3 h-3 ml-1 sm:ml-2" />
                               </a>
                             </Button>
-                            {/* <FindNearMeButton
-                              itemName={item.name}
-                              brand={item.brand}
-                              onStoresFound={(stores) =>
-                                setActiveStoreSearch({
-                                  itemName: item.name,
-                                  brand: item.brand,
-                                  stores,
-                                })
-                              }
-                            /> */}
                           </>
                         ) : (
                           <div className="text-xs text-muted-foreground flex items-center gap-1">
@@ -1193,7 +1149,7 @@ export function OutfitDetails({ id }) {
                   <CheckCircle2 className="w-10 h-10 mx-auto text-green-600 dark:text-green-400" />
                   <p className="text-lg font-semibold text-green-900 dark:text-green-100">Shopping Links Unlocked!</p>
                   <p className="text-sm text-green-700 dark:text-green-300">
-                    Click "Shop Now" on any item above or view all links at once
+                    {"Click \"Shop Now\" on any item above or view all links at once"}
                   </p>
                 </div>
                 <Button
