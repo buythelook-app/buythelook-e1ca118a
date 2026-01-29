@@ -151,12 +151,151 @@ export function getOutfitColors(): Record<string, string> {
 }
 
 /**
- * Convert a hex color to a human-readable color name
+ * HEX to Color Name Mapping - comprehensive mapping for database search
+ * Maps HEX codes to color names that exist in the zara_cloth database
+ */
+const HEX_TO_COLOR_NAME: Record<string, string[]> = {
+  // Blacks
+  '#000000': ['negro', 'black', 'noir'],
+  '#1A1A1A': ['negro', 'black', 'antracita'],
+  '#2D2D2D': ['negro', 'antracita', 'gris oscuro'],
+  '#1C2541': ['navy', 'marino', 'azul marino'],
+  
+  // Whites & Creams
+  '#FFFFFF': ['blanco', 'white', 'crudo'],
+  '#FAFAFA': ['blanco', 'crudo', 'off-white'],
+  '#F5F5DC': ['beige', 'crudo', 'arena'],
+  '#FFFFF0': ['marfil', 'ivory', 'crudo'],
+  '#FAF0E6': ['lino', 'crudo', 'natural'],
+  '#FDF5E6': ['crema', 'crudo', 'beige'],
+  
+  // Grays
+  '#4A4A4A': ['gris', 'antracita', 'marengo'],
+  '#6B6B6B': ['gris', 'grey', 'gris medio'],
+  '#808080': ['gris', 'grey', 'gris medio'],
+  '#A8A8A8': ['gris claro', 'silver', 'gris'],
+  '#C0C0C0': ['plata', 'silver', 'gris claro'],
+  '#708090': ['gris', 'pizarra', 'slate'],
+  
+  // Blues
+  '#2C3E50': ['marino', 'navy', 'azul oscuro'],
+  '#34495E': ['azul grisaceo', 'navy', 'marino'],
+  '#000080': ['marino', 'navy', 'azul marino'],
+  '#4169E1': ['azul', 'blue', 'royal'],
+  '#6495ED': ['azul', 'celeste', 'cornflower'],
+  '#87CEEB': ['celeste', 'azul claro', 'sky blue'],
+  '#00BFFF': ['turquesa', 'azul', 'celeste'],
+  '#1E90FF': ['azul', 'blue', 'royal'],
+  
+  // Greens
+  '#2E4A3E': ['verde', 'verde oscuro', 'forest'],
+  '#556B2F': ['oliva', 'verde oliva', 'khaki'],
+  '#6B8E23': ['oliva', 'verde', 'khaki'],
+  '#8FBC8F': ['verde', 'sage', 'verde claro'],
+  '#008000': ['verde', 'green', 'verde oscuro'],
+  '#808000': ['oliva', 'khaki', 'verde'],
+  '#20B2AA': ['turquesa', 'verde agua', 'teal'],
+  '#3CB371': ['verde', 'green', 'esmeralda'],
+  '#32CD32': ['verde', 'lime', 'verde lima'],
+  
+  // Browns & Beiges
+  '#5D4E37': ['camel', 'marron', 'brown'],
+  '#8B4513': ['marron', 'brown', 'tabaco'],
+  '#A0522D': ['marron', 'siena', 'tabaco'],
+  '#D2B48C': ['beige', 'tan', 'camel'],
+  '#DEB887': ['beige', 'camel', 'arena'],
+  '#CD853F': ['marron', 'camel', 'peru'],
+  '#8B7355': ['marron', 'brown', 'nuez'],
+  '#D4C4A8': ['beige', 'khaki', 'arena'],
+  '#C2B8A3': ['piedra', 'stone', 'beige'],
+  '#E8DCD0': ['greige', 'beige', 'gris'],
+  '#D3C4B5': ['taupe', 'beige', 'gris'],
+  
+  // Reds & Burgundy
+  '#722F37': ['burdeos', 'burgundy', 'granate'],
+  '#800000': ['burdeos', 'granate', 'maroon'],
+  '#B22222': ['rojo', 'red', 'granate'],
+  '#FF0000': ['rojo', 'red', 'vermelho'],
+  '#FF4500': ['naranja', 'rojo', 'coral'],
+  '#DC143C': ['rojo', 'carmesi', 'red'],
+  
+  // Pinks
+  '#FFB6C1': ['rosa', 'pink', 'rosa claro'],
+  '#FFC0CB': ['rosa', 'pink', 'rosa claro'],
+  '#FF69B4': ['rosa', 'fucsia', 'hot pink'],
+  '#FF1493': ['fucsia', 'rosa', 'magenta'],
+  '#DB7093': ['rosa', 'pink', 'rosa palo'],
+  '#C71585': ['magenta', 'fucsia', 'rosa'],
+  
+  // Purples
+  '#800080': ['morado', 'purple', 'purpura'],
+  '#9400D3': ['morado', 'violeta', 'purple'],
+  '#8A2BE2': ['morado', 'violeta', 'blue violet'],
+  '#4B0082': ['indigo', 'morado', 'azul oscuro'],
+  '#E6E6FA': ['lavanda', 'lila', 'lavender'],
+  '#DDA0DD': ['ciruela', 'plum', 'lila'],
+  '#D8BFD8': ['lila', 'lavanda', 'thistle'],
+  
+  // Oranges & Yellows
+  '#FFA500': ['naranja', 'orange', 'mandarina'],
+  '#FF6347': ['coral', 'naranja', 'tomate'],
+  '#FFFF00': ['amarillo', 'yellow'],
+  '#FFD700': ['dorado', 'oro', 'gold'],
+  '#FFDAB9': ['melocoton', 'peach', 'rosa'],
+  
+  // Turquoise & Teal
+  '#00CED1': ['turquesa', 'teal', 'verde agua'],
+  '#008080': ['teal', 'turquesa', 'verde azulado'],
+  '#40E0D0': ['turquesa', 'aqua', 'verde agua'],
+};
+
+/**
+ * Convert a hex color to searchable color names for database queries
+ * @param hex The hex color code
+ * @returns An array of color names to search for
+ */
+export function hexToColorNames(hex: string): string[] {
+  const normalizedHex = hex.toUpperCase();
+  
+  // Direct match
+  if (HEX_TO_COLOR_NAME[normalizedHex]) {
+    return HEX_TO_COLOR_NAME[normalizedHex];
+  }
+  
+  // Find closest color by calculating color distance
+  const hexToRgb = (h: string): [number, number, number] => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);
+    return result 
+      ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
+      : [0, 0, 0];
+  };
+  
+  const colorDistance = (hex1: string, hex2: string): number => {
+    const [r1, g1, b1] = hexToRgb(hex1);
+    const [r2, g2, b2] = hexToRgb(hex2);
+    return Math.sqrt(Math.pow(r2 - r1, 2) + Math.pow(g2 - g1, 2) + Math.pow(b2 - b1, 2));
+  };
+  
+  let closestHex = '#000000';
+  let minDistance = Infinity;
+  
+  for (const knownHex of Object.keys(HEX_TO_COLOR_NAME)) {
+    const distance = colorDistance(normalizedHex, knownHex);
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestHex = knownHex;
+    }
+  }
+  
+  return HEX_TO_COLOR_NAME[closestHex] || ['negro'];
+}
+
+/**
+ * Convert a hex color to a human-readable color name (Hebrew)
  * @param hex The hex color code
  * @returns A human-readable color name
  */
 export function getColorName(hex: string): string {
-  // Basic color mapping (could be expanded)
   const colorMap: Record<string, string> = {
     '#000000': 'שחור',
     '#FFFFFF': 'לבן',
@@ -180,10 +319,7 @@ export function getColorName(hex: string): string {
     '#F5F5DC': 'בז׳'
   };
 
-  // Normalize hex to uppercase
   const normalizedHex = hex.toUpperCase();
-  
-  // Return the mapped color name or the hex code if not found
   return colorMap[normalizedHex] || hex;
 }
 
@@ -347,7 +483,7 @@ function getBasicExcludePattern(): string {
 
 /**
  * Find clothing items matching the recommended colors from the agent
- * גרסה מתונה - מרחיב חיפוש אבל דוחה רק דברים בסיסיים
+ * NOW ACTUALLY USES COLOR MATCHING! 🎨
  * @param colors Record of item types to hex colors
  * @param occasion Optional occasion for better filtering
  * @returns A record of item types to matching clothing items
@@ -357,7 +493,7 @@ export async function findMatchingClothingItems(
   occasion?: string
 ): Promise<Record<string, any[]>> {
   
-  logger.info('🔍 [findMatchingClothingItems] מתחיל חיפוש', {
+  logger.info('🔍 [findMatchingClothingItems] Starting search WITH COLOR MATCHING', {
     context: 'findMatchingClothingItems',
     data: { colors, occasion }
   });
@@ -369,84 +505,110 @@ export async function findMatchingClothingItems(
     coat: []
   };
 
-  // דחייה בסיסית - אחת לכל הלולאה
   const excludePattern = getBasicExcludePattern();
 
-  for (const [type, color] of Object.entries(colors)) {
-    if (!color || type === 'coat') continue;
+  for (const [type, hexColor] of Object.entries(colors)) {
+    if (!hexColor || type === 'coat') continue;
 
-    // קבל תבנית חיפוש משופרת
-    const categoryPattern = getCategoryPattern(type, occasion);
+    // 🎨 NEW: Convert HEX to searchable color names
+    const colorNames = hexToColorNames(hexColor);
     
+    logger.info(`🎨 [findMatchingClothingItems] ${type}: HEX ${hexColor} → Colors: ${colorNames.join(', ')}`, {
+      context: 'findMatchingClothingItems',
+      data: { type, hexColor, colorNames }
+    });
+
+    const categoryPattern = getCategoryPattern(type, occasion);
     if (!categoryPattern) continue;
 
-    // פצל לתנאי OR מרובים
-    const terms = categoryPattern.split('|');
-    const orConditions = terms.map(term =>
+    const categoryTerms = categoryPattern.split('|');
+    const categoryConditions = categoryTerms.map(term =>
       `product_family.ilike.%${term}%,product_name.ilike.%${term}%`
     ).join(',');
 
     try {
-      // חיפוש עם דחייה מינימלית
-      const { data: items, error } = await supabase
-        .from('zara_cloth')
-        .select('id, product_name, price, colour, image, product_family, product_subfamily, url')
-        .or(orConditions)
-        .not('product_family', 'ilike', excludePattern)
-        .limit(10);
+      // 🎨 PHASE 1: Try to find items matching BOTH category AND color
+      let matchedItems: any[] = [];
+      
+      for (const colorName of colorNames) {
+        if (matchedItems.length >= 5) break; // We have enough items
+        
+        const { data: colorMatchedItems, error: colorError } = await supabase
+          .from('zara_cloth')
+          .select('id, product_name, price, colour, image, product_family, product_subfamily, url')
+          .or(categoryConditions)
+          .ilike('colour', `%${colorName}%`)
+          .not('product_family', 'ilike', excludePattern)
+          .limit(5);
 
-      if (error) {
-        logger.error(`❌ [findMatchingClothingItems] שגיאה בחיפוש ${type}`, {
-          context: 'findMatchingClothingItems',
-          data: error
-        });
-        continue;
+        if (!colorError && colorMatchedItems && colorMatchedItems.length > 0) {
+          logger.info(`✅ [findMatchingClothingItems] Found ${colorMatchedItems.length} ${type} items matching color "${colorName}"`, {
+            context: 'findMatchingClothingItems',
+            data: { colorName, count: colorMatchedItems.length }
+          });
+          
+          // Add unique items only
+          for (const item of colorMatchedItems) {
+            if (!matchedItems.find(m => m.id === item.id)) {
+              matchedItems.push(item);
+            }
+          }
+        }
       }
 
-      if (items && items.length > 0) {
-        logger.info(`✅ [findMatchingClothingItems] נמצאו ${items.length} פריטי ${type}`, {
+      // 🎨 PHASE 2: If no color matches, fall back to category-only (but log warning)
+      if (matchedItems.length === 0) {
+        logger.warn(`⚠️ [findMatchingClothingItems] No color match for ${type} (${hexColor}), falling back to category-only`, {
+          context: 'findMatchingClothingItems',
+          data: { type, hexColor, colorNames }
+        });
+        
+        const { data: fallbackItems, error: fallbackError } = await supabase
+          .from('zara_cloth')
+          .select('id, product_name, price, colour, image, product_family, product_subfamily, url')
+          .or(categoryConditions)
+          .not('product_family', 'ilike', excludePattern)
+          .limit(10);
+
+        if (!fallbackError && fallbackItems) {
+          matchedItems = fallbackItems;
+        }
+      }
+
+      if (matchedItems.length > 0) {
+        logger.info(`✅ [findMatchingClothingItems] Total ${matchedItems.length} ${type} items found`, {
           context: 'findMatchingClothingItems',
           data: {
-            id: items[0].id,
-            productName: items[0].product_name,
-            imageType: typeof items[0].image,
-            color: items[0].colour
+            type,
+            requestedColor: hexColor,
+            foundColors: matchedItems.slice(0, 3).map(i => i.colour)
           }
         });
 
-        // המרה לפורמט הנכון + ולידציה נוספת
-        result[type] = items
+        // Validate and transform items
+        result[type] = matchedItems
           .filter(item => {
-            // וולידציה - וודא שהפריט באמת תואם לקטגוריה
             const productName = (item.product_name || '').toUpperCase();
             const productFamily = (item.product_family || '').toUpperCase();
             
-            // בדיקת שמלה - שמלות לא צריכות להיות תחת top או bottom
             const isDress = productName.includes('VESTIDO') || 
                            productName.includes('DRESS') ||
                            productFamily.includes('VESTIDO') ||
                            productFamily.includes('DRESS');
             
             if (type === 'top') {
-              // דחה שמלות מ-top (הן ייכללו בקטגוריה נפרדת)
               if (isDress) return false;
-              
-              // ודא שזה לא מכנסיים/חצאית
               if (productName.includes('PANTALON') || productName.includes('FALDA') || 
                   productFamily.includes('PANTALON') || productFamily.includes('FALDA')) {
                 return false;
               }
             } else if (type === 'bottom') {
-              // דחה שמלות מ-bottom
               if (isDress) return false;
-              
-              // ודא שזה לא חולצה
               if (productName.includes('CAMISETA') || productName.includes('BLUSA') || 
                   productFamily.includes('CAMISETA') || productFamily.includes('BLUSA')) {
                 return false;
               }
             } else if (type === 'shoes') {
-              // ודא שזה נעליים
               if (!productName.includes('ZAPATO') && !productName.includes('BOTA') && 
                   !productName.includes('SHOE') && !productName.includes('SANDAL') &&
                   !productFamily.includes('ZAPATO') && !productFamily.includes('BOTA')) {
@@ -466,17 +628,36 @@ export async function findMatchingClothingItems(
               price: `₪${item.price}`,
               image: imageUrl,
               color: item.colour,
-              url: item.url
+              url: item.url,
+              matchedHex: hexColor // 🎨 Track which HEX color this was matched for
             };
           });
       }
     } catch (error) {
-      logger.error(`❌ [findMatchingClothingItems] שגיאה בחיפוש ${type}`, {
+      logger.error(`❌ [findMatchingClothingItems] Error searching ${type}`, {
         context: 'findMatchingClothingItems',
         data: error
       });
     }
   }
+
+  // Log final summary
+  logger.info('🎨 [findMatchingClothingItems] SEARCH COMPLETE', {
+    context: 'findMatchingClothingItems',
+    data: {
+      requestedColors: colors,
+      foundItems: {
+        top: result.top.length,
+        bottom: result.bottom.length,
+        shoes: result.shoes.length
+      },
+      colorMatches: {
+        top: result.top.slice(0, 2).map(i => ({ name: i.name, color: i.color })),
+        bottom: result.bottom.slice(0, 2).map(i => ({ name: i.name, color: i.color })),
+        shoes: result.shoes.slice(0, 2).map(i => ({ name: i.name, color: i.color }))
+      }
+    }
+  });
 
   return result;
 }
