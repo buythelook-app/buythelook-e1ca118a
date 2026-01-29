@@ -880,6 +880,50 @@ export type Database = {
           },
         ]
       }
+      product_update_history: {
+        Row: {
+          change_type: string
+          changed_by: string | null
+          created_at: string | null
+          cron_log_id: string | null
+          field_name: string | null
+          id: string
+          new_value: string | null
+          old_value: string | null
+          product_id: string
+        }
+        Insert: {
+          change_type: string
+          changed_by?: string | null
+          created_at?: string | null
+          cron_log_id?: string | null
+          field_name?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          product_id: string
+        }
+        Update: {
+          change_type?: string
+          changed_by?: string | null
+          created_at?: string | null
+          cron_log_id?: string | null
+          field_name?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_update_history_cron_log_id_fkey"
+            columns: ["cron_log_id"]
+            isOneToOne: false
+            referencedRelation: "scraper_cron_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -951,6 +995,164 @@ export type Database = {
           style?: string
         }
         Relationships: []
+      }
+      scraper_cron_jobs: {
+        Row: {
+          auto_retry: boolean | null
+          category_paths: Json
+          concurrency: number | null
+          consecutive_failures: number | null
+          created_at: string | null
+          description: string | null
+          email_recipients: Json
+          end_index: number | null
+          id: string
+          is_active: boolean | null
+          last_run_at: string | null
+          limit_value: number | null
+          max_retries: number | null
+          name: string
+          next_run_at: string | null
+          notify_on_failure: boolean | null
+          notify_on_success: boolean | null
+          retry_delay_minutes: number | null
+          schedule_time: string
+          schedule_type: string
+          schedule_value: string | null
+          scrape_mode: string
+          scraper_type: string | null
+          start_index: number | null
+          timezone: string | null
+          total_runs: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          auto_retry?: boolean | null
+          category_paths?: Json
+          concurrency?: number | null
+          consecutive_failures?: number | null
+          created_at?: string | null
+          description?: string | null
+          email_recipients?: Json
+          end_index?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_run_at?: string | null
+          limit_value?: number | null
+          max_retries?: number | null
+          name: string
+          next_run_at?: string | null
+          notify_on_failure?: boolean | null
+          notify_on_success?: boolean | null
+          retry_delay_minutes?: number | null
+          schedule_time?: string
+          schedule_type?: string
+          schedule_value?: string | null
+          scrape_mode?: string
+          scraper_type?: string | null
+          start_index?: number | null
+          timezone?: string | null
+          total_runs?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          auto_retry?: boolean | null
+          category_paths?: Json
+          concurrency?: number | null
+          consecutive_failures?: number | null
+          created_at?: string | null
+          description?: string | null
+          email_recipients?: Json
+          end_index?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_run_at?: string | null
+          limit_value?: number | null
+          max_retries?: number | null
+          name?: string
+          next_run_at?: string | null
+          notify_on_failure?: boolean | null
+          notify_on_success?: boolean | null
+          retry_delay_minutes?: number | null
+          schedule_time?: string
+          schedule_type?: string
+          schedule_value?: string | null
+          scrape_mode?: string
+          scraper_type?: string | null
+          start_index?: number | null
+          timezone?: string | null
+          total_runs?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      scraper_cron_logs: {
+        Row: {
+          categories_processed: Json | null
+          completed_at: string | null
+          created_at: string | null
+          cron_job_id: string
+          duration_seconds: number | null
+          email_sent: boolean | null
+          email_sent_at: string | null
+          error_message: string | null
+          id: string
+          products_added: number | null
+          products_failed: number | null
+          products_updated: number | null
+          retry_count: number | null
+          scraper_type: string | null
+          started_at: string
+          status: string
+          total_products_scraped: number | null
+        }
+        Insert: {
+          categories_processed?: Json | null
+          completed_at?: string | null
+          created_at?: string | null
+          cron_job_id: string
+          duration_seconds?: number | null
+          email_sent?: boolean | null
+          email_sent_at?: string | null
+          error_message?: string | null
+          id?: string
+          products_added?: number | null
+          products_failed?: number | null
+          products_updated?: number | null
+          retry_count?: number | null
+          scraper_type?: string | null
+          started_at?: string
+          status?: string
+          total_products_scraped?: number | null
+        }
+        Update: {
+          categories_processed?: Json | null
+          completed_at?: string | null
+          created_at?: string | null
+          cron_job_id?: string
+          duration_seconds?: number | null
+          email_sent?: boolean | null
+          email_sent_at?: string | null
+          error_message?: string | null
+          id?: string
+          products_added?: number | null
+          products_failed?: number | null
+          products_updated?: number | null
+          retry_count?: number | null
+          scraper_type?: string | null
+          started_at?: string
+          status?: string
+          total_products_scraped?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scraper_cron_logs_cron_job_id_fkey"
+            columns: ["cron_job_id"]
+            isOneToOne: false
+            referencedRelation: "scraper_cron_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shoes: {
         Row: {
@@ -1640,19 +1842,27 @@ export type Database = {
         }
         Relationships: []
       }
-      zara_cloth_test: {
+      zara_cloth_scraper: {
         Row: {
+          ai_classified: boolean | null
           availability: boolean | null
+          body_fits: string[] | null
+          brand: string | null
           care: Json | null
           category_id: string | null
           category_name: string | null
+          classified_at: string | null
+          clothing_category: string | null
           colour: string | null
           colour_code: string
           created_at: string | null
           currency: string | null
           description: string | null
           dimension: string | null
+          events: string[] | null
+          fabric_characteristics: string[] | null
           flags: string[] | null
+          formality_level: number | null
           id: number
           image: Json | null
           images: Json | null
@@ -1663,7 +1873,10 @@ export type Database = {
           match_products: Json | null
           materials: Json | null
           materials_description: string | null
+          occasions: string[] | null
+          outfit_category: string | null
           price: number | null
+          price_segment: string | null
           product_family: string | null
           product_family_en: string | null
           product_id: number
@@ -1676,23 +1889,34 @@ export type Database = {
           sku: string | null
           source: string | null
           source_priority: number | null
+          style_categories: string[] | null
+          style_tags: string[] | null
           sync_method: string | null
           updated_at: string | null
           url: string | null
+          weather_suitability: string[] | null
           you_may_also_like: string | null
         }
         Insert: {
+          ai_classified?: boolean | null
           availability?: boolean | null
+          body_fits?: string[] | null
+          brand?: string | null
           care?: Json | null
           category_id?: string | null
           category_name?: string | null
+          classified_at?: string | null
+          clothing_category?: string | null
           colour?: string | null
           colour_code?: string
           created_at?: string | null
           currency?: string | null
           description?: string | null
           dimension?: string | null
+          events?: string[] | null
+          fabric_characteristics?: string[] | null
           flags?: string[] | null
+          formality_level?: number | null
           id?: number
           image?: Json | null
           images?: Json | null
@@ -1703,7 +1927,10 @@ export type Database = {
           match_products?: Json | null
           materials?: Json | null
           materials_description?: string | null
+          occasions?: string[] | null
+          outfit_category?: string | null
           price?: number | null
+          price_segment?: string | null
           product_family?: string | null
           product_family_en?: string | null
           product_id: number
@@ -1716,23 +1943,34 @@ export type Database = {
           sku?: string | null
           source?: string | null
           source_priority?: number | null
+          style_categories?: string[] | null
+          style_tags?: string[] | null
           sync_method?: string | null
           updated_at?: string | null
           url?: string | null
+          weather_suitability?: string[] | null
           you_may_also_like?: string | null
         }
         Update: {
+          ai_classified?: boolean | null
           availability?: boolean | null
+          body_fits?: string[] | null
+          brand?: string | null
           care?: Json | null
           category_id?: string | null
           category_name?: string | null
+          classified_at?: string | null
+          clothing_category?: string | null
           colour?: string | null
           colour_code?: string
           created_at?: string | null
           currency?: string | null
           description?: string | null
           dimension?: string | null
+          events?: string[] | null
+          fabric_characteristics?: string[] | null
           flags?: string[] | null
+          formality_level?: number | null
           id?: number
           image?: Json | null
           images?: Json | null
@@ -1743,7 +1981,10 @@ export type Database = {
           match_products?: Json | null
           materials?: Json | null
           materials_description?: string | null
+          occasions?: string[] | null
+          outfit_category?: string | null
           price?: number | null
+          price_segment?: string | null
           product_family?: string | null
           product_family_en?: string | null
           product_id?: number
@@ -1756,9 +1997,171 @@ export type Database = {
           sku?: string | null
           source?: string | null
           source_priority?: number | null
+          style_categories?: string[] | null
+          style_tags?: string[] | null
           sync_method?: string | null
           updated_at?: string | null
           url?: string | null
+          weather_suitability?: string[] | null
+          you_may_also_like?: string | null
+        }
+        Relationships: []
+      }
+      zara_cloth_test: {
+        Row: {
+          ai_classified: boolean | null
+          availability: boolean | null
+          body_fits: string[] | null
+          care: Json | null
+          category_id: string | null
+          category_name: string | null
+          classified_at: string | null
+          clothing_category: string | null
+          colour: string | null
+          colour_code: string
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          dimension: string | null
+          events: string[] | null
+          fabric_characteristics: string[] | null
+          flags: string[] | null
+          formality_level: number | null
+          id: number
+          image: Json | null
+          images: Json | null
+          is_active: boolean | null
+          last_synced: string | null
+          last_synced_by: string | null
+          low_on_stock: boolean | null
+          match_products: Json | null
+          materials: Json | null
+          materials_description: string | null
+          occasions: string[] | null
+          price: number | null
+          price_segment: string | null
+          product_family: string | null
+          product_family_en: string | null
+          product_id: number
+          product_name: string | null
+          product_subfamily: string | null
+          section: string | null
+          seo_category_id: string | null
+          similar_products: Json | null
+          size: string
+          sku: string | null
+          source: string | null
+          source_priority: number | null
+          style_categories: string[] | null
+          style_tags: string[] | null
+          sync_method: string | null
+          updated_at: string | null
+          url: string | null
+          weather_suitability: string[] | null
+          you_may_also_like: string | null
+        }
+        Insert: {
+          ai_classified?: boolean | null
+          availability?: boolean | null
+          body_fits?: string[] | null
+          care?: Json | null
+          category_id?: string | null
+          category_name?: string | null
+          classified_at?: string | null
+          clothing_category?: string | null
+          colour?: string | null
+          colour_code?: string
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          dimension?: string | null
+          events?: string[] | null
+          fabric_characteristics?: string[] | null
+          flags?: string[] | null
+          formality_level?: number | null
+          id?: number
+          image?: Json | null
+          images?: Json | null
+          is_active?: boolean | null
+          last_synced?: string | null
+          last_synced_by?: string | null
+          low_on_stock?: boolean | null
+          match_products?: Json | null
+          materials?: Json | null
+          materials_description?: string | null
+          occasions?: string[] | null
+          price?: number | null
+          price_segment?: string | null
+          product_family?: string | null
+          product_family_en?: string | null
+          product_id: number
+          product_name?: string | null
+          product_subfamily?: string | null
+          section?: string | null
+          seo_category_id?: string | null
+          similar_products?: Json | null
+          size?: string
+          sku?: string | null
+          source?: string | null
+          source_priority?: number | null
+          style_categories?: string[] | null
+          style_tags?: string[] | null
+          sync_method?: string | null
+          updated_at?: string | null
+          url?: string | null
+          weather_suitability?: string[] | null
+          you_may_also_like?: string | null
+        }
+        Update: {
+          ai_classified?: boolean | null
+          availability?: boolean | null
+          body_fits?: string[] | null
+          care?: Json | null
+          category_id?: string | null
+          category_name?: string | null
+          classified_at?: string | null
+          clothing_category?: string | null
+          colour?: string | null
+          colour_code?: string
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          dimension?: string | null
+          events?: string[] | null
+          fabric_characteristics?: string[] | null
+          flags?: string[] | null
+          formality_level?: number | null
+          id?: number
+          image?: Json | null
+          images?: Json | null
+          is_active?: boolean | null
+          last_synced?: string | null
+          last_synced_by?: string | null
+          low_on_stock?: boolean | null
+          match_products?: Json | null
+          materials?: Json | null
+          materials_description?: string | null
+          occasions?: string[] | null
+          price?: number | null
+          price_segment?: string | null
+          product_family?: string | null
+          product_family_en?: string | null
+          product_id?: number
+          product_name?: string | null
+          product_subfamily?: string | null
+          section?: string | null
+          seo_category_id?: string | null
+          similar_products?: Json | null
+          size?: string
+          sku?: string | null
+          source?: string | null
+          source_priority?: number | null
+          style_categories?: string[] | null
+          style_tags?: string[] | null
+          sync_method?: string | null
+          updated_at?: string | null
+          url?: string | null
+          weather_suitability?: string[] | null
           you_may_also_like?: string | null
         }
         Relationships: []
@@ -1917,6 +2320,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_update_credits: {
+        Args: { new_credits: number; target_user_id: string }
+        Returns: undefined
+      }
       cleanup_expired_store_cache: { Args: never; Returns: undefined }
       has_role: {
         Args: {
@@ -1925,6 +2332,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: { Args: never; Returns: boolean }
       upsert_zara_cloth_test:
         | {
             Args: {
