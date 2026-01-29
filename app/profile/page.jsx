@@ -7,6 +7,7 @@ import { supabaseAuth } from "@/lib/supabase-auth-client"
 import { Loader2, Edit } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { CalendarEvents } from "@/components/calendar-events"
 import Link from "next/link"
 
 export default function ProfilePage() {
@@ -186,6 +187,10 @@ export default function ProfilePage() {
               </div>
             )}
 
+            <div className="p-8 border border-border bg-white/50 backdrop-blur-sm">
+              <CalendarEvents />
+            </div>
+
             <div className="flex flex-col gap-4">
               <button
                 onClick={() => router.push("/credits")}
@@ -215,6 +220,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   )
 }

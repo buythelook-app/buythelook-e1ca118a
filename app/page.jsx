@@ -11,6 +11,7 @@ import { supabaseAuth } from "@/lib/supabase-auth-client"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import Image from "next/image"
 import StyleGapSection from '@/components/StyleGapSection'
+
 const pulseAnimation = `
   @keyframes pulse-glow {
     0%, 100% {
@@ -372,6 +373,9 @@ function HomeContent() {
   const [userCredits, setUserCredits] = useState(0)
   const [featuredProducts, setFeaturedProducts] = useState([])
   const [hasUserOutfits, setHasUserOutfits] = useState(false)
+  const [productsLoading, setProductsLoading] = useState(true)
+  const [productsError, setProductsError] = useState(null)
+
   useEffect(() => {
     const fetchCredits = async () => {
       if (!user) {
@@ -399,41 +403,78 @@ function HomeContent() {
 
   useEffect(() => {
     const fetchFeaturedProducts = async () => {
-      console.log("/luxury-fashion-hero.jpg Fetching featured products for Recently Styled section")
-      console.log("/luxury-fashion-hero.jpg User logged in:", !!user)
+      setProductsLoading(true)
+      setProductsError(null)
+      
+      console.log("🎨 [RECENTLY STYLED] Starting fetch")
+      console.log("👤 User logged in:", !!user)
+      console.log("🆔 User ID:", user?.id)
 
       try {
         if (user) {
           // Fetch items from user's unlocked outfits
-          console.log("/luxury-fashion-hero.jpg Fetching user's unlocked outfit items")
+          console.log("🔍 Fetching user's unlocked outfit items")
+          
           const { data: outfits, error } = await supabaseAuth
             .from("generated_outfits")
-            .select("items")
+            .select("id, items, created_at, links_unlocked")
             .eq("user_id", user.id)
             .eq("links_unlocked", true)
             .order("created_at", { ascending: false })
             .limit(10)
 
           if (error) {
-            console.error("/luxury-fashion-hero.jpg Error fetching user outfits:", error)
+            console.error("❌ Error fetching user outfits:", error)
             throw error
           }
 
-          console.log("/luxury-fashion-hero.jpg Found", outfits?.length || 0, "unlocked outfits")
+          console.log("📦 Raw outfits data:", outfits)
+          console.log("📊 Found", outfits?.length || 0, "unlocked outfits")
+
+          // Log each outfit details
+          outfits?.forEach((outfit, idx) => {
+            console.log(`🎯 Outfit ${idx + 1}:`, {
+              id: outfit.id,
+              created_at: outfit.created_at,
+              links_unlocked: outfit.links_unlocked,
+              items_count: outfit.items?.length || 0,
+              has_items: !!outfit.items
+            })
+          })
 
           // Extract all items from all outfits into a flat array
           const allItems = []
-          outfits?.forEach((outfit) => {
+          outfits?.forEach((outfit, outfitIdx) => {
+            console.log(`\n🔎 Processing outfit ${outfitIdx + 1}:`)
+            
             if (outfit.items && Array.isArray(outfit.items)) {
-              outfit.items.forEach((item) => {
-                if (item.product_url && (item.image || item.images)) {
+              console.log(`  ✅ Has ${outfit.items.length} items`)
+              
+              outfit.items.forEach((item, itemIdx) => {
+                console.log(`  📦 Item ${itemIdx + 1}:`, {
+                  name: item.name,
+                  has_product_url: !!item.product_url,
+                  has_image: !!item.image,
+                  has_image_url: !!item.image_url,
+                  has_images_array: !!item.images,
+                  images_length: item.images?.length
+                })
+
+                if (item.product_url && (item.image || item.image_url || item.images)) {
                   let productImage = item.image || item.image_url
+                  
+                  // FIXED: Handle images array safely
                   if (item.images && Array.isArray(item.images) && item.images.length > 0) {
-                    // Last image is typically the product-only image without model
-                    productImage = item.images[item.images.length - 2]
+                    // Use last image if available, otherwise second to last, otherwise first
+                    if (item.images.length >= 2) {
+                      productImage = item.images[item.images.length - 2]
+                    } else {
+                      productImage = item.images[0]
+                    }
+                    console.log(`  🖼️  Using image from array: ${productImage}`)
                   }
 
-                  allItems.push({
+                  const productItem = {
                     id: item.id || `${item.name}-${Math.random()}`,
                     name: item.name,
                     brand: item.brand || "Designer",
@@ -441,31 +482,38 @@ function HomeContent() {
                     image: productImage,
                     product_url: item.product_url,
                     category: item.category || "Fashion",
-                    outfitDate: outfit.created_at, // Track when outfit was created
-                  })
+                    outfitDate: outfit.created_at,
+                  }
+
+                  allItems.push(productItem)
+                  console.log(`  ✅ Added to featured products`)
+                } else {
+                  console.log(`  ⚠️  Skipped - missing required data`)
                 }
               })
+            } else {
+              console.log(`  ❌ No items array or not an array`)
             }
           })
 
-          console.log("/luxury-fashion-hero.jpg Extracted", allItems.length, "shoppable items from outfits")
+          console.log("\n✨ Final results:")
+          console.log("📊 Total shoppable items extracted:", allItems.length)
+          console.log("🎯 Sample items:", allItems.slice(0, 3))
 
           if (allItems.length > 0) {
             setFeaturedProducts(allItems)
             setHasUserOutfits(true)
+            setProductsLoading(false)
+            console.log("✅ Successfully set featured products from user outfits")
             return
           }
 
+          console.log("⚠️  No shoppable items found, falling back to sample products")
           setHasUserOutfits(false)
-          setFeaturedProducts([])
-
-          console.log(
-            "/luxury-fashion-hero.jpg No shoppable items found in user's outfits, falling back to sample products",
-          )
         }
 
-        // Fallback: Fetch sample products from database (for non-logged-in or users without outfits)
-        console.log("/luxury-fashion-hero.jpg Fetching sample products from database")
+        // Fallback: Fetch sample products from database
+        console.log("🔄 Fetching sample products from database")
         const { searchProductsFromDB } = await import("@/lib/home")
 
         const products = await searchProductsFromDB(
@@ -473,11 +521,14 @@ function HomeContent() {
           { limit: 20, categoryType: "general" },
         )
 
-        console.log("/luxury-fashion-hero.jpg Fetched", products.length, "sample products")
+        console.log("📦 Fetched", products.length, "sample products")
         setFeaturedProducts(products)
+        setProductsLoading(false)
       } catch (error) {
-        console.error("/luxury-fashion-hero.jpg Failed to fetch featured products:", error)
+        console.error("❌ Failed to fetch featured products:", error)
+        setProductsError(error.message)
         setFeaturedProducts([])
+        setProductsLoading(false)
       }
     }
 
@@ -488,19 +539,23 @@ function HomeContent() {
     router.push("/quiz")
   }
 
-  const handleCurateMyLook = () => {
-    const params = new URLSearchParams()
-    if (selectedOccasion) params.set("occasion", selectedOccasion)
-    if (selectedBudget) params.set("budget", selectedBudget)
-    if (selectedAesthetic) params.set("mood", selectedAesthetic)
+const handleCurateMyLook = () => {
+  const params = new URLSearchParams()
+  
+  // Add the parameter to skip profile prompt
+  params.set("noshowform", "true")
+  
+  if (selectedOccasion) params.set("occasion", selectedOccasion)
+  if (selectedBudget) params.set("budget", selectedBudget)
+  if (selectedAesthetic) params.set("mood", selectedAesthetic)
 
-    if (visionText.trim()) {
-      localStorage.setItem("btl_quick_vision", visionText)
-      params.set("quick", "true")
-    }
-
-    router.push(`/quiz?${params.toString()}`)
+  if (visionText.trim()) {
+    localStorage.setItem("btl_quick_vision", visionText)
+    params.set("quick", "true")
   }
+
+  router.push(`/quiz?${params.toString()}`)
+}
 
   const openAuth = (mode) => {
     setAuthMode(mode)
@@ -535,7 +590,7 @@ function HomeContent() {
 
       <main className="relative">
         {/* ========== HERO SECTION ========== */}
-  <section className="w-full relative min-h-[100svh] flex items-center justify-center overflow-hidden">
+        <section className="w-full relative min-h-[100svh] flex items-center justify-center overflow-hidden">
           <HeroVideoBackground isPlaying={isVideoPlaying} isMuted={isVideoMuted} />
 
           {/* Video Controls - responsive positioning */}
@@ -569,8 +624,6 @@ function HomeContent() {
             </button>
           </motion.div>
 
-          {/* <ScrollIndicator /> */}
-
           {/* Hero Content - improved responsive padding and spacing */}
           <div className="relative z-99 text-center px-4 sm:px-6 md:px-8 max-w-5xl mx-auto py-20 sm:py-0">
             <motion.div
@@ -582,7 +635,7 @@ function HomeContent() {
 
             <h1 className="text-[9vh] text-white font-serif tracking-[-0.02em]"><AnimatedHeroText delay={0.5}>Stop Scrolling.</AnimatedHeroText></h1>
             <h1 className="text-[9vh] text-white italic font-light text-white/95"><AnimatedHeroText delay={0.5}>Start Wearing.</AnimatedHeroText></h1>
-   <motion.p
+            <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.1 }}
@@ -828,32 +881,46 @@ function HomeContent() {
           </div>
         </section>
 
-        {user && hasUserOutfits && featuredProducts.length > 0 && (
-          <>
-            {" "}
-            <section className="py-12 sm:py-16 md:py-20 bg-neutral-50">
-              <div className="max-w-8xl mx-auto px-4 sm:px-6 md:px-8">
-                <FadeInView className="text-center mb-8 sm:mb-10">
-                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif text-neutral-900 mb-4">
-                    Recently <span className="italic font-light">Styled</span>
-                  </h2>
-                  <p className="text-base sm:text-lg text-neutral-600">
-                    Shop individual pieces from our curated collection – every item is shoppable now.
-                  </p>
-                </FadeInView>
+        {/* RECENTLY STYLED SECTION - Shows for all logged-in users */}
+        {user && (
+          <section className="py-12 sm:py-16 md:py-20 bg-neutral-50">
+            <div className="max-w-8xl mx-auto px-4 sm:px-6 md:px-8">
+              <FadeInView className="text-center mb-8 sm:mb-10">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif text-neutral-900 mb-4">
+                  Recently <span className="italic font-light">Styled</span>
+                </h2>
+                <p className="text-base sm:text-lg text-neutral-600">
+                  {productsLoading 
+                    ? "Loading your personalized collection..."
+                    : featuredProducts.length > 0 && hasUserOutfits
+                      ? "Shop individual pieces from your curated outfits – every item is shoppable now."
+                      : featuredProducts.length > 0 
+                        ? "Discover trending pieces from our curated collection."
+                        : "Get started by generating your first outfit to see personalized recommendations here."}
+                </p>
+              </FadeInView>
 
-                <FadeInView delay={0.1}>
-                  {featuredProducts.length > 0 ? (
-                    <InfiniteProductCarousel products={featuredProducts} />
-                  ) : (
-                    <div className="flex items-center justify-center py-20">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neutral-900"></div>
-                    </div>
-                  )}
-                </FadeInView>
-              </div>
-            </section>
-          </>
+              <FadeInView delay={0.1}>
+                {productsLoading ? (
+                  <div className="flex items-center justify-center py-20">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neutral-900"></div>
+                  </div>
+                ) : productsError ? (
+                  <div className="text-center py-20">
+                    <p className="text-red-600 mb-4">Error loading products: {productsError}</p>
+                    <Button onClick={() => window.location.reload()}>Retry</Button>
+                  </div>
+                ) : featuredProducts.length > 0 ? (
+                  <InfiniteProductCarousel products={featuredProducts} />
+                ) : (
+                  <div className="text-center py-20">
+                    <p className="text-neutral-600 mb-6">No items available yet. Generate your first outfit!</p>
+                    <Button onClick={handleStartQuiz}>Start Style Quiz</Button>
+                  </div>
+                )}
+              </FadeInView>
+            </div>
+          </section>
         )}
 
         <section className="py-12 sm:py-16 md:py-20 bg-[#faf9f7] border-y border-neutral-200">

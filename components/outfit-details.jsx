@@ -80,9 +80,6 @@ function ProductDetailModal({ item, isOpen, onClose }) {
         <div className="p-6 space-y-4">
           <h3 className="text-2xl font-serif text-foreground">{item.name}</h3>
           <div className="space-y-2 text-muted-foreground">
-            {/* <p>
-              <span className="font-medium text-foreground">Brand:</span> {item.brand}
-            </p> */}
             <p>
               <span className="font-medium text-foreground">Price:</span> ${item.price.toFixed(2)}
             </p>
@@ -131,14 +128,16 @@ export function OutfitDetails({ id }) {
   const [showLockAnimation, setShowLockAnimation] = useState(false)
 
   const [feedbackOpen, setFeedbackOpen] = useState(false)
-  const [feedbackType, setFeedbackType] = useState(null) // 'like' or 'dislike'
+  const [feedbackType, setFeedbackType] = useState(null)
   const [feedbackReason, setFeedbackReason] = useState("")
   const [feedbackText, setFeedbackText] = useState("")
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
-  const [userFeedback, setUserFeedback] = useState(null) // existing feedback
+  const [userFeedback, setUserFeedback] = useState(null)
 
-  const [activeStoreSearch, setActiveStoreSearch] = useState(null) // { itemName, brand, stores }
-  const [isAutoPlaying, setIsAutoPlaying] = useState(false) // Auto-play toggle
+  const [activeStoreSearch, setActiveStoreSearch] = useState(null)
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false)
+
+  const [showLinksPopup, setShowLinksPopup] = useState(false)
 
   const ensureAbsoluteUrl = (url) => {
     if (!url || url === "#" || url === "/" || url.trim() === "") return null
@@ -147,16 +146,16 @@ export function OutfitDetails({ id }) {
   }
 
   const openAllShoppingLinks = () => {
-    console.log(" Opening all shopping links in new tabs")
-    console.log(" Outfit items structure:", outfit.items)
+    console.log("🛒 Opening all shopping links in new tabs")
+    console.log("📦 Outfit items structure:", outfit.items)
 
     const itemsArray = outfit.items.top ? [outfit.items.top, outfit.items.bottom, outfit.items.shoes] : outfit.items
-    console.log(" Items array:", itemsArray)
+    console.log("📋 Items array:", itemsArray)
 
     const validLinks = itemsArray.filter((item) => {
       const url = ensureAbsoluteUrl(item.product_url || item.url)
       console.log(
-        " Checking item:",
+        "🔗 Checking item:",
         item.product_name,
         "URL:",
         item.product_url || item.url,
@@ -166,7 +165,7 @@ export function OutfitDetails({ id }) {
       return url !== null
     })
 
-    console.log(` Found ${validLinks.length} valid shopping links`)
+    console.log(`✅ Found ${validLinks.length} valid shopping links`)
 
     if (validLinks.length === 0) {
       toast({
@@ -180,15 +179,14 @@ export function OutfitDetails({ id }) {
     let openedCount = 0
     validLinks.forEach((item, index) => {
       const absoluteUrl = ensureAbsoluteUrl(item.product_url || item.url)
-      console.log(` Opening link ${index + 1}:`, absoluteUrl)
+      console.log(`🌐 Opening link ${index + 1}:`, absoluteUrl)
 
-      // Open immediately - no async calls
       const opened = window.open(absoluteUrl, "_blank", "noopener,noreferrer")
       if (opened) {
         openedCount++
-        console.log(` Link ${index + 1} opened successfully`)
+        console.log(`✅ Link ${index + 1} opened successfully`)
       } else {
-        console.log(` Link ${index + 1} was blocked by browser`)
+        console.log(`❌ Link ${index + 1} was blocked by browser`)
       }
     })
 
@@ -197,6 +195,7 @@ export function OutfitDetails({ id }) {
         title: "Opening Shopping Links",
         description: `Opened ${openedCount} product page${openedCount > 1 ? "s" : ""} in new tabs`,
       })
+      setShowLinksPopup(false)
     } else {
       toast({
         title: "Popup Blocked",
@@ -209,7 +208,7 @@ export function OutfitDetails({ id }) {
   const handlePurchaseLinks = async () => {
     if (isPurchasing) return
 
-    console.log(" Links Unlock: Starting $5 payment flow for outfit:", id)
+    console.log("💳 Links Unlock: Starting $5 payment flow for outfit:", id)
 
     if (!user) {
       toast({
@@ -234,12 +233,12 @@ export function OutfitDetails({ id }) {
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error(" Links Unlock: Server responded with:", errorText)
+        console.error("❌ Links Unlock: Server responded with:", errorText)
         throw new Error("Failed to create checkout session")
       }
 
       const data = await response.json()
-      console.log(" Links Unlock: Payment response:", data)
+      console.log("✅ Links Unlock: Payment response:", data)
 
       if (data.url) {
         window.location.href = data.url
@@ -247,7 +246,7 @@ export function OutfitDetails({ id }) {
         throw new Error("Failed to create checkout session")
       }
     } catch (error) {
-      console.error(" Links Unlock: Payment error:", error)
+      console.error("❌ Links Unlock: Payment error:", error)
       toast({
         title: "Payment Failed",
         description: "Unable to process payment. Please try again.",
@@ -260,7 +259,7 @@ export function OutfitDetails({ id }) {
   const handleUnlockWithCredit = async () => {
     if (isUnlockingWithCredit) return
 
-    console.log(" Outfit Details: Unlocking shopping links with 1 credit")
+    console.log("💎 Outfit Details: Unlocking shopping links with 1 credit")
 
     if (!user) {
       toast({
@@ -298,21 +297,21 @@ export function OutfitDetails({ id }) {
         throw new Error(data.error || "Failed to unlock shopping links")
       }
 
-      console.log(" Outfit Details: Links unlocked with credit!", data)
+      console.log("✅ Outfit Details: Links unlocked with credit!", data)
 
       setLinksUnlocked(true)
       setUserCredits(data.newBalance)
 
       toast({
         title: "Shopping Links Unlocked!",
-        description: `1 credit used. ${data.newBalance} credits remaining. Opening links...`,
+        description: `1 credit used. ${data.newBalance} credits remaining.`,
       })
 
       setTimeout(() => {
-        openAllShoppingLinks()
-      }, 1000)
+        setShowLinksPopup(true)
+      }, 500)
     } catch (error) {
-      console.error(" Outfit Details: Credit unlock error:", error)
+      console.error("❌ Outfit Details: Credit unlock error:", error)
       toast({
         title: "Unlock Failed",
         description: error.message || "Unable to unlock with credit. Please try again.",
@@ -358,7 +357,7 @@ export function OutfitDetails({ id }) {
 
   useEffect(() => {
     const loadOutfit = async () => {
-      console.log(" Outfit Details: Loading outfit with ID:", id)
+      console.log("📥 Outfit Details: Loading outfit with ID:", id)
 
       if (user) {
         const [outfitResult, profileResult] = await Promise.all([
@@ -367,12 +366,12 @@ export function OutfitDetails({ id }) {
         ])
 
         if (outfitResult.error) {
-          console.error(" Error fetching outfit from database:", outfitResult.error)
+          console.error("❌ Error fetching outfit from database:", outfitResult.error)
           setOutfit(null)
         } else {
-          console.log(" Outfit Details: Found outfit in database:", outfitResult.data)
+          console.log("✅ Outfit Details: Found outfit in database:", outfitResult.data)
           console.log(
-            " Outfit Details: links_unlocked value:",
+            "🔒 Outfit Details: links_unlocked value:",
             outfitResult.data.links_unlocked,
             "Type:",
             typeof outfitResult.data.links_unlocked,
@@ -391,7 +390,7 @@ export function OutfitDetails({ id }) {
           if (!isUnlocked) {
             setTimeout(() => {
               setShowLockAnimation(true)
-            }, 500) // Delay animation slightly after page load
+            }, 500)
           }
 
           if (outfitResult.data.is_liked !== null) {
@@ -413,10 +412,10 @@ export function OutfitDetails({ id }) {
 
         if (profileResult.data) {
           setUserCredits(profileResult.data.credits || 0)
-          console.log(" Outfit Details: User has", profileResult.data.credits, "credits")
+          console.log("💎 Outfit Details: User has", profileResult.data.credits, "credits")
         }
       } else {
-        console.log(" No user logged in, outfit details require authentication")
+        console.log("⚠️ No user logged in, outfit details require authentication")
         setOutfit(null)
       }
 
@@ -426,7 +425,6 @@ export function OutfitDetails({ id }) {
     loadOutfit()
   }, [id, user])
 
-  // Auto-play effect - cycles through items and their images
   useEffect(() => {
     if (!isAutoPlaying || !outfit) return
 
@@ -438,22 +436,18 @@ export function OutfitDetails({ id }) {
         const images = currentItem?.images || [currentItem?.image]
         const currentImgIdx = prev[mainImageIndex] || 0
         
-        // If we're at the last image of current item, move to next item
         if (currentImgIdx >= images.length - 1) {
-          // Move to next item (or loop back to first)
           const nextItemIdx = (mainImageIndex + 1) % itemsArray.length
           setMainImageIndex(nextItemIdx)
-          // Start from the last 2 images (or first if less than 2)
           const nextItem = itemsArray[nextItemIdx]
           const nextImages = nextItem?.images || [nextItem?.image]
           const startIdx = Math.max(0, nextImages.length - 2)
           return { ...prev, [nextItemIdx]: startIdx }
         }
         
-        // Otherwise, move to next image in current item
         return { ...prev, [mainImageIndex]: currentImgIdx + 1 }
       })
-    }, 2500) // 2.5 seconds per image
+    }, 2500)
 
     return () => clearInterval(interval)
   }, [isAutoPlaying, outfit, mainImageIndex])
@@ -461,7 +455,6 @@ export function OutfitDetails({ id }) {
   const handleFeedbackClick = (type) => {
     setFeedbackType(type)
     setFeedbackOpen(true)
-    // Reset form
     setFeedbackReason("")
     setFeedbackText("")
   }
@@ -524,7 +517,7 @@ export function OutfitDetails({ id }) {
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="text-center space-y-4">
           <h2 className="text-2xl font-serif text-foreground">Outfit Not Found</h2>
-          <p className="text-muted-foreground">We couldn't find the outfit you're looking for.</p>
+          <p className="text-muted-foreground">{"We couldn't find the outfit you're looking for."}</p>
         </div>
       </div>
     )
@@ -532,6 +525,16 @@ export function OutfitDetails({ id }) {
 
   const itemsArray = outfit.items.top ? [outfit.items.top, outfit.items.bottom, outfit.items.shoes] : outfit.items
   const itemLabels = ["Top", "Bottom", "Shoes"]
+
+  const getValidShoppingLinks = () => {
+    return itemsArray
+      .map((item, index) => ({
+        ...item,
+        label: itemLabels[index] || `Item ${index + 1}`,
+        url: ensureAbsoluteUrl(item.product_url || item.url),
+      }))
+      .filter(item => item.url !== null)
+  }
 
   return (
     <>
@@ -607,13 +610,75 @@ export function OutfitDetails({ id }) {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={showLinksPopup} onOpenChange={setShowLinksPopup}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="flex items-center gap-2 text-2xl">
+              <CheckCircle2 className="w-6 h-6 text-foreground" />
+              Shopping Links Unlocked
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground font-normal">
+              Click any item to visit the product page
+            </p>
+          </DialogHeader>
+          <div className="space-y-2 py-6">
+            <div className="space-y-2 max-h-[450px] overflow-y-auto pr-1">
+              {getValidShoppingLinks().map((item, index) => (
+                <a
+                  key={index}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-4 p-4 bg-muted/30 hover:bg-foreground/5 transition-colors duration-300 group cursor-pointer"
+                >
+                  <div className="relative w-24 h-24 bg-muted overflow-hidden flex-shrink-0">
+                    <Image
+                      src={item.images?.[0] || item.image || "/placeholder.svg"}
+                      alt={item.name}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 font-medium">
+                      {item.label}
+                    </p>
+                    <p className="font-medium text-base text-foreground line-clamp-2 leading-snug mb-2">
+                      {item.name}
+                    </p>
+                    <p className="text-lg font-semibold text-foreground">
+                      ${item.price?.toFixed(2)}
+                    </p>
+                  </div>
+                  <ExternalLink className="w-5 h-5 text-muted-foreground transition-transform duration-300 group-hover:translate-x-1 flex-shrink-0" />
+                </a>
+              ))}
+            </div>
+          </div>
+          <DialogFooter className="gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowLinksPopup(false)}
+              className="flex-1 sm:flex-none"
+            >
+              Close
+            </Button>
+            <Button
+              onClick={openAllShoppingLinks}
+              className="flex-1 sm:flex-none bg-foreground text-background hover:bg-foreground/90 transition-all"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Open All Links
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 max-w-7xl mx-auto px-4 lg:px-0 mt-20">
         <div className="space-y-6">
-          {/* Premium Hero Gallery with Side Thumbnails */}
           <div className="relative bg-card overflow-hidden rounded-xl shadow-2xl">
             <div className="flex flex-col md:flex-row h-[500px] sm:h-[600px] md:h-[650px] lg:h-[750px]">
               
-              {/* Main Hero Image */}
               <div className="relative flex-1 h-full bg-neutral-100 dark:bg-neutral-900 group overflow-hidden">
                 {(() => {
                   const activeItem = itemsArray[mainImageIndex] || itemsArray[0]
@@ -623,7 +688,6 @@ export function OutfitDetails({ id }) {
 
                   return (
                     <>
-                      {/* Main Image */}
                       <Image
                         src={images[currentImgIndex] || "/placeholder.svg"}
                         alt={activeItem?.name}
@@ -632,10 +696,8 @@ export function OutfitDetails({ id }) {
                         priority
                       />
 
-                      {/* Gradient overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
 
-                      {/* Feedback buttons + Auto-play toggle - top left */}
                       <div className="absolute top-4 left-4 flex gap-2 z-20">
                         <Button
                           variant="secondary"
@@ -663,7 +725,6 @@ export function OutfitDetails({ id }) {
                         </Button>
                       </div>
 
-                      {/* Auto-play toggle - top right */}
                       <div className="absolute top-4 right-4 z-20">
                         <Button
                           variant="secondary"
@@ -680,7 +741,6 @@ export function OutfitDetails({ id }) {
                         </Button>
                       </div>
 
-                      {/* Navigation Arrows - centered vertically, inside main image only */}
                       {hasMultipleImages && (
                         <>
                           <button
@@ -700,7 +760,6 @@ export function OutfitDetails({ id }) {
                         </>
                       )}
 
-                      {/* Product Info Overlay - bottom left */}
                       <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6 md:p-8 z-10">
                         <span className="inline-block bg-white/25 backdrop-blur-sm text-white text-[10px] sm:text-xs uppercase tracking-[0.2em] font-medium px-3 py-1.5 rounded-full mb-3">
                           {itemLabels[mainImageIndex]}
@@ -712,7 +771,6 @@ export function OutfitDetails({ id }) {
                           ${activeItem?.price?.toFixed(2)}
                         </p>
                         
-                        {/* Image Counter - inline with price */}
                         {hasMultipleImages && (
                           <div className="absolute bottom-5 sm:bottom-6 md:bottom-8 right-5 sm:right-6 md:right-8">
                             <div className="bg-black/60 backdrop-blur-sm text-white text-sm sm:text-base font-medium px-4 py-2 rounded-full min-w-[60px] text-center">
@@ -722,7 +780,6 @@ export function OutfitDetails({ id }) {
                         )}
                       </div>
 
-                      {/* Click to view details overlay */}
                       <button
                         onClick={() => handleItemClick(mainImageIndex)}
                         className="absolute inset-0 z-10 cursor-pointer"
@@ -733,7 +790,6 @@ export function OutfitDetails({ id }) {
                 })()}
               </div>
 
-              {/* Vertical Thumbnails - fills full height */}
               <div className="flex md:flex-col w-full md:w-[120px] lg:w-[140px] h-[100px] md:h-full bg-neutral-50 dark:bg-neutral-900/80">
                 {itemsArray.map((item, idx) => {
                   const images = item.images || [item.image]
@@ -757,7 +813,6 @@ export function OutfitDetails({ id }) {
                         className="object-cover"
                       />
                       
-                      {/* Hover/Active overlay with info */}
                       <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-0 group-hover/thumb:opacity-100"}`}>
                         <div className="absolute bottom-2 md:bottom-3 left-2 md:left-3 right-2 md:right-3">
                           <span className="text-white text-[9px] md:text-[10px] font-bold uppercase tracking-wider">
@@ -769,7 +824,6 @@ export function OutfitDetails({ id }) {
                         </div>
                       </div>
 
-                      {/* Active dot indicator */}
                       {isActive && (
                         <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-black dark:bg-white rounded-full shadow-lg" />
                       )}
@@ -779,10 +833,9 @@ export function OutfitDetails({ id }) {
               </div>
             </div>
 
-            {/* Bottom hint bar */}
             <div className="bg-neutral-100 dark:bg-neutral-800 py-3 px-4 flex items-center justify-between">
               <p className="text-xs text-muted-foreground">
-                Click thumbnails to switch • Tap image for details
+                {"Click thumbnails to switch • Tap image for details"}
               </p>
               <button
                 onClick={() => handleItemClick(mainImageIndex)}
@@ -818,7 +871,6 @@ export function OutfitDetails({ id }) {
                 {activeStoreSearch.stores.map((store, idx) => (
                   <div key={idx} className="p-4 hover:bg-muted/30 transition-colors">
                     <div className="flex gap-4">
-                      {/* Store image */}
                       <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                         {store.photo ? (
                           <img
@@ -838,7 +890,6 @@ export function OutfitDetails({ id }) {
                         </div>
                       </div>
 
-                      {/* Store info */}
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-foreground truncate">{store.name}</h4>
                         <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{store.address}</p>
@@ -858,7 +909,6 @@ export function OutfitDetails({ id }) {
                       </div>
                     </div>
 
-                    {/* Action buttons */}
                     <div className="flex gap-2 mt-3">
                       <Button size="sm" className="flex-1 bg-neutral-900 text-white hover:bg-neutral-800" asChild>
                         <a
@@ -927,7 +977,7 @@ export function OutfitDetails({ id }) {
                 const images = item.images || [item.image]
                 const hasMultipleImages = images.length > 1
                 const productUrl = ensureAbsoluteUrl(item.product_url || item.url)
-                console.log(" Outfit Details: Item URL for", item.name, ":", productUrl)
+                console.log("🔗 Outfit Details: Item URL for", item.name, ":", productUrl)
 
                 return (
                   <div
@@ -1025,17 +1075,6 @@ export function OutfitDetails({ id }) {
                                 Shop Now <ExternalLink className="w-3 h-3 ml-1 sm:ml-2" />
                               </a>
                             </Button>
-                            {/* <FindNearMeButton
-                              itemName={item.name}
-                              brand={item.brand}
-                              onStoresFound={(stores) =>
-                                setActiveStoreSearch({
-                                  itemName: item.name,
-                                  brand: item.brand,
-                                  stores,
-                                })
-                              }
-                            /> */}
                           </>
                         ) : (
                           <div className="text-xs text-muted-foreground flex items-center gap-1">
@@ -1112,17 +1151,17 @@ export function OutfitDetails({ id }) {
                   <CheckCircle2 className="w-10 h-10 mx-auto text-green-600 dark:text-green-400" />
                   <p className="text-lg font-semibold text-green-900 dark:text-green-100">Shopping Links Unlocked!</p>
                   <p className="text-sm text-green-700 dark:text-green-300">
-                    Click "Shop Now" on any item above or open all links at once below
+                    {"Click \"Shop Now\" on any item above or view all links at once"}
                   </p>
                 </div>
                 <Button
                   variant="default"
                   size="lg"
                   className="w-full h-14 bg-green-600 hover:bg-green-700 text-white uppercase tracking-widest transition-all duration-300 font-medium"
-                  onClick={openAllShoppingLinks}
+                  onClick={() => setShowLinksPopup(true)}
                 >
                   <ExternalLink className="mr-2 w-5 h-5" />
-                  Open All Shopping Links
+                  View All Shopping Links
                 </Button>
               </div>
             )}
