@@ -140,6 +140,9 @@ export function OutfitDetails({ id }) {
   const [activeStoreSearch, setActiveStoreSearch] = useState(null) // { itemName, brand, stores }
   const [isAutoPlaying, setIsAutoPlaying] = useState(false) // Auto-play toggle
 
+  // NEW: State for shopping links popup
+  const [showLinksPopup, setShowLinksPopup] = useState(false)
+
   const ensureAbsoluteUrl = (url) => {
     if (!url || url === "#" || url === "/" || url.trim() === "") return null
     if (url.startsWith("http://") || url.startsWith("https://")) return url
@@ -147,16 +150,16 @@ export function OutfitDetails({ id }) {
   }
 
   const openAllShoppingLinks = () => {
-    console.log(" Opening all shopping links in new tabs")
-    console.log(" Outfit items structure:", outfit.items)
+    console.log("🛒 Opening all shopping links in new tabs")
+    console.log("📦 Outfit items structure:", outfit.items)
 
     const itemsArray = outfit.items.top ? [outfit.items.top, outfit.items.bottom, outfit.items.shoes] : outfit.items
-    console.log(" Items array:", itemsArray)
+    console.log("📋 Items array:", itemsArray)
 
     const validLinks = itemsArray.filter((item) => {
       const url = ensureAbsoluteUrl(item.product_url || item.url)
       console.log(
-        " Checking item:",
+        "🔗 Checking item:",
         item.product_name,
         "URL:",
         item.product_url || item.url,
@@ -166,7 +169,7 @@ export function OutfitDetails({ id }) {
       return url !== null
     })
 
-    console.log(` Found ${validLinks.length} valid shopping links`)
+    console.log(`✅ Found ${validLinks.length} valid shopping links`)
 
     if (validLinks.length === 0) {
       toast({
@@ -180,15 +183,15 @@ export function OutfitDetails({ id }) {
     let openedCount = 0
     validLinks.forEach((item, index) => {
       const absoluteUrl = ensureAbsoluteUrl(item.product_url || item.url)
-      console.log(` Opening link ${index + 1}:`, absoluteUrl)
+      console.log(`🌐 Opening link ${index + 1}:`, absoluteUrl)
 
       // Open immediately - no async calls
       const opened = window.open(absoluteUrl, "_blank", "noopener,noreferrer")
       if (opened) {
         openedCount++
-        console.log(` Link ${index + 1} opened successfully`)
+        console.log(`✅ Link ${index + 1} opened successfully`)
       } else {
-        console.log(` Link ${index + 1} was blocked by browser`)
+        console.log(`❌ Link ${index + 1} was blocked by browser`)
       }
     })
 
@@ -197,6 +200,8 @@ export function OutfitDetails({ id }) {
         title: "Opening Shopping Links",
         description: `Opened ${openedCount} product page${openedCount > 1 ? "s" : ""} in new tabs`,
       })
+      // Close the popup after opening links
+      setShowLinksPopup(false)
     } else {
       toast({
         title: "Popup Blocked",
@@ -209,7 +214,7 @@ export function OutfitDetails({ id }) {
   const handlePurchaseLinks = async () => {
     if (isPurchasing) return
 
-    console.log(" Links Unlock: Starting $5 payment flow for outfit:", id)
+    console.log("💳 Links Unlock: Starting $5 payment flow for outfit:", id)
 
     if (!user) {
       toast({
@@ -234,12 +239,12 @@ export function OutfitDetails({ id }) {
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error(" Links Unlock: Server responded with:", errorText)
+        console.error("❌ Links Unlock: Server responded with:", errorText)
         throw new Error("Failed to create checkout session")
       }
 
       const data = await response.json()
-      console.log(" Links Unlock: Payment response:", data)
+      console.log("✅ Links Unlock: Payment response:", data)
 
       if (data.url) {
         window.location.href = data.url
@@ -247,7 +252,7 @@ export function OutfitDetails({ id }) {
         throw new Error("Failed to create checkout session")
       }
     } catch (error) {
-      console.error(" Links Unlock: Payment error:", error)
+      console.error("❌ Links Unlock: Payment error:", error)
       toast({
         title: "Payment Failed",
         description: "Unable to process payment. Please try again.",
@@ -260,7 +265,7 @@ export function OutfitDetails({ id }) {
   const handleUnlockWithCredit = async () => {
     if (isUnlockingWithCredit) return
 
-    console.log(" Outfit Details: Unlocking shopping links with 1 credit")
+    console.log("💎 Outfit Details: Unlocking shopping links with 1 credit")
 
     if (!user) {
       toast({
@@ -298,21 +303,22 @@ export function OutfitDetails({ id }) {
         throw new Error(data.error || "Failed to unlock shopping links")
       }
 
-      console.log(" Outfit Details: Links unlocked with credit!", data)
+      console.log("✅ Outfit Details: Links unlocked with credit!", data)
 
       setLinksUnlocked(true)
       setUserCredits(data.newBalance)
 
       toast({
         title: "Shopping Links Unlocked!",
-        description: `1 credit used. ${data.newBalance} credits remaining. Opening links...`,
+        description: `1 credit used. ${data.newBalance} credits remaining.`,
       })
 
+      // Show the popup instead of immediately opening links
       setTimeout(() => {
-        openAllShoppingLinks()
-      }, 1000)
+        setShowLinksPopup(true)
+      }, 500)
     } catch (error) {
-      console.error(" Outfit Details: Credit unlock error:", error)
+      console.error("❌ Outfit Details: Credit unlock error:", error)
       toast({
         title: "Unlock Failed",
         description: error.message || "Unable to unlock with credit. Please try again.",
@@ -358,7 +364,7 @@ export function OutfitDetails({ id }) {
 
   useEffect(() => {
     const loadOutfit = async () => {
-      console.log(" Outfit Details: Loading outfit with ID:", id)
+      console.log("📥 Outfit Details: Loading outfit with ID:", id)
 
       if (user) {
         const [outfitResult, profileResult] = await Promise.all([
@@ -367,12 +373,12 @@ export function OutfitDetails({ id }) {
         ])
 
         if (outfitResult.error) {
-          console.error(" Error fetching outfit from database:", outfitResult.error)
+          console.error("❌ Error fetching outfit from database:", outfitResult.error)
           setOutfit(null)
         } else {
-          console.log(" Outfit Details: Found outfit in database:", outfitResult.data)
+          console.log("✅ Outfit Details: Found outfit in database:", outfitResult.data)
           console.log(
-            " Outfit Details: links_unlocked value:",
+            "🔒 Outfit Details: links_unlocked value:",
             outfitResult.data.links_unlocked,
             "Type:",
             typeof outfitResult.data.links_unlocked,
@@ -413,10 +419,10 @@ export function OutfitDetails({ id }) {
 
         if (profileResult.data) {
           setUserCredits(profileResult.data.credits || 0)
-          console.log(" Outfit Details: User has", profileResult.data.credits, "credits")
+          console.log("💎 Outfit Details: User has", profileResult.data.credits, "credits")
         }
       } else {
-        console.log(" No user logged in, outfit details require authentication")
+        console.log("⚠️ No user logged in, outfit details require authentication")
         setOutfit(null)
       }
 
@@ -533,10 +539,22 @@ export function OutfitDetails({ id }) {
   const itemsArray = outfit.items.top ? [outfit.items.top, outfit.items.bottom, outfit.items.shoes] : outfit.items
   const itemLabels = ["Top", "Bottom", "Shoes"]
 
+  // Get valid shopping links for the popup
+  const getValidShoppingLinks = () => {
+    return itemsArray
+      .map((item, index) => ({
+        ...item,
+        label: itemLabels[index] || `Item ${index + 1}`,
+        url: ensureAbsoluteUrl(item.product_url || item.url),
+      }))
+      .filter(item => item.url !== null)
+  }
+
   return (
     <>
       <ProductDetailModal item={selectedItem} isOpen={!!selectedItem} onClose={() => setSelectedItem(null)} />
 
+      {/* Feedback Dialog */}
       <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -602,6 +620,69 @@ export function OutfitDetails({ id }) {
             </Button>
             <Button onClick={submitFeedback} disabled={!feedbackReason || isSubmittingFeedback}>
               {isSubmittingFeedback ? "Saving..." : "Save Feedback"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* NEW: Shopping Links Popup Dialog */}
+      <Dialog open={showLinksPopup} onOpenChange={setShowLinksPopup}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              Shopping Links Unlocked!
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Your shopping links are ready. Click on any item below to visit the product page:
+            </p>
+         <div className="space-y-2 max-h-[400px] overflow-y-auto">
+  {getValidShoppingLinks().map((item, index) => (
+    <a
+      key={index} // key must be on the outermost element in map
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors group"
+    >
+      <div className="relative w-16 h-16 bg-muted rounded overflow-hidden flex-shrink-0">
+        <Image
+          src={item.images?.[0] || item.image || "/placeholder.svg"}
+          alt={item.name}
+          fill
+          className="object-cover"
+        />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate">
+          {item.name}
+        </p>
+        <p className="text-xs text-muted-foreground">{item.label}</p>
+        <p className="text-sm font-semibold text-foreground mt-1">
+          ${item.price?.toFixed(2)}
+        </p>
+      </div>
+      <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+    </a>
+  ))}
+</div>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowLinksPopup(false)}
+              className="w-full sm:w-auto"
+            >
+              Close
+            </Button>
+            <Button
+              onClick={openAllShoppingLinks}
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Open All Links
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -927,7 +1008,7 @@ export function OutfitDetails({ id }) {
                 const images = item.images || [item.image]
                 const hasMultipleImages = images.length > 1
                 const productUrl = ensureAbsoluteUrl(item.product_url || item.url)
-                console.log(" Outfit Details: Item URL for", item.name, ":", productUrl)
+                console.log("🔗 Outfit Details: Item URL for", item.name, ":", productUrl)
 
                 return (
                   <div
@@ -1112,17 +1193,17 @@ export function OutfitDetails({ id }) {
                   <CheckCircle2 className="w-10 h-10 mx-auto text-green-600 dark:text-green-400" />
                   <p className="text-lg font-semibold text-green-900 dark:text-green-100">Shopping Links Unlocked!</p>
                   <p className="text-sm text-green-700 dark:text-green-300">
-                    Click "Shop Now" on any item above or open all links at once below
+                    Click "Shop Now" on any item above or view all links at once
                   </p>
                 </div>
                 <Button
                   variant="default"
                   size="lg"
                   className="w-full h-14 bg-green-600 hover:bg-green-700 text-white uppercase tracking-widest transition-all duration-300 font-medium"
-                  onClick={openAllShoppingLinks}
+                  onClick={() => setShowLinksPopup(true)}
                 >
                   <ExternalLink className="mr-2 w-5 h-5" />
-                  Open All Shopping Links
+                  View All Shopping Links
                 </Button>
               </div>
             )}
