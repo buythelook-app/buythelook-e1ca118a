@@ -611,59 +611,61 @@ export function OutfitDetails({ id }) {
       </Dialog>
 
       <Dialog open={showLinksPopup} onOpenChange={setShowLinksPopup}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              Shopping Links Unlocked!
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="flex items-center gap-2 text-2xl">
+              <CheckCircle2 className="w-6 h-6 text-foreground" />
+              Shopping Links Unlocked
             </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground">
-              Your shopping links are ready. Click on any item below to visit the product page:
+            <p className="text-sm text-muted-foreground font-normal">
+              Click any item to visit the product page
             </p>
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+          </DialogHeader>
+          <div className="space-y-2 py-6">
+            <div className="space-y-2 max-h-[450px] overflow-y-auto pr-1">
               {getValidShoppingLinks().map((item, index) => (
                 <a
                   key={index}
                   href={item.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors group"
+                  className="flex items-center gap-4 p-4 bg-muted/30 hover:bg-foreground/5 transition-colors duration-300 group cursor-pointer"
                 >
-                  <div className="relative w-16 h-16 bg-muted rounded overflow-hidden flex-shrink-0">
+                  <div className="relative w-24 h-24 bg-muted overflow-hidden flex-shrink-0">
                     <Image
                       src={item.images?.[0] || item.image || "/placeholder.svg"}
                       alt={item.name}
                       fill
-                      className="object-cover"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate">
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 font-medium">
+                      {item.label}
+                    </p>
+                    <p className="font-medium text-base text-foreground line-clamp-2 leading-snug mb-2">
                       {item.name}
                     </p>
-                    <p className="text-xs text-muted-foreground">{item.label}</p>
-                    <p className="text-sm font-semibold text-foreground mt-1">
+                    <p className="text-lg font-semibold text-foreground">
                       ${item.price?.toFixed(2)}
                     </p>
                   </div>
-                  <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                  <ExternalLink className="w-5 h-5 text-muted-foreground transition-transform duration-300 group-hover:translate-x-1 flex-shrink-0" />
                 </a>
               ))}
             </div>
           </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className="gap-3">
             <Button
               variant="outline"
               onClick={() => setShowLinksPopup(false)}
-              className="w-full sm:w-auto"
+              className="flex-1 sm:flex-none"
             >
               Close
             </Button>
             <Button
               onClick={openAllShoppingLinks}
-              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
+              className="flex-1 sm:flex-none bg-foreground text-background hover:bg-foreground/90 transition-all"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
               Open All Links
